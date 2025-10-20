@@ -8,8 +8,9 @@ AGI Voice V2 is a desktop research application for **AI-based autonomous driving
 - **Frontend**: Tauri 2.x + SvelteKit 2.9.0 + Svelte 5.0.0 + Tailwind CSS 4.1.14 (with Vite 6.x)
 - **Backend**: Tauri (Rust) + SeaORM with SQLite
 - **Database**:
-  - **AI Chat System**: SQLite (`ai_chat.db` in project root) - Generic AI conversation system
-  - **Domain Data**: Separate databases for domain-specific data (e.g., autonomous driving data)
+  - **AI Chat System**: SQLite (`ai_chat.db`) - Generic AI conversation system
+  - **SUMO Maps**: SQLite (`sumo_maps.db`) - Autonomous driving map data
+  - **Dual Database Support**: Wrapper types (`AiChatDb`, `MapDb`) for Tauri State management
 - **Icons**: Iconify with Solar duotone theme
 - **AI Integration**: Claude CLI via Tauri commands for natural language interactions
 
@@ -58,6 +59,7 @@ AGI Voice V2 is a desktop research application for **AI-based autonomous driving
 - **Icons**: `@iconify/svelte` with Solar duotone icons
 - **Main Pages**:
   - Dashboard (`/`) - Main interface with AI chat widget for autonomous driving research
+  - Map Settings (`/map-settings/*`) - SUMO map management (generator, library)
   - AI Settings (`/ai-settings/*`) - AI system configuration (system messages, characters, commands, user info, final message)
   - Settings (`/settings`) - Application settings
 - **State Management**:
@@ -84,7 +86,8 @@ AGI Voice V2 is a desktop research application for **AI-based autonomous driving
 
 **Database Architecture**:
 - **AI Chat Database** (`ai_chat.db`): Generic, reusable AI conversation system
-- **Domain Databases**: Separate databases for domain-specific data (autonomous driving, etc.)
+- **SUMO Maps Database** (`sumo_maps.db`): Autonomous driving map data
+- **Dual Database Pattern**: Wrapper types to support multiple databases in Tauri State
 
 **Important**: All timestamps use `DateTime` (UTC) for consistency.
 
@@ -95,10 +98,29 @@ AGI Voice V2 is a desktop research application for **AI-based autonomous driving
 - `conversations` - Chat sessions (links character + prompt template)
 - `messages` - Chat history (user/assistant messages)
 
+**SUMO Maps Tables** (`sumo_maps.db` - Domain-Specific):
+- `maps` - SUMO traffic maps (name, description, node_xml, edge_xml, tags, category, difficulty, metadata, embedding info)
+- `map_scenarios` - Map scenarios (map_id, drivers, vehicles, traffic_config)
+
+**Dual Database Support**:
+```rust
+// Wrapper types for Tauri State management
+pub struct AiChatDb(pub DatabaseConnection);
+pub struct MapDb(pub DatabaseConnection);
+
+// Commands use specific wrapper types
+#[tauri::command]
+pub async fn create_map(request: CreateMapRequest, map_db: State<'_, MapDb>) -> Result<map::Model, String>
+
+#[tauri::command]
+pub async fn get_conversations(db: State<'_, AiChatDb>) -> Result<Vec<ConversationWithCount>, String>
+```
+
 **Design Philosophy**:
 - **Generic AI Chat**: All conversation-related tables in `ai_chat.db` for reusability across projects
 - **Domain Separation**: Domain-specific data (e.g., autonomous driving maps, sensor data) in separate databases
 - **No mixing**: AI chat system remains independent and portable
+- **Type Safety**: Wrapper types prevent database connection mix-ups in Tauri State
 
 ### Dynamic Prompt System
 
@@ -229,10 +251,20 @@ src-tauri/
 │   │   ├── prompt_templates.rs   # System message CRUD
 │   │   ├── characters.rs         # Character CRUD
 │   │   ├── command_templates.rs  # Command template CRUD
-│   │   └── conversations.rs      # Conversation CRUD
+│   │   ├── conversations.rs      # Conversation CRUD
+│   │   └── maps.rs               # Map CRUD (SUMO maps)
 │   ├── db/
-│   │   ├── mod.rs           # Database initialization
-│   │   ├── models/          # SeaORM entity models (5 AI tables)
+│   │   ├── mod.rs           # Database initialization (AiChatDb, MapDb wrappers)
+│   │   ├── map_db.rs        # SUMO maps database initialization
+│   │   ├── models/          # SeaORM entity models
+│   │   │   ├── mod.rs
+│   │   │   ├── prompt_template.rs
+│   │   │   ├── character.rs
+│   │   │   ├── command_template.rs
+│   │   │   ├── conversation.rs
+│   │   │   ├── message.rs
+│   │   │   ├── map.rs       # SUMO map entity
+│   │   │   └── map_scenario.rs  # Map scenario entity
 │   │   └── sync.rs          # Database sync utilities
 │   └── ai/
 │       ├── mod.rs           # AI module exports
@@ -257,6 +289,11 @@ src/
 │   │   ├── commands/+page.svelte         # Command template CRUD
 │   │   ├── user-info/+page.svelte        # User info management
 │   │   └── final-message/+page.svelte    # Final message management
+│   ├── map-settings/
+│   │   ├── +layout.svelte           # Sub-sidebar layout (Map 설정)
+│   │   ├── +page.svelte             # Default redirect to generator
+│   │   ├── generator/+page.svelte   # SUMO map creation/editing
+│   │   └── library/+page.svelte     # Map library with search/filter
 │   └── settings/+page.svelte    # Settings
 ├── lib/
 │   ├── components/
@@ -266,7 +303,9 @@ src/
 │   │   ├── AIChatWidget.svelte   # AI chat widget with history/chat views
 │   │   ├── ChatView.svelte       # Chat interface with markdown rendering
 │   │   ├── ChatHistoryView.svelte # Conversation history with message counts
-│   │   └── ChatSettingsView.svelte # Character/prompt selection modal
+│   │   ├── ChatSettingsView.svelte # Character/prompt selection modal
+│   │   ├── MapCanvas.svelte      # SVG-based SUMO map visualization
+│   │   └── MapCard.svelte        # Map display card (with edit/delete)
 │   └── stores/
 │       ├── uiStore.ts            # UI state (sidebar, chat, widget mode, conversation)
 │       ├── dbWatcher.svelte.ts   # DB change detection (auto-refresh)
@@ -398,6 +437,77 @@ The AI chat system uses Claude CLI via Rust's `std::process::Command`. On Window
 - Frontend: Displays as "{time} • 메시지 {n}개"
 - Real-time updates via `conversationCreated` event
 
+### SUMO Map Management System
+
+**Feature**: Create, visualize, and manage SUMO traffic simulation maps with full CRUD operations
+
+**Architecture**:
+- **Database**: Separate `sumo_maps.db` for domain-specific map data
+- **Entity Models**: `map` (SUMO XML data) and `map_scenario` (vehicle/driver configs)
+- **Dual Database Support**: Wrapper types (`AiChatDb`, `MapDb`) prevent State conflicts
+
+**Backend (Rust)**:
+- **Commands** (`src-tauri/src/commands/maps.rs`):
+  - `create_map`: Save new SUMO map with XML data
+  - `get_maps`: Retrieve maps with filtering (category, embedded status, search)
+  - `get_map_by_id`: Get single map for editing
+  - `update_map`: Update existing map
+  - `delete_map`: Remove map from database
+  - `get_map_count`: Get total map count
+
+**Frontend (Svelte)**:
+- **Map Settings Layout** (`/map-settings`):
+  - Nested sidebar structure (like AI Settings)
+  - Sub-menu: Map 생성, Map 라이브러리
+
+- **Map Generator** (`/map-settings/generator`):
+  - XML input panels for SUMO nodes and edges
+  - Real-time map visualization with MapCanvas
+  - Auto-parse XML on mount
+  - Edit mode: Load existing map data via URL query param (`?id=123`)
+  - Save/Update: Store to database with metadata
+
+- **Map Library** (`/map-settings/library`):
+  - Grid display of all saved maps using MapCard component
+  - Search by name/description
+  - Filter by category and embedding status
+  - Real-time map count display
+  - Auto-refresh on database changes (dbWatcher)
+  - Edit button: Navigate to generator with map data pre-filled
+  - Delete button: Remove map with confirmation
+
+**Components**:
+- **MapCanvas** (`src/lib/components/MapCanvas.svelte`):
+  - SVG-based SUMO map visualization
+  - Auto-scales to fit canvas
+  - Displays nodes (circles) and edges (arrows with lanes)
+  - Different colors for node types (traffic_light, priority)
+
+- **MapCard** (`src/lib/components/MapCard.svelte`):
+  - Card display for individual maps
+  - Shows metadata: name, description, category, difficulty, tags
+  - Embedding status badge (Phase 2)
+  - Edit button (pen icon) - navigate to generator
+  - Delete button (trash icon) - remove map
+
+**Navigation Flow**:
+```
+[Main Sidebar]
+├── Map 설정
+    └── [Sub-sidebar]
+        ├── Map 생성     → Create/Edit maps
+        └── Map 라이브러리 → Browse/Manage maps
+```
+
+**SUMO XML Format**:
+- **Nodes**: Junction/intersection definitions (id, x, y, type)
+- **Edges**: Road connections (id, from, to, numLanes, speed)
+- Parsed with DOMParser, visualized in SVG canvas
+
+**Future Phases**:
+- **Phase 2**: Embedding system with OpenAI API + FAISS vector DB
+- **Phase 3**: RAG search functionality for map recommendations
+
 ## Common Issues & Solutions
 
 ### Issue: Command templates not working
@@ -437,15 +547,31 @@ npm run dev  # Vite dev server on http://localhost:1420
 
 **Last Updated**: 2025-10-20
 **Project Status**: Autonomous Driving Research Application
+
 **Recent Updates**:
-- **Generic AI Chat System**: Full dynamic prompt system with conversations, characters, and command templates
-- **Database architecture**:
-  - `ai_chat.db` for generic AI conversation system (reusable across projects)
-  - Separate databases for domain-specific data (autonomous driving, etc.)
-- **Modular design**: AI chat system separated from domain data for portability
-- Widget mode with window resizing and bottom-right positioning
-- Custom titlebar with window controls
-- Chat history with message counts
-- Auto-refresh system (2s polling via Tauri commands)
+- ✅ **SUMO Map Management System (Phase 1 Complete)**:
+  - Dual database architecture (`ai_chat.db` + `sumo_maps.db`)
+  - Wrapper types (`AiChatDb`, `MapDb`) for Tauri State management
+  - Full CRUD operations for SUMO traffic maps
+  - Map generator with XML input and SVG visualization
+  - Map library with search, filter, and edit functionality
+  - MapCanvas component (SVG-based visualization)
+  - MapCard component (edit/delete buttons)
+  - Nested sidebar structure (Map 설정 → Map 생성, Map 라이브러리)
+
+- ✅ **Generic AI Chat System**:
+  - Full dynamic prompt system with conversations, characters, and command templates
+  - Database architecture: `ai_chat.db` for generic AI conversation system (reusable across projects)
+  - Modular design: AI chat system separated from domain data for portability
+  - Widget mode with window resizing and bottom-right positioning
+  - Custom titlebar with window controls
+  - Chat history with message counts
+  - Auto-refresh system (2s polling via Tauri commands)
+
 **Next Priority**:
-- Implement autonomous driving research-specific features in separate database
+- **Phase 2**: Implement embedding system for SUMO maps
+  - OpenAI Embeddings API integration
+  - FAISS vector database for similarity search
+  - Embed button in map library
+  - Embedding progress UI
+- **Phase 3**: RAG search functionality for map recommendations
