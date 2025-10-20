@@ -1,10 +1,13 @@
 <script>
 	import { onMount } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
+	import { page } from '$app/stores';
 	import Icon from '@iconify/svelte';
 	import MapCanvas from '$lib/components/MapCanvas.svelte';
 
 	// State
+	let editMapId = $state(null);
+	let isEditMode = $state(false);
 	let mapName = $state('');
 	let mapDescription = $state('');
 	let nodeXml = $state(`<?xml version="1.0" encoding="UTF-8"?>
@@ -70,12 +73,44 @@
 		}
 	}
 
+	// Load map data for edit mode
+	async function loadMapData(id) {
+		try {
+			const map = await invoke('get_map_by_id', { id: parseInt(id) });
+
+			// Populate fields
+			mapName = map.name;
+			mapDescription = map.description;
+			nodeXml = map.nodeXml;
+			edgeXml = map.edgeXml;
+
+			// Parse and display
+			parseXml();
+
+			console.log('✅ Loaded map for editing:', map.name);
+		} catch (error) {
+			console.error('❌ Failed to load map:', error);
+			saveMessage = { type: 'error', text: `맵 로드 실패: ${error}` };
+			setTimeout(() => { saveMessage = null; }, 3000);
+		}
+	}
+
 	// Auto-parse on mount
 	onMount(() => {
-		parseXml();
+		// Check for edit mode
+		const urlParams = new URLSearchParams(window.location.search);
+		const id = urlParams.get('id');
+
+		if (id) {
+			editMapId = parseInt(id);
+			isEditMode = true;
+			loadMapData(id);
+		} else {
+			parseXml();
+		}
 	});
 
-	// Save to DB
+	// Save to DB (create)
 	async function saveToDb() {
 		if (!mapName.trim()) {
 			saveMessage = { type: 'error', text: '맵 이름을 입력해주세요.' };
@@ -116,23 +151,102 @@
 			setTimeout(() => { saveMessage = null; }, 5000);
 		}
 	}
+
+	// Update map (edit mode)
+	async function updateMap() {
+		if (!mapName.trim()) {
+			saveMessage = { type: 'error', text: '맵 이름을 입력해주세요.' };
+			setTimeout(() => { saveMessage = null; }, 3000);
+			return;
+		}
+
+		if (!mapDescription.trim()) {
+			saveMessage = { type: 'error', text: '맵 설명을 입력해주세요.' };
+			setTimeout(() => { saveMessage = null; }, 3000);
+			return;
+		}
+
+		try {
+			const map = await invoke('update_map', {
+				id: editMapId,
+				request: {
+					name: mapName.trim(),
+					description: mapDescription.trim(),
+					nodeXml: nodeXml,
+					edgeXml: edgeXml,
+					tags: null,
+					category: null,
+					difficulty: null,
+					metadata: null
+				}
+			});
+
+			saveMessage = { type: 'success', text: `맵 "${map.name}"이 수정되었습니다.` };
+			setTimeout(() => {
+				saveMessage = null;
+				// Navigate back to library
+				window.location.href = '/map-settings/library';
+			}, 2000);
+		} catch (error) {
+			console.error('Update error:', error);
+			saveMessage = { type: 'error', text: `수정 실패: ${error}` };
+			setTimeout(() => { saveMessage = null; }, 5000);
+		}
+	}
+
+	// Delete map (edit mode)
+	async function deleteMap() {
+		if (!confirm(`"${mapName}" 맵을 삭제하시겠습니까?`)) {
+			return;
+		}
+
+		try {
+			await invoke('delete_map', { id: editMapId });
+
+			saveMessage = { type: 'success', text: '맵이 삭제되었습니다.' };
+			setTimeout(() => {
+				saveMessage = null;
+				// Navigate back to library
+				window.location.href = '/map-settings/library';
+			}, 1500);
+		} catch (error) {
+			console.error('Delete error:', error);
+			saveMessage = { type: 'error', text: `삭제 실패: ${error}` };
+			setTimeout(() => { saveMessage = null; }, 5000);
+		}
+	}
 </script>
 
 <div class="page-container">
 	<div class="page-header">
 		<div>
-			<h1>Map 생성</h1>
-			<p class="subtitle">SUMO XML 노드와 엣지를 입력하여 맵을 생성하고 시각화합니다.</p>
+			<h1>{isEditMode ? 'Map 수정' : 'Map 생성'}</h1>
+			<p class="subtitle">
+				{isEditMode
+					? 'SUMO XML 노드와 엣지를 수정하고 저장합니다.'
+					: 'SUMO XML 노드와 엣지를 입력하여 맵을 생성하고 시각화합니다.'}
+			</p>
 		</div>
 		<div class="header-actions">
 			<button class="btn-secondary" onclick={parseXml}>
 				<Icon icon="solar:refresh-bold" width="20" height="20" />
 				미리보기
 			</button>
-			<button class="btn-primary" onclick={saveToDb}>
-				<Icon icon="solar:diskette-bold" width="20" height="20" />
-				DB 저장
-			</button>
+			{#if isEditMode}
+				<button class="btn-danger" onclick={deleteMap}>
+					<Icon icon="solar:trash-bin-trash-bold" width="20" height="20" />
+					삭제
+				</button>
+				<button class="btn-primary" onclick={updateMap}>
+					<Icon icon="solar:diskette-bold" width="20" height="20" />
+					저장
+				</button>
+			{:else}
+				<button class="btn-primary" onclick={saveToDb}>
+					<Icon icon="solar:diskette-bold" width="20" height="20" />
+					DB 저장
+				</button>
+			{/if}
 		</div>
 	</div>
 

@@ -2,7 +2,7 @@
 	import Icon from '@iconify/svelte';
 
 	// Props
-	let { map, onSelect = null, onDelete = null } = $props();
+	let { map, onSelect = null, onEdit = null, onDelete = null } = $props();
 
 	// Parse tags if JSON string
 	let parsedTags = $derived.by(() => {
@@ -28,6 +28,14 @@
 	function handleClick() {
 		if (onSelect) {
 			onSelect(map);
+		}
+	}
+
+	// Handle edit click
+	function handleEdit(event) {
+		event.stopPropagation();
+		if (onEdit) {
+			onEdit(map);
 		}
 	}
 
@@ -77,9 +85,14 @@
 
 	<div class="card-footer">
 		<span class="date">{formatDate(map.createdAt)}</span>
-		<button class="delete-btn" onclick={handleDelete} title="삭제">
-			<Icon icon="solar:trash-bin-trash-bold" width="18" height="18" />
-		</button>
+		<div class="action-buttons">
+			<button class="edit-btn" onclick={handleEdit} title="수정">
+				<Icon icon="solar:pen-bold" width="18" height="18" />
+			</button>
+			<button class="delete-btn" onclick={handleDelete} title="삭제">
+				<Icon icon="solar:trash-bin-trash-bold" width="18" height="18" />
+			</button>
+		</div>
 	</div>
 </div>
 
@@ -189,6 +202,12 @@
 		color: var(--color-text-muted);
 	}
 
+	.action-buttons {
+		display: flex;
+		gap: 0.5rem;
+	}
+
+	.edit-btn,
 	.delete-btn {
 		padding: 0.375rem;
 		background: transparent;
@@ -197,6 +216,11 @@
 		cursor: pointer;
 		color: var(--color-text-muted);
 		transition: all 0.2s;
+	}
+
+	.edit-btn:hover {
+		background: rgba(59, 130, 246, 0.1);
+		color: var(--color-primary);
 	}
 
 	.delete-btn:hover {

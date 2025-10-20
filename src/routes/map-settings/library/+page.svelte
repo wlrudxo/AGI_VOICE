@@ -68,6 +68,12 @@
 		// TODO: Navigate to map detail page or open edit modal
 	}
 
+	// Handle map edit
+	function handleEditMap(map) {
+		// Navigate to map-generator with map id
+		window.location.href = `/map-settings/generator?id=${map.id}`;
+	}
+
 	// Handle map deletion
 	async function handleDeleteMap(map) {
 		if (!confirm(`"${map.name}" 맵을 삭제하시겠습니까?`)) {
@@ -114,7 +120,7 @@
 			<p class="subtitle">저장된 SUMO 맵을 조회하고 관리합니다.</p>
 		</div>
 		<div class="header-actions">
-			<a href="/map-generator" class="btn-primary">
+			<a href="/map-settings/generator" class="btn-primary">
 				<Icon icon="solar:add-circle-bold" width="20" height="20" />
 				새 맵 생성
 			</a>
@@ -183,7 +189,7 @@
 						? '검색 조건에 맞는 맵이 없습니다.'
 						: '첫 번째 맵을 생성해보세요!'}
 				</p>
-				<a href="/map-generator" class="btn-primary">
+				<a href="/map-settings/generator" class="btn-primary">
 					<Icon icon="solar:add-circle-bold" width="20" height="20" />
 					맵 생성하기
 				</a>
@@ -194,6 +200,7 @@
 					<MapCard
 						{map}
 						onSelect={handleSelectMap}
+						onEdit={handleEditMap}
 						onDelete={handleDeleteMap}
 					/>
 				{/each}
