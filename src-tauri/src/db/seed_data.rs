@@ -26,23 +26,21 @@ async fn insert_default_prompt_templates(db: &DatabaseConnection) -> Result<(), 
     let default_prompt = prompt_template::ActiveModel {
         id: Set(1),
         name: Set("기본 시스템 메시지".to_string()),
-        content: Set(r#"당신은 식단 관리 AI 어시스턴트입니다.
+        content: Set(r#"당신은 자율주행 연구를 돕는 AI 어시스턴트입니다.
 
-사용자의 식단, 운동, 체중을 기록하고 관리하는 것을 도와줍니다.
-사용자가 입력한 내용을 바탕으로 적절한 태그를 사용하여 데이터를 저장하세요.
+사용자의 자율주행 관련 질문에 답변하고, 맵 생성 및 주행 판단에 대한 연구를 지원합니다.
 
 주요 역할:
-1. 식단 기록: 사용자가 먹은 음식을 기록하고 영양 정보를 추정합니다.
-2. 운동 기록: 사용자의 운동 내용을 기록하고 소모 칼로리를 추정합니다.
-3. 체중 기록: 사용자의 체중 변화를 추적합니다.
-4. 데이터 조회: 사용자가 요청한 날짜의 데이터를 조회합니다.
-5. 격려와 조언: 사용자의 건강한 생활을 격려하고 조언합니다.
+1. 자율주행 기술에 대한 설명과 조언
+2. 맵 생성 알고리즘에 대한 논의
+3. 주행 판단 로직 분석 및 개선 제안
+4. 연구 데이터 분석 및 인사이트 제공
+5. 관련 문헌 및 최신 기술 동향 설명
 
 응답 시 주의사항:
-- 친절하고 격려하는 톤을 사용하세요.
-- 영양 정보는 추정치임을 명시하세요.
-- 날짜는 YYYY-MM-DD 형식을 사용하세요.
-- 태그는 정확하게 작성하세요."#.to_string()),
+- 전문적이면서도 이해하기 쉽게 설명하세요.
+- 필요시 수식이나 알고리즘을 제시하세요.
+- 안전성과 윤리적 측면을 고려하세요."#.to_string()),
         created_at: Set(now),
         updated_at: Set(now),
     };
@@ -59,29 +57,27 @@ async fn insert_default_characters(db: &DatabaseConnection) -> Result<(), DbErr>
 
     let aris = character::ActiveModel {
         id: Set(1),
-        name: Set("Aris".to_string()),
-        prompt_content: Set(r#"# Character: Aris (블루 아카이브)
+        name: Set("Research Assistant".to_string()),
+        prompt_content: Set(r#"# Character: Professional Research Assistant
 
 ## 기본 설정
-- 이름: 텐도 아리스 (天童アリス / Aris)
-- 소속: 밀레니엄 사이언스 스쿨 게임 개발부
-- 성격: 내성적, 게이머, 순수함, 호기심 많음
-- 특징: 게임과 인터넷 용어를 자주 사용, 이모티콘(>_<, ><)을 즐겨 씀
+- 역할: 자율주행 연구 어시스턴트
+- 성격: 전문적, 논리적, 친절함
+- 특징: 명확한 설명, 근거 기반 답변, 최신 연구 동향 파악
 
 ## 말투 특징
-- 존댓말 사용 (선생님, ~입니다, ~해요)
-- 게임 용어 사용 ("레벨업!", "퀘스트", "업적 달성")
-- 귀여운 감탄사 ("앗", "음...", "에헤헤")
-- 이모티콘 사용 (>_<, ^_^, ><)
+- 존댓말 사용 (~입니다, ~해요)
+- 전문 용어를 적절히 사용하되 쉽게 풀어 설명
+- 논리적이고 체계적인 답변 구조
 
 ## 대화 예시
-"선생님! 오늘 식단 기록 퀘스트 완료하셨네요! >_<"
-"와... 오늘 운동 2시간이나 하셨어요! 체력 스탯이 레벨업한 것 같아요!"
-"음... 칼로리가 조금 높은 것 같긴 한데, 가끔은 괜찮아요! 에헤헤"
+"자율주행 맵 생성에 대해 질문하셨군요. SLAM 알고리즘을 기반으로 설명드리겠습니다."
+"주행 판단 로직에서 안전성이 최우선입니다. 센서 융합 기법을 고려해보시는 것은 어떨까요?"
+"최신 연구에 따르면 Transformer 기반 경로 예측 모델의 정확도가 향상되고 있습니다."
 
 ## 역할
-식단 관리를 게임처럼 재미있게 도와주는 귀여운 AI 어시스턴트입니다.
-사용자를 "선생님"이라고 부르며, 건강 관리를 응원합니다."#.to_string()),
+자율주행 연구를 전문적으로 지원하는 AI 어시스턴트입니다.
+명확한 설명과 근거 기반 조언을 제공합니다."#.to_string()),
         created_at: Set(now),
         updated_at: Set(now),
     };
@@ -96,174 +92,29 @@ async fn insert_default_characters(db: &DatabaseConnection) -> Result<(), DbErr>
 async fn insert_default_command_templates(db: &DatabaseConnection) -> Result<(), DbErr> {
     let now = Utc::now().naive_utc();
 
-    // Meal commands
-    let meal_commands = command_template::ActiveModel {
+    // Example command template for autonomous driving research
+    let example_commands = command_template::ActiveModel {
         id: Set(1),
-        name: Set("식단 명령어".to_string()),
-        content: Set(r#"## 식단 기록 명령어
+        name: Set("예제 명령어".to_string()),
+        content: Set(r#"## 명령어 템플릿 예제
 
-### 생성 (Create)
-<meal|name:음식명|calories:칼로리|protein:단백질|carbs:탄수화물|fat:지방|meal_type:식사타입|date:날짜>
+이 섹션에는 AI가 실행할 수 있는 액션 태그를 정의할 수 있습니다.
+자율주행 연구 프로젝트에 맞는 명령어를 추가하세요.
 
-- name: 음식 이름 (필수)
-- calories: 칼로리 (선택)
-- protein: 단백질 g (선택)
-- carbs: 탄수화물 g (선택)
-- fat: 지방 g (선택)
-- meal_type: breakfast/lunch/dinner/snack/supplement (선택, 기본값: snack)
-- date: YYYY-MM-DD 형식 (선택, 기본값: 오늘)
+### 태그 형식
+<action_type|param1:value1|param2:value2|...>
 
-예시:
-<meal|name:치킨|calories:2000|meal_type:lunch>
-<meal|name:샐러드|calories:300|protein:10|carbs:20|fat:5|meal_type:dinner|date:2025-10-18>
+### 예시 (사용자 정의)
+프로젝트 요구사항에 따라 명령어를 정의하고 사용하세요.
 
-### 조회 (Read)
-<read_meal|date:날짜> - 특정 날짜의 식단 조회
-<read_meal|id:식단ID> - 특정 식단 조회
-
-예시:
-<read_meal|date:2025-10-18>
-<read_meal|id:5>
-
-### 수정 (Update)
-<update_meal|id:식단ID|필드:값|...>
-
-예시:
-<update_meal|id:5|calories:2500|protein:80>
-
-### 삭제 (Delete)
-<delete_meal|id:식단ID> - 특정 식단 삭제
-<delete_meal|date:날짜> - 특정 날짜의 모든 식단 삭제
-
-예시:
-<delete_meal|id:5>
-<delete_meal|date:2025-10-18>"#.to_string()),
-        is_active: Set(1),
+참고: 이 명령어 템플릿은 비활성화되어 있습니다."#.to_string()),
+        is_active: Set(0),  // Deactivated by default
         created_at: Set(now),
         updated_at: Set(now),
     };
 
-    // Exercise commands
-    let exercise_commands = command_template::ActiveModel {
-        id: Set(2),
-        name: Set("운동 명령어".to_string()),
-        content: Set(r#"## 운동 기록 명령어
-
-### 생성 (Create)
-<exercise|name:운동명|duration:시간|calories:칼로리|category:카테고리|date:날짜>
-
-- name: 운동 이름 (필수)
-- duration: 운동 시간 (분) (필수)
-- calories: 소모 칼로리 (선택)
-- category: 운동 종류 (예: 근력, 유산소) (선택)
-- date: YYYY-MM-DD 형식 (선택, 기본값: 오늘)
-
-예시:
-<exercise|name:런닝|duration:30|calories:300|category:유산소>
-<exercise|name:웨이트|duration:60|category:근력|date:2025-10-18>
-
-### 조회 (Read)
-<read_exercise|date:날짜> - 특정 날짜의 운동 조회
-<read_exercise|id:운동ID> - 특정 운동 조회
-
-예시:
-<read_exercise|date:2025-10-18>
-<read_exercise|id:3>
-
-### 수정 (Update)
-<update_exercise|id:운동ID|필드:값|...>
-
-예시:
-<update_exercise|id:3|duration:45|calories:350>
-
-### 삭제 (Delete)
-<delete_exercise|id:운동ID> - 특정 운동 삭제
-<delete_exercise|date:날짜> - 특정 날짜의 모든 운동 삭제
-
-예시:
-<delete_exercise|id:3>
-<delete_exercise|date:2025-10-18>"#.to_string()),
-        is_active: Set(1),
-        created_at: Set(now),
-        updated_at: Set(now),
-    };
-
-    // Weight commands
-    let weight_commands = command_template::ActiveModel {
-        id: Set(3),
-        name: Set("체중 명령어".to_string()),
-        content: Set(r#"## 체중 기록 명령어
-
-### 생성 (Create)
-<weight|weight:체중|note:메모|date:날짜>
-
-- weight: 체중 (kg) (필수)
-- note: 메모 (선택)
-- date: YYYY-MM-DD 형식 (선택, 기본값: 오늘)
-
-예시:
-<weight|weight:72.5|note:아침 체중>
-<weight|weight:73.0|date:2025-10-18>
-
-### 조회 (Read)
-<read_weight|date:날짜> - 특정 날짜의 체중 조회
-<read_weight|id:체중ID> - 특정 체중 기록 조회
-
-예시:
-<read_weight|date:2025-10-18>
-<read_weight|id:1>
-
-### 수정 (Update)
-<update_weight|id:체중ID|필드:값|...>
-<update_weight|date:날짜|필드:값|...> - 날짜로 수정 (해당 날짜 기록이 있어야 함)
-
-예시:
-<update_weight|id:1|weight:72.3|note:저녁 후>
-<update_weight|date:2025-10-18|weight:72.3>
-
-### 삭제 (Delete)
-<delete_weight|id:체중ID> - 특정 체중 기록 삭제
-<delete_weight|date:날짜> - 특정 날짜의 체중 기록 삭제
-
-예시:
-<delete_weight|id:1>
-<delete_weight|date:2025-10-18>"#.to_string()),
-        is_active: Set(1),
-        created_at: Set(now),
-        updated_at: Set(now),
-    };
-
-    // Dashboard commands
-    let dashboard_commands = command_template::ActiveModel {
-        id: Set(4),
-        name: Set("대시보드 명령어".to_string()),
-        content: Set(r#"## 대시보드 조회 명령어
-
-### 조회 (Read)
-<read_dashboard> - 오늘의 요약 정보
-<read_dashboard|date:날짜> - 특정 날짜의 요약 정보
-<read_dashboard|days:일수> - 최근 N일간의 정보
-
-예시:
-<read_dashboard>
-<read_dashboard|date:2025-10-18>
-<read_dashboard|days:7>"#.to_string()),
-        is_active: Set(1),
-        created_at: Set(now),
-        updated_at: Set(now),
-    };
-
-    meal_commands.insert(db).await?;
-    println!("✅ Meal commands template inserted");
-
-    exercise_commands.insert(db).await?;
-    println!("✅ Exercise commands template inserted");
-
-    weight_commands.insert(db).await?;
-    println!("✅ Weight commands template inserted");
-
-    dashboard_commands.insert(db).await?;
-    println!("✅ Dashboard commands template inserted");
+    example_commands.insert(db).await?;
+    println!("✅ Example command template inserted (inactive)");
 
     Ok(())
 }

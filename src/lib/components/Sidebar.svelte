@@ -12,11 +12,7 @@
 
   const navItems: NavItem[] = [
     { name: '대시보드', path: '/', icon: 'solar:widget-2-bold-duotone' },
-    { name: '식단', path: '/meals', icon: 'solar:cup-hot-bold-duotone' },
-    { name: '운동', path: '/exercises', icon: 'solar:dumbbell-bold-duotone' },
-    { name: '체중', path: '/weights', icon: 'solar:scale-bold-duotone' },
-    { name: 'AI 미션', path: '/missions', icon: 'solar:medal-star-bold-duotone' },
-    { name: 'AI 프롬프트', path: '/ai-settings', icon: 'solar:settings-minimalistic-bold-duotone' },
+    { name: 'AI 설정', path: '/ai-settings', icon: 'solar:settings-minimalistic-bold-duotone' },
     { name: '설정', path: '/settings', icon: 'solar:settings-bold-duotone' }
   ];
 

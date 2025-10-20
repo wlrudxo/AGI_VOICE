@@ -4,12 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-AI Diet V2 is a desktop diet management application with AI-powered features. The application uses:
+AGI Voice V2 is a desktop research application for **AI-based autonomous driving map generation and driving decision research**. The application uses:
 - **Frontend**: Tauri 2.x + SvelteKit 2.9.0 + Svelte 5.0.0 + Tailwind CSS 4.1.14 (with Vite 6.x)
 - **Backend**: Tauri (Rust) + SeaORM with SQLite
-- **Database**: SQLite (`ai_diet.db` in project root)
+- **Database**:
+  - **AI Chat System**: SQLite (`ai_chat.db` in project root) - Generic AI conversation system
+  - **Domain Data**: Separate databases for domain-specific data (e.g., autonomous driving data)
 - **Icons**: Iconify with Solar duotone theme
 - **AI Integration**: Claude CLI via Tauri commands for natural language interactions
+
+**Core Focus**:
+- **Generic AI Chat System**: Reusable conversation system with dynamic prompts, characters, and command templates
+- **Autonomous Driving Research**: Map generation and driving decision analysis using AI chat
+- **Modular Architecture**: AI chat system separated from domain-specific data for reusability
 
 ## Architecture
 
@@ -19,15 +26,15 @@ AI Diet V2 is a desktop diet management application with AI-powered features. Th
 
 #### Backend (Rust)
 - All Rust structs use `#[serde(rename_all = "camelCase")]` for Tauri communication
-- **Database columns remain snake_case**: `meal_date`, `meal_type`, `food_name`, `total_calories`, etc.
+- **Database columns remain snake_case**: `created_at`, `updated_at`, `is_active`, etc.
 - SeaORM handles conversion between snake_case DB and camelCase Rust structs
-- Tauri command parameters: `targetDate`, `mealDate`, `exerciseDate`
-- Response fields: `totalProtein`, `totalCarbs`, `totalFat`, `currentMissions`, `dailyData`, `byType`
+- Tauri command parameters: `conversationId`, `messageId`, `templateId`
+- Response fields: `messageCount`, `createdAt`, `updatedAt`, `isActive`
 
 #### Frontend (TypeScript/Svelte)
-- TypeScript interfaces must use camelCase: `mealDate`, `mealType`, `foodName`
-- Form data objects must use camelCase: `{ mealDate, mealType, foodName }`
-- Template access must use camelCase: `{stats.totalCalories}`, `{meal.foodName}`
+- TypeScript interfaces must use camelCase: `conversationId`, `messageContent`, `createdAt`
+- Form data objects must use camelCase: `{ conversationId, messageContent, createdAt }`
+- Template access must use camelCase: `{conversation.messageCount}`, `{message.content}`
 - Consistent with JavaScript/TypeScript conventions
 
 #### Why camelCase?
@@ -50,25 +57,22 @@ AI Diet V2 is a desktop diet management application with AI-powered features. Th
 - **Build Tool**: Vite 6.x with Tauri 2.x integration
 - **Icons**: `@iconify/svelte` with Solar duotone icons
 - **Main Pages**:
-  - Dashboard (`/`) - Today's summary + weekly overview with AI chat widget
-  - Meals (`/meals`) - Meal CRUD with nutrition stats
-  - Exercises (`/exercises`) - Exercise tracking
-  - Weights (`/weights`) - Weight tracking
-  - Missions (`/missions`) - AI mission management
-  - AI Prompts (`/ai-settings/*`) - AI system configuration (system messages, characters, commands, user info, final message)
+  - Dashboard (`/`) - Main interface with AI chat widget for autonomous driving research
+  - AI Settings (`/ai-settings/*`) - AI system configuration (system messages, characters, commands, user info, final message)
   - Settings (`/settings`) - Application settings
 - **State Management**:
   - Svelte stores (`src/lib/stores/`)
   - `uiStore.ts` - UI state (sidebar, chat, widget mode, conversation title)
   - `dbWatcher.svelte.ts` - DB change detection (2s polling, auto-refresh)
   - `settingsStore.ts` - App settings (minimize to tray)
-  - `weights.svelte.ts` - Weight data store
 
 ### Backend (Tauri + Rust)
 - **Framework**: Tauri 2.x with Rust
 - **ORM**: SeaORM for SQLite database operations
-- **Database**: SQLite (`ai_diet.db` in project root)
-- **Data Strategy**: Uses Date (not DateTime) for user-facing dates to avoid timezone issues
+- **Databases**:
+  - **AI Chat DB**: `ai_chat.db` (Generic AI conversation system)
+  - **Domain DB**: Separate databases for domain-specific data
+- **Data Strategy**: Uses DateTime (UTC) for timestamp tracking
 - **Communication**: Frontend communicates with Rust backend via Tauri `invoke()` commands
 - **AI Integration**:
   - Claude CLI via subprocess (executed from Rust commands)
@@ -78,21 +82,23 @@ AI Diet V2 is a desktop diet management application with AI-powered features. Th
 
 ### Database Schema
 
-**Important**: All user-facing dates use `Date` type (YYYY-MM-DD), not `DateTime`. The `created_at` field uses `DateTime` (UTC) for audit purposes only.
+**Database Architecture**:
+- **AI Chat Database** (`ai_chat.db`): Generic, reusable AI conversation system
+- **Domain Databases**: Separate databases for domain-specific data (autonomous driving, etc.)
 
-**Core Data Tables**:
-- `weights` - One weight record per day (measured_date is unique)
-- `meals` - Multiple meals per date allowed
-- `exercises` - Multiple exercises per date allowed
-- `ai_missions` - Status workflow: pending → in_progress → completed/failed
-- `ai_evaluations` - Daily/weekly/monthly evaluations
+**Important**: All timestamps use `DateTime` (UTC) for consistency.
 
-**AI System Tables** (Dynamic Prompt System):
+**AI Chat System Tables** (`ai_chat.db` - Generic & Reusable):
 - `prompt_templates` - System messages (templates for AI behavior)
 - `characters` - Character prompts (personality/tone)
-- `command_templates` - Command definitions (tag formats, CRUD instructions)
+- `command_templates` - Command definitions (tag formats, action instructions)
 - `conversations` - Chat sessions (links character + prompt template)
 - `messages` - Chat history (user/assistant messages)
+
+**Design Philosophy**:
+- **Generic AI Chat**: All conversation-related tables in `ai_chat.db` for reusability across projects
+- **Domain Separation**: Domain-specific data (e.g., autonomous driving maps, sensor data) in separate databases
+- **No mixing**: AI chat system remains independent and portable
 
 ### Dynamic Prompt System
 
@@ -100,10 +106,10 @@ The AI chat uses a **template-based dynamic prompt system** stored in the databa
 
 1. **System Message** (prompt_templates): Core AI behavior and instructions
 2. **Character** (characters): Personality, tone, and style (e.g., "Aris" from Blue Archive)
-3. **Command Templates** (command_templates): Tag-based CRUD instructions
+3. **Command Templates** (command_templates): Tag-based action instructions
    - Multiple templates can be created and activated/deactivated
    - Only active templates are sent to AI
-   - Allows modular command sets (e.g., "Meal Commands", "Exercise Commands")
+   - Allows modular command sets for autonomous driving research tasks
 4. **User Info**: User-specific context (stored in conversation or LocalStorage)
 5. **Final Message**: Custom checkout instructions (stored in LocalStorage)
 6. **Conversation History**: Previous messages for context continuity
@@ -218,11 +224,6 @@ src-tauri/
 │   ├── lib.rs               # Tauri command registration
 │   ├── commands/
 │   │   ├── mod.rs           # Command module exports
-│   │   ├── meals.rs         # Meal CRUD commands
-│   │   ├── exercises.rs     # Exercise CRUD commands
-│   │   ├── weights.rs       # Weight CRUD commands
-│   │   ├── missions.rs      # AI Mission CRUD commands
-│   │   ├── dashboard.rs     # Dashboard data commands
 │   │   ├── ai_chat.rs       # AI chat command
 │   │   ├── settings.rs      # Settings commands
 │   │   ├── prompt_templates.rs   # System message CRUD
@@ -231,7 +232,7 @@ src-tauri/
 │   │   └── conversations.rs      # Conversation CRUD
 │   ├── db/
 │   │   ├── mod.rs           # Database initialization
-│   │   ├── models/          # SeaORM entity models (9 tables)
+│   │   ├── models/          # SeaORM entity models (5 AI tables)
 │   │   └── sync.rs          # Database sync utilities
 │   └── ai/
 │       ├── mod.rs           # AI module exports
@@ -241,16 +242,14 @@ src-tauri/
 └── tauri.conf.json          # Tauri configuration
 ```
 
+**Note**: Diet-related commands (meals, exercises, weights, missions, dashboard) have been removed.
+
 **Frontend Structure:**
 ```
 src/
 ├── routes/
 │   ├── +layout.svelte           # Main layout with sidebar
-│   ├── +page.svelte             # Dashboard
-│   ├── meals/+page.svelte       # Meal management
-│   ├── exercises/+page.svelte   # Exercise management
-│   ├── weights/+page.svelte     # Weight tracking
-│   ├── missions/+page.svelte    # AI missions
+│   ├── +page.svelte             # Dashboard with AI chat
 │   ├── ai-settings/
 │   │   ├── +layout.svelte           # Sub-sidebar layout
 │   │   ├── chat-settings/+page.svelte    # Chat settings
@@ -272,10 +271,11 @@ src/
 │   └── stores/
 │       ├── uiStore.ts            # UI state (sidebar, chat, widget mode, conversation)
 │       ├── dbWatcher.svelte.ts   # DB change detection (auto-refresh)
-│       ├── settingsStore.ts      # App settings (minimize to tray)
-│       └── weights.svelte.ts     # Weight data store
+│       └── settingsStore.ts      # App settings (minimize to tray)
 └── app.css                       # Global styles with Tailwind import
 ```
+
+**Note**: Diet-related pages (meals, exercises, weights, missions) and stores (weights.svelte.ts) have been removed.
 
 ## Tauri Configuration
 
@@ -337,10 +337,8 @@ The AI chat system uses Claude CLI via Rust's `std::process::Command`. On Window
 9. Messages are saved to database automatically
 
 **Tag Format**: `<type|field:value|field:value|...>`
-- Create: `<meal|name:치킨|calories:2000|meal_type:lunch>`
-- Read: `<read_meal|date:2025-10-09>`
-- Update: `<update_meal|id:5|calories:2500>`
-- Delete: `<delete_meal|id:5>`
+- Tags can be defined in command templates for specific autonomous driving research tasks
+- Frontend parses and executes tagged actions via Tauri invoke commands
 
 ### Widget Mode
 
@@ -410,7 +408,7 @@ The AI chat system uses Claude CLI via Rust's `std::process::Command`. On Window
 
 ### Issue: Database connection errors
 **Cause**: Database file doesn't exist or is corrupted
-**Solution**: Check that `ai_diet.db` exists in project root. Tauri creates it automatically on first run.
+**Solution**: Check that `ai_chat.db` exists in project root. Tauri creates it automatically on first run.
 
 ### Issue: Claude CLI not found
 **Cause**: Claude CLI not installed or not in PATH
@@ -439,16 +437,20 @@ npm run dev  # Vite dev server on http://localhost:1420
 
 ---
 
-**Last Updated**: 2025-10-18
-**Project Status**: Full Tauri Migration Complete
+**Last Updated**: 2025-10-20
+**Project Status**: Converted to Autonomous Driving Research Application
 **Recent Updates**:
-- **FastAPI completely removed**: Migrated to 100% Tauri (Rust) backend
-- Frontend-driven AI chat: Parsing and action execution moved to frontend
-- All API calls replaced with Tauri `invoke()` commands
-- Database: `ai_diet.db` in project root (SeaORM + SQLite)
-- Styling refactor: Converted 147 inline styles to semantic utility classes
+- **Project pivot**: AI Diet V2 → AGI Voice V2 (Autonomous Driving Research)
+- **Removed all diet features**: meals, exercises, weights, missions, dashboard pages and backend commands
+- **Generic AI Chat System**: Full dynamic prompt system with conversations, characters, and command templates
+- **Database architecture**:
+  - `ai_chat.db` for generic AI conversation system (reusable across projects)
+  - Separate databases for domain-specific data (autonomous driving, etc.)
+- **Modular design**: AI chat system separated from domain data for portability
 - Widget mode with window resizing and bottom-right positioning
 - Custom titlebar with window controls
 - Chat history with message counts
 - Auto-refresh system (2s polling via Tauri commands)
-**Next Priority**: System tray integration activation (code ready, needs activation)
+**Next Priority**:
+- Remove diet-related backend/frontend code
+- Implement autonomous driving research-specific features in separate database

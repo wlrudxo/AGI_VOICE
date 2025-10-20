@@ -8,21 +8,21 @@ pub mod seed_data;
 pub mod schema;
 
 /// Get the application data directory path
-/// Returns: %APPDATA%/ai_diet_v2 on Windows, ~/.local/share/ai_diet_v2 on Linux, ~/Library/Application Support/ai_diet_v2 on macOS
+/// Returns: %APPDATA%/ai_chat on Windows, ~/.local/share/ai_chat on Linux, ~/Library/Application Support/ai_chat on macOS
 pub fn get_app_data_dir() -> Result<PathBuf, String> {
     let data_dir = dirs::data_dir()
         .ok_or("Failed to get system data directory")?;
 
-    let app_dir = data_dir.join("ai_diet_v2");
+    let app_dir = data_dir.join("ai_chat");
 
     Ok(app_dir)
 }
 
 /// Get the database file path in AppData
-/// Returns: %APPDATA%/ai_diet_v2/ai_diet.db
+/// Returns: %APPDATA%/ai_chat/ai_chat.db
 pub fn get_db_path() -> Result<PathBuf, String> {
     let app_dir = get_app_data_dir()?;
-    Ok(app_dir.join("ai_diet.db"))
+    Ok(app_dir.join("ai_chat.db"))
 }
 
 /// Get the old database path (project root)
@@ -32,7 +32,7 @@ fn get_old_db_path() -> PathBuf {
     // Go up one level to project root
     let mut path = std::env::current_dir().expect("Failed to get current directory");
     path.push("..");  // Go to project root
-    path.join("ai_diet.db")
+    path.join("ai_chat.db")
 }
 
 /// Migrate old database from project root to AppData
@@ -57,7 +57,7 @@ fn migrate_old_db() -> Result<bool, String> {
 
 /// Initialize database connection
 ///
-/// Connects to SQLite database at AppData/ai_diet_v2/ai_diet.db
+/// Connects to SQLite database at AppData/ai_chat/ai_chat.db
 /// Creates the file if it doesn't exist (mode=rwc)
 /// Migrates old database from project root if it exists
 pub async fn init_db() -> Result<DatabaseConnection, DbErr> {
