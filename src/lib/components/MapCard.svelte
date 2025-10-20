@@ -2,7 +2,7 @@
 	import Icon from '@iconify/svelte';
 
 	// Props
-	let { map, onSelect = null, onEdit = null, onDelete = null } = $props();
+	let { map, onSelect = null, onEdit = null, onDelete = null, onEmbed = null } = $props();
 
 	// Parse tags if JSON string
 	let parsedTags = $derived.by(() => {
@@ -46,6 +46,14 @@
 			onDelete(map);
 		}
 	}
+
+	// Handle embed click
+	function handleEmbed(event) {
+		event.stopPropagation();
+		if (onEmbed) {
+			onEmbed(map);
+		}
+	}
 </script>
 
 <div class="map-card" onclick={handleClick} role="button" tabindex="0">
@@ -86,6 +94,11 @@
 	<div class="card-footer">
 		<span class="date">{formatDate(map.createdAt)}</span>
 		<div class="action-buttons">
+			{#if !map.isEmbedded && onEmbed}
+				<button class="embed-btn" onclick={handleEmbed} title="임베딩 생성">
+					<Icon icon="solar:database-bold" width="18" height="18" />
+				</button>
+			{/if}
 			<button class="edit-btn" onclick={handleEdit} title="수정">
 				<Icon icon="solar:pen-bold" width="18" height="18" />
 			</button>
@@ -207,6 +220,7 @@
 		gap: 0.5rem;
 	}
 
+	.embed-btn,
 	.edit-btn,
 	.delete-btn {
 		padding: 0.375rem;
@@ -216,6 +230,11 @@
 		cursor: pointer;
 		color: var(--color-text-muted);
 		transition: all 0.2s;
+	}
+
+	.embed-btn:hover {
+		background: rgba(16, 185, 129, 0.1);
+		color: #10b981;
 	}
 
 	.edit-btn:hover {

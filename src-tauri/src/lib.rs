@@ -76,6 +76,11 @@ pub fn run() {
             commands::delete_map,
             commands::get_map_count,
             commands::maps_health,
+            // Embeddings
+            ai::embeddings::embed_map,
+            ai::embeddings::search_similar_maps,
+            ai::embeddings::build_all_embeddings,
+            ai::embeddings::embeddings_health,
         ])
         .setup(|app| {
             // Initialize AI chat database connection

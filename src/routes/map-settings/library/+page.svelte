@@ -90,6 +90,57 @@
 		}
 	}
 
+	// Handle single map embedding
+	async function handleEmbedMap(map) {
+		if (!confirm(`"${map.name}" 맵의 임베딩을 생성하시겠습니까?`)) {
+			return;
+		}
+
+		try {
+			console.log('🔄 Embedding map:', map.id);
+			const result = await invoke('embed_map', { mapId: map.id });
+
+			if (result.success) {
+				console.log('✅ Map embedded successfully:', result);
+				alert(`임베딩 생성 완료: ${map.name}`);
+				await loadMaps(); // Reload to update embedded status
+			} else {
+				throw new Error(result.error || 'Unknown error');
+			}
+		} catch (e) {
+			console.error('❌ Failed to embed map:', e);
+			alert(`임베딩 생성 실패: ${e}`);
+		}
+	}
+
+	// Handle batch embedding (all maps)
+	let buildingEmbeddings = $state(false);
+	async function handleBuildAllEmbeddings() {
+		if (!confirm('모든 맵의 임베딩을 생성하시겠습니까? (시간이 걸릴 수 있습니다)')) {
+			return;
+		}
+
+		try {
+			buildingEmbeddings = true;
+			console.log('🏗️ Building all embeddings...');
+
+			const result = await invoke('build_all_embeddings', { rebuild: false });
+
+			if (result.success) {
+				console.log('✅ All embeddings built successfully:', result);
+				alert(`전체 임베딩 생성 완료!\n- 총 맵: ${result.totalMaps}개\n- 임베딩 완료: ${result.embeddedCount}개`);
+				await loadMaps(); // Reload to update embedded statuses
+			} else {
+				throw new Error(result.error || 'Unknown error');
+			}
+		} catch (e) {
+			console.error('❌ Failed to build embeddings:', e);
+			alert(`전체 임베딩 생성 실패: ${e}`);
+		} finally {
+			buildingEmbeddings = false;
+		}
+	}
+
 	// Get unique categories
 	let categories = $derived.by(() => {
 		const cats = new Set(maps.map(m => m.category));
@@ -120,6 +171,14 @@
 			<p class="subtitle">저장된 SUMO 맵을 조회하고 관리합니다.</p>
 		</div>
 		<div class="header-actions">
+			<button
+				class="btn-secondary"
+				onclick={handleBuildAllEmbeddings}
+				disabled={buildingEmbeddings}
+			>
+				<Icon icon="solar:database-bold" width="20" height="20" />
+				{buildingEmbeddings ? '임베딩 생성 중...' : '전체 맵 Embed'}
+			</button>
 			<a href="/map-settings/generator" class="btn-primary">
 				<Icon icon="solar:add-circle-bold" width="20" height="20" />
 				새 맵 생성
@@ -202,6 +261,7 @@
 						onSelect={handleSelectMap}
 						onEdit={handleEditMap}
 						onDelete={handleDeleteMap}
+						onEmbed={handleEmbedMap}
 					/>
 				{/each}
 			</div>

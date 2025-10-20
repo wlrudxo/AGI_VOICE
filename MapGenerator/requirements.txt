@@ -5,3 +5,4 @@ openai
 faiss-cpu
 tiktoken
 pyperclip
+python-dotenv
