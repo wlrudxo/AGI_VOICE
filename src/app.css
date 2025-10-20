@@ -1,0 +1,347 @@
+@import "tailwindcss";
+
+@theme {
+  /* Blue Archive inspired semantic colors */
+  --color-primary: #5b9cf5;
+  --color-primary-dark: #3b7dd8;
+  --color-primary-light: #88b8f7;
+
+  --color-secondary: #68d391;
+  --color-secondary-dark: #48bb78;
+
+  --color-background: #f7fafc;
+  --color-surface: #ffffff;
+  --color-surface-hover: #edf2f7;
+
+  --color-text-primary: #1a202c;
+  --color-text-secondary: #718096;
+  --color-text-muted: #a0aec0;
+
+  --color-border: #e2e8f0;
+  --color-border-dark: #cbd5e0;
+
+  --color-success: #48bb78;
+  --color-warning: #ed8936;
+  --color-error: #f56565;
+  --color-info: #4299e1;
+
+  --color-sidebar-bg: #f0f0fa;
+  --color-sidebar-hover: #e0e0f0;
+  --color-sidebar-active: #a0d0ff;
+  --color-sidebar-text: #1a202c;
+
+  /* Chat message colors */
+  --color-chat-user-bg: #667eea;
+  --color-chat-user-hover: #5568d3;
+  --color-chat-assistant-bg: #f3f4f6;
+  --color-chat-assistant-text: #333;
+  --color-chat-action-bg: #e0f2fe;
+  --color-chat-action-text: #0284c7;
+  --color-chat-action-border: #0284c7;
+
+  /* Error states */
+  --color-error-hover: #ef4444;
+  --color-error-active: #dc2626;
+
+  /* Close button colors */
+  --color-close-hover: #e74c3c;
+  --color-close-active: #c0392b;
+
+  /* Button background colors with opacity */
+  --color-primary-bg-light: rgba(74, 158, 255, 0.1);
+  --color-error-bg-light: rgba(255, 82, 82, 0.1);
+
+  /* Shadow colors */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.2);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+  --shadow-dialog: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-tooltip: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-primary: 0 4px 12px rgba(102, 126, 234, 0.4);
+
+  /* Overlay backgrounds */
+  --overlay-light: rgba(0, 0, 0, 0.1);
+  --overlay-medium: rgba(0, 0, 0, 0.5);
+  --overlay-white-light: rgba(255, 255, 255, 0.2);
+  --overlay-white-medium: rgba(255, 255, 255, 0.5);
+
+  /* Focus/Glow effects */
+  --focus-ring: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  --focus-ring-primary: rgba(102, 126, 234, 0.1);
+
+  /* Borders */
+  --border-light: rgba(0, 0, 0, 0.1);
+  --border-medium: rgba(0, 0, 0, 0.2);
+}
+
+/* Base styles */
+body {
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+/* Button Styles */
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-primary);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-primary-bg-light);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary-light);
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-primary-light);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-danger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-error-bg-light);
+  color: var(--color-error);
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--color-error);
+  color: white;
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: var(--color-surface-hover);
+  color: var(--color-text-secondary);
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover:not(:disabled) {
+  background: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.btn-icon.danger:hover:not(:disabled) {
+  background: var(--color-error-bg-light);
+  color: var(--color-error);
+}
+
+.btn-icon:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background: none;
+  color: var(--color-text-secondary);
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-text:hover:not(:disabled) {
+  color: var(--color-text-primary);
+  background: var(--color-surface-hover);
+}
+
+.btn-text:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Scrollbar Styling */
+/* For Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+  -webkit-appearance: none;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-dark);
+  border-radius: 6px;
+  border: 2px solid var(--color-surface);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* Remove scrollbar buttons (arrows) */
+::-webkit-scrollbar-button {
+  display: none;
+  height: 0;
+  width: 0;
+}
+
+::-webkit-scrollbar-button:increment,
+::-webkit-scrollbar-button:decrement {
+  display: none;
+  height: 0;
+  width: 0;
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-dark) var(--color-surface);
+}
+
+/* Custom Utility Classes */
+/* Text Colors */
+.text-primary {
+  color: var(--color-text-primary);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.text-accent {
+  color: var(--color-primary);
+}
+
+.text-accent-dark {
+  color: var(--color-primary-dark);
+}
+
+/* Background Colors */
+.bg-surface {
+  background-color: var(--color-surface);
+}
+
+.bg-surface-hover {
+  background-color: var(--color-surface-hover);
+}
+
+.bg-primary {
+  background-color: var(--color-primary);
+}
+
+.bg-error {
+  background-color: var(--color-error);
+}
+
+.bg-success {
+  background-color: var(--color-success);
+}
+
+.bg-warning {
+  background-color: var(--color-warning);
+}
+
+.bg-info {
+  background-color: var(--color-info);
+}
+
+/* Border Colors */
+.border-default {
+  border-color: var(--color-border);
+}
+
+.border-dark {
+  border-color: var(--color-border-dark);
+}
+
+.border-primary {
+  border-color: var(--color-primary);
+}
+
+/* Common Combinations */
+.card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.card-hover:hover {
+  background-color: var(--color-surface-hover);
+}
+
+/* Sidebar Colors */
+.bg-sidebar {
+  background-color: var(--color-sidebar-bg);
+}
+
+.bg-sidebar-hover {
+  background-color: var(--color-sidebar-hover);
+}
+
+.bg-sidebar-active {
+  background-color: var(--color-sidebar-active);
+}
+
+.text-sidebar {
+  color: var(--color-sidebar-text);
+}

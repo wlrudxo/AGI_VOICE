@@ -1,0 +1,29 @@
+# Tauri dev server watch 제외 파일
+# 이 파일들이 변경되어도 재빌드하지 않음
+
+# Claude CLI가 생성하는 CLAUDE.md
+backend/CLAUDE.md
+CLAUDE.md
+
+# SQLite 데이터베이스 (데이터 변경 시마다 재빌드 방지)
+*.db
+*.db-shm
+*.db-wal
+
+# 런타임 설정 파일 (앱 설정 변경 시 재빌드 방지)
+backend/config.json
+config.json
+
+# Python 백엔드 관련 (Rust 마이그레이션 후 불필요)
+backend/**/*.py
+backend/**/*.pyc
+backend/__pycache__/**
+
+# 빌드 아티팩트
+target/**
+dist/**
+build/**
+
+# 환경 설정
+.env
+.env.local
