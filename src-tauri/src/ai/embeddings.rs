@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::process::Command;
-use tauri::State;
 
 /// FAISS 인덱스 저장 경로 가져오기
 pub fn get_faiss_index_path() -> Result<PathBuf, String> {
@@ -28,19 +27,22 @@ pub fn get_db_path() -> Result<PathBuf, String> {
         .to_path_buf();
 
     // Try multiple possible paths
-    let candidates = vec![
+    let mut candidates = vec![
         // Production: beside exe
         exe_dir.join("sumo_maps.db"),
-        // Development: project root
-        exe_dir
-            .parent()
-            .and_then(|p| p.parent())
-            .map(|p| p.join("sumo_maps.db")),
-        // Current working directory
-        std::env::current_dir().ok().map(|p| p.join("sumo_maps.db")),
     ];
 
-    for candidate in candidates.iter().flatten() {
+    // Development: project root
+    if let Some(parent) = exe_dir.parent().and_then(|p| p.parent()) {
+        candidates.push(parent.join("sumo_maps.db"));
+    }
+
+    // Current working directory
+    if let Ok(cwd) = std::env::current_dir() {
+        candidates.push(cwd.join("sumo_maps.db"));
+    }
+
+    for candidate in &candidates {
         if candidate.exists() {
             println!("  Using DB path: {:?}", candidate);
             return Ok(candidate.clone());
@@ -65,17 +67,23 @@ async fn run_python_script(script_name: &str, args: Vec<String>) -> Result<Strin
         .to_path_buf();
 
     // Candidate paths (development and production)
-    let candidates = vec![
-        // Development: src-tauri/target/debug/../../MapGenerator
-        exe_dir.parent().and_then(|p| p.parent()).map(|p| p.join("MapGenerator")),
+    let mut candidates = vec![
         // Production: beside exe
-        Some(exe_dir.join("MapGenerator")),
-        // Current working directory
-        Some(std::env::current_dir().ok()?.join("MapGenerator")),
+        exe_dir.join("MapGenerator"),
     ];
 
+    // Development: src-tauri/target/debug/../../MapGenerator
+    if let Some(parent) = exe_dir.parent().and_then(|p| p.parent()) {
+        candidates.push(parent.join("MapGenerator"));
+    }
+
+    // Current working directory
+    if let Ok(cwd) = std::env::current_dir() {
+        candidates.push(cwd.join("MapGenerator"));
+    }
+
     let mut script_path = None;
-    for candidate in candidates.iter().flatten() {
+    for candidate in &candidates {
         let full_path = candidate.join(script_name);
         println!("  Checking path: {:?}", full_path);
         if full_path.exists() {
@@ -90,7 +98,6 @@ async fn run_python_script(script_name: &str, args: Vec<String>) -> Result<Strin
             script_name,
             candidates
                 .iter()
-                .flatten()
                 .map(|p| format!("  - {:?}", p.join(script_name)))
                 .collect::<Vec<_>>()
                 .join("\n")
