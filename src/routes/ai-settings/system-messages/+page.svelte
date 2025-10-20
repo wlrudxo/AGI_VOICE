@@ -107,7 +107,7 @@
 						type="text"
 						id="name"
 						bind:value={formData.name}
-						placeholder="예: AI Diet V2 기본 시스템"
+						placeholder="예: 자율주행 연구 시스템"
 					/>
 				</div>
 

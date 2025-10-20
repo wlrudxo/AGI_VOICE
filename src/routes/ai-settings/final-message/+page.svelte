@@ -15,9 +15,9 @@
 	const DEFAULT_TEMPLATE = `## Final Checkout
 
 - Check if all required tags are properly formatted
-- Ensure the response is friendly and encouraging
-- Verify date formats (YYYY-MM-DD)
-- Confirm calorie/duration estimates are reasonable`;
+- Ensure the response is clear and professional
+- Verify technical accuracy of autonomous driving concepts
+- Provide relevant references or examples when appropriate`;
 
 	function loadFinalMessage() {
 		const saved = localStorage.getItem(STORAGE_KEY);
