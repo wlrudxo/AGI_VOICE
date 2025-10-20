@@ -27,29 +27,77 @@ pub fn get_db_path() -> Result<PathBuf, String> {
         .ok_or_else(|| "Failed to get exe parent dir".to_string())?
         .to_path_buf();
 
-    Ok(exe_dir.join("sumo_maps.db"))
+    // Try multiple possible paths
+    let candidates = vec![
+        // Production: beside exe
+        exe_dir.join("sumo_maps.db"),
+        // Development: project root
+        exe_dir
+            .parent()
+            .and_then(|p| p.parent())
+            .map(|p| p.join("sumo_maps.db")),
+        // Current working directory
+        std::env::current_dir().ok().map(|p| p.join("sumo_maps.db")),
+    ];
+
+    for candidate in candidates.iter().flatten() {
+        if candidate.exists() {
+            println!("  Using DB path: {:?}", candidate);
+            return Ok(candidate.clone());
+        }
+    }
+
+    // If not found, use default (will be created)
+    let default_path = exe_dir.join("sumo_maps.db");
+    println!("  DB not found, using default: {:?}", default_path);
+    Ok(default_path)
 }
 
 /// Python 스크립트 실행 헬퍼
 async fn run_python_script(script_name: &str, args: Vec<String>) -> Result<String, String> {
     println!("🐍 Running Python script: {} with args: {:?}", script_name, args);
 
-    // Get MapGenerator directory (relative to exe)
+    // Try multiple possible paths for MapGenerator
     let exe_dir = std::env::current_exe()
         .map_err(|e| format!("Failed to get exe path: {}", e))?
         .parent()
         .ok_or_else(|| "Failed to get exe parent dir".to_string())?
         .to_path_buf();
 
-    let script_path = exe_dir
-        .parent()
-        .ok_or_else(|| "Failed to get project root".to_string())?
-        .join("MapGenerator")
-        .join(script_name);
+    // Candidate paths (development and production)
+    let candidates = vec![
+        // Development: src-tauri/target/debug/../../MapGenerator
+        exe_dir.parent().and_then(|p| p.parent()).map(|p| p.join("MapGenerator")),
+        // Production: beside exe
+        Some(exe_dir.join("MapGenerator")),
+        // Current working directory
+        Some(std::env::current_dir().ok()?.join("MapGenerator")),
+    ];
 
-    if !script_path.exists() {
-        return Err(format!("Python script not found: {:?}", script_path));
+    let mut script_path = None;
+    for candidate in candidates.iter().flatten() {
+        let full_path = candidate.join(script_name);
+        println!("  Checking path: {:?}", full_path);
+        if full_path.exists() {
+            script_path = Some(full_path);
+            break;
+        }
     }
+
+    let script_path = script_path.ok_or_else(|| {
+        format!(
+            "Python script not found: {}. Searched:\n{}",
+            script_name,
+            candidates
+                .iter()
+                .flatten()
+                .map(|p| format!("  - {:?}", p.join(script_name)))
+                .collect::<Vec<_>>()
+                .join("\n")
+        )
+    })?;
+
+    println!("  Using script path: {:?}", script_path);
 
     let output = Command::new("python")
         .arg(script_path)
