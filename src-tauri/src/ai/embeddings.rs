@@ -32,9 +32,13 @@ pub fn get_db_path() -> Result<PathBuf, String> {
         exe_dir.join("sumo_maps.db"),
     ];
 
-    // Development: project root
-    if let Some(parent) = exe_dir.parent().and_then(|p| p.parent()) {
-        candidates.push(parent.join("sumo_maps.db"));
+    // Development: project root (src-tauri/target/debug/../../../sumo_maps.db)
+    if let Some(project_root) = exe_dir
+        .parent()  // target
+        .and_then(|p| p.parent())  // src-tauri
+        .and_then(|p| p.parent())  // AGI_VOICE_V2 (project root)
+    {
+        candidates.push(project_root.join("sumo_maps.db"));
     }
 
     // Current working directory
@@ -72,9 +76,13 @@ async fn run_python_script(script_name: &str, args: Vec<String>) -> Result<Strin
         exe_dir.join("MapGenerator"),
     ];
 
-    // Development: src-tauri/target/debug/../../MapGenerator
-    if let Some(parent) = exe_dir.parent().and_then(|p| p.parent()) {
-        candidates.push(parent.join("MapGenerator"));
+    // Development: src-tauri/target/debug/../../../MapGenerator (project root)
+    if let Some(project_root) = exe_dir
+        .parent()  // target
+        .and_then(|p| p.parent())  // src-tauri
+        .and_then(|p| p.parent())  // AGI_VOICE_V2 (project root)
+    {
+        candidates.push(project_root.join("MapGenerator"));
     }
 
     // Current working directory
