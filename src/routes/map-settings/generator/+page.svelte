@@ -1,6 +1,8 @@
 <script>
 	import { onMount } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
+	import { readTextFile } from '@tauri-apps/plugin-fs';
+	import { open } from '@tauri-apps/plugin-dialog';
 	import { page } from '$app/stores';
 	import Icon from '@iconify/svelte';
 	import MapCanvas from '$lib/components/MapCanvas.svelte';
@@ -10,6 +12,7 @@
 	let isEditMode = $state(false);
 	let mapName = $state('');
 	let mapDescription = $state('');
+	let mapTags = $state('');
 	let nodeXml = $state(`<?xml version="1.0" encoding="UTF-8"?>
 <nodes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/nodes_file.xsd">
     <node id="center" x="0.0" y="0.0" type="traffic_light"/>
@@ -84,6 +87,26 @@
 			nodeXml = map.nodeXml;
 			edgeXml = map.edgeXml;
 
+			// Handle tags (can be array, string, or null)
+			if (map.tags) {
+				if (Array.isArray(map.tags)) {
+					mapTags = map.tags.join(', ');
+				} else if (typeof map.tags === 'string') {
+					// Try to parse JSON string
+					try {
+						const parsed = JSON.parse(map.tags);
+						mapTags = Array.isArray(parsed) ? parsed.join(', ') : map.tags;
+					} catch {
+						// If not valid JSON, use as-is
+						mapTags = map.tags;
+					}
+				} else {
+					mapTags = '';
+				}
+			} else {
+				mapTags = '';
+			}
+
 			// Parse and display
 			parseXml();
 
@@ -124,6 +147,11 @@
 			return;
 		}
 
+		// Convert comma-separated tags to array
+		const tagsArray = mapTags.trim()
+			? mapTags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+			: null;
+
 		try {
 			const map = await invoke('create_map', {
 				request: {
@@ -131,7 +159,7 @@
 					description: mapDescription.trim(),
 					nodeXml: nodeXml,
 					edgeXml: edgeXml,
-					tags: null,
+					tags: tagsArray,
 					category: 'general',
 					difficulty: 'medium',
 					metadata: null
@@ -143,6 +171,7 @@
 			// Reset form
 			mapName = '';
 			mapDescription = '';
+			mapTags = '';
 
 			setTimeout(() => { saveMessage = null; }, 5000);
 		} catch (error) {
@@ -166,6 +195,11 @@
 			return;
 		}
 
+		// Convert comma-separated tags to array
+		const tagsArray = mapTags.trim()
+			? mapTags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+			: null;
+
 		try {
 			const map = await invoke('update_map', {
 				id: editMapId,
@@ -174,7 +208,7 @@
 					description: mapDescription.trim(),
 					nodeXml: nodeXml,
 					edgeXml: edgeXml,
-					tags: null,
+					tags: tagsArray,
 					category: null,
 					difficulty: null,
 					metadata: null
@@ -215,6 +249,202 @@
 			setTimeout(() => { saveMessage = null; }, 5000);
 		}
 	}
+
+	// Import XML files
+	async function importXmlFiles() {
+		try {
+			const selected = await open({
+				multiple: true,
+				filters: [{
+					name: 'SUMO XML Files',
+					extensions: ['xml']
+				}]
+			});
+
+			if (!selected || selected.length === 0) {
+				return;
+			}
+
+			// Separate .edg.xml and .nod.xml files
+			const edgFiles = selected.filter(path => path.endsWith('.edg.xml'));
+			const nodFiles = selected.filter(path => path.endsWith('.nod.xml'));
+
+			// Validation: Only 1 of each type allowed
+			if (edgFiles.length > 1) {
+				saveMessage = { type: 'error', text: '⚠️ .edg.xml 파일은 1개만 선택할 수 있습니다.' };
+				setTimeout(() => { saveMessage = null; }, 3000);
+				return;
+			}
+
+			if (nodFiles.length > 1) {
+				saveMessage = { type: 'error', text: '⚠️ .nod.xml 파일은 1개만 선택할 수 있습니다.' };
+				setTimeout(() => { saveMessage = null; }, 3000);
+				return;
+			}
+
+			// Read and populate textareas
+			if (nodFiles.length === 1) {
+				const content = await readTextFile(nodFiles[0]);
+				nodeXml = content;
+				console.log('✅ Loaded node XML from:', nodFiles[0]);
+			}
+
+			if (edgFiles.length === 1) {
+				const content = await readTextFile(edgFiles[0]);
+				edgeXml = content;
+				console.log('✅ Loaded edge XML from:', edgFiles[0]);
+			}
+
+			// Auto-parse after import
+			parseXml();
+
+			// Success message
+			const importedTypes = [];
+			if (nodFiles.length > 0) importedTypes.push('노드');
+			if (edgFiles.length > 0) importedTypes.push('엣지');
+
+			if (importedTypes.length > 0) {
+				saveMessage = { type: 'success', text: `✅ ${importedTypes.join(', ')} XML을 불러왔습니다.` };
+				setTimeout(() => { saveMessage = null; }, 3000);
+			}
+		} catch (error) {
+			console.error('Import error:', error);
+			saveMessage = { type: 'error', text: `파일 불러오기 실패: ${error}` };
+			setTimeout(() => { saveMessage = null; }, 3000);
+		}
+	}
+
+	// Import sample maps to database
+	async function importSampleMaps() {
+		const sampleMaps = [
+			{
+				name: 'y_junction_01',
+				description: 'Y자 모양의 삼거리 교차로입니다. 하단에서 올라오는 도로가 중앙 지점에서 두 갈래로 나뉘어 좌측 상단과 우측 상단으로 분기됩니다. 세 개의 방향으로 연결되며, 중앙 교차점을 중심으로 120도 간격으로 배치됩니다. 2차선 도로로 구성되며, 속도는 50km/h(13.89m/s)입니다.',
+				nodeXml: `<?xml version="1.0" encoding="UTF-8"?>
+<!-- Y형 교차로를 위한 Node 정의 -->
+<nodes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/nodes_file.xsd">
+    <!-- 중앙 교차로 노드 -->
+    <node id="center" x="0.0" y="0.0" type="priority"/>
+    <!-- 하단 노드 (줄기) -->
+    <node id="bottom" x="0.0" y="-100.0" type="priority"/>
+    <!-- 좌측 상단 노드 -->
+    <node id="top_left" x="-86.6" y="50.0" type="priority"/>
+    <!-- 우측 상단 노드 -->
+    <node id="top_right" x="86.6" y="50.0" type="priority"/>
+</nodes>`,
+				edgeXml: `<?xml version="1.0" encoding="UTF-8"?>
+<!-- Y형 교차로를 위한 Edge 정의 -->
+<edges xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/edges_file.xsd">
+    <edge id="bottom_to_center" from="bottom" to="center" priority="2" numLanes="2" speed="13.89"/>
+    <edge id="center_to_bottom" from="center" to="bottom" priority="2" numLanes="2" speed="13.89"/>
+    <edge id="center_to_top_left" from="center" to="top_left" priority="2" numLanes="2" speed="13.89"/>
+    <edge id="top_left_to_center" from="top_left" to="center" priority="2" numLanes="2" speed="13.89"/>
+    <edge id="center_to_top_right" from="center" to="top_right" priority="2" numLanes="2" speed="13.89"/>
+    <edge id="top_right_to_center" from="top_right" to="center" priority="2" numLanes="2" speed="13.89"/>
+</edges>`,
+				tags: ['Y자 교차로', '삼거리', '분기 지점', '양갈래 도로'],
+				category: 'junction',
+				difficulty: 'medium'
+			},
+			{
+				name: 't_junction_01',
+				description: 'T자 모양의 삼거리 교차로입니다. 좌우로 이어지는 주 도로에 하단에서 올라오는 도로가 수직으로 연결됩니다. 세 개의 방향으로 연결되며, 일반적인 T자형 골목길이나 지선 도로 연결에 사용됩니다. 2차선 도로로 구성되며, 속도는 50km/h(13.89m/s)입니다.',
+				nodeXml: `<?xml version="1.0" encoding="UTF-8"?>
+<!-- T형 교차로를 위한 Node 정의 -->
+<nodes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/nodes_file.xsd">
+    <node id="center" x="0.0" y="0.0" type="priority"/>
+    <node id="left" x="-100.0" y="0.0" type="priority"/>
+    <node id="right" x="100.0" y="0.0" type="priority"/>
+    <node id="bottom" x="0.0" y="-100.0" type="priority"/>
+</nodes>`,
+				edgeXml: `<?xml version="1.0" encoding="UTF-8"?>
+<!-- T형 교차로를 위한 Edge 정의 -->
+<edges xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/edges_file.xsd">
+    <edge id="left_to_center" from="left" to="center" priority="2" numLanes="2" speed="13.89"/>
+    <edge id="center_to_left" from="center" to="left" priority="2" numLanes="2" speed="13.89"/>
+    <edge id="center_to_right" from="center" to="right" priority="2" numLanes="2" speed="13.89"/>
+    <edge id="right_to_center" from="right" to="center" priority="2" numLanes="2" speed="13.89"/>
+    <edge id="bottom_to_center" from="bottom" to="center" priority="2" numLanes="2" speed="13.89"/>
+    <edge id="center_to_bottom" from="center" to="bottom" priority="2" numLanes="2" speed="13.89"/>
+</edges>`,
+				tags: ['T자 교차로', '삼거리', '직각 분기', '측면 진입로'],
+				category: 'junction',
+				difficulty: 'medium'
+			},
+			{
+				name: 'three_lane_road_01',
+				description: '넓은 3차선 직선 도로입니다. 200m 길이의 일직선 도로로 양방향 모두 3차선입니다. 속도는 80km/h(22.22m/s)로 고속 주행이 가능합니다. 교통량이 많은 주요 간선도로나 고속화도로에 적합합니다.',
+				nodeXml: `<?xml version="1.0" encoding="UTF-8"?>
+<!-- 3차선 직선 도로를 위한 Node 정의 -->
+<nodes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/nodes_file.xsd">
+    <node id="start" x="0.0" y="0.0" type="priority"/>
+    <node id="end" x="200.0" y="0.0" type="priority"/>
+</nodes>`,
+				edgeXml: `<?xml version="1.0" encoding="UTF-8"?>
+<!-- 3차선 직선 도로를 위한 Edge 정의 -->
+<edges xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/edges_file.xsd">
+    <edge id="start_to_end" from="start" to="end" priority="3" numLanes="3" speed="22.22"/>
+    <edge id="end_to_start" from="end" to="start" priority="3" numLanes="3" speed="22.22"/>
+</edges>`,
+				tags: ['3차선', '넓은 도로', '간선도로', '주요 도로', '고속 도로', '다차선 도로'],
+				category: 'highway',
+				difficulty: 'easy'
+			},
+			{
+				name: 'straight_road_01',
+				description: '단순한 직선 도로입니다. 300m 길이의 긴 일직선 도로로 양방향 2차선입니다. 속도는 50km/h(13.89m/s)입니다. 가장 기본적인 도로 형태로, 복잡한 교차로 없이 단순 이동 경로가 필요할 때 적합합니다.',
+				nodeXml: `<?xml version="1.0" encoding="UTF-8"?>
+<!-- 1자형 직선 도로를 위한 Node 정의 -->
+<nodes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/nodes_file.xsd">
+    <node id="start" x="0.0" y="0.0" type="priority"/>
+    <node id="end" x="300.0" y="0.0" type="priority"/>
+</nodes>`,
+				edgeXml: `<?xml version="1.0" encoding="UTF-8"?>
+<!-- 1자형 직선 도로를 위한 Edge 정의 -->
+<edges xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/edges_file.xsd">
+    <edge id="start_to_end" from="start" to="end" priority="2" numLanes="2" speed="13.89"/>
+    <edge id="end_to_start" from="end" to="start" priority="2" numLanes="2" speed="13.89"/>
+</edges>`,
+				tags: ['1자형', '직선 도로', '단순 도로', '일반 도로', '기본 간선'],
+				category: 'general',
+				difficulty: 'easy'
+			}
+		];
+
+		saveMessage = { type: 'info', text: '🚀 샘플 맵 Import 시작...' };
+		let successCount = 0;
+		let errorCount = 0;
+
+		for (const map of sampleMaps) {
+			try {
+				await invoke('create_map', {
+					request: {
+						name: map.name,
+						description: map.description,
+						nodeXml: map.nodeXml,
+						edgeXml: map.edgeXml,
+						tags: map.tags,
+						category: map.category,
+						difficulty: map.difficulty,
+						metadata: null
+					}
+				});
+				console.log(`✅ ${map.name} 저장 완료`);
+				successCount++;
+			} catch (error) {
+				console.error(`❌ ${map.name} 저장 실패:`, error);
+				errorCount++;
+			}
+		}
+
+		if (errorCount === 0) {
+			saveMessage = { type: 'success', text: `🎉 샘플 맵 ${successCount}개 Import 완료!` };
+		} else {
+			saveMessage = { type: 'error', text: `⚠️ ${successCount}개 성공, ${errorCount}개 실패` };
+		}
+
+		setTimeout(() => { saveMessage = null; }, 5000);
+	}
 </script>
 
 <div class="page-container">
@@ -228,6 +458,16 @@
 			</p>
 		</div>
 		<div class="header-actions">
+			{#if !isEditMode}
+				<button class="btn-secondary" onclick={importSampleMaps}>
+					<Icon icon="solar:database-bold" width="20" height="20" />
+					샘플 맵 Import
+				</button>
+			{/if}
+			<button class="btn-secondary" onclick={importXmlFiles}>
+				<Icon icon="solar:import-bold" width="20" height="20" />
+				Import
+			</button>
 			<button class="btn-secondary" onclick={parseXml}>
 				<Icon icon="solar:refresh-bold" width="20" height="20" />
 				미리보기
@@ -283,6 +523,20 @@
 					placeholder="RAG 검색에 사용될 맵 설명을 입력하세요. 예: 신호등이 있는 4거리 교차로. 2차선 도로가 십자형으로 교차함."
 					rows="3"
 				></textarea>
+			</div>
+
+			<div class="input-section">
+				<label>
+					<Icon icon="solar:tag-bold-duotone" width="20" height="20" />
+					태그
+				</label>
+				<input
+					type="text"
+					bind:value={mapTags}
+					placeholder="쉼표로 구분하여 입력하세요. 예: 교차로, 신호등, 4거리"
+					class="input-field"
+				/>
+				<small class="helper-text">태그는 쉼표(,)로 구분하여 입력하세요.</small>
 			</div>
 
 			<div class="input-section">
@@ -525,5 +779,12 @@
 		gap: 0.5rem;
 		color: var(--color-text-secondary);
 		font-size: 0.875rem;
+	}
+
+	.helper-text {
+		display: block;
+		margin-top: 0.25rem;
+		color: var(--color-text-secondary);
+		font-size: 0.75rem;
 	}
 </style>

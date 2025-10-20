@@ -60,7 +60,8 @@
             "global-shortcut:allow-unregister",
             "global-shortcut:allow-unregister-all",
             "dialog:allow-save",
-            "dialog:allow-open"
+            "dialog:allow-open",
+            "fs:allow-read-text-file"
           ]
         }
       ]
