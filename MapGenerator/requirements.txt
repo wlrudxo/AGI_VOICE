@@ -6,3 +6,4 @@ faiss-cpu
 tiktoken
 pyperclip
 python-dotenv
+numpy<2.0,>=1.22.4

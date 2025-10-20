@@ -18,45 +18,10 @@ pub fn get_faiss_index_path() -> Result<PathBuf, String> {
     Ok(faiss_path)
 }
 
-/// 데이터베이스 경로 가져오기
+/// 데이터베이스 경로 가져오기 (map_db.rs와 동일한 경로 사용)
 pub fn get_db_path() -> Result<PathBuf, String> {
-    let exe_dir = std::env::current_exe()
-        .map_err(|e| format!("Failed to get exe path: {}", e))?
-        .parent()
-        .ok_or_else(|| "Failed to get exe parent dir".to_string())?
-        .to_path_buf();
-
-    // Try multiple possible paths
-    let mut candidates = vec![
-        // Production: beside exe
-        exe_dir.join("sumo_maps.db"),
-    ];
-
-    // Development: project root (src-tauri/target/debug/../../../sumo_maps.db)
-    if let Some(project_root) = exe_dir
-        .parent()  // target
-        .and_then(|p| p.parent())  // src-tauri
-        .and_then(|p| p.parent())  // AGI_VOICE_V2 (project root)
-    {
-        candidates.push(project_root.join("sumo_maps.db"));
-    }
-
-    // Current working directory
-    if let Ok(cwd) = std::env::current_dir() {
-        candidates.push(cwd.join("sumo_maps.db"));
-    }
-
-    for candidate in &candidates {
-        if candidate.exists() {
-            println!("  Using DB path: {:?}", candidate);
-            return Ok(candidate.clone());
-        }
-    }
-
-    // If not found, use default (will be created)
-    let default_path = exe_dir.join("sumo_maps.db");
-    println!("  DB not found, using default: {:?}", default_path);
-    Ok(default_path)
+    // Use the same path as map_db.rs
+    crate::db::map_db::get_map_db_path()
 }
 
 /// Python 스크립트 실행 헬퍼

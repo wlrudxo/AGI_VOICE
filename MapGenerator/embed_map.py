@@ -119,8 +119,9 @@ def embed_map(map_id, faiss_index_path, db_path):
 
     # FAISS 인덱스 로드 또는 생성
     faiss_path = Path(faiss_index_path)
+    faiss_index_file = faiss_path / "index.faiss"
 
-    if faiss_path.exists():
+    if faiss_index_file.exists():
         # 기존 인덱스 로드
         log_error(f"Loading existing FAISS index from {faiss_index_path}")
         vector_store = FAISS.load_local(
