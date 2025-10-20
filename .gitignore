@@ -20,3 +20,6 @@ __pycache__/
 
 # Claude Code settings
 .claude/settings.local.json
+
+# Archives
+*.zip
