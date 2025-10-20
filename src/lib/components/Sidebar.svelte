@@ -12,6 +12,8 @@
 
   const navItems: NavItem[] = [
     { name: '대시보드', path: '/', icon: 'solar:widget-2-bold-duotone' },
+    { name: 'Map 생성', path: '/map-generator', icon: 'solar:map-bold-duotone' },
+    { name: 'Map 라이브러리', path: '/map-library', icon: 'solar:folder-with-files-bold-duotone' },
     { name: 'AI 설정', path: '/ai-settings', icon: 'solar:settings-minimalistic-bold-duotone' },
     { name: '설정', path: '/settings', icon: 'solar:settings-bold-duotone' }
   ];

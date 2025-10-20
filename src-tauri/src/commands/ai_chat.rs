@@ -6,6 +6,7 @@ use tauri::State;
 use crate::ai::{build_full_prompt, save_claude_md, ClaudeCLIManager, Message as PromptMessage};
 use crate::commands::settings::load_settings;
 use crate::db::models::{character, command_template, conversation, message, prompt_template};
+use crate::db::AiChatDb;
 
 // ==================== Request/Response Models ====================
 
@@ -234,19 +235,19 @@ async fn execute_claude_request(
 #[tauri::command]
 pub async fn chat(
     request: ChatRequest,
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<ChatResponse, String> {
     println!("📥 Chat request: {:?}", request.message);
 
     // 1. Conversation 로드/생성
     let (conversation, character_id, prompt_template_id, user_info) =
-        get_or_create_conversation(&request, &db).await?;
+        get_or_create_conversation(&request, &db.0).await?;
 
     println!("✅ Conversation ID: {}", conversation.id);
 
     // 2. 대화 컨텍스트 로드
     let (character, prompt_template, previous_messages, command_info_list) =
-        load_conversation_context(&db, conversation.id, character_id, prompt_template_id).await?;
+        load_conversation_context(&db.0, conversation.id, character_id, prompt_template_id).await?;
 
     println!(
         "✅ Loaded context: character={}, template={}, messages={}, commands={}",
@@ -310,7 +311,7 @@ pub async fn chat(
             created_at: Set(msg_timestamp),
             ..Default::default()
         };
-        let saved_user = user_msg.insert(&*db).await.map_err(|e| {
+        let saved_user = user_msg.insert(&db.0).await.map_err(|e| {
             println!("❌ Failed to save user message: {}", e);
             e.to_string()
         })?;
@@ -328,7 +329,7 @@ pub async fn chat(
         ..Default::default()
     };
     let saved_assistant = assistant_msg
-        .insert(&*db)
+        .insert(&db.0)
         .await
         .map_err(|e| {
             println!("❌ Failed to save assistant message: {}", e);
@@ -341,7 +342,7 @@ pub async fn chat(
     // 저장 후 검증: 해당 대화의 메시지 수 확인
     let message_count = message::Entity::find()
         .filter(message::Column::ConversationId.eq(conversation.id))
-        .count(&*db)
+        .count(&db.0)
         .await
         .map_err(|e| e.to_string())?;
 

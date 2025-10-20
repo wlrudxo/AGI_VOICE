@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Y형 교차로를 위한 Node 정의 -->
+<nodes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/nodes_file.xsd">
+    <!-- 중앙 교차로 노드 -->
+    <node id="center" x="0.0" y="0.0" type="priority"/>
+
+    <!-- 하단 노드 (줄기) -->
+    <node id="bottom" x="0.0" y="-100.0" type="priority"/>
+
+    <!-- 좌측 상단 노드 -->
+    <node id="top_left" x="-86.6" y="50.0" type="priority"/>
+
+    <!-- 우측 상단 노드 -->
+    <node id="top_right" x="86.6" y="50.0" type="priority"/>
+</nodes>

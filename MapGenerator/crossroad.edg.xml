@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 십자형 교차로를 위한 Edge 정의 -->
+<edges xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/edges_file.xsd">
+    <!-- 북쪽에서 중앙으로 -->
+    <edge id="north_to_center" from="north" to="center" priority="3" numLanes="2" speed="13.89"/>
+
+    <!-- 중앙에서 북쪽으로 -->
+    <edge id="center_to_north" from="center" to="north" priority="3" numLanes="2" speed="13.89"/>
+
+    <!-- 남쪽에서 중앙으로 -->
+    <edge id="south_to_center" from="south" to="center" priority="3" numLanes="2" speed="13.89"/>
+
+    <!-- 중앙에서 남쪽으로 -->
+    <edge id="center_to_south" from="center" to="south" priority="3" numLanes="2" speed="13.89"/>
+
+    <!-- 동쪽에서 중앙으로 -->
+    <edge id="east_to_center" from="east" to="center" priority="3" numLanes="2" speed="13.89"/>
+
+    <!-- 중앙에서 동쪽으로 -->
+    <edge id="center_to_east" from="center" to="east" priority="3" numLanes="2" speed="13.89"/>
+
+    <!-- 서쪽에서 중앙으로 -->
+    <edge id="west_to_center" from="west" to="center" priority="3" numLanes="2" speed="13.89"/>
+
+    <!-- 중앙에서 서쪽으로 -->
+    <edge id="center_to_west" from="center" to="west" priority="3" numLanes="2" speed="13.89"/>
+</edges>

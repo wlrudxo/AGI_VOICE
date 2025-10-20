@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 십자형 교차로를 위한 Node 정의 -->
+<nodes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/nodes_file.xsd">
+    <!-- 중앙 교차로 노드 -->
+    <node id="center" x="0.0" y="0.0" type="traffic_light"/>
+
+    <!-- 북쪽 노드 -->
+    <node id="north" x="0.0" y="100.0" type="priority"/>
+
+    <!-- 남쪽 노드 -->
+    <node id="south" x="0.0" y="-100.0" type="priority"/>
+
+    <!-- 동쪽 노드 -->
+    <node id="east" x="100.0" y="0.0" type="priority"/>
+
+    <!-- 서쪽 노드 -->
+    <node id="west" x="-100.0" y="0.0" type="priority"/>
+</nodes>

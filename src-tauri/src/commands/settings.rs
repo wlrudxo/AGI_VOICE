@@ -3,9 +3,8 @@ use std::fs;
 use std::path::Path;
 use tauri::State;
 
-use sea_orm::DatabaseConnection;
-
 use crate::commands::common::HealthResponse;
+use crate::db::AiChatDb;
 
 // ==================== Settings Models ====================
 
@@ -230,7 +229,7 @@ pub async fn update_chat_settings(chat_settings: ChatSettings) -> Result<ChatSet
 /// Get database timestamp
 #[tauri::command]
 pub async fn get_db_timestamp(
-    _db: State<'_, DatabaseConnection>,
+    _db: State<'_, AiChatDb>,
 ) -> Result<DbTimestamp, String> {
     let db_path = get_db_path();
 

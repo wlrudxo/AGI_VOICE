@@ -1,0 +1,129 @@
+사용자 요청: 곡선이 있는 T자 교차로
+
+=== 참고할 유사한 맵 예시들 ===
+
+[예시 1] t_junction
+설명: T자 모양의 삼거리 교차로입니다. 좌우로 이어지는 주 도로에 하단에서 올라오는 도로가 수직으로 연결됩니다. 세 개의 방향으로 연결되며, 일반적인 T자형 골목길이나 지선 도로 연결에 사용됩니다. 2차선 도로로 구성되며, 속도는 50km/h(13.89m/s)입니다. T자 교차로, 삼거리, 직각 분기, 측면 진입로에 적합합니다.
+
+Node 파일:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- T형 교차로를 위한 Node 정의 -->
+<nodes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/nodes_file.xsd">
+    <!-- 중앙 교차로 노드 -->
+    <node id="center" x="0.0" y="0.0" type="priority"/>
+
+    <!-- 좌측 노드 -->
+    <node id="left" x="-100.0" y="0.0" type="priority"/>
+
+    <!-- 우측 노드 -->
+    <node id="right" x="100.0" y="0.0" type="priority"/>
+
+    <!-- 하단 노드 -->
+    <node id="bottom" x="0.0" y="-100.0" type="priority"/>
+</nodes>
+
+```
+
+Edge 파일:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- T형 교차로를 위한 Edge 정의 -->
+<edges xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/edges_file.xsd">
+    <!-- 좌측에서 중앙으로 -->
+    <edge id="left_to_center" from="left" to="center" priority="2" numLanes="2" speed="13.89"/>
+
+    <!-- 중앙에서 좌측으로 -->
+    <edge id="center_to_left" from="center" to="left" priority="2" numLanes="2" speed="13.89"/>
+
+    <!-- 중앙에서 우측으로 -->
+    <edge id="center_to_right" from="center" to="right" priority="2" numLanes="2" speed="13.89"/>
+
+    <!-- 우측에서 중앙으로 -->
+    <edge id="right_to_center" from="right" to="center" priority="2" numLanes="2" speed="13.89"/>
+
+    <!-- 하단에서 중앙으로 -->
+    <edge id="bottom_to_center" from="bottom" to="center" priority="2" numLanes="2" speed="13.89"/>
+
+    <!-- 중앙에서 하단으로 -->
+    <edge id="center_to_bottom" from="center" to="bottom" priority="2" numLanes="2" speed="13.89"/>
+</edges>
+
+```
+
+------------------------------------------------------------
+
+[예시 2] crossroad
+설명: 네 방향이 교차하는 십자형 교차로입니다. 북쪽, 남쪽, 동쪽, 서쪽 네 방향의 도로가 중앙에서 만납니다. 신호등(traffic_light)이 설치되어 교통을 제어합니다. 2차선 도로로 구성되며, 속도는 50km/h(13.89m/s)입니다. 우선순위가 높은(priority 3) 주요 교차로로, 사거리, 십자로, 네거리, 신호등 교차로에 적합합니다.
+
+Node 파일:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 십자형 교차로를 위한 Node 정의 -->
+<nodes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/nodes_file.xsd">
+    <!-- 중앙 교차로 노드 -->
+    <node id="center" x="0.0" y="0.0" type="traffic_light"/>
+
+    <!-- 북쪽 노드 -->
+    <node id="north" x="0.0" y="100.0" type="priority"/>
+
+    <!-- 남쪽 노드 -->
+    <node id="south" x="0.0" y="-100.0" type="priority"/>
+
+    <!-- 동쪽 노드 -->
+    <node id="east" x="100.0" y="0.0" type="priority"/>
+
+    <!-- 서쪽 노드 -->
+    <node id="west" x="-100.0" y="0.0" type="priority"/>
+</nodes>
+
+```
+
+Edge 파일:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 십자형 교차로를 위한 Edge 정의 -->
+<edges xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/edges_file.xsd">
+    <!-- 북쪽에서 중앙으로 -->
+    <edge id="north_to_center" from="north" to="center" priority="3" numLanes="2" speed="13.89"/>
+
+    <!-- 중앙에서 북쪽으로 -->
+    <edge id="center_to_north" from="center" to="north" priority="3" numLanes="2" speed="13.89"/>
+
+    <!-- 남쪽에서 중앙으로 -->
+    <edge id="south_to_center" from="south" to="center" priority="3" numLanes="2" speed="13.89"/>
+
+    <!-- 중앙에서 남쪽으로 -->
+    <edge id="center_to_south" from="center" to="south" priority="3" numLanes="2" speed="13.89"/>
+
+    <!-- 동쪽에서 중앙으로 -->
+    <edge id="east_to_center" from="east" to="center" priority="3" numLanes="2" speed="13.89"/>
+
+    <!-- 중앙에서 동쪽으로 -->
+    <edge id="center_to_east" from="center" to="east" priority="3" numLanes="2" speed="13.89"/>
+
+    <!-- 서쪽에서 중앙으로 -->
+    <edge id="west_to_center" from="west" to="center" priority="3" numLanes="2" speed="13.89"/>
+
+    <!-- 중앙에서 서쪽으로 -->
+    <edge id="center_to_west" from="center" to="west" priority="3" numLanes="2" speed="13.89"/>
+</edges>
+
+```
+
+------------------------------------------------------------
+
+위 예시들을 참고하여, 사용자가 요청한 맵의 node.xml과 edge.xml을 생성해주세요.
+
+요구사항:
+1. SUMO 형식을 정확히 따를 것
+2. 노드 좌표가 실제 도로 형태에 맞게 배치될 것
+3. Edge는 올바른 노드 연결 관계를 가질 것
+4. 적절한 차선 수(numLanes)와 속도 제한(speed)을 설정할 것
+
+출력 형식:
+=== node.xml ===
+[XML 내용]
+
+=== edge.xml ===
+[XML 내용]

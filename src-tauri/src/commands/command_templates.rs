@@ -4,6 +4,7 @@ use tauri::State;
 
 use crate::commands::common::{DeleteResult, HealthResponse};
 use crate::db::models::command_template;
+use crate::db::AiChatDb;
 
 // ==================== Request/Response Models ====================
 
@@ -53,7 +54,7 @@ impl From<command_template::Model> for CommandTemplateResponse {
 #[tauri::command]
 pub async fn get_command_templates(
     is_active: Option<i32>,
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<Vec<CommandTemplateResponse>, String> {
     let mut query = command_template::Entity::find();
 
@@ -63,7 +64,7 @@ pub async fn get_command_templates(
 
     let templates = query
         .order_by_desc(command_template::Column::CreatedAt)
-        .all(&*db)
+        .all(&db.0)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -77,10 +78,10 @@ pub async fn get_command_templates(
 #[tauri::command]
 pub async fn get_command_template_by_id(
     id: i32,
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<CommandTemplateResponse, String> {
     let template = command_template::Entity::find_by_id(id)
-        .one(&*db)
+        .one(&db.0)
         .await
         .map_err(|e| e.to_string())?
         .ok_or("Command template not found")?;
@@ -92,7 +93,7 @@ pub async fn get_command_template_by_id(
 #[tauri::command(rename_all = "camelCase")]
 pub async fn create_command_template(
     template_data: CommandTemplateCreate,
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<CommandTemplateResponse, String> {
     let new_template = command_template::ActiveModel {
         name: Set(template_data.name),
@@ -102,7 +103,7 @@ pub async fn create_command_template(
     };
 
     let result = new_template
-        .insert(&*db)
+        .insert(&db.0)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -114,10 +115,10 @@ pub async fn create_command_template(
 pub async fn update_command_template(
     id: i32,
     template_data: CommandTemplateUpdate,
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<CommandTemplateResponse, String> {
     let existing = command_template::Entity::find_by_id(id)
-        .one(&*db)
+        .one(&db.0)
         .await
         .map_err(|e| e.to_string())?
         .ok_or("Command template not found")?;
@@ -127,7 +128,7 @@ pub async fn update_command_template(
     active.content = Set(template_data.content);
     active.is_active = Set(template_data.is_active);
 
-    let result = active.update(&*db).await.map_err(|e| e.to_string())?;
+    let result = active.update(&db.0).await.map_err(|e| e.to_string())?;
 
     Ok(CommandTemplateResponse::from(result))
 }
@@ -136,10 +137,10 @@ pub async fn update_command_template(
 #[tauri::command]
 pub async fn toggle_command_template(
     id: i32,
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<CommandTemplateResponse, String> {
     let existing = command_template::Entity::find_by_id(id)
-        .one(&*db)
+        .one(&db.0)
         .await
         .map_err(|e| e.to_string())?
         .ok_or("Command template not found")?;
@@ -149,7 +150,7 @@ pub async fn toggle_command_template(
     // Toggle: 0 -> 1, 1 -> 0
     active.is_active = Set(if existing.is_active == 0 { 1 } else { 0 });
 
-    let result = active.update(&*db).await.map_err(|e| e.to_string())?;
+    let result = active.update(&db.0).await.map_err(|e| e.to_string())?;
 
     Ok(CommandTemplateResponse::from(result))
 }
@@ -158,16 +159,16 @@ pub async fn toggle_command_template(
 #[tauri::command]
 pub async fn delete_command_template(
     id: i32,
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<DeleteResult, String> {
     let template = command_template::Entity::find_by_id(id)
-        .one(&*db)
+        .one(&db.0)
         .await
         .map_err(|e| e.to_string())?
         .ok_or("Command template not found")?;
 
     command_template::Entity::delete_by_id(template.id)
-        .exec(&*db)
+        .exec(&db.0)
         .await
         .map_err(|e| e.to_string())?;
 

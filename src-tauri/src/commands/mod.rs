@@ -6,6 +6,7 @@ pub mod prompt_templates;
 pub mod characters;
 pub mod conversations;
 pub mod command_templates;
+pub mod maps;
 
 // Re-export common types
 pub use common::*;
@@ -17,3 +18,4 @@ pub use prompt_templates::*;
 pub use characters::*;
 pub use conversations::*;
 pub use command_templates::*;
+pub use maps::*;

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 3차선 직선 도로를 위한 Node 정의 -->
+<nodes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/nodes_file.xsd">
+    <!-- 시작 노드 -->
+    <node id="start" x="0.0" y="0.0" type="priority"/>
+
+    <!-- 종료 노드 -->
+    <node id="end" x="200.0" y="0.0" type="priority"/>
+</nodes>

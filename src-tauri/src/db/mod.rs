@@ -6,6 +6,11 @@ pub mod models;
 pub mod sync;
 pub mod seed_data;
 pub mod schema;
+pub mod map_db;
+
+// Wrapper types to distinguish different database connections in Tauri State
+pub struct AiChatDb(pub DatabaseConnection);
+pub struct MapDb(pub DatabaseConnection);
 
 /// Get the application data directory path
 /// Returns: %APPDATA%/ai_chat on Windows, ~/.local/share/ai_chat on Linux, ~/Library/Application Support/ai_chat on macOS

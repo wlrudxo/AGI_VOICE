@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 병합 차선을 위한 Edge 정의 -->
+<edges xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/edges_file.xsd">
+    <!-- 주 도로: 시작에서 병합 지점으로 -->
+    <edge id="main_to_merge" from="main_start" to="merge_point" priority="3" numLanes="2" speed="22.22"/>
+
+    <!-- 진입 램프: 램프 시작에서 병합 지점으로 -->
+    <edge id="ramp_to_merge" from="ramp_start" to="merge_point" priority="2" numLanes="1" speed="16.67"/>
+
+    <!-- 병합 후: 병합 지점에서 종료로 -->
+    <edge id="merge_to_end" from="merge_point" to="end" priority="3" numLanes="3" speed="22.22"/>
+
+    <!-- 역방향: 종료에서 병합 지점으로 -->
+    <edge id="end_to_merge" from="end" to="merge_point" priority="3" numLanes="2" speed="22.22"/>
+
+    <!-- 역방향: 병합 지점에서 시작으로 -->
+    <edge id="merge_to_main" from="merge_point" to="main_start" priority="3" numLanes="2" speed="22.22"/>
+</edges>

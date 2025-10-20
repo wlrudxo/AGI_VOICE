@@ -6,6 +6,7 @@ use tauri::State;
 
 use crate::commands::common::{DeleteResult, HealthResponse};
 use crate::db::models::character;
+use crate::db::AiChatDb;
 
 // ==================== Request/Response Models ====================
 
@@ -50,10 +51,10 @@ impl From<character::Model> for CharacterResponse {
 /// Get all characters
 #[tauri::command]
 pub async fn get_characters(
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<Vec<CharacterResponse>, String> {
     let characters = character::Entity::find()
-        .all(&*db)
+        .all(&db.0)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -67,10 +68,10 @@ pub async fn get_characters(
 #[tauri::command]
 pub async fn get_character_by_id(
     id: i32,
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<CharacterResponse, String> {
     let character = character::Entity::find_by_id(id)
-        .one(&*db)
+        .one(&db.0)
         .await
         .map_err(|e| e.to_string())?
         .ok_or("Character not found")?;
@@ -82,7 +83,7 @@ pub async fn get_character_by_id(
 #[tauri::command]
 pub async fn create_character(
     characterData: CharacterCreate,
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<CharacterResponse, String> {
     let new_character = character::ActiveModel {
         name: Set(characterData.name),
@@ -91,7 +92,7 @@ pub async fn create_character(
     };
 
     let result = new_character
-        .insert(&*db)
+        .insert(&db.0)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -103,10 +104,10 @@ pub async fn create_character(
 pub async fn update_character(
     id: i32,
     characterData: CharacterUpdate,
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<CharacterResponse, String> {
     let existing = character::Entity::find_by_id(id)
-        .one(&*db)
+        .one(&db.0)
         .await
         .map_err(|e| e.to_string())?
         .ok_or("Character not found")?;
@@ -115,7 +116,7 @@ pub async fn update_character(
     active.name = Set(characterData.name);
     active.prompt_content = Set(characterData.prompt_content);
 
-    let result = active.update(&*db).await.map_err(|e| e.to_string())?;
+    let result = active.update(&db.0).await.map_err(|e| e.to_string())?;
 
     Ok(CharacterResponse::from(result))
 }
@@ -124,16 +125,16 @@ pub async fn update_character(
 #[tauri::command]
 pub async fn delete_character(
     id: i32,
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<DeleteResult, String> {
     let character = character::Entity::find_by_id(id)
-        .one(&*db)
+        .one(&db.0)
         .await
         .map_err(|e| e.to_string())?
         .ok_or("Character not found")?;
 
     character::Entity::delete_by_id(character.id)
-        .exec(&*db)
+        .exec(&db.0)
         .await
         .map_err(|e| e.to_string())?;
 

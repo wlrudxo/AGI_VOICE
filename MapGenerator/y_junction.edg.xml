@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Y형 교차로를 위한 Edge 정의 -->
+<edges xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/edges_file.xsd">
+    <!-- 하단에서 중앙으로 -->
+    <edge id="bottom_to_center" from="bottom" to="center" priority="2" numLanes="2" speed="13.89"/>
+
+    <!-- 중앙에서 하단으로 -->
+    <edge id="center_to_bottom" from="center" to="bottom" priority="2" numLanes="2" speed="13.89"/>
+
+    <!-- 중앙에서 좌측 상단으로 -->
+    <edge id="center_to_top_left" from="center" to="top_left" priority="2" numLanes="2" speed="13.89"/>
+
+    <!-- 좌측 상단에서 중앙으로 -->
+    <edge id="top_left_to_center" from="top_left" to="center" priority="2" numLanes="2" speed="13.89"/>
+
+    <!-- 중앙에서 우측 상단으로 -->
+    <edge id="center_to_top_right" from="center" to="top_right" priority="2" numLanes="2" speed="13.89"/>
+
+    <!-- 우측 상단에서 중앙으로 -->
+    <edge id="top_right_to_center" from="top_right" to="center" priority="2" numLanes="2" speed="13.89"/>
+</edges>

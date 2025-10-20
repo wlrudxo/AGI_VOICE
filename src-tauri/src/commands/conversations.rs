@@ -4,6 +4,7 @@ use tauri::State;
 
 use crate::commands::common::{DeleteResult, HealthResponse};
 use crate::db::models::{conversation, message};
+use crate::db::AiChatDb;
 
 // ==================== Request/Response Models ====================
 
@@ -89,11 +90,11 @@ impl From<message::Model> for MessageResponse {
 /// Get all conversations (with message count)
 #[tauri::command]
 pub async fn get_conversations(
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<Vec<ConversationWithCount>, String> {
     let conversations = conversation::Entity::find()
         .order_by_desc(conversation::Column::UpdatedAt)
-        .all(&*db)
+        .all(&db.0)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -103,7 +104,7 @@ pub async fn get_conversations(
         // Count messages for this conversation
         let message_count = message::Entity::find()
             .filter(message::Column::ConversationId.eq(conv.id))
-            .count(&*db)
+            .count(&db.0)
             .await
             .map_err(|e| e.to_string())?;
 
@@ -126,10 +127,10 @@ pub async fn get_conversations(
 #[tauri::command]
 pub async fn get_conversation_by_id(
     id: i32,
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<ConversationResponse, String> {
     let conversation = conversation::Entity::find_by_id(id)
-        .one(&*db)
+        .one(&db.0)
         .await
         .map_err(|e| e.to_string())?
         .ok_or("Conversation not found")?;
@@ -142,11 +143,11 @@ pub async fn get_conversation_by_id(
 pub async fn get_conversation_messages(
     id: i32,
     limit: Option<i32>,
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<Vec<MessageResponse>, String> {
     // Check if conversation exists
     let _conversation = conversation::Entity::find_by_id(id)
-        .one(&*db)
+        .one(&db.0)
         .await
         .map_err(|e| e.to_string())?
         .ok_or("Conversation not found")?;
@@ -157,7 +158,7 @@ pub async fn get_conversation_messages(
         .filter(message::Column::ConversationId.eq(id))
         .order_by_asc(message::Column::CreatedAt)
         .limit(limit as u64)
-        .all(&*db)
+        .all(&db.0)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -168,7 +169,7 @@ pub async fn get_conversation_messages(
 #[tauri::command(rename_all = "camelCase")]
 pub async fn create_conversation(
     conversation_data: ConversationCreate,
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<ConversationResponse, String> {
     let new_conversation = conversation::ActiveModel {
         character_id: Set(conversation_data.character_id),
@@ -179,7 +180,7 @@ pub async fn create_conversation(
     };
 
     let result = new_conversation
-        .insert(&*db)
+        .insert(&db.0)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -191,10 +192,10 @@ pub async fn create_conversation(
 pub async fn update_conversation(
     id: i32,
     conversation_data: ConversationUpdate,
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<ConversationResponse, String> {
     let existing = conversation::Entity::find_by_id(id)
-        .one(&*db)
+        .one(&db.0)
         .await
         .map_err(|e| e.to_string())?
         .ok_or("Conversation not found")?;
@@ -209,7 +210,7 @@ pub async fn update_conversation(
         active.user_info = Set(Some(user_info));
     }
 
-    let result = active.update(&*db).await.map_err(|e| e.to_string())?;
+    let result = active.update(&db.0).await.map_err(|e| e.to_string())?;
 
     Ok(ConversationResponse::from(result))
 }
@@ -218,10 +219,10 @@ pub async fn update_conversation(
 #[tauri::command]
 pub async fn delete_conversation(
     id: i32,
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<DeleteResult, String> {
     let conversation = conversation::Entity::find_by_id(id)
-        .one(&*db)
+        .one(&db.0)
         .await
         .map_err(|e| e.to_string())?
         .ok_or("Conversation not found")?;
@@ -229,13 +230,13 @@ pub async fn delete_conversation(
     // Delete related messages first
     message::Entity::delete_many()
         .filter(message::Column::ConversationId.eq(id))
-        .exec(&*db)
+        .exec(&db.0)
         .await
         .map_err(|e| e.to_string())?;
 
     // Delete conversation
     conversation::Entity::delete_by_id(conversation.id)
-        .exec(&*db)
+        .exec(&db.0)
         .await
         .map_err(|e| e.to_string())?;
 

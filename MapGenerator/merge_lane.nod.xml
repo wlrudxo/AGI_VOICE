@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 병합 차선을 위한 Node 정의 -->
+<nodes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/nodes_file.xsd">
+    <!-- 주 도로 시작 노드 -->
+    <node id="main_start" x="0.0" y="0.0" type="priority"/>
+
+    <!-- 병합 지점 노드 -->
+    <node id="merge_point" x="100.0" y="0.0" type="priority"/>
+
+    <!-- 진입 램프 시작 노드 -->
+    <node id="ramp_start" x="80.0" y="-50.0" type="priority"/>
+
+    <!-- 종료 노드 -->
+    <node id="end" x="200.0" y="0.0" type="priority"/>
+</nodes>

@@ -67,20 +67,44 @@ pub fn run() {
             commands::toggle_command_template,
             commands::delete_command_template,
             commands::command_templates_health,
+            // Maps
+            commands::create_map,
+            commands::get_maps,
+            commands::get_map_by_id,
+            commands::update_map,
+            commands::delete_map,
+            commands::get_map_count,
+            commands::maps_health,
         ])
         .setup(|app| {
-            // Initialize database connection
+            // Initialize AI chat database connection
             let db = tauri::async_runtime::block_on(async {
                 db::init_db().await
             });
 
             match db {
                 Ok(connection) => {
-                    println!("✅ Database initialized successfully");
-                    app.manage(connection);
+                    println!("✅ AI Chat database initialized successfully");
+                    app.manage(db::AiChatDb(connection));
                 }
                 Err(e) => {
-                    eprintln!("❌ Database initialization failed: {}", e);
+                    eprintln!("❌ AI Chat database initialization failed: {}", e);
+                    return Err(e.into());
+                }
+            }
+
+            // Initialize map database connection
+            let map_db = tauri::async_runtime::block_on(async {
+                db::map_db::init_map_db().await
+            });
+
+            match map_db {
+                Ok(connection) => {
+                    println!("✅ Map database initialized successfully");
+                    app.manage(db::MapDb(connection));
+                }
+                Err(e) => {
+                    eprintln!("❌ Map database initialization failed: {}", e);
                     return Err(e.into());
                 }
             }

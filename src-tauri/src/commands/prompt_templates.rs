@@ -6,6 +6,7 @@ use tauri::State;
 
 use crate::commands::common::{DeleteResult, HealthResponse};
 use crate::db::models::prompt_template;
+use crate::db::AiChatDb;
 
 // ==================== Request/Response Models ====================
 
@@ -50,10 +51,10 @@ impl From<prompt_template::Model> for PromptTemplateResponse {
 /// Get all prompt templates
 #[tauri::command]
 pub async fn get_prompt_templates(
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<Vec<PromptTemplateResponse>, String> {
     let templates = prompt_template::Entity::find()
-        .all(&*db)
+        .all(&db.0)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -67,10 +68,10 @@ pub async fn get_prompt_templates(
 #[tauri::command]
 pub async fn get_prompt_template_by_id(
     id: i32,
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<PromptTemplateResponse, String> {
     let template = prompt_template::Entity::find_by_id(id)
-        .one(&*db)
+        .one(&db.0)
         .await
         .map_err(|e| e.to_string())?
         .ok_or("Prompt template not found")?;
@@ -82,7 +83,7 @@ pub async fn get_prompt_template_by_id(
 #[tauri::command]
 pub async fn create_prompt_template(
     templateData: PromptTemplateCreate,
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<PromptTemplateResponse, String> {
     let new_template = prompt_template::ActiveModel {
         name: Set(templateData.name),
@@ -91,7 +92,7 @@ pub async fn create_prompt_template(
     };
 
     let result = new_template
-        .insert(&*db)
+        .insert(&db.0)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -103,10 +104,10 @@ pub async fn create_prompt_template(
 pub async fn update_prompt_template(
     id: i32,
     templateData: PromptTemplateUpdate,
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<PromptTemplateResponse, String> {
     let existing = prompt_template::Entity::find_by_id(id)
-        .one(&*db)
+        .one(&db.0)
         .await
         .map_err(|e| e.to_string())?
         .ok_or("Prompt template not found")?;
@@ -115,7 +116,7 @@ pub async fn update_prompt_template(
     active.name = Set(templateData.name);
     active.content = Set(templateData.content);
 
-    let result = active.update(&*db).await.map_err(|e| e.to_string())?;
+    let result = active.update(&db.0).await.map_err(|e| e.to_string())?;
 
     Ok(PromptTemplateResponse::from(result))
 }
@@ -124,16 +125,16 @@ pub async fn update_prompt_template(
 #[tauri::command]
 pub async fn delete_prompt_template(
     id: i32,
-    db: State<'_, DatabaseConnection>,
+    db: State<'_, AiChatDb>,
 ) -> Result<DeleteResult, String> {
     let template = prompt_template::Entity::find_by_id(id)
-        .one(&*db)
+        .one(&db.0)
         .await
         .map_err(|e| e.to_string())?
         .ok_or("Prompt template not found")?;
 
     prompt_template::Entity::delete_by_id(template.id)
-        .exec(&*db)
+        .exec(&db.0)
         .await
         .map_err(|e| e.to_string())?;
 
