@@ -1,4 +1,5 @@
 use sea_orm::{ConnectionTrait, Database, DatabaseConnection, DbErr, Statement};
+use std::fs;
 use std::path::PathBuf;
 
 /// Get sumo_maps.db path (in app data directory)
@@ -9,6 +10,17 @@ pub fn get_map_db_path() -> Result<PathBuf, String> {
 
 /// Initialize SUMO maps database
 pub async fn init_map_db() -> Result<DatabaseConnection, DbErr> {
+    // Get AppData directory
+    let app_dir = crate::db::get_app_data_dir()
+        .map_err(|e| DbErr::Custom(format!("Failed to get app data directory: {}", e)))?;
+
+    // Ensure AppData directory exists
+    if !app_dir.exists() {
+        fs::create_dir_all(&app_dir)
+            .map_err(|e| DbErr::Custom(format!("Failed to create app data directory: {}", e)))?;
+        println!("📁 Created app data directory: {}", app_dir.display());
+    }
+
     let db_path = get_map_db_path().map_err(|e| DbErr::Custom(e))?;
 
     println!("📂 Map DB path: {:?}", db_path);
