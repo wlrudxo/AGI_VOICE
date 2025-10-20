@@ -77,11 +77,14 @@ async fn get_or_create_conversation(
             .clone()
             .unwrap_or_else(|| format!("Chat {}", chrono::Local::now().format("%Y-%m-%d %H:%M")));
 
+        let now = chrono::Utc::now().naive_utc();
         let new_conv = conversation::ActiveModel {
             character_id: Set(character_id),
             prompt_template_id: Set(prompt_template_id),
             user_info: Set(request.user_info.clone()),
             title: Set(Some(title)),
+            created_at: Set(now),
+            updated_at: Set(now),
             ..Default::default()
         };
 
@@ -296,12 +299,15 @@ pub async fn chat(
     println!("✅ Got response from Claude ({} chars)", raw_response.len());
 
     // 4. 메시지 DB 저장
+    let msg_timestamp = chrono::Utc::now().naive_utc();
+
     if request.role == "user" {
         // user 역할: user 메시지 + assistant 응답 모두 저장
         let user_msg = message::ActiveModel {
             conversation_id: Set(conversation.id),
             role: Set("user".to_string()),
             content: Set(request.message.clone()),
+            created_at: Set(msg_timestamp),
             ..Default::default()
         };
         let saved_user = user_msg.insert(&*db).await.map_err(|e| {
@@ -318,6 +324,7 @@ pub async fn chat(
         conversation_id: Set(conversation.id),
         role: Set("assistant".to_string()),
         content: Set(raw_response.clone()),
+        created_at: Set(msg_timestamp),
         ..Default::default()
     };
     let saved_assistant = assistant_msg
