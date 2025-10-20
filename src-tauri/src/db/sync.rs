@@ -5,7 +5,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 /// Get the backup directory path
-/// Returns: %APPDATA%/ai_diet_v2/backups
+/// Returns: %APPDATA%/agi_voice_v2/backups
 fn get_backup_dir() -> Result<PathBuf, String> {
     let app_dir = crate::db::get_app_data_dir()?;
     Ok(app_dir.join("backups"))
@@ -53,7 +53,7 @@ pub fn create_backup() -> Result<PathBuf, String> {
 
     // Generate backup filename with timestamp
     let timestamp = Local::now().format("%Y%m%d_%H%M%S");
-    let backup_filename = format!("ai_diet_backup_{}.db", timestamp);
+    let backup_filename = format!("agi_voice_backup_{}.db", timestamp);
     let backup_path = backup_dir.join(backup_filename);
 
     // Copy database to backup
@@ -82,7 +82,7 @@ fn cleanup_old_backups(keep_count: usize) -> Result<(), String> {
             path.is_file() &&
             path.file_name()
                 .and_then(|n| n.to_str())
-                .map(|n| n.starts_with("ai_diet_backup_") && n.ends_with(".db"))
+                .map(|n| n.starts_with("agi_voice_backup_") && n.ends_with(".db"))
                 .unwrap_or(false)
         })
         .collect();
@@ -281,7 +281,7 @@ pub fn list_backups() -> Result<Vec<PathBuf>, String> {
             path.is_file() &&
             path.file_name()
                 .and_then(|n| n.to_str())
-                .map(|n| n.starts_with("ai_diet_backup_") && n.ends_with(".db"))
+                .map(|n| n.starts_with("agi_voice_backup_") && n.ends_with(".db"))
                 .unwrap_or(false)
         })
         .collect();

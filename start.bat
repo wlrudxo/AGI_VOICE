@@ -1,7 +1,7 @@
 @echo off
-title AI Diet V2 - Dev Mode
+title AGI Voice V2 - Dev Mode
 echo ========================================
-echo   AI Diet V2 - Development Mode
+echo   AGI Voice V2 - Development Mode
 echo ========================================
 echo.
 echo Starting Tauri development server...

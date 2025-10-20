@@ -97,7 +97,7 @@
       // File save dialog
       const destination = await save({
         title: 'Export Database',
-        defaultPath: 'ai_diet.db',
+        defaultPath: 'agi_voice.db',
         filters: [{
           name: 'SQLite Database',
           extensions: ['db']
@@ -165,7 +165,7 @@
     try {
       const selected = await save({
         title: '데이터베이스 파일 경로 선택',
-        defaultPath: 'ai_diet.db',
+        defaultPath: 'agi_voice.db',
         filters: [{
           name: 'SQLite Database',
           extensions: ['db']
@@ -260,7 +260,7 @@
             <input
               type="text"
               bind:value={settings.databaseFilePath}
-              placeholder="예: C:\Users\username\OneDrive\AI_Diet\ai_diet.db (비어있으면 backend/ai_diet.db 사용)"
+              placeholder="예: C:\Users\username\OneDrive\AGI_Voice\agi_voice.db (비어있으면 agi_voice.db 사용)"
               class="flex-1 px-4 py-3 rounded-lg border border-default"
             />
             <button
@@ -396,7 +396,7 @@
             <input
               type="text"
               bind:value={settings.claudeWorkspaceDir}
-              placeholder="예: C:\Users\username\Projects\MyProject (비어있으면 AppData\Roaming\AI_Diet_V2 사용)"
+              placeholder="예: C:\Users\username\Projects\MyProject (비어있으면 AppData\Roaming\AGI_Voice_V2 사용)"
               class="flex-1 px-4 py-3 rounded-lg border border-default"
             />
             <button
@@ -408,7 +408,7 @@
             </button>
           </div>
           <p class="text-xs mt-2 text-muted">
-            Claude CLI가 실행될 작업 디렉토리입니다. 비어있으면 기본값(AppData\Roaming\AI_Diet_V2)을 사용합니다.<br>
+            Claude CLI가 실행될 작업 디렉토리입니다. 비어있으면 기본값(AppData\Roaming\AGI_Voice_V2)을 사용합니다.<br>
             이 폴더에 CLAUDE.md 파일이 생성되고, 상대 경로는 이 폴더 기준입니다.
           </p>
         </div>
@@ -482,9 +482,9 @@
         <li>• <strong>데이터베이스 경로</strong>: 원드라이브 등 클라우드 경로를 지정하면 여러 PC에서 동기화됩니다.</li>
         <li>• <strong>백업</strong>: 앱 종료 시 자동 백업 (타임스탬프 파일명, 최근 10개 유지).</li>
         <li>• <strong>Claude 실행 폴더</strong>: AI 채팅 시 Claude CLI가 실행될 작업 디렉토리입니다.</li>
-        <li>• 비어있으면 기본값(<code>AppData\Roaming\AI_Diet_V2</code>)을 사용합니다.</li>
+        <li>• 비어있으면 기본값(<code>AppData\Roaming\AGI_Voice_V2</code>)을 사용합니다.</li>
         <li>• 폴더가 존재하지 않으면 저장 시 오류가 발생합니다.</li>
-        <li>• 설정은 <code>AppData\Roaming\AI_Diet_V2\config.json</code>에 저장됩니다.</li>
+        <li>• 설정은 <code>AppData\Roaming\AGI_Voice_V2\config.json</code>에 저장됩니다.</li>
       </ul>
     </div>
   {/if}

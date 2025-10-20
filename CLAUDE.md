@@ -242,7 +242,6 @@ src-tauri/
 └── tauri.conf.json          # Tauri configuration
 ```
 
-**Note**: Diet-related commands (meals, exercises, weights, missions, dashboard) have been removed.
 
 **Frontend Structure:**
 ```
@@ -275,7 +274,6 @@ src/
 └── app.css                       # Global styles with Tailwind import
 ```
 
-**Note**: Diet-related pages (meals, exercises, weights, missions) and stores (weights.svelte.ts) have been removed.
 
 ## Tauri Configuration
 
@@ -438,10 +436,8 @@ npm run dev  # Vite dev server on http://localhost:1420
 ---
 
 **Last Updated**: 2025-10-20
-**Project Status**: Converted to Autonomous Driving Research Application
+**Project Status**: Autonomous Driving Research Application
 **Recent Updates**:
-- **Project pivot**: AI Diet V2 → AGI Voice V2 (Autonomous Driving Research)
-- **Removed all diet features**: meals, exercises, weights, missions, dashboard pages and backend commands
 - **Generic AI Chat System**: Full dynamic prompt system with conversations, characters, and command templates
 - **Database architecture**:
   - `ai_chat.db` for generic AI conversation system (reusable across projects)
@@ -452,5 +448,4 @@ npm run dev  # Vite dev server on http://localhost:1420
 - Chat history with message counts
 - Auto-refresh system (2s polling via Tauri commands)
 **Next Priority**:
-- Remove diet-related backend/frontend code
 - Implement autonomous driving research-specific features in separate database

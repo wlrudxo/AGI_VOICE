@@ -57,7 +57,7 @@
 	// 유저 정보 가져오기
 	function getUserInfo() {
 		try {
-			return localStorage.getItem('ai_diet_user_info') || '';
+			return localStorage.getItem('agi_voice_user_info') || '';
 		} catch (error) {
 			console.error('Failed to get user info:', error);
 			return '';
@@ -67,7 +67,7 @@
 	// 유저 이름 가져오기
 	function getUserName() {
 		try {
-			return localStorage.getItem('ai_diet_user_name') || '';
+			return localStorage.getItem('agi_voice_user_name') || '';
 		} catch (error) {
 			console.error('Failed to get user name:', error);
 			return '';
@@ -77,7 +77,7 @@
 	// 최종 메시지 가져오기
 	function getFinalMessage() {
 		try {
-			return localStorage.getItem('ai_diet_final_message') || '';
+			return localStorage.getItem('agi_voice_final_message') || '';
 		} catch (error) {
 			console.error('Failed to get final message:', error);
 			return '';

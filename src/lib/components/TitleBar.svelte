@@ -24,7 +24,7 @@
 
 <div class="titlebar" data-tauri-drag-region>
 	<div class="titlebar-left" data-tauri-drag-region>
-		<span class="app-title" data-tauri-drag-region>AI Diet V2</span>
+		<span class="app-title" data-tauri-drag-region>AGI Voice V2</span>
 	</div>
 
 	<div class="titlebar-right">

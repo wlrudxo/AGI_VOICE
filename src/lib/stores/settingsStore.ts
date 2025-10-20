@@ -13,7 +13,7 @@ function loadInitialSettings(): AppSettings {
   }
 
   try {
-    const stored = localStorage.getItem('ai_diet_app_settings');
+    const stored = localStorage.getItem('agi_voice_app_settings');
     if (stored) {
       return JSON.parse(stored);
     }
@@ -38,7 +38,7 @@ function createSettingsStore() {
         // localStorage에 저장
         if (typeof window !== 'undefined') {
           try {
-            localStorage.setItem('ai_diet_app_settings', JSON.stringify(newState));
+            localStorage.setItem('agi_voice_app_settings', JSON.stringify(newState));
           } catch (error) {
             console.error('Failed to save settings:', error);
           }

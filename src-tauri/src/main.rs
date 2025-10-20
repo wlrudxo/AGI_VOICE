@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    ai_diet_v2_lib::run()
+    agi_voice_v2_lib::run()
 }

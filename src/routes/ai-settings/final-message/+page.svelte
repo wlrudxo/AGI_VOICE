@@ -9,7 +9,7 @@
 	let lastSaved = $state(null);
 
 	// LocalStorage 키
-	const STORAGE_KEY = 'ai_diet_final_message';
+	const STORAGE_KEY = 'agi_voice_final_message';
 
 	// 기본 템플릿
 	const DEFAULT_TEMPLATE = `## Final Checkout

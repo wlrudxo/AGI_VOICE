@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "ai_diet_v2",
+  "productName": "AGI Voice V2",
   "version": "0.1.0",
-  "identifier": "com.aidiet.app",
+  "identifier": "com.agivoice.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "AI Diet V2",
+        "title": "AGI Voice V2",
         "width": 1200,
         "height": 800,
         "decorations": false,

@@ -25,9 +25,9 @@ function loadInitialState(): UiState {
   }
 
   try {
-    const storedViewMode = localStorage.getItem('ai_diet_chat_view_mode');
-    const storedConversationId = localStorage.getItem('ai_diet_conversation_id');
-    const storedWasWidgetMode = localStorage.getItem('ai_diet_was_widget_mode_before_tray');
+    const storedViewMode = localStorage.getItem('agi_voice_chat_view_mode');
+    const storedConversationId = localStorage.getItem('agi_voice_conversation_id');
+    const storedWasWidgetMode = localStorage.getItem('agi_voice_was_widget_mode_before_tray');
 
     return {
       isSidebarCollapsed: false,
@@ -81,7 +81,7 @@ function createUiStore() {
       // localStorage에 저장
       if (typeof window !== 'undefined') {
         try {
-          localStorage.setItem('ai_diet_chat_view_mode', mode);
+          localStorage.setItem('agi_voice_chat_view_mode', mode);
         } catch (error) {
           console.error('Failed to save chat view mode:', error);
         }
@@ -96,9 +96,9 @@ function createUiStore() {
       if (typeof window !== 'undefined') {
         try {
           if (id === null) {
-            localStorage.removeItem('ai_diet_conversation_id');
+            localStorage.removeItem('agi_voice_conversation_id');
           } else {
-            localStorage.setItem('ai_diet_conversation_id', id.toString());
+            localStorage.setItem('agi_voice_conversation_id', id.toString());
           }
         } catch (error) {
           console.error('Failed to save conversation id:', error);
@@ -126,7 +126,7 @@ function createUiStore() {
       // localStorage에 저장
       if (typeof window !== 'undefined') {
         try {
-          localStorage.setItem('ai_diet_was_widget_mode_before_tray', wasWidgetMode.toString());
+          localStorage.setItem('agi_voice_was_widget_mode_before_tray', wasWidgetMode.toString());
         } catch (error) {
           console.error('Failed to save widget mode before tray:', error);
         }

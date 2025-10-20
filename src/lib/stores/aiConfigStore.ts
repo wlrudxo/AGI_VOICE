@@ -4,7 +4,7 @@
  * - LocalStorage에 저장
  */
 
-const STORAGE_KEY = 'ai_diet_config';
+const STORAGE_KEY = 'agi_voice_config';
 
 interface AIConfig {
 	selectedTemplateId: number | null;

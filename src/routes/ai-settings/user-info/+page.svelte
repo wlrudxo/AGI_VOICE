@@ -10,8 +10,8 @@
 	let lastSaved = $state(null);
 
 	// LocalStorage 키
-	const USER_NAME_KEY = 'ai_diet_user_name';
-	const USER_INFO_KEY = 'ai_diet_user_info';
+	const USER_NAME_KEY = 'agi_voice_user_name';
+	const USER_INFO_KEY = 'agi_voice_user_info';
 
 	function loadUserInfo() {
 		const savedName = localStorage.getItem(USER_NAME_KEY);
