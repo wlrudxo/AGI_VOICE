@@ -3,7 +3,11 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import Icon from '@iconify/svelte';
 	import MapCard from '$lib/components/MapCard.svelte';
+	import Dialog from '$lib/components/Dialog.svelte';
 	import { dbWatcher } from '$lib/stores/dbWatcher.svelte';
+
+	// Dialog reference
+	let dialog;
 
 	// State
 	let maps = $state([]);
@@ -76,7 +80,12 @@
 
 	// Handle map deletion
 	async function handleDeleteMap(map) {
-		if (!confirm(`"${map.name}" 맵을 삭제하시겠습니까?`)) {
+		const confirmed = await dialog.confirm(
+			`"${map.name}" 맵을 삭제하시겠습니까?`,
+			'맵 삭제'
+		);
+
+		if (!confirmed) {
 			return;
 		}
 
@@ -86,13 +95,18 @@
 			await loadMaps(); // Reload after deletion
 		} catch (e) {
 			console.error('❌ Failed to delete map:', e);
-			alert(`맵 삭제 실패: ${e}`);
+			await dialog.alert(`맵 삭제 실패: ${e}`, '오류');
 		}
 	}
 
 	// Handle single map embedding
 	async function handleEmbedMap(map) {
-		if (!confirm(`"${map.name}" 맵의 임베딩을 생성하시겠습니까?`)) {
+		const confirmed = await dialog.confirm(
+			`"${map.name}" 맵의 임베딩을 생성하시겠습니까?`,
+			'임베딩 생성'
+		);
+
+		if (!confirmed) {
 			return;
 		}
 
@@ -102,21 +116,26 @@
 
 			if (result.success) {
 				console.log('✅ Map embedded successfully:', result);
-				alert(`임베딩 생성 완료: ${map.name}`);
+				await dialog.alert(`임베딩 생성 완료: ${map.name}`, '완료');
 				await loadMaps(); // Reload to update embedded status
 			} else {
 				throw new Error(result.error || 'Unknown error');
 			}
 		} catch (e) {
 			console.error('❌ Failed to embed map:', e);
-			alert(`임베딩 생성 실패: ${e}`);
+			await dialog.alert(`임베딩 생성 실패: ${e}`, '오류');
 		}
 	}
 
 	// Handle batch embedding (all maps)
 	let buildingEmbeddings = $state(false);
 	async function handleBuildAllEmbeddings() {
-		if (!confirm('모든 맵의 임베딩을 생성하시겠습니까? (시간이 걸릴 수 있습니다)')) {
+		const confirmed = await dialog.confirm(
+			'모든 맵의 임베딩을 생성하시겠습니까?\n(시간이 걸릴 수 있습니다)',
+			'전체 임베딩 생성'
+		);
+
+		if (!confirmed) {
 			return;
 		}
 
@@ -128,14 +147,17 @@
 
 			if (result.success) {
 				console.log('✅ All embeddings built successfully:', result);
-				alert(`전체 임베딩 생성 완료!\n- 총 맵: ${result.totalMaps}개\n- 임베딩 완료: ${result.embeddedCount}개`);
+				await dialog.alert(
+					`전체 임베딩 생성 완료!\n- 총 맵: ${result.totalMaps}개\n- 임베딩 완료: ${result.embeddedCount}개`,
+					'완료'
+				);
 				await loadMaps(); // Reload to update embedded statuses
 			} else {
 				throw new Error(result.error || 'Unknown error');
 			}
 		} catch (e) {
 			console.error('❌ Failed to build embeddings:', e);
-			alert(`전체 임베딩 생성 실패: ${e}`);
+			await dialog.alert(`전체 임베딩 생성 실패: ${e}`, '오류');
 		} finally {
 			buildingEmbeddings = false;
 		}
@@ -268,6 +290,8 @@
 		{/if}
 	</div>
 </div>
+
+<Dialog bind:this={dialog} />
 
 <style>
 	.page-container {

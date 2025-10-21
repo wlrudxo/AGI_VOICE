@@ -196,6 +196,11 @@ pub async fn update_map(
 
     active_model.updated_at = Set(chrono::Utc::now().naive_utc());
 
+    // Clear embedding fields when map is updated (embedding needs to be regenerated)
+    active_model.is_embedded = Set(0);
+    active_model.embedded_at = Set(None);
+    active_model.embedding_model = Set(None);
+
     let updated = active_model.update(&map_db.0).await.map_err(|e| {
         println!("❌ Failed to update map: {}", e);
         format!("Failed to update map: {}", e)
