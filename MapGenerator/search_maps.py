@@ -136,18 +136,20 @@ def search_similar_maps(query, faiss_index_path, db_path, top_k=5):
         # Similarity score 계산 (FAISS는 L2 distance를 반환)
         # Lower distance = higher similarity
         # Normalize to 0-1 range (approximate)
-        similarity_score = 1.0 / (1.0 + distance)
+        # Convert to native Python float for JSON serialization
+        distance_float = float(distance)
+        similarity_score = 1.0 / (1.0 + distance_float)
 
         output.append({
-            'map_id': map_data['id'],
-            'map_name': map_data['name'],
+            'mapId': map_data['id'],
+            'mapName': map_data['name'],
             'description': map_data['description'],
             'category': map_data['category'],
             'difficulty': map_data['difficulty'],
             'tags': map_data['tags'],
-            'similarity_score': round(similarity_score, 4),
-            'distance': round(distance, 4),
-            'is_embedded': bool(map_data['is_embedded'])
+            'similarityScore': round(similarity_score, 4),
+            'distance': round(distance_float, 4),
+            'isEmbedded': bool(map_data['is_embedded'])
         })
 
     return output

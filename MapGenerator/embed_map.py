@@ -148,10 +148,10 @@ def embed_map(map_id, faiss_index_path, db_path):
 
     return {
         'success': True,
-        'map_id': map_id,
-        'map_name': map_data['name'],
-        'embedded_at': embedded_at,
-        'embedding_model': embedding_model_name
+        'mapId': map_id,
+        'mapName': map_data['name'],
+        'embeddedAt': embedded_at,
+        'embeddingModel': embedding_model_name
     }
 
 

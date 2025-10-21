@@ -93,6 +93,12 @@ async fn run_python_script(script_name: &str, args: Vec<String>) -> Result<Strin
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
+
+        // Check for OpenAI API key error
+        if stderr.contains("api_key") || stderr.contains("OPENAI_API_KEY") {
+            return Err("⚠️ API 키 설정이 필요합니다!\n\n프로젝트 루트의 .env 파일에 다음과 같이 설정하세요:\nOPENAI_API_KEY=sk-proj-xxxxxxxxxx\n\nAPI 키 발급: https://platform.openai.com/api-keys".to_string());
+        }
+
         return Err(format!("Python script failed:\n{}", stderr));
     }
 

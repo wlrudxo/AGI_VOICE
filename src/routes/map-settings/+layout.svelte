@@ -7,7 +7,8 @@
 	// 하위 메뉴
 	const subMenus = [
 		{ path: '/map-settings/generator', icon: 'solar:map-bold-duotone', label: 'Map 생성' },
-		{ path: '/map-settings/library', icon: 'solar:folder-with-files-bold-duotone', label: 'Map 라이브러리' }
+		{ path: '/map-settings/library', icon: 'solar:folder-with-files-bold-duotone', label: 'Map 라이브러리' },
+		{ path: '/map-settings/rag-test', icon: 'solar:magnifer-zoom-in-bold-duotone', label: 'RAG 테스트' }
 	];
 
 	const currentPath = $derived($page.url.pathname);

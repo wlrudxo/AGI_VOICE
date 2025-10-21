@@ -141,11 +141,11 @@ def build_all_embeddings(faiss_index_path, db_path, rebuild=False):
         log_progress("No maps to embed.")
         return {
             'success': True,
-            'total_maps': 0,
-            'embedded_count': 0,
-            'skipped_count': 0,
-            'embedding_model': embedding_model_name,
-            'index_path': faiss_index_path
+            'totalMaps': 0,
+            'embeddedCount': 0,
+            'skippedCount': 0,
+            'embeddingModel': embedding_model_name,
+            'indexPath': faiss_index_path
         }
 
     log_progress(f"Found {total_maps} map(s) to embed.")
@@ -201,11 +201,11 @@ def build_all_embeddings(faiss_index_path, db_path, rebuild=False):
 
     return {
         'success': True,
-        'total_maps': total_maps,
-        'embedded_count': len(map_ids),
-        'skipped_count': 0,
-        'embedding_model': embedding_model_name,
-        'index_path': faiss_index_path
+        'totalMaps': total_maps,
+        'embeddedCount': len(map_ids),
+        'skippedCount': 0,
+        'embeddingModel': embedding_model_name,
+        'indexPath': faiss_index_path
     }
 
 
