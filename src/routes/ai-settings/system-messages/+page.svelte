@@ -29,11 +29,11 @@
 				// 수정
 				await invoke('update_prompt_template', {
 					id: editingTemplate.id,
-					template: formData
+					templateData: formData
 				});
 			} else {
 				// 생성
-				await invoke('create_prompt_template', { template: formData });
+				await invoke('create_prompt_template', { templateData: formData });
 			}
 			await loadTemplates();
 			resetForm();

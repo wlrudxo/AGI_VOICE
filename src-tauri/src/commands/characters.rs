@@ -4,6 +4,7 @@ use sea_orm::*;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
+use chrono::Utc;
 use crate::commands::common::{DeleteResult, HealthResponse};
 use crate::db::models::character;
 use crate::db::AiChatDb;
@@ -85,9 +86,13 @@ pub async fn create_character(
     characterData: CharacterCreate,
     db: State<'_, AiChatDb>,
 ) -> Result<CharacterResponse, String> {
+    let now = Utc::now().naive_utc();
+
     let new_character = character::ActiveModel {
         name: Set(characterData.name),
         prompt_content: Set(characterData.prompt_content),
+        created_at: Set(now),
+        updated_at: Set(now),
         ..Default::default()
     };
 
@@ -106,6 +111,8 @@ pub async fn update_character(
     characterData: CharacterUpdate,
     db: State<'_, AiChatDb>,
 ) -> Result<CharacterResponse, String> {
+    let now = Utc::now().naive_utc();
+
     let existing = character::Entity::find_by_id(id)
         .one(&db.0)
         .await
@@ -115,6 +122,7 @@ pub async fn update_character(
     let mut active: character::ActiveModel = existing.into();
     active.name = Set(characterData.name);
     active.prompt_content = Set(characterData.prompt_content);
+    active.updated_at = Set(now);
 
     let result = active.update(&db.0).await.map_err(|e| e.to_string())?;
 

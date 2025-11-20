@@ -2,6 +2,7 @@ use sea_orm::*;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
+use chrono::Utc;
 use crate::commands::common::{DeleteResult, HealthResponse};
 use crate::db::models::command_template;
 use crate::db::AiChatDb;
@@ -95,10 +96,14 @@ pub async fn create_command_template(
     template_data: CommandTemplateCreate,
     db: State<'_, AiChatDb>,
 ) -> Result<CommandTemplateResponse, String> {
+    let now = Utc::now().naive_utc();
+
     let new_template = command_template::ActiveModel {
         name: Set(template_data.name),
         content: Set(template_data.content),
         is_active: Set(template_data.is_active),
+        created_at: Set(now),
+        updated_at: Set(now),
         ..Default::default()
     };
 
@@ -117,6 +122,8 @@ pub async fn update_command_template(
     template_data: CommandTemplateUpdate,
     db: State<'_, AiChatDb>,
 ) -> Result<CommandTemplateResponse, String> {
+    let now = Utc::now().naive_utc();
+
     let existing = command_template::Entity::find_by_id(id)
         .one(&db.0)
         .await
@@ -127,6 +134,7 @@ pub async fn update_command_template(
     active.name = Set(template_data.name);
     active.content = Set(template_data.content);
     active.is_active = Set(template_data.is_active);
+    active.updated_at = Set(now);
 
     let result = active.update(&db.0).await.map_err(|e| e.to_string())?;
 

@@ -4,6 +4,7 @@ use sea_orm::*;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
+use chrono::Utc;
 use crate::commands::common::{DeleteResult, HealthResponse};
 use crate::db::models::prompt_template;
 use crate::db::AiChatDb;
@@ -85,9 +86,13 @@ pub async fn create_prompt_template(
     templateData: PromptTemplateCreate,
     db: State<'_, AiChatDb>,
 ) -> Result<PromptTemplateResponse, String> {
+    let now = Utc::now().naive_utc();
+
     let new_template = prompt_template::ActiveModel {
         name: Set(templateData.name),
         content: Set(templateData.content),
+        created_at: Set(now),
+        updated_at: Set(now),
         ..Default::default()
     };
 
@@ -106,6 +111,8 @@ pub async fn update_prompt_template(
     templateData: PromptTemplateUpdate,
     db: State<'_, AiChatDb>,
 ) -> Result<PromptTemplateResponse, String> {
+    let now = Utc::now().naive_utc();
+
     let existing = prompt_template::Entity::find_by_id(id)
         .one(&db.0)
         .await
@@ -115,6 +122,7 @@ pub async fn update_prompt_template(
     let mut active: prompt_template::ActiveModel = existing.into();
     active.name = Set(templateData.name);
     active.content = Set(templateData.content);
+    active.updated_at = Set(now);
 
     let result = active.update(&db.0).await.map_err(|e| e.to_string())?;
 

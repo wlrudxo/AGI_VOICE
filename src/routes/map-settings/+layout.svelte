@@ -1,8 +1,10 @@
 <script>
 	import { page } from '$app/stores';
 	import Icon from '@iconify/svelte';
+	import Tooltip from '$lib/components/Tooltip.svelte';
 
 	let { children } = $props();
+	let isCollapsed = false;
 
 	// 하위 메뉴
 	const subMenus = [
@@ -12,28 +14,61 @@
 	];
 
 	const currentPath = $derived($page.url.pathname);
+	const subSidebarWidth = $derived(isCollapsed ? '5.5rem' : '16rem');
+
+	function toggleSubSidebar() {
+		isCollapsed = !isCollapsed;
+	}
 </script>
 
 <div class="map-settings-layout">
 	<!-- 하위 사이드바 -->
-	<aside class="sub-sidebar">
-		<div class="sub-sidebar-header">
+	<aside
+		class="sub-sidebar"
+		class:collapsed={isCollapsed}
+		style={`--sub-sidebar-width: ${subSidebarWidth};`}
+	>
+		<div class="sub-sidebar-header" class:collapsed={isCollapsed}>
 			<Icon icon="solar:map-point-wave-bold-duotone" width="24" height="24" />
-			<h2>Map 설정</h2>
+			{#if !isCollapsed}
+				<h2>Map 설정</h2>
+			{/if}
 		</div>
 
 		<nav class="sub-nav">
 			{#each subMenus as menu}
-				<a
-					href={menu.path}
-					class="sub-nav-item"
-					class:active={currentPath === menu.path}
-				>
-					<Icon icon={menu.icon} width="20" height="20" />
-					<span>{menu.label}</span>
-				</a>
+				{#if isCollapsed}
+					<Tooltip text={menu.label} position="right">
+						<a
+							href={menu.path}
+							class="sub-nav-item collapsed"
+							class:active={currentPath === menu.path}
+						>
+							<Icon icon={menu.icon} width="20" height="20" />
+						</a>
+					</Tooltip>
+				{:else}
+					<a
+						href={menu.path}
+						class="sub-nav-item"
+						class:active={currentPath === menu.path}
+					>
+						<Icon icon={menu.icon} width="20" height="20" />
+						<span>{menu.label}</span>
+					</a>
+				{/if}
 			{/each}
 		</nav>
+
+		<div class="sub-sidebar-footer">
+			<button class="toggle-btn" on:click={toggleSubSidebar}>
+				<Icon
+					icon={isCollapsed ? 'solar:alt-arrow-right-bold-duotone' : 'solar:alt-arrow-left-bold-duotone'}
+					width="24"
+					height="24"
+				/>
+			</button>
+		</div>
 	</aside>
 
 	<!-- 메인 컨텐츠 -->
@@ -50,11 +85,13 @@
 	}
 
 	.sub-sidebar {
-		width: 16rem;
+		width: var(--sub-sidebar-width, 16rem);
 		border-right: 1px solid var(--color-border);
 		display: flex;
 		flex-direction: column;
 		background-color: var(--color-surface);
+		transition: width 200ms ease;
+		overflow: hidden;
 	}
 
 	.sub-sidebar-header {
@@ -64,6 +101,10 @@
 		align-items: center;
 		gap: 0.75rem;
 		color: var(--color-primary);
+	}
+
+	.sub-sidebar-header.collapsed {
+		justify-content: center;
 	}
 
 	.sub-sidebar-header h2 {
@@ -78,6 +119,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
+		flex: 1;
 	}
 
 	.sub-nav-item {
@@ -97,14 +139,45 @@
 		color: var(--color-text-primary);
 	}
 
+	.sub-nav-item.collapsed {
+		justify-content: center;
+		width: 3.5rem;
+		height: 3.5rem;
+		margin: 0 auto;
+	}
+
 	.sub-nav-item.active {
 		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
 		color: white;
+	}
+
+	.sub-sidebar-footer {
+		padding: 1rem;
+		border-top: 1px solid var(--color-border);
 	}
 
 	.sub-content {
 		flex: 1;
 		overflow-y: auto;
 		padding: 2rem;
+	}
+
+	.toggle-btn {
+		width: 3.5rem;
+		height: 3.5rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: 1px solid var(--border-light);
+		border-radius: 0.5rem;
+		background: var(--color-surface);
+		color: var(--color-text-primary);
+		cursor: pointer;
+		transition: all 200ms;
+	}
+
+	.toggle-btn:hover {
+		background-color: var(--color-surface-hover);
+		border-color: var(--color-primary);
 	}
 </style>
