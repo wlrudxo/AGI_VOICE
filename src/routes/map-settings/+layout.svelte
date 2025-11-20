@@ -4,7 +4,7 @@
 	import Tooltip from '$lib/components/Tooltip.svelte';
 
 	let { children } = $props();
-	let isCollapsed = false;
+	let isCollapsed = $state(false);
 
 	// 하위 메뉴
 	const subMenus = [
