@@ -20,7 +20,7 @@
 
 <div class="dashboard">
   <div class="welcome-section">
-    <h1 class="text-primary">AGI Voice V2</h1>
+    <h1 class="text-primary">AGI Voice</h1>
     <p class="text-secondary">자율주행 연구를 위한 AI 어시스턴트</p>
     <div class="current-time text-muted">{currentTime}</div>
   </div>

@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "AGI Voice V2",
+  "productName": "AGI Voice",
   "version": "0.1.0",
   "identifier": "com.agivoice.app",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "AGI Voice V2",
+        "title": "AGI Voice",
         "width": 1200,
         "height": 800,
         "decorations": false,
@@ -25,7 +25,9 @@
         {
           "identifier": "main-capability",
           "description": "Capability for the main window",
-          "windows": ["main"],
+          "windows": [
+            "main"
+          ],
           "permissions": [
             "core:window:allow-set-size",
             "core:window:allow-set-position",
@@ -63,7 +65,14 @@
             "dialog:allow-open",
             "dialog:allow-confirm",
             "dialog:allow-message",
-            "fs:allow-read-text-file"
+            {
+              "identifier": "fs:allow-read-text-file",
+              "allow": [
+                {
+                  "path": "**"
+                }
+              ]
+            }
           ]
         }
       ]
