@@ -81,7 +81,10 @@
 
 <div class="page-container">
 	<div class="page-header">
-		<h1>캐릭터 관리</h1>
+		<div>
+			<h1>캐릭터 관리</h1>
+			<p class="page-description">AI 채팅 위젯에서 사용할 캐릭터를 관리합니다.</p>
+		</div>
 		<button class="btn-primary" onclick={startCreate}>
 			<Icon icon="solar:add-circle-bold" width="20" height="20" />
 			새 캐릭터
@@ -166,21 +169,10 @@
 <style>
 	.page-container {
 		max-width: 1200px;
+		margin: 0 auto;
 	}
 
-	.page-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 2rem;
-	}
 
-	.page-header h1 {
-		margin: 0;
-		font-size: 2rem;
-		font-weight: 700;
-		color: #1f2937;
-	}
 
 	.loading {
 		text-align: center;

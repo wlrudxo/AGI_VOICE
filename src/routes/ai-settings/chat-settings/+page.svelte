@@ -104,8 +104,10 @@
 
 <div class="chat-settings-page">
 	<div class="page-header">
-		<h1>💬 채팅 설정</h1>
-		<p class="page-description">AI 채팅에서 사용할 기본 캐릭터와 시스템 템플릿을 선택하세요.</p>
+		<div>
+			<h1>채팅 설정</h1>
+			<p class="page-description">AI 채팅에서 사용할 기본 캐릭터와 시스템 템플릿을 선택하세요.</p>
+		</div>
 	</div>
 
 	{#if loading}
@@ -196,17 +198,6 @@
 		margin-bottom: 2rem;
 	}
 
-	.page-header h1 {
-		font-size: 2rem;
-		font-weight: 700;
-		color: #1f2937;
-		margin: 0 0 0.5rem 0;
-	}
-
-	.page-description {
-		color: var(--color-text-secondary);
-		margin: 0;
-	}
 
 	.loading-state {
 		text-align: center;

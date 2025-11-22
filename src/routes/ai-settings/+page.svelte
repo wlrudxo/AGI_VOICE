@@ -67,10 +67,8 @@
 
 <div class="settings-home">
 	<div class="page-header">
-		<div>
-			<h1>AI 설정</h1>
-			<p class="subtitle">AI 채팅에 사용할 템플릿과 캐릭터를 선택하세요.</p>
-		</div>
+		<h1>AI 설정</h1>
+		<p class="page-description">AI 채팅에 사용할 템플릿과 캐릭터를 선택하세요.</p>
 	</div>
 
 	{#if isLoading}
@@ -176,22 +174,7 @@
 		max-width: 1000px;
 	}
 
-	.page-header {
-		margin-bottom: 2rem;
-	}
 
-	.page-header h1 {
-		margin: 0;
-		font-size: 2rem;
-		font-weight: 700;
-		color: #1f2937;
-	}
-
-	.subtitle {
-		margin: 0.5rem 0 0 0;
-		color: #6b7280;
-		font-size: 1rem;
-	}
 
 	.loading {
 		text-align: center;

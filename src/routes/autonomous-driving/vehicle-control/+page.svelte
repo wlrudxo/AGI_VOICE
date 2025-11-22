@@ -87,8 +87,10 @@
 
 <div class="vehicle-control">
   <div class="page-header">
-    <h1>🚗 차량 제어</h1>
-    <p class="page-description">CarMaker 차량을 실시간으로 제어합니다.</p>
+    <div>
+      <h1>🚗 차량 제어</h1>
+      <p class="page-description">CarMaker 차량을 실시간으로 제어합니다.</p>
+    </div>
   </div>
 
   <!-- Vehicle Data Monitor -->

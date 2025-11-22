@@ -597,6 +597,9 @@ body {
 
 /* Page Layout */
 .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   padding: 0 0 0.75rem 0;
   margin-bottom: 1.25rem;
   border-bottom: 1px solid var(--color-border);
@@ -613,6 +616,11 @@ body {
   color: var(--color-text-secondary);
   margin: 0;
   font-size: 0.8125rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
 }
 
 /* Section Styles */

@@ -420,7 +420,7 @@
 	<div class="page-header">
 		<div>
 			<h1>Map 라이브러리</h1>
-			<p class="subtitle">저장된 SUMO 맵을 조회하고 관리합니다.</p>
+			<p class="page-description">저장된 SUMO 맵을 조회하고 관리합니다.</p>
 		</div>
 		<div class="header-actions">
 			<button class="btn-secondary" onclick={createSampleMaps}>
@@ -530,32 +530,7 @@
 <style>
 	.page-container {
 		max-width: 1400px;
-		padding: 2rem;
-	}
-
-	.page-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-start;
-		margin-bottom: 2rem;
-	}
-
-	.page-header h1 {
-		margin: 0;
-		font-size: 2rem;
-		font-weight: 700;
-		color: var(--color-text-primary);
-	}
-
-	.subtitle {
-		margin: 0.5rem 0 0 0;
-		color: var(--color-text-secondary);
-		font-size: 1rem;
-	}
-
-	.header-actions {
-		display: flex;
-		gap: 1rem;
+		margin: 0 auto;
 	}
 
 	.filters-section {

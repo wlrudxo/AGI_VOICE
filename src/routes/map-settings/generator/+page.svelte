@@ -331,7 +331,7 @@
 	<div class="page-header">
 		<div>
 			<h1>{isEditMode ? 'Map 수정' : 'Map 생성'}</h1>
-			<p class="subtitle">
+			<p class="page-description">
 				{isEditMode
 					? 'SUMO XML 노드와 엣지를 수정하고 저장합니다.'
 					: 'SUMO XML 노드와 엣지를 입력하여 맵을 생성하고 시각화합니다.'}
@@ -471,32 +471,7 @@
 <style>
 	.page-container {
 		max-width: 1400px;
-		padding: 2rem;
-	}
-
-	.page-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-start;
-		margin-bottom: 2rem;
-	}
-
-	.page-header h1 {
-		margin: 0;
-		font-size: 2rem;
-		font-weight: 700;
-		color: var(--color-text-primary);
-	}
-
-	.subtitle {
-		margin: 0.5rem 0 0 0;
-		color: var(--color-text-secondary);
-		font-size: 1rem;
-	}
-
-	.header-actions {
-		display: flex;
-		gap: 1rem;
+		margin: 0 auto;
 	}
 
 	.content-grid {

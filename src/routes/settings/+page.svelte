@@ -212,9 +212,9 @@
 </script>
 
 <div class="max-w-4xl mx-auto">
-  <h1 class="text-3xl font-bold mb-6 text-primary">
-    ⚙️ 설정
-  </h1>
+  <div class="page-header">
+    <h1>⚙️ 설정</h1>
+  </div>
 
   {#if loading}
     <div class="text-center py-12">

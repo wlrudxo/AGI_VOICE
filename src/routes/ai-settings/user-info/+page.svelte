@@ -53,7 +53,7 @@
 	<div class="page-header">
 		<div>
 			<h1>유저 정보</h1>
-			<p class="subtitle">AI가 참고할 사용자 정보를 입력하세요.</p>
+			<p class="page-description">AI가 참고할 사용자 정보를 입력하세요.</p>
 		</div>
 		<button class="btn-primary" onclick={saveUserInfo} disabled={isSaving}>
 			<Icon icon="solar:diskette-bold" width="20" height="20" />
@@ -124,27 +124,10 @@
 <style>
 	.page-container {
 		max-width: 900px;
+		margin: 0 auto;
 	}
 
-	.page-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-start;
-		margin-bottom: 2rem;
-	}
 
-	.page-header h1 {
-		margin: 0;
-		font-size: 2rem;
-		font-weight: 700;
-		color: #1f2937;
-	}
-
-	.subtitle {
-		margin: 0.5rem 0 0 0;
-		color: var(--color-text-secondary);
-		font-size: 1rem;
-	}
 
 	.content-card {
 		background: white;

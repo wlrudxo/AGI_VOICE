@@ -81,7 +81,10 @@
 
 <div class="page-container">
 	<div class="page-header">
-		<h1>시스템 메시지 템플릿</h1>
+		<div>
+			<h1>시스템 메시지 템플릿</h1>
+			<p class="page-description">AI의 역할과 행동 방식을 정의하는 프롬프트를 관리합니다.</p>
+		</div>
 		<button class="btn-primary" onclick={startCreate}>
 			<Icon icon="solar:add-circle-bold" width="20" height="20" />
 			새 템플릿
@@ -161,26 +164,7 @@
 <style>
 	.page-container {
 		max-width: 1200px;
-	}
-
-	.page-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 2rem;
-	}
-
-	.page-header h1 {
-		margin: 0;
-		font-size: 2rem;
-		font-weight: 700;
-		color: #1f2937;
-	}
-
-	.loading {
-		text-align: center;
-		padding: 3rem;
-		color: var(--color-text-secondary);
+		margin: 0 auto;
 	}
 
 	.form-card {

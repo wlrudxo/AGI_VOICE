@@ -138,7 +138,7 @@
 	<div class="page-header">
 		<div>
 			<h1>명령어 템플릿</h1>
-			<p class="subtitle">AI에게 전달할 명령어 정보를 관리합니다. 활성화된 템플릿만 전송됩니다.</p>
+			<p class="page-description">AI에게 전달할 명령어 정보를 관리합니다. 활성화된 템플릿만 전송됩니다.</p>
 		</div>
 		<button class="btn-primary" onclick={openCreateModal}>
 			<Icon icon="solar:add-circle-bold-duotone" width="20" height="20" />
@@ -263,18 +263,7 @@
 		margin-bottom: 2rem;
 	}
 
-	.page-header h1 {
-		margin: 0 0 0.5rem 0;
-		font-size: 2rem;
-		font-weight: 700;
-		color: #1f2937;
-	}
 
-	.subtitle {
-		margin: 0;
-		color: var(--color-text-secondary);
-		font-size: 0.95rem;
-	}
 
 	.loading {
 		text-align: center;

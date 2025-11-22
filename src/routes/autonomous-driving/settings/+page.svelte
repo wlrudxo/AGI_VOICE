@@ -53,8 +53,10 @@
 
 <div class="autonomous-settings">
   <div class="page-header">
-    <h1>⚙️ 자율주행 설정</h1>
-    <p class="page-description">CarMaker 제어와 관련된 설정을 관리합니다.</p>
+    <div>
+      <h1>⚙️ 자율주행 설정</h1>
+      <p class="page-description">CarMaker 제어와 관련된 설정을 관리합니다.</p>
+    </div>
   </div>
 
   <!-- CarMaker Connection Section -->

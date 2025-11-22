@@ -49,7 +49,7 @@
 	<div class="page-header">
 		<div>
 			<h1>RAG 테스트</h1>
-			<p class="subtitle">자연어 검색으로 유사한 맵을 찾습니다.</p>
+			<p class="page-description">자연어 검색으로 유사한 맵을 찾습니다.</p>
 		</div>
 	</div>
 
@@ -167,25 +167,10 @@
 <style>
 	.page-container {
 		max-width: 1200px;
-		padding: 2rem;
+		margin: 0 auto;
 	}
 
-	.page-header {
-		margin-bottom: 2rem;
-	}
 
-	.page-header h1 {
-		margin: 0;
-		font-size: 2rem;
-		font-weight: 700;
-		color: var(--color-text-primary);
-	}
-
-	.subtitle {
-		margin: 0.5rem 0 0 0;
-		color: var(--color-text-secondary);
-		font-size: 1rem;
-	}
 
 	/* Search Section */
 	.search-section {

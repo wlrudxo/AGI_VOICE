@@ -60,7 +60,7 @@
 	<div class="page-header">
 		<div>
 			<h1>최종 메시지</h1>
-			<p class="subtitle">AI 응답 생성 전 마지막으로 체크할 사항을 입력하세요.</p>
+			<p class="page-description">AI 응답 생성 전 마지막으로 체크할 사항을 입력하세요.</p>
 		</div>
 		<div class="header-actions">
 			<button class="btn-secondary" onclick={resetToDefault}>
@@ -112,27 +112,10 @@
 <style>
 	.page-container {
 		max-width: 900px;
+		margin: 0 auto;
 	}
 
-	.page-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-start;
-		margin-bottom: 2rem;
-	}
 
-	.page-header h1 {
-		margin: 0;
-		font-size: 2rem;
-		font-weight: 700;
-		color: #1f2937;
-	}
-
-	.subtitle {
-		margin: 0.5rem 0 0 0;
-		color: var(--color-text-secondary);
-		font-size: 1rem;
-	}
 
 	.header-actions {
 		display: flex;
