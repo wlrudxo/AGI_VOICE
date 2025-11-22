@@ -1,0 +1,694 @@
+--- Page 56 ---
+1299 User Accessible Quantities
+Powertrain
+CarMaker Reference Manual Version 14.0.126.12 Powertrain
+26.12.1 General
+26.12.2 Powertrain Control (PTControl)Name UAQ Name C-CodeName CarMaker for
+SimulinkUnit Info (data type, if not double)
+<pos> := FL, FR, RL, RR
+<pre> := PowerTrain
+<Nb> :=0, .., n (number)
+<preW> := PowerTrain.IF .WheelOut[Nb]
+PT.OSRate <pre>.OSRate - Oversampling rate (integration substeps)
+PT.Trq_Supp2Bdy1B.y<pre>.Trq_Supp2Bdy1B[0]
+<pre>.Trq_Supp2Bdy1B[1]
+<pre>.Trq_Supp2Bdy1B[2]PT IF Trq_Supp2Bdy1B x
+PT IF Trq_Supp2Bdy1B y
+PT IF Trq_Supp2Bdy1B zNm Support torque to vehicle frame Fr1B
+PT.Trq_Supp2Bdy1.y<pre>.Trq_Supp2Bdy1[0]
+<pre>.Trq_Supp2Bdy1[1]
+<pre>.Trq_Supp2Bdy1[2]PT IF Trq_Supp2Bdy1 x
+PT IF Trq_Supp2Bdy1 y
+PT IF Trq_Supp2Bdy1 zNm Support torque to vehicle frame Fr1/Fr1A
+PT.Trq_Supp2BdyEng.x
+PT.Trq_Supp2BdyEng.y<pre>.Trq_Supp2BdyEng[0]
+<pre>.Trq_Supp2BdyEng[1]PT IF Trq_Supp2BdyEng x
+PT IF Trq_Supp2BdyEng yNm Support torque to engine frame FrEng
+PT.W<pos>.rot <preW>.rot PT IF W<pos> rot rad Rotation angle of wheel <pos>
+PT.W<pos>.rotv <preW>.rotv PT IF W<pos> rotv rad/s Rotation speed of wheel <pos>
+PT.W<pos>.Trq_B2W <preW>.Trq_B2W PT IF W<pos> Trq_B2W Nm Torque acting from brake to wheel <pos>
+PT.W<pos>.Trq_BrakeReg <preW>.Trq_BrakeReg PT IF W<pos> Trq_BrakeReg Nm Estimated current regenerative brake torque at wheel
+<pos> (absolute value)
+PT.W<pos>.Trq_BrakeReg_max <preW>.Trq_BrakeReg_max PT IF W<pos>
+Trq_BrakeReg_maxNm Estimated maximum possible regenerative brake
+torque at wheel <pos> (absolute value)
+PT.W<pos>.Trq_Drive <preW>.Trq_Drive PT IF W<pos> Trq_Drive Nm Drive torque of wheel <pos>
+PT.W<pos>.Trq_Supp2WC <preW>.Trq_Supp2WC PT W<pos>Trq_Supp2WC Nm Drive torque support on wheel carrier <pos>
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<pre> := PT.Control
+<preIF> := PowerTrain.ControlIF
+<preIFGB> := PowerTrain.ControlIF .GearBoxOut[i]
+<pre>.Clutch.<i>.Pos <preIF>.ClutchOut[i].Pos - Clutch target position
+<pre>.Clutch.<i>.rotv_out_trg <preIF>.ClutchOut[i].rotv_out_trg rad/s Clutch output shaft target rotation speed
+<pre>.Clutch.<i>.Trq_out_trg <preIF>.ClutchOut[i].Trq_out_trg Nm Clutch output shaft target torque
+<pre>.Clutch.<i>.Phase - For Parallel P3 model.
+Current clutch phase of the decoupling clutch:
+0:= Closed
+1:= Open
+2:= Clutch opening
+3:= Wait for ramp down of electric motor torque
+4:= Synchronize motor speed
+5:= Close Clutch
+<pre>.Clutch.Phase_trg - For Parallel P3 model.
+Target clutch phase of the decoupling clutch
+0:= Closed
+1:= Open
+<pre>.Clutch.Phase_trg.SetManual - For Parallel P3 model.
+Activate manual setting of the Clutch.Phase_trg.
+0:= Off
+1:= On
+<pre>.Coasting.EngineOn - Allows changing the Coasting mode during simulation:
+0:= Engine Off Coasting
+1:= Engine On Coasting
+<pre>.Consump.Comb_E.Abs
+<pre>.Consump.Comb_E.Act
+<pre>.Consump.Comb_E.AvgkWh
+kWh/
+100kmCombined consumption (fuel, low and high voltage battery) expressed as electric
+energy consumption: absolute, actual, average
+--- Page 57 ---
+1300 User Accessible Quantities
+Powertrain
+CarMaker Reference Manual Version 14.0.1<pre>.Consump.Comb_F .Abs
+<pre>.Consump.Comb_F .Act
+<pre>.Consump.Comb_F .Avgl
+l/
+100kmCombined consumption (fuel, low and high voltage battery) e xpressed as fuel
+consumption: absolute, actual, average
+<pre>.Consump.Elec.Abs
+<pre>.Consump.Elec.Act
+<pre>.Consump.Elec.AvgkWh
+kWh/
+100kmElectric energy consumption (low and high voltage battery) : absolute, actual,
+average
+<pre>.Consump.Fuel.Abs
+<pre>.Consump.Fuel.Act
+<pre>.Consump.Fuel.Avgl
+l/
+100kmFuel consumption: absolute, actual, average
+<pre>.Consump.Reset - Reset the absolute and average consumption values (boolean)
+<pre>.Engine.FuelCutOff <preIF>.EngineOut.FuelCutOff - Flag if fuel is cut-off (boolean)
+<pre>.Engine.Load <preIF>.EngineOut.Load - Engine target load
+<pre>.Engine.rotv_trg <preIF>.EngineOut.rotv_trg rad/s Engine target rotation speed
+<pre>.Engine.set_ISC <preIF>.EngineOut.set_ISC - Idle speed controller activated (boolean)
+<pre>.Engine.Trq_trg <preIF>.EngineOut.Trq_trg Nm Engine target torque
+<pre>.GasInterpret.Trq_trg Nm Target drive torque from gas pedal interpreter module
+<pre>.GB.<i>.Clutch.Pos <preIFGB>.Clutch.Pos - Gearbox internal clutch target position
+<pre>.GB.<i>.Clutch_dis.Pos <preIFGB>.Clutch_dis.Pos - Gearbox internal clutch target position for disengaged shaft of DCT gearbox
+<pre>.GB.<i>.Clutch.rotv_out_t
+rg<preIFGB>.Clutch.rotv_out_trg
+<preIFGBM>.Clutch.rotv_out_trgrad/s Gearbox internal clutch output shaft target rotation speed
+<pre>.GB.<i>.Clutch_dis.rotv_o
+ut_trg<preIF-
+GB>.Clutch_dis.rotv_out_trgrad/s Gearbox internal clutch output shaft target rotation speed for disengaged shaft of
+DCT gearbox
+<pre>.GB.<i>.Clutch.Trq_out_tr
+g<preIFGB>.Clutch.Trq_out_trg Nm Gearbox internal clutch output shaft target torque
+<pre>.GB.<i>.Clutch_dis.Trq_o
+ut_trg<preIF-
+GB>.Clutch_dis.Trq_out_trgNm Gearbox internal clutch output shaft target torque for dis engaged shaft of DCT
+gearbox
+<pre>.GB.<i>.GearNoTrg <preIFGB>.GearNoTrg - Gearbox target gear (integer)
+<pre>.GB.<i>.GearNoTrg_dis <preIFGB>.GearNoTrg_dis - Gearbox target gear (integer) for disengaged shaft of DCT gearbox
+<pre>.GB.<i>.rotv_in_trg <preIFGB>.rotv_in_trg rad/s Gearbox input shaft target rotation speed
+<pre>.GB.<i>.Trq_out_trg <preIFGB>.Trq_out_trg Nm Gearbox output shaft target torque
+<pre>.Ignition <preIF>.Ignition - Powertrain ignition (boolean)
+<pre>.ISG.Load
+<pre>.Motor<iM>.Load<preIF>.ISGOut.Load
+<preIF>.MotorOut[iM].Load- Integrated starter generator / electric motor <iM> target load
+<pre>.ISG.rotv_trg
+<pre>.Motor<iM>.rotv_trg<preIF>.ISGOut.rotv_trg
+<preIF>.MotorOut[iM].rotv_trgrad/s Integrated starter generator / electric motor <iM> target rotation speed
+<pre>.ISG.Trq_trg
+<pre>.Motor<iM>.Trq_trg<preIF>.ISGOut.Trq_trg
+<preIF>.MotorOut[iM].Trq_trgNm Integrated starter generator / electric motor <iM> target torque
+<pre>.Motor.Trqtrg_AtPOI - For Parallel P3 model.
+Target torque of the motor at the POI/reference point of the GasInterpreter.
+<pre>.OperationError <preIF>.OperationError - Current operation error (integer)
+<pre>.OperationState <preIF>.OperationState - Current operation state (integer):
+0: Absent (leave the vehicle)
+1: Power off
+2: Power accessory
+3: Power on
+4: Driving
+<pre>.PwrExploited % Ratio of exploited power (for visualization in IPGInstruments)
+<pre>.Battery.<LV/HV>.
+Temp_trg<preIF>.Batt<LV/HV>Out.
+Temp_trgK Battery target temperature
+<pre>.Battery.<LV/HV>.
+MassFlowCool_trg<preIF>.Batt<LV/HV>Out.
+MassFlowCool_trgkg/s Battery coolant target mass ﬂow rate
+<pre>.PwrSupply.
+Pwr_HV1toLV_trg<preIF>.PwrSupplyOut.
+Pwr_HV1toLV_trgW Target transferred electric power from high voltage 1 electric circuit to low voltage
+electric circuitName UAQ Name C-Code Unit Info (data type, if not double)
+--- Page 58 ---
+1301 User Accessible Quantities
+Powertrain
+CarMaker Reference Manual Version 14.0.126.12.3 Engine Control Unit (ECU)
+26.12.4 Motor Control Unit (MCU)
+Basic FOC<pre>.StrategyMode <preIF>.StrategyMode - Current strategy mode (integer):
+0: Start/Stop
+1: Regenerative brake
+2: Regenerative drag torque
+3: Coasting
+4: Electric drive
+5: LoadShift
+6: Assist
+7: Boost
+8: Engine drive
+9: Engine start
+10: Engine synchronization
+11: Engine stop
+<pre>.StrategyMode_trg - Target strategy mode (integer)
+<pre>.StrategyMode_trg.
+SetManual- Flag if target strategy mode can be set by DVA (boolean):
+1=target strategy mode is set manually by DVA and not by PTControl
+<pre>.TrqRatio.Front2Rear For electrical and serial powertrain the ratio for torque di stribution between the
+front and rear drive axle (0=all at rear axle....1=all at front axle).Name UAQ Name C-Code Unit Info (data type, if not double)
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<pre> := PowerTrain.EngineCU_IF
+PT.ECU.Engine_on <pre>.Engine_on - Flag if engine is on (boolean)
+PT.ECU.FuelCutOff <pre>.FuelCutOff - Flag if fuel is cut-off (boolean)
+PT.ECU.Load <pre>.Load - Load/throttle signal for engine
+PT.ECU.Status <pre>.Status - ECU status (integer)
+PT.ECU.TrqDrag <pre>.TrqDrag Nm Engine drag torque at current rotation speed
+PT.ECU.TrqFull <pre>.TrqFull Nm Engine full torque at current rotation speed
+PT.ECU.TrqOpt <pre>.TrqOpt Nm Engine torque with optimum consumption at current rotation speed
+PT.ECU.Load_lim_min
+PT.ECU.Load_lim_maxOutput engine load for lower and upper limitation (only for model Basic )
+(PT.ECU.Load_lim_min must be smaller than PT.ECU.Load_lim_max)
+PT.ECU.Trq_lim_min
+PT.ECU.Trq_lim_maxNm Target engine torque limitation (only for model Basic )
+(PT.ECU.Trq_lim_min must be smaller than PT.ECU.Trq_lim_max
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<pre> := PowerTrain.MotorCU_IF
+<preM> := PT.MCU.Motor<iM>
+PT.MCU.ISG.Load
+<preM>.Load<pre>.ISGOut.Load
+<pre>.MotorOut[iM].Load- Load signal for integrated starter generator / electric motor <iM>
+PT.MCU.ISG.TrqGen_max
+<preM>.TrqGen_max<pre>.ISGOut.TrqGen_max
+<pre>.MotorOut[iM].TrqGen_maxNm Integrated starter generator / electric motor <iM> maximum generator torque at cur-
+rent rotation speed
+PT.MCU.ISG.TrqMot_max
+<preM>.TrqMot_max<pre>.ISGOut.TrqMot_max
+<pre>.MotorOut[iM].TrqMot_maxNm Integrated starter generator / electric motor <iM> maximum motor torque at current
+rotation speed
+PT.MCU.Status <pre>.Status - MCU status (integer)
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<pre> := PowerTrain.MotorCU_IF
+<preM> := PT.MCU.Motor<iM>
+PT.MCU.ISG.Current_d_ref
+<preM>.Current_d_refA d coordinate of target rotary current vector
+--- Page 59 ---
+1302 User Accessible Quantities
+Powertrain
+CarMaker Reference Manual Version 14.0.126.12.5 Transmission Control Unit (TCU)PT.MCU.ISG.Current_q_ref
+<preM>.Current_q_refA q coordinate of target rotary current vector
+PT.MCU.ISG.Load_Volt_d
+<preM>.Load_Volt_dV d coordinate of applied rotary voltage vector
+PT.MCU.ISG.Load_Volt_q
+<preM>.Load_Volt_qV q coordinate of applied rotary voltage vector
+PT.MCU.ISG.PhiVolt
+<preM>.PhiVoltrad angle of applied rotary voltage vector
+PT.MCU.ISG.MagVolt
+<preM>.MagVoltV Magnitude of applied rotary voltage vector
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<pre> := PowerTrain.TransmCU_IF
+<preGB> := PT.TCU.GB.<i>
+PT.TCU.Clutch.Pos <pre>.ClutchOut.Pos - Separated clutch target position
+<preGB>.Clutch.Pos <pre>.GearBoxOut[i].Clutch.Pos - Internal clutch target position of gearbox and electric motor
+gearbox <i> (0 = clutch closed, 1 = clutch open)
+<preGB>.Clutch_dis.Pos <pre>.GearBoxOut[i].Clutch_dis.Pos - Internal clutch target position of gearbox for disengaged
+shaft of DCT
+<preGB>.GearNoTrg <pre>.GearBoxOut[i].GearNoTrg - Target gear of gearbox and electric motor gearbox <i>
+<preGB>.GearNoTrg_dis <pre>.GearBoxOut[i].GearNoTrg_dis - Target gear of gearbox for disengaged shaft of DCT gearbox
+<preGB>.i_trg <pre>.GearBoxOut[i].i_trg - Target gear ratio for CVT gearbox
+<preGB>.set_ParkBrake <pre>.GearBoxOut[i].set_ParkBrake - Set gearbox park brake of gearbox and electric motor gear-
+box <iM>
+<preGB>.Trq_DriveSrc_trg <pre>.GearBoxOut[i].Trq_DriveSrc_trg Nm Optional drive source target torque from TCU to PTControl
+(e.g. while shifting)
+PT.TCU.ShiftCtrl.<i>.ShiftAvoid_active - Flag if shift avoidance is active separate for every gearbox.
+PT.TCU.LockUp - Lock-up clutch position of gearbox converter clutch w ith
+TCU “Automatic” or “Automatic with Converter“
+0 = no lockup
+1 = lockup clutch closed
+PT.TCU.LockUp.PosFinal Speciﬁes the position of the lockup clutch at the end of the
+synchronization process
+PT.TCU.LockUp.SynchronisationTime - Speciﬁes the time to close the lockup clutch
+PT.TCU.Status <pre>.Status - TCU status (integer)Name UAQ Name C-Code Unit Info (data type, if not double)
+PT.TCU.LockUp.PosFinal Speciﬁes the position of the lockup clutch at the end of the synchro-
+nization process
+PT.TCU.DCT.PwrOnUp.RotvGradientTrg
+PT.TCU.DCT.PwrOnDown.RotvGradientTrg
+PT.TCU.DCT.PwrOffUp.RotvGradientTrg
+PT.TCU.DCT.PwrOffDown.RotvGradientTrg- Specifies the desired engine rotational speed gradient dur ing
+clutch synchronization
+PT.TCU.DCT.PwrOnUp.SyncTime
+PT.TCU.DCT.PwrOnDown.SyncTime
+PT.TCU.DCT.PwrOffUp.SyncTime
+PT.TCU.DCT.PwrOffDown.SyncTimes Speciﬁes the desired clutch synchronization time
+--- Page 60 ---
+1303 User Accessible Quantities
+Powertrain
+CarMaker Reference Manual Version 14.0.126.12.6 Battery Control Unit (BCU)
+26.12.7 Engine
+General
+Intake Manifold PressureName UAQ Name C-Code Unit Info (data type, if not double)
+<pre> := PowerTrain.BatteryCU_IF
+PT.BCU.Batt<LV/HV>.
+SOC<pre>.Batt<LV/HV>.SOC % Low / high voltage battery state of charge
+PT.BCU.Batt<LV/HV>.
+SOH<pre>.Batt<LV/HV>.SOH % Low / high voltage battery state of health
+PT.BCU.Batt<LV/HV>.
+Temp_trg<pre>.Batt<LV/HV>.Temp_trg K Low / high voltage battery target temperature
+(only in case BCU PI temperature control is activated)
+PT.BCU.Batt<LV/HV>.
+TempCool_in<pre>.Batt<LV/HV>.
+TempCool_inK Low / high voltage battery coolant inlet temperature
+PT.BCU.Batt<LV/HV>.
+TempCool_out<pre>.Batt<LV/HV>.
+TempCool_outK Low / high voltage battery coolant outlet temperature
+PT.BCU.Batt<LV/HV>.
+MassFlowCool<pre>.Batt<LV/HV>.
+MassFlowCoolkg/s Low / high voltage battery coolant mass ﬂow rate
+PT.BCU.Status <pre>.Status - BCU status (integer)
+Name UAQ Name C-CodeName CarMaker
+for SimulinkUnit Info (data type, if not double)
+<pre> := PowerTrain.Engine
+<preIF> := PowerTrain.EngineIF
+PT IF Engine_Trq
+(Engine Control)Nm Engine control torque
+PT.Engine.be g/kWh Speciﬁc fuel consumption of the engine
+PT.Engine.FuelFlow <preIF>.FuelFlow l/s Current fuel ﬂow
+PT.Engine.FuelFlow_ext <pre>.Fuel.Flow_ext l/s External fuel ﬂow (negative for ﬁll up the fuel tank)
+PT.Engine.FuelLevel <pre>.Fuel.Level % Current fuel tank level
+PT.Engine.DVA.Trq
+PT.Engine.Sherpa.TrqNm Effective engine torque at output shaft used for engine model ‘DVA’
+respectively ‘Sherpa’
+PT.Engine.PwrO W Engine output power
+PT.Engine.rot <preIF>.rot rad Rotation angle of engine output shaft
+PT.Engine.rotv PowerTrain.IF .Engine_rotv
+(copy from <preIF>.rotv)PT IF Engine_rotv rad/s Rotational speed of engine output shaft
+PT.Engine.Trq <preIF>.Trq Nm Effective engine torque at output shaft
+PT.Engine.Trq_Ext2E <pre>.Trq_Ext2E Nm External torque to engine output shaft
+PT.Engine.Mapping.Pwr-
+Corr.Fac- Engine power/torque correction factor depending on environ ment
+conditions
+Name UAQ Name C-CodeName CarMaker
+for SimulinkUnit Info (data type, if not double)
+<pre> := PowerTrain.Engine.Mapping.IMP
+<pre>.dm_cyl kg/s Air mass ﬂow in the engine cylinders
+<pre>.dm_thr kg/s Air mass ﬂow after throttle
+<pre>.dpres_im Pa/s Intake manifold pressure derivation
+<pre>.alpha - Throttle loss coefﬁcient
+<pre>.lambda - Intake manifold relative ﬁlling
+<pre>.psi - Flow coefﬁcient
+--- Page 61 ---
+1304 User Accessible Quantities
+Powertrain
+CarMaker Reference Manual Version 14.0.126.12.8 Integrated Starter Generator / Electric Motor
+Permanent magnet synchronous motor “PMSM”<pre>.pres_im Pa Intake manifold pressure
+<pre>.relrho_im - Intake manifold relative pressure (used for Linear2D)Name UAQ Name C-CodeName CarMaker
+for SimulinkUnit Info (data type, if not double)
+Name UAQ Name C-Code Unit Info (data type, if not double)
+PT.MotorISG.PwrElec
+PT.Motor<iM>.PwrElecPowerTrain.ISG_IF .PwrElec
+PowerTrain.MotorIF[iM].PwrElecW Actual electric power of integrated starter generator / electric motor <iM>
+PT.MotorISG.Ratio
+PT.Motor<iM>.RatioPowerTrain.ISG_IF .CfgIF->Ratio
+PowerTrain.MotorIF[iM].CfgIF->Ratio- Transmission ratio of the integrated starter generator / electric motor <iM> between
+the motor output shaft and the powertrain shaft that it is connected to
+PT.MotorISG.rot
+PT.Motor<iM>.rotPowerTrain.ISG_IF .rot
+PowerTrain.MotorIF[iM].rotrad Actual output shaft rotation angle of integrated starter generator / electric motor <iM>
+PT.MotorISG.rotv
+PT.Motor<iM>.rotvPowerTrain.ISG_IF .rotv
+PowerTrain.MotorIF[iM].rotvrad/s Actual output shaft rotation speed of integrated starter generator / electric motor <iM>
+PT.MotorISG.Trq
+PT.Motor<iM>.TrqPowerTrain.ISG_IF .Trq
+PowerTrain.MotorIF[iM].TrqNm Actual torque on driven shaft of integrated starter generator / electric motor <iM>
+PT.MotorISG.VoltBatt
+PT.Motor<iM>.VoltBattPowerTrain.ISG_IF .VoltBatt
+PowerTrain.MotorIF[iM].VoltBattV Electric grid voltage at integrated starter generator / electric motor <iM>
+PT.MotorISG.Voltage_d
+PT.Motor<iM>.Voltage_dPowerTrain.ISG_IF .Voltage_dq[0]
+PowerTrain.MotorIF[iM].
+Voltage_dq[0]V d coordinate of applied voltage
+PT.MotorISG.Voltage_q
+PT.Motor<iM>.Voltage_qPowerTrain.ISG_IF .Voltage_dq[1]
+PowerTrain.MotorIF[iM].
+Voltage_dq[1]V q coordinate of applied voltage
+PT.MotorISG.Voltage_u
+PT.Motor<iM>.Voltage_uPowerTrain.ISG_IF .Voltage_uvw[0]
+PowerTrain.MotorIF[iM].
+Voltage_uvw[0]V u coordinate of applied voltage
+PT.MotorISG.Voltage_v
+PT.Motor<iM>.Voltage_vPowerTrain.ISG_IF .Voltage_uvw[1]
+PowerTrain.MotorIF[iM].
+Voltage_uvw[1]V v coordinate of applied voltage
+PT.MotorISG.Voltage_w
+PT.Motor<iM>.Voltage_wPowerTrain.ISG_IF .Voltage_uvw[2]
+PowerTrain.MotorIF[iM].
+Voltage_uvw[2]V w coordinate of applied voltage
+PT.MotorISG.Current_d
+PT.Motor<iM>.Current_dPowerTrain.ISG_IF .Current_dq[0]
+PowerTrain.MotorIF[iM].
+Current_dq[0]A d coordinate of motor current
+PT.MotorISG.Current_q
+PT.Motor<iM>.Current_qPowerTrain.ISG_IF .Current_dq[1]
+PowerTrain.MotorIF[iM].
+Current_dq[1]A q coordinate of motor current
+PT.MotorISG.Current_u
+PT.Motor<iM>.Current_uPowerTrain.ISG_IF .Current_uvw[0]
+PowerTrain.MotorIF[iM].
+Current_uvw[0]A u coordinate of motor current
+PT.MotorISG.Current_v
+PT.Motor<iM>.Current_vPowerTrain.ISG_IF .Current_uvw[1]
+PowerTrain.MotorIF[iM].
+Current_uvw[1]A v coordinate of motor current
+PT.MotorISG.Current_w
+PT.Motor<iM>.Current_wPowerTrain.ISG_IF .Current_uvw[2]
+PowerTrain.MotorIF[iM].
+Current_uvw[2]A w coordinate of motor current
+Name UAQ Name C-Code Unit Info (data type, if not double)
+PT.MotorISG.rotv_el
+PT.Motor<iM>.rotv_elrad/s rotational speed of the electric rotary vector
+PT.MotorISG.PwrMech
+PT.Motor<iM>.PwrMechW mechanical motor output power
+--- Page 62 ---
+1305 User Accessible Quantities
+Powertrain
+CarMaker Reference Manual Version 14.0.126.12.9 Clutch
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<preIF> := PowerTrain.ClutchIF[i]
+<pre> := PT.Clutch.<i>
+<pre>.i_TrqIn2Out <pre>.i_TrqIn2Out - Current ratio clutch input shaft torque to output shaft torque (estimated)
+<pre>.DVA.Trq_A2B Nm Torque transferred from clutch input to output side used for clutch model ‘DVA’
+<pre>.PwrI W Clutch input power
+<pre>.PwrO W Clutch output power
+<pre>.rot_in <preIF>.rot_in rad Rotation angle of clutch input shaft
+<pre>.rot_out <preIF>.rot_out rad Rotation angle of clutch output shaft
+<pre>.rotv_in <preIF>.rotv_in rad/s Rotational speed of clutch input shaft
+<pre>.rotv_out <preIF>.rotv_out rad/s Rotational speed of clutch output shaft
+<pre>.Trq_in <preIF>.Trq_in Nm Clutch input shaft torque
+<pre>.Trq_out <preIF>.Trq_out Nm Clutch output shaft torque
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<preIF> := PowerTrain.ClutchIF[i]
+<pre> := PT.Clutch.<i>
+<pre>.i_TrqIn2Out <pre>.i_TrqIn2Out - Current ratio clutch input shaft torque to output shaft torque (estimated)
+<pre>.DVA.Trq_A2B Nm Torque transferred from clutch input to output side used for clutch model ‘DVA’
+<pre>.PwrI W Clutch input power
+<pre>.PwrO W Clutch output power
+<pre>.rot_in <preIF>.rot_in rad Rotation angle of clutch input shaft
+<pre>.rot_out <preIF>.rot_out rad Rotation angle of clutch output shaft
+<pre>.rotv_in <preIF>.rotv_in rad/s Rotational speed of clutch input shaft
+<pre>.rotv_out <preIF>.rotv_out rad/s Rotational speed of clutch output shaft
+<pre>.Trq_in <preIF>.Trq_in Nm Clutch input shaft torque
+<pre>.Trq_out <preIF>.Trq_out Nm Clutch output shaft torque
+--- Page 63 ---
+1306 User Accessible Quantities
+Powertrain
+CarMaker Reference Manual Version 14.0.126.12.10GearBox
+26.12.11Free EndName UAQ Name C-CodeName
+CarMaker for
+SimulinkUnit Info (data type, if not double)
+<pre> := PT.Gearbox.<i>
+<preIF> := PowerTrain.GearBoxIF[i]
+<preGB> := PowerTrain.GearBox[i]
+<pre>.DVA.i - Current user deﬁned transmission ratio used for gearbox model
+‘DVA’
+<pre>.Clutch.i_TrqIn2Out <preIF>.ClutchOut.i_TrqIn2Out - Ratio between gearbox clutch input shaft and output shaft (esti-
+mated)
+<pre>.Clutch_dis.i_TrqIn2Out <preIF>.Clutch_dis_Out.
+i_TrqIn2Out- Ratio between gearbox clutch input shaft and output shaft (esti-
+mated) for disengaged shaft of DCT gearbox
+<pre>.Clutch.rotv_in <preIF>.ClutchOut.rotv_in rad/s Current gearbox clutch input shaft rotation speed
+<pre>.Clutch_dis.rotv_in <preIF>.Clutch_dis_Out.rotv_in rad/s Current gearbox clutch input shaft rotation angle for disen -
+gaged shaft of DCT gearbox
+<pre>.Clutch.rotv_out <preIF>.ClutchOut.rotv_out rad/s Current gearbox clutch output shaft rotation speed
+<pre>.Clutch_dis.rotv_out <preIF>.Clutch_dis_Out.rotv_out rad/s Current gearbox clutch output shaft rotation speed for dise n-
+gaged shaft of DCT gearbox
+<pre>.Clutch.Trq_in <preIF>.ClutchOut.Trq_in Nm Current gearbox clutch input shaft torque
+<pre>.Clutch_dis.Trq_in <preIF>.Clutch_dis_Out.Trq_in Nm Current gearbox clutch input shaft torque for disengaged shaft
+of DCT gearbox
+<pre>.Clutch.Trq_out <preIF>.ClutchOut.Trq_out Nm Current gearbox clutch output shaft torque
+<pre>.Clutch_dis.Trq_out <preIF>.Clutch_dis_Out.Trq_out Nm Current gearbox clutch output shaft torque for disengaged shaft
+of DCT gearbox
+<pre>.Auto_AMT.SyncTime ms Gearbox synchronization time for the AMT gearbox.
+<pre>.Auto_Conv.SyncTime ms Gearbox synchronization time for the Automatic with Converter
+gearbox.
+<pre>.CVT.didt 1/s Current gearbox ratio change rate for gearbox model CVT
+<pre>.CVT.efﬁciency - Current gearbox efﬁciency for gearbox model CVT
+<pre>.GearNo PowerTrain.IF .GearNo
+(copy from <pre>.GearNo)PT IF GearNo - Current gear (integer)
+<pre>.GearNo_dis <preIF>.GearNo_dis PT IF GearNo_dis - Current gear of disengaged shaft (integer) for DCT
+<pre>.i <preIF>.i - Current transmission ratio
+<pre>.i_Ext <preGB>.i_Ext - Additional user deﬁned external transmission ratio
+<pre>.i_TrqIn2Out <preIF>.i_TrqIn2Out - Current gearbox transmission ratio considering loss
+<pre>.Inert_ExtIn <preGB>.Inert_ExtIn kgm2Additional external inertia to gearbox input shaft
+<pre>.Inert_ExtOut <preGB>.Inert_ExtOut kgm2Additional external inertia to gearbox output shaft
+<pre>.Inert_out <preIF>.Inert_out kgm2Gearbox output shaft inertia
+<pre>.PwrI W Gearbox input power
+<pre>.PwrO W Gearbox output power
+<pre>.rot_in <preIF>.rot_in rad Rotation angle of gearbox input shaft
+<pre>.rot_out <preIF>.rot_out rad Rotation angle of gearbox output shaft
+<pre>.rotv_in <preIF>.rotv_in rad/s Rotational speed of gearbox input shaft
+<pre>.rotv_out <preIF>.rotv_out rad/s Rotational speed of gearbox output shaft
+<pre>.Trq_Ext2GB_In <preGB>.Trq_Ext2GB_In Nm External torque to gearbox input shaft (in front of the internal
+clutch)
+<pre>.Trq_Ext2GB_Out <preGB>.Trq_Ext2GB_Out Nm External torque to gearbox output shaft
+<pre>.Trq_in <preIF>.Trq_in Nm Current gearbox input shaft torque
+<pre>.Trq_out <preIF>.Trq_out Nm Current gearbox output shaft torque
+--- Page 64 ---
+1307 User Accessible Quantities
+Powertrain
+CarMaker Reference Manual Version 14.0.126.12.12Driveline
+General
+Generic models
+Additional Quantities
+The additional quantities can be added to the data dictionary via a SimParameter key (see
+section 3.1.28 ’Data Dictionary’ ).Name UAQ Name C-Code Unit Info (data type, if not double)
+<pre> := PT.FreeEnd.<Id>
+<preIF> := PowerTrain.FreeEnd_IF[Id]
+<pre>.Trq_in <preIF>.Trq_in Nm Input torque to the free end model
+<pre>.rotv <preIF>.rotv rad/s Free end shaft rotation speed
+<pre>.rot <preIF>.rot rad Free end shaft roation angle
+<pre>.Trq_ext <preIF>.Trq_ext Nm Additional external torque that can be applied to the free spinning shaft
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<pre> := PowerTrain.DriveLine
+<preIF> := PowerTrain.DriveLineIF
+<preDS> := PT.DL.DriveSrc.<ds>
+<pos> := FL, FR, RL, RR
+<preDS>.i_D2W<pos> <preIF>.DriveOut[ds].i_D2W[pos] - Drive source <ds> current ratio: drive source to wheel <pos> (estimated)
+<preDS>.rot_in <preIF>.DriveOut[ds].rot_in rad Drive source <ds> input rotation angle
+<preDS>.rotv_in <preIF>.DriveOut[ds].rotv_in rad/s Drive source <ds> input rotation speed
+<preDS>.Trq_in <preIF>.DriveIn[ds].Trq_in Nm Drive source <ds> input torque
+<preDS>.Trq_ext <pre>.Trq_Ext2DriveSrc[ds] Nm Additional external input torque at outshaft of drive source <ds>
+PT.DL.iDiff_mean PowerTrain.IF .DL_iDiff_mean
+(copy from <preIF>.iDiff_mean)Driveline mean differential ratio (overrides the value from the initialization if non zero)
+Name UAQ Unit Info (data type, if not double)
+<Diff> := FDiff, RDiff, CDiff
+PT.Gen.DL.<Diff>.DVA.Trq_A2B Nm Torque transferred from A to B at differential (for coupling model ‘DVA’)
+PT.Gen.DL.<Diff>.PwrI W Differential input power
+PT.Gen.DL.<Diff>.PwrO W Differential output power
+PT.Gen.DL.<Diff>.rotv_in rad/s Rotation speed of differential input shaft
+PT.Gen.DL.<Diff>.Trq_Cpl2B Nm Torque from differential coupling model to shaft B
+PT.Gen.DL.<Diff>.Trq_Input Nm Torque to differential input shaft (without external torque)
+PT.Gen.DL.<Diff>.Trq_in_ext Nm External torque to differential input shaft
+PT.Gen.DL.<Diff>.TrqRatio Torque ratio at differential used for coupling mode ‘TrqVec’
+PT.Gen.DL.CDiff.GearNo Current gear number of center differential if there exists more than one gears (integer)
+PT.Gen.DL.HangOn.drotv_Diff2o rad/s Delta rotation speed between input and output shaft
+PT.Gen.DL.HangOn.DVA.Trq_A2B Nm Torque transferred from A to B at hangon clutch (for coupling model ‘DVA’)
+PT.Gen.DL.HangOn.PwrI W Hangon clutch input power
+PT.Gen.DL.HangOn.PwrO W Hangon clutch output power
+PT.Gen.DL.HangOn.Trq_Cpl2B Nm Torque from hangon clutch coupling model to shaft B (output)
+Name UAQ Unit Info (data type, if not double)
+<Diff> := FDiff, RDiff, CDiff
+<Shaft> := HalfShaftR, HalfShaftL, DriveShaft
+PT.Gen.DL.<Diff>.<Shaft>.q rad Torsion angle of the ﬂexible shaft
+PT.Gen.DL.<Diff>.<Shaft>.qp rad/s Angular velocity of the ﬂexible shaft
+--- Page 65 ---
+1308 User Accessible Quantities
+Powertrain
+CarMaker Reference Manual Version 14.0.126.12.13Power Supply
+Battery
+Additional Quantities for BattECM
+Setting the key DataDict.AddQuants = Battery-BattECM via SimParameters provides addi-
+tional UAQs for the extended battery model BattECM (see section 3.1.28 ’Data Dictionary’ ).
+Power supplyPT.Gen.DL.<Diff>.<Shaft>.qpp rad/ Angular acceleration of the ﬂexible shaft
+PT.Gen.DL.<Diff>.<Shaft>.Trq_sd Nm Torque output of the ﬂexible shaftName UAQ Unit Info (data type, if not double)
+s2
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<pre> := PowerTrain.PowerSupplyIF
+PT.BattLV.AOC
+PT.BattHV.AOC<pre>.BattLV.AOC
+<pre>.BattHV.AOCAh Low / high voltage battery actual amount of charge
+PT.BattLV.Current
+PT.BattHV.Current<pre>.BattLV.Current
+<pre>.BattHV.CurrentA Low / high voltage battery electric current
+PT.BattLV.Energy
+PT.BattHV.Energy<pre>.BattLV.Energy
+<pre>.BattHV.EnergykWh Low / high voltage battery remaining energy capacity
+PT.BattLV.Pwr_max
+PT.BattHV.Pwr_max<pre>.BattLV.Pwr_max
+<pre>.BattHV.Pwr_maxW Low / high voltage battery maximum charge/discharge power
+PT.BattLV.Temp
+PT.BattHV.Temp<pre>.BattLV.Temp
+<pre>.BattHV.TempK Low / high voltage battery temperature
+PT.BattLV.Volt_oc
+PT.BattHV.Volt_ocV Low /high voltage battery open circuit voltage (with the model ‘Chen’)
+Name UAQ Name C-Code Unit Info (data type, if not double)
+PT.Batt<LV/HV>.
+Volt_ocV Low / high voltage battery open circuit voltage
+PT.Batt<LV/HV>.
+SOCA Low / high voltage battery electric current
+PT.Batt<LV/HV>.
+BattAOCAh Low / high voltage battery unscaled (sub-pack level) amount of charge
+PT.Batt<LV/HV>.
+BattVoltV Low / high voltage battery unscaled (sub-pack level) voltage
+PT.Batt<LV/HV>.
+BattCurrentA Low / high voltage battery unscaled (sub-pack level) current
+PT.Batt<LV/HV>.
+BattEnergyWh Low / high voltage battery unscaled (sub-pack level) remaining load of energy
+PT.Batt<LV/HV>.
+BattPwrW Low / high voltage battery unscaled (sub-pack level) power
+PT.Batt<LV/HV>.
+PackChargeConsumpAh Low / high voltage battery scaled (pack level) charge consumption
+PT.Batt<LV/HV>.
+PackEnergyConsumpkWh Low / high voltage battery scaled (pack level) energy consumption
+PT.Batt<LV/HV>.
+Pwr_ohmicW Low / high voltage battery scaled (pack level) ohmic power loss
+(if thermal model is set)
+PT.Batt<LV/HV>.
+R0Ohm Low / high voltage battery ECM electric resistance
+(if R0 is set)
+PT.Batt<LV/HV>.RC<i>.
+ROhm Low / high voltage battery electric resistance of RC elements
+(if RC<i> element is set)
+PT.Batt<LV/HV>.RC<i>.
+CF Low / high voltage battery electric capacity of RC elements
+(if RC<i> element is set)
+PT.Batt<LV/HV>.RC<i>.
+VoltageV Low / high voltage battery voltage of RC elements
+(if RC<i> element is set)
+--- Page 66 ---
+1309 User Accessible Quantities
+Powertrain
+CarMaker Reference Manual Version 14.0.1Name UAQ Name C-Code Unit Info (data type, if not double)
+<pre> := PowerTrain.PowerSupply
+<preIF> := PowerTrain.PowerSupplyIF
+<prePS> := PT.PwrSupply
+<prePS>.Eta_HV1toHV2 <preIF>.Eta_HV1toHV2 - DC/DC efﬁciency from high voltage 1 electric circuit to high voltage 2 electric circuit
+<prePS>.Eta_HV1toLV <preIF>.Eta_HV1toLV - DC/DC efﬁciency from high voltage 1 electric circuit to low voltage electric circuit
+<prePS>.HV1.Pwr
+<prePS>.HV2.Pwr<preIF>.Pwr_HV1
+<preIF>.Pwr_HV2W Total electric power (generators and consumers) on high voltage 1 / 2 electric circuit
+<prePS>.LV.Pwr <preIF>.Pwr_LV W Total electric power (generators and consumers) on low voltage electric circuit
+<prePS>.HV1.Pwr_aux
+<prePS>.HV2.Pwr_aux<pre>.Pwr_HV1_aux
+<pre>.Pwr_HV2_auxW Additional external electric power (generators and consumers) on high voltage 1 / 2
+electric circuit
+<prePS>.LV.Pwr_aux <pre>.Pwr_LV_aux W Additional external electric power (generators and consumers) on low voltage electric
+circuit
+<prePS>.HV1.Voltage
+<prePS>.HV2.Voltage<preIF>.Voltage_HV1
+<preIF>.Voltage_HV2V High voltage 1 / 2 electric circuit actual voltage
+<prePS>.LV.Voltage <preIF>.Voltage_LV V Low voltage electric circuit actual voltage
+<prePS>.Pwr_HV1toHV2 <preIF>.Pwr_HV1toHV2 W Actual transferred electric power from high voltage 1 circuit to high voltage 2 circuit
+<prePS>.Pwr_HV1toHV2_max <preIF>.Pwr_HV1toHV2_max W Maximum possible transferred electric power from high v oltage 1 electric circuit to
+high voltage 2 electric circuit
+<prePS>.Pwr_HV1toLV <preIF>.Pwr_HV1toLV W Actual transferred electric power from high voltage 1 circuit to low voltage circuit
+<prePS>.Pwr_HV1toLV_max <preIF>.Pwr_HV1toLV_max W Maximum possible transferred electric power from high voltage 1 electric circuit to low
+voltage electric circuit
+--- Page 67 ---
+1310 User Accessible Quantities
+Power Flow Calculation
+CarMaker Reference Manual Version 14.0.126.13 Power Flow Calculation
+26.13.1 PowerDelta
+Name UAQ Name C-Code Unit Info
+<pos> := FL, FR, RL, RR
+PwrD.Aero.Drag PowerDelta.Aero.Drag W PowerDelta due to aerodynamic drag force
+PwrD.Aero.Lift PowerDelta.Aero.Lift W PowerDelta due to aerodynamic lift force
+PwrD.Aero.Pitch PowerDelta.Aero.Pitch W PowerDelta due to aerodynamic pitch moment
+PwrD.Aero.Roll PowerDelta.Aero.Roll W PowerDelta due to aerodynamic roll moment
+PwrD.Aero.Side PowerDelta.Aero.Sid W PowerDelta due to aerodynamic side force
+PwrD.Aero.Total PowerDelta.Aero.Total W Total aerodynamic PowerDelta
+PwrD.Aero.Y aw PowerDelta.Aero.Y aw W PowerDelta due to aerodynamic yaw moment
+PwrD.Brake.Total PowerDelta.Brake_Total W Total brake PowerDelta
+PwrD.Brake.Total<pos> PowerDelta.Brake[i].Total W PowerDelta due to brake at wheel <pos>
+PwrD.Grvt PowerDelta.Grvt, W PowerDelta due to road inclination (gravity)
+PwrD.Hitch.Frc_x
+PwrD.Hitch.Frc_y
+PwrD.Hitch.Frc_zPowerDelta.Hitch.Frc_x
+PowerDelta.Hitch.Frc_y
+PowerDelta.Hitch.Frc_zW PowerDelta due to hitch forces
+PwrD.Hitch.Total PowerDelta.Hitch.Total W Total trailer hitch PowerDelta
+PwrD.Hitch.Trq_x
+PwrD.Hitch.Trq_y
+PwrD.Hitch.Trq_zPowerDelta.Hitch.Trq_x
+PowerDelta.Hitch.Trq_y
+PowerDelta.Hitch.Trq_zW PowerDelta due to hitch torques
+PwrD.Inert_Chassis PowerDelta.Inert_Chassis W PowerDelta due to inertia of the vehicle body
+PwrD.PT.Battery_LV PowerDelta.PT.Battery_LV W PowerDelta for the low voltage battery
+PwrD.PT.Battery_HV PowerDelta.PT.Battery_HV W PowerDelta for the high voltage battery
+PwrD.PT.CDiff PowerDelta.PT.CDiff W PowerDelta for the central differential
+PwrD.PT.Clutch.<i> PowerDelta.PT.Clutch[i] W PowerDelta for the clutch
+PwrD.PT.DriveLine PowerDelta.PT.DriveLine W PowerDelta for the total driveline (all differentials + han g-on clutch +
+shafts)
+PwrD.PT.Engine PowerDelta.PT.Engine W PowerDelta for the engine
+PwrD.PT.FDiff PowerDelta.PT.FDiff W PowerDelta for the front differential
+PwrD.PT.Gearbox<i> PowerDelta.PT.GearBox[i] W PowerDelta for the gearbox
+PwrD.PT.HangOn PowerDelta.PT.HangOn W PowerDelta for the hang-on clutch
+PwrD.PT.Inert PowerDelta.PT.Inert W PowerDelta due to inertia of the powertrain components (engine, clutch)
+not passed to driveline
+PwrD.PT.Inert_DL PowerDelta.PT.Inert_DL W PowerDelta due to inertia of the driveline
+PwrD.PT.ISG PowerDelta.PT.ISG W PowerDelta for the starter generator ISG
+PwrD.PT.Motor
+PwrD.PT.Motor<iM>PowerDelta.PT.Motor[iM] W PowerDelta for the electric motor iM
+PwrD.PT.PlanetGear PowerDelta.PT.PlanetGear W PowerDelta for the planet gearbox (only in PowerSplit powertrain)
+PwrD.PT.PowerSupply PowerDelta.PT.PowerSupply W PowerDelta for the power supply
+PwrD.PT.RDiff PowerDelta.PT.RDiff W PowerDelta for the rear differential
+PwrD.PT.Shafts PowerDelta.PT.Shafts W PowerDelta for all shafts torques
+PwrD.PT.Spring_DL PowerDelta.PT.Spring_DL W PowerDelta due to shaft spring torque in the ﬂexible driveline
+PwrD.PT.Total PowerDelta.PT.Total W Total powertrain PowerDelta
+PwrD.Susp.Buffer<pos> PowerDelta.Susp[i].Buffer W PowerDelta due to the buffer of suspension <pos>
+PwrD.Susp.Damper<pos> PowerDelta.Susp[i].Damper W PowerDelta due to damper of suspension <pos>
+PwrD.Susp.Spring<pos> PowerDelta.Susp[i].Spring W PowerDelta due to the spring of suspension <pos>
+PwrD.Susp.Stabi<pos> PowerDelta.Susp[i].Stabi W PowerDelta due to the stabi of suspension <pos>
+PwrD.Susp.Total PowerDelta.Susp_Total W Total suspension PowerDelta
+PwrD.Susp.Total<pos> PowerDelta.Susp[i].Total W Total suspension PowerDelta of suspension <pos>
+PwrD.Tire.CambDeﬂ<pos> PowerDelta.Tire[i].CambDeﬂ W PowerDelta due to camber deﬂection of tire <pos>
+PwrD.Tire.LatSlip<pos> PowerDelta.Tire[i].LatSlip W PowerDelta due to lateral slip of tire <pos>
+--- Page 68 ---
+1311 User Accessible Quantities
+Power Flow Calculation
+CarMaker Reference Manual Version 14.0.126.13.2 PowerLoss
+26.13.3 PowerStorePwrD.Tire.LongSlip<pos> PowerDelta.Tire[i].LongSlip W PowerDelta due to longitudinal slip of tire <pos>
+PwrD.Tire.RollResist<pos> PowerDelta.Tire[i].RollResist W PowerDelta due to rolling resistance of tire <pos>
+PwrD.Tire.ToeSlip<pos> PowerDelta.Tire[i].ToeSlip W PowerDelta due to toe slip of tire <pos>
+PwrD.Tire.Total PowerDelta.Tire_Total W Total tire PowerDelta
+PwrD.Tire.Total<pos> PowerDelta.Tire[i].Total W Total tire PowerDelta of tire <pos>
+PwrD.Tire.VertDeﬂ<pos> PowerDelta.Tire[i].VertDeﬂ W PowerDelta due to vertical deﬂection of tire <pos>
+PwrD.Total PowerDelta.Total W Total PowerDelta (power loss/gain)
+Name UAQ Name C-Code Unit Info
+PwrL.Aero PowerLoss.Aero W Total power loss due to aerodynamics
+PwrL.Brake PowerLoss.Brake W Total power loss in the brakes
+PwrL.Grvt PowerLoss.Grvt W Total power loss due to road inclination
+PwrL.Hitch PowerLoss.Hitch W Total power loss due to trailer hitch forces
+PwrL.Inert_Chassis PowerLoss.Inert_Chassis W Total power loss due to inertia of vehicle body
+PwrL.PT PowerLoss.PT W Total power loss in the powertrain
+PwrL.Susp PowerLoss.Susp W Total power loss in the suspensions
+PwrL.Tire PowerLoss.Tire W Total power loss in the tires
+PwrL.Total PowerLoss.Total W Total power lossName UAQ Name C-Code Unit Info
+Name UAQ Name C-Code Unit Info
+PwrS.Aero PowerStore.Aero W Total power store due to aerodynamics
+PwrS.Brake PowerStore.Brake W Total power store in the brakes
+PwrS.Grvt PowerStore.Grvt W Total power store due to road inclination
+PwrS.Hitch PowerStore.Hitch W Total power store due to trailer hitch forces
+PwrS.Inert_Chassis PowerStore.Inert_Chassis W Total power store due to inertia of vehicle body
+PwrS.PT PowerStore.PT W Total power store in the powertrain
+PwrS.Susp PowerStore.Susp W Total power store in the suspensions
+PwrS.Tire PowerStore.Tire W Total power store in the tires
+PwrS.Total PowerStore.Total W Total power store

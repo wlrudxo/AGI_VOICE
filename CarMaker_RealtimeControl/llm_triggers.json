@@ -1,0 +1,11 @@
+{
+  "description": "LLM trigger conditions for CarMaker simulation",
+  "note": "Variable names use underscores instead of dots (Car_v not Car.v). Speeds in m/s.",
+  "triggers": [
+    {
+      "name": "speed_over_60kph",
+      "condition": "Car_v > 16.67",
+      "description": "Speed exceeds 60 km/h (16.67 m/s)"
+    }
+  ]
+}

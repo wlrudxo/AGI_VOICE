@@ -97,7 +97,6 @@ fn get_db_path() -> std::path::PathBuf {
 
 pub fn load_settings() -> Result<Settings, String> {
     let config_path = get_config_path();
-    println!("📂 Loading settings from: {:?}", config_path);
 
     if config_path.exists() {
         let content = fs::read_to_string(&config_path)
@@ -106,10 +105,8 @@ pub fn load_settings() -> Result<Settings, String> {
         let settings: Settings = serde_json::from_str(&content)
             .map_err(|e| format!("Failed to parse config file: {}", e))?;
 
-        println!("✅ Settings loaded: {:?}", settings);
         Ok(settings)
     } else {
-        println!("⚠️ Config file not found, using default settings");
         Ok(Settings::default())
     }
 }

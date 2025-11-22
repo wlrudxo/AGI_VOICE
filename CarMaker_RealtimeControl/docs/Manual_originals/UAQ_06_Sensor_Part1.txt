@@ -1,0 +1,972 @@
+--- Page 69 ---
+1312 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.126.14 Sensors
+26.14.1 Inertial Sensor
+The quantities in the column “Simulink“ refer to those with respect to the “Car InertialSen-
+sorTrafﬁcObject“ block in the CarMaker for Simulink library.
+26.14.2 Slip Angle SensorName UAQ Name C-CodeName
+SimulinkFrame Unit Info (data type, if not ﬂoat)
+<Nb> :=0, .., n (number)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.Inertial.<inst>.<name>
+- InertialSensor[Nb].SignalMask SignalMask - Signal frame selection (unsigned long)
+- InertialSensor[Nb].Pos_B[0]
+InertialSensor[Nb].Pos_B[1]
+InertialSensor[Nb].Pos_B[2]Pos_B x
+Pos_B y
+Pos_B zFrB m Position of inertial sensor with name <nm> in the
+mounted body coordinate system as defined in Car-
+Maker Vehicle GUI
+- InertialSensor[Nb].OBO_0[0]
+InertialSensor[Nb].OBO_0[1]
+InertialSensor[Nb].OBO_0[2]OBO_0 x
+OBO_0 y
+OBO_0 zFr0 m Sensor position relative to the global coordinate sys-
+tem
+- InertialSensor[Nb].OBO_B[0]
+InertialSensor[Nb].OBO_B[1]
+InertialSensor[Nb].OBO_B[2]OBO_B x
+OBO_B y
+OBO_B zFrB m Sensor position relative to mounted body coordinate
+system as deﬁned in CarMaker Vehicle GUI
+<preQ>.Acc_0.x
+<preQ>.Acc_0.y
+<preQ>.Acc_0.zInertialSensor[Nb].Acc_0[0]
+InertialSensor[Nb].Acc_0[1]
+InertialSensor[Nb].Acc_0[2]Acc_0 x
+Acc_0 y
+Acc_0 zFr0 m/s2Translational acceleration of inertial sensor with name
+<nm> in global frame
+<preQ>.Acc_B.x
+<preQ>.Acc_B.y
+<preQ>.Acc_B.zInertialSensor[Nb].Acc_B[0]
+InertialSensor[Nb].Acc_B[1]
+InertialSensor[Nb].Acc_B[2]Acc_B x
+Acc_B y
+Acc_B zFr1 or
+Fr2m/s2Translational acceleration of inertial sensor with name
+<nm> in body frame (Fr1; Fr2)
+<preQ>.Alpha_0.x
+<preQ>.Alpha_0.y
+<preQ>.Alpha_0.zInertialSensor[Nb].Alpha_0[0]
+InertialSensor[Nb].Alpha_0[1]
+InertialSensor[Nb].Alpha_0[2]Alpha_0 x
+Alpha_0 y
+Alpha_0 zFr0 rad/s2Rotational acceleration of inertial sensor with name
+<nm> in global frame
+<preQ>.Alpha_B.x
+<preQ>.Alpha_B.y
+<preQ>.Alpha_B.zInertialSensor[Nb].Alpha_B[0]
+InertialSensor[Nb].Alpha_B[1]
+InertialSensor[Nb].Alpha_B[2]Alpha_B x
+Alpha_B y
+Alpha_B zFr1 or
+Fr2rad/s2Rotational acceleration of inertial sensor with name
+<nm> in body frame (Fr1; Fr2)
+<preQ>.Omega_0.x
+<preQ>.Omega_0.y
+<preQ>.Omega_0.zInertialSensor[Nb].Omega_0[0]
+InertialSensor[Nb].Omega_0[1]
+InertialSensor[Nb].Omega_0[2]Omega_0 x
+Omega_0 y
+Omega_0 zFr0 rad/s Rotational velocity of inertial sensor with name <nm>
+in global frame
+<preQ>.Omega_B.x
+<preQ>.Omega_B.y
+<preQ>.Omega_B.zInertialSensor[Nb].Omega_B[0]
+InertialSensor[Nb].Omega_B[1]
+InertialSensor[Nb].Omega_B[2]Omega_B x
+Omega_B y
+Omega_B zFr1 or
+Fr2rad/s Rotational velocity of inertial sensor with name <nm>
+in body frame (Fr1; Fr2)
+<preQ>.Pos_0.x
+<preQ>.Pos_0.y
+<preQ>.Pos_0.zInertialSensor[Nb].Pos_0[0]
+InertialSensor[Nb].Pos_0[1]
+InertialSensor[Nb].Pos_0[2]Pos_0 x
+Pos_0 y
+Pos_0 zFr0 m Position of inertial sensor with name <nm> in global
+frame
+<preQ>.Vel_0.x
+<preQ>.Vel_0.y
+<preQ>.Vel_0.zInertialSensor[Nb].Vel_0[0]
+InertialSensor[Nb].Vel_0[1]
+InertialSensor[Nb].Vel_0[2]Vel_0 x
+Vel_0 y
+Vel_0 zFr0 m/s Translational velocity of inertial sensor with name
+<nm> in global frame
+<preQ>.Vel_B.x
+<preQ>.Vel_B.y
+<preQ>.Vel_B.zInertialSensor[Nb].Vel_B[0]
+InertialSensor[Nb].Vel_B[1]
+InertialSensor[Nb].Vel_B[2]Vel_B x
+Vel_B y
+Vel_B zFr1 or
+Fr2m/s Translational velocity of inertial sensor with name
+<nm> in body frame (Fr1; Fr2)
+Name UAQ Name C-Code Name Simulink Unit Info (data type, if not double)
+<Nb> :=0, .., n (number)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.SAngle.<inst>.<name>
+<preQ>.Ang SAngleSensor[Nb].Angle - rad Sideslip angle sensor measurement
+--- Page 70 ---
+1313 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.126.14.3 Object Sensor
+General
+The quantities in the column “Simulink“ refer to those with respect to the “Car ObjectSensor“
+block in the CarMaker Simulink library.
+Relevant TargetName UAQ Name C-Code Name Simulink Unit Info (data type, if not double)
+<Nb> :=0, .., n (number)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.Object.<inst>.<name>
+Pointer tObjectSensor *pOS = &ObjectSensor[<SensorId>] or ObjectSensor_GetByIndex(<SensorId>) or
+ObjectSensor_GetByIndex(ObjectSensor_FindIndexForName(<name>))
+<preQ>.DrvLaneCurv pOS->DrvLaneCurv DrvLaneCurv 1/m Predicted driving lane curvature of sensor with the name <nm>
+<preQ>.rx_ext
+<preQ>.ry_ext
+<preQ>.rz_extpOS->rot_zyx_ext[0]
+pOS->rot_zyx_ext[1]
+pOS->rot_zyx_ext[2]Rot_zyx x
+Rot_zyx y
+Rot_zyx zrad External sensor rotation with ZYX-orientation order
+<preQ>.TimeStamp pOS->TimeStamp - s Time-stamp of updated sensor signals
+<preQ>.tx_ext
+<preQ>.ty_ext
+<preQ>.tz_extpOS->.t_ext[0]
+pOS->t_ext[1]
+pOS->t_ext[2]- m External sensor travel, expressed in mounted frame
+Sensor.Object.nSensors ObjectSensorCount - - Number of Sensors deﬁned (integer)
+Name UAQ Name C-Code Name Simulink Unit Info (data type, if not double)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.Object.<inst>.<name>.relvTgt
+Pointer tObjectSensor *pOS = &ObjectSensor[<SensorId>] or ObjectSensor_GetByIndex(<SensorId>) or
+ObjectSensor_GetByIndex(ObjectSensor_FindIndexForName(<name>))
+<preC> := pOS->relvTarget
+<preQ>.dtct pOS->Targ_Dtct TargetDetected - Flag: a relevant target is detected (boolean)
+<preQ>.ObjId pOS->relvTargetObjId relvTargetObjId - Global object Id of the relevant target:
+- value (integer) =-1 stands for no detection
+(please refer to section 5.4 ’Object ID’  for more information)
+<preQ>.ImgArea_LeftP
+<preQ>.ImgArea_NearP
+<preQ>.ImgArea_RightP<preC>.ImgArea_LeftP
+<preC>.ImgArea_NearP
+<preC>.ImgArea_RightP- - Projection of the target points on the sensor image area
+<preQ>.IncAngle_alpha
+<preQ>.IncAngle_beta<preC>.incangle[0]
+<preC>.incangle[1]- rad Angle of incidence in the nearest point
+<preQ>.RefPnt.alpha
+<preQ>.NearPnt.alpha<preC>.RefPnt.alpha_p
+<preC>.NearPnt.alpha_p- rad Bearing azimut of the relevant target
+(nearest point and reference point)
+<preQ>.RefPnt.ds_p
+<preQ>.NearPnt.ds_p<preC>.RefPnt.ds_p
+<preC>.NearPnt.ds_p- m Distance to the relevant target
+(nearest point and reference point)
+<preQ>.RefPnt.ds.x
+<preQ>.RefPnt.ds.y
+<preQ>.RefPnt.ds.z
+<preQ>.NearPnt.ds.x
+<preQ>.NearPnt.ds.y
+<preQ>.NearPnt.ds.z<preC>.RefPnt.ds[0]
+<preC>.RefPnt.ds[1]
+<preC>.RefPnt.ds[2]
+<preC>.NearPnt.ds[0]
+<preC>.NearPnt.ds[1]
+<preC>.NearPnt.ds[2]- m Distance to the relevant target in x,y,z-direction in sensor frame
+(nearest point and reference point)
+<preQ>.RefPnt.dv_p
+<preQ>.NearPnt.dv_p<preC>.RefPnt.dv_p
+<preC>.NearPnt.dv_p- m/s Relative radial speed of the relevant target
+(nearest point and reference point)
+<preQ>.RefPnt.dv.x
+<preQ>.RefPnt.dv.y
+<preQ>.RefPnt.dv.z
+<preQ>.NearPnt.dv.x
+<preQ>.NearPnt.dv.y
+<preQ>.NearPnt.dv.z<preC>.RefPnt.dv[0]
+<preC>.RefPnt.dv[1]
+<preC>.RefPnt.dv[2]
+<preC>.NearPnt.dv[0]
+<preC>.NearPnt.dv[1]
+<preC>.NearPnt.dv[2- m/s Speed of the relevant target in x,y,z-direction in sensor frame
+(nearest point and reference point)
+<preQ>.RefPnt.r_zyx.x
+<preQ>.RefPnt.r_zyx.y
+<preQ>.RefPnt.r_zyx.z<preC>.RefPnt.r_zyx[0]
+<preC>.RefPnt.r_zyx[1]
+<preC>.RefPnt.r_zyx[2]- rad Orientation of relevant target in the reference point re ferring to
+the sensor frame with rotation order z-y-x
+<preQ>.RefPnt.theta
+<preQ>.NearPnt.theta<preC>.RefPnt.theta_p
+<preC>.NearPnt.theta_p- rad Bearing elevation of the relevant target
+(nearest point and reference point)
+--- Page 71 ---
+1314 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.1Object List
+The quantities in the column “Simulink“ refer to those with respect to the “Car ObjectSensor
+Object“ block in the CarMaker Simulink library.
+26.14.4 Ground Truth Sensor
+GeneralName UAQ Name C-Code Name Simulink Unit Info (data type, if not double)
+<Nb> :=0, .., n (number)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.Object.<inst>.<name>.Obj.<name_object>
+Pointer tObjectSensorObj *pOSO = ObjectSensor_GetObject(<Sensor Id>, <Internal TrafﬁcId>) or
+ObjectSensor_GetObjectByObjId(<Sensor Id>, <Global ObjId>) or ObjectSensor_GetObjectForName(<Sensor Name>, <Trafﬁc Object Name>)
+- TrafﬁcObjectId - Trafﬁc (internal) object’s identiﬁcation number (integer)
+- pOSO->ObjId GlobalObjectId - Global object’s identiﬁcation number (integer)
+(please refer to section 5.4 ’Object ID’  for more information)
+- pOSO->h
+pOSO->l
+pOSO->wheight
+length
+widthm Trafﬁc object’s height, length, width
+- pOSO->zOff zOff m Distance between the trafﬁc object’s bottom and the road
+<preQ>.dtct pOSO->dtct dtct - Flag: Trafﬁc object is detected by sensor <nm> (boolean)
+<preQ>.ImgArea_LeftP
+<preQ>.ImgArea_NearP
+<preQ>.ImgArea_RightPpOSO->ImgArea_LeftP
+pOSO->ImgArea_NearP
+pOSO->ImgArea_RightPImgArea_LeftP
+ImgArea_NearP
+ImgArea_RightP- Projection of the object points on the sensor image area
+<preQ>.IncAngle_alpha
+<preQ>.IncAngle_betapOSO->incangle[0]
+pOSO->incangle[1]IncAngle 0
+IncAngle 1rad Angle of incidence in the nearest point of the trafﬁc object
+<preQ>.InLane pOSO->InLane - - Flag: traffic object is within the vehicle driving lane (only for
+’Nearest object in Path’ detection) (boolean)
+<preQ>.obsv pOSO->obsv obsv - Flag: trafﬁc object is inside the observation area of sensor <nm>
+(all sensor quantities are calculated) (boolean)
+<preQ>.RefPnt.alpha
+<preQ>.NearPnt.alphapOSO->RefPnt.alpha_p
+pOSO->NearPnt.alpha_pRefPnt alpha_p
+NearPnt alpha_prad Bearing azimut of the trafﬁc object
+(nearest point and reference point)
+<preQ>.RefPnt.ds_p
+<preQ>.NearPnt.ds_ppOSO->RefPnt.ds_p
+pOSO->NearPnt.ds_pRefPnt ds_p
+NearPnt ds_pm Distance from sensor to trafﬁc object
+(nearest point and reference point)
+<preQ>.RefPnt.ds.x
+<preQ>.RefPnt.ds.y
+<preQ>.RefPnt.ds.z
+<preQ>.NearPnt.ds.x
+<preQ>.NearPnt.ds.y
+<preQ>.NearPnt.ds.zpOSO->RefPnt.ds[0]
+pOSO->RefPnt.ds[1]
+pOSO->RefPnt.ds[2]
+pOSO->NearPnt.ds[0]
+pOSO->NearPnt.ds[1]
+pOSO->NearPnt.ds[2]RefPnt ds x
+RefPnt ds y
+RefPnt ds z
+NearPnt ds x
+NearPnt ds y
+NearPnt ds zm Distance from sensor to trafﬁc object in x,y,z-direction in sensor
+frame
+(nearest point and reference point)
+<preQ>.RefPnt.dv_p
+<preQ>.NearPnt.dv_ppOSO->RefPnt.dv_p
+pOSO->NearPnt.dv_pRefPnt dv_p
+NearPnt dv_pm/s Relative radial speed (distance change rate)
+(nearest point and reference point)
+<preQ>.RefPnt.dv.x
+<preQ>.RefPnt.dv.y
+<preQ>.RefPnt.dv.z
+<preQ>.NearPnt.dv.x
+<preQ>.NearPnt.dv.y
+<preQ>.NearPnt.dv.zpOSO->RefPnt.dv[0]
+pOSO->RefPnt.dv[1]
+pOSO->RefPnt.dv[2]
+pOSO->NearPnt.dv[0]
+pOSO->NearPnt.dv[1]
+pOSO->NearPnt.dv[2]RefPnt dv x
+RefPnt dv y
+RefPnt dv z
+NearPnt dv x
+NearPnt dv y
+NearPnt dv zm/s Speed of the trafﬁc object in x,y,z-direction in sensor frame
+(nearest point and reference point)
+<preQ>.RefPnt.r_zyx.x
+<preQ>.RefPnt.r_zyx.y
+<preQ>.RefPnt.r_zyx.zpOSO->RefPnt.r_zyx[0]
+pOSO->RefPnt.r_zyx[1]
+pOSO->RefPnt.r_zyx[2]RefPnt r_zyx x
+RefPnt r_zyx y
+RefPnt r_zyx z
+NearPnt r_zyx x
+NearPnt r_zyx y
+NearPnt r_zyx zrad Orientation of trafﬁc object <nm_O> in the reference point refer-
+ring to the sensor frame with rotation order z-y-x
+<preQ>.RefPnt.theta
+<preQ>.NearPnt.thetapOSO->RefPnt.theta_p
+pOSO->NearPnt.theta_pRefPnt theta_p
+NearPnt theta_prad Bearing elevation of the trafﬁc object
+(nearest point and reference point)
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<NoS> := 0..n (sensors)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.GroundTruth.<inst>.<name>
+<preC> := GroundTruthSensor[NoS]
+--- Page 72 ---
+1315 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.1Object List
+Data Pointer Lines<preQ>.Active - 0 or 1 to deactivate or activate calculation for this sensor i nstance
+(integer)
+<preQ>.nGTObjects <preC>.nGTObjects - Number of detected gtObjects. This number may include objects that
+are not listed in any of the type lists.
+<preQ>.nLines <preC>.nLines - Number of detected lines (integer)
+<preQ>.nLanes <preC>.nLanes - Number of detected lanes (integer)
+<preQ>.nRoots <preC>.nRoots - Number of detected roots (integer)
+<preQ>.nTrafﬁcSigns <preC>.nTrafﬁcSigns - Number of detected trafﬁc signs (integer)
+<preQ>.nTrafﬁcLights <preC>.nTrafﬁcLights - Number of detected trafﬁc lights (integer)
+<preQ>.nMounts <preC>.nMounts - Number of detected mounts (integer)
+<preQ>.nTrafﬁcObjects <preC>.nTrafﬁcObjects - Number of detected trafﬁc objects (integer)
+<preQ>.nSceneObjects <preC>.nSceneObjects - Number of detected scene objects (integer)
+<preQ>.TimeStamp <preC>.TimeStamp s Time stamp of updated sensor signals
+<preC>.sensorPos0[0]
+<preC>.sensorPos0[1]
+<preC>.sensorPos0[2]m Sensor position in Fr0 with external motion
+<preC>.cfg.range[0]
+<preC>.cfg.range[1]m Minimum and maximum range of the sensor
+<preC>.cfg.FoV[0]
+<preC>.cfg.FoV[1]rad Horizontal and Vertical sensor ﬁeld of view
+<preC>.cfg.cycleTime ms Sensor cycle duration
+<preC>.cfg.cycleOffset ms Time until start of ﬁrst sensor cycle
+<preQ>.tx_ext
+<preQ>.ty_ext
+<preQ>.tz_ext<preC>.t_ext[0]
+<preC>.t_ext[1]
+<preC>.t_ext[2]m External sensor travel, expressed in mounted frame
+<preQ>.rx_ext
+<preQ>.ry_ext
+<preQ>.rz_ext<preC>.rot_zyx_ext[0]
+<preC>.rot_zyx_ext[1]
+<preC>.rot_zyx_ext[2]rad External sensor rotation with ZYX-orientation orderName UAQ Name C-Code Unit Info (data type, if not double)
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<NoS> := 0..n (sensors)
+<NoO> := 0..m (objects)
+<preC> := GroundTruthSensor[NoS].GTObj[NoO]
+<preC>.ObjID - Global ID to identify object (integer)
+<preC>.UserID - User-deﬁned ID to identify object (integer)
+<preC>.GTObjType - Object type (integer):
+0 = GTOT_Line
+1 = GTOT_Lane
+2 = GTOT_Root
+3 = GTOT_TrafﬁcSign
+4 = GTOT_TrafﬁcLight
+5 = GTOT_Mount
+6 = GTOT_Trafﬁc
+7 = GTOT_Scene
+<preC>.hasData - Indicates if more detailed data to this object is available (integer)
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<NoS> := 0..n (sensors)
+<NoO> := 0..n (lines)
+<NoLP> := 0..m (line points)
+<NoDSP> := 0..m (dash start points)
+<NoDEP> := 0..m (dash end points)
+<NoPL> := 0..m (previous lines)
+<NoNL> := 0..m (next lines)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.GroundTruth.<inst>.<name>.Line.<NoO>
+<preC> := GroundTruthSensor[NoS].lines[NoO]
+<preCC> := GroundTruthSensor[NoS].lines[NoO].polynomialList
+--- Page 73 ---
+1316 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.1<preQ>.ObjID <preC>.ObjID - Global ID to identify object (integer)
+<preQ>.UserID <preC>.UserID - User-deﬁned ID to identify object (integer)
+<preQ>.SubsectionID <preC>.SubsectionID - Id to handle multiple separate sections of one line inside fov (integer)
+<preQ>.Type <preC>.lineType - Line type (integer):
+0 = GTLT_Centerline
+1 = GTLT_LaneBoundary
+2 = GTLT_RoadBoundary
+3 = GTLT_Path
+4 = GTLT_RMSolid
+5 = GTLT_RMBroken
+6 = GTLT_RMDotted
+7 = GTLT_RMDoubleSolid
+8 = GTLT_RMDoubleBroken
+9 = GTLT_RMDoubleDotted
+10 = GTLT_RMDoubleBrokenL
+11 = GTLT_RMDoubleBrokenR
+12 = GTLT_RMDoubleDottedL
+13 = GTLT_RMDoubleDottedR
+14 = GTLT_GuardRail1
+15 = GTLT_GuardRail2
+16 = GTLT_GuardRail3
+17 = GTLT_JerseyBarrier
+18 = GTLT_Wall
+<preQ>.Width <preC>.width m Line width
+<preQ>.Height <preC>.height m Line height
+<preQ>.Length <preC>.length m Length of line section inside ﬁeld of view
+<preQ>.Color_R
+<preQ>.Color_G
+<preQ>.Color_B<preC>.colorRGB[0]
+<preC>.colorRGB[1]
+<preC>.colorRGB[2]- RGB triplet for line color, digital 8-bit per channel [0..255]
+<preC>.dashLength m Length of dashes in broken line
+<preC>.intervalLength m Length of intervals between dashes in broken line
+<preC>.nPoints - Number of 3-dimensional arrays in points (integer)
+<preC>.points[<NoLP>][0]
+<preC>.points[<NoLP>][1]
+<preC>.points[<NoLP>][2]m x coordinates of line points (only valid for pointlist output)
+y coordinates of line points (only valid for pointlist output)
+z coordinates of line points (only valid for pointlist output)
+<preC>.curvature[<NoLP>] 1/m Curvature of line points (only valid for pointlist output)
+<preC>.gradient[<NoLP>] 1/m Gradient of line points (only valid for pointlist output)
+<preC>.nDashStartPoints - Number of 3-dimensional arrays in dashStartPosition (integer)
+<preC>.dashStartPosition[<NoDSP>][0]
+<preC>.dashStartPosition[<NoDSP>][1]
+<preC>.dashStartPosition[<NoDSP>][2]m x coordinates of dash start points in broken lines
+y coordinates of dash start points in broken lines
+z coordinates of dash start points in broken lines
+<preC>.nDashEndPoints - Number of 3-dimensional arrays in dashEndPosition (integer)
+<preC>.dashEndPosition[<NoDEP>][0]
+<preC>.dashEndPosition[<NoDEP>][1]
+<preC>.dashEndPosition[<NoDEP>][2]m x coordinates of dash end points in broken lines
+y coordinates of dash end points in broken lines
+z coordinates of dash end points in broken lines
+<preC>.nPrev - Number of elements in prev (integer)
+<preC>.prev[<NoPL>] - List of pointers to previous elements inside ﬁeld of view (*tGTObject)
+<preC>.nNext - Number of elements in next (integer)
+<preC>.next[<NoNL>] - List of pointers to next elements inside ﬁeld of view (*tGTObject)
+<preC>.polynomialList - First element of a linked polynomialList list
+(*tGTParametricCubicPolynomial)
+<preCC>.ObjID - Object Id of road marking, path, etc. suitable to object id in the Sce-
+nario Editor (integer)
+<preC>.detectionProbability - Detection probability of the object
+<preCC>.prev - Pointer to the previous polynomial (*tGTParametricCubicPolynomial)
+<preCC>.next - Pointer to next polynomial (*tGTParametricCubicPolynomial)
+<preCC>.cx[0]
+<preCC>.cx[1]
+<preCC>.cx[2]
+<preCC>.cx[3]- dx coefﬁcient of polynomial for x coordinate
+cx coefﬁcient of polynomial for x coordinate
+bx coefﬁcient of polynomial for x coordinate
+ax coefﬁcient of polynomial for x coordinate
+<preCC>.cy[0]
+<preCC>.cy[1]
+<preCC>.cy[2]
+<preCC>.cy[3]- dy coefﬁcient of polynomial for y coordinate
+cy coefﬁcient of polynomial for y coordinate
+by coefﬁcient of polynomial for y coordinate
+ay coefﬁcient of polynomial for y coordinateName UAQ Name C-Code Unit Info (data type, if not double)
+--- Page 74 ---
+1317 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.1Data Pointer Lanes
+Data Pointer Roots<preCC>.cz[0]
+<preCC>.cz[1]
+<preCC>.cz[2]
+<preCC>.cz[3]- dz coefﬁcient of polynomial for z coordinate
+cz coefﬁcient of polynomial for z coordinate
+bz coefﬁcient of polynomial for z coordinate
+az coefﬁcient of polynomial for z coordinate
+<preCC>.s - s coordinate at start of polynomial
+<preCC>.sCurve - s coordinate at start of polynomial on complete curve
+<preCC>.interval - Range of s coordinate of polynomialName UAQ Name C-Code Unit Info (data type, if not double)
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<NoS> := 0..n (sensors)
+<NoO> := 0..n (lanes)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.GroundTruth.<inst>.<name>.Lane.<NoO>
+<preC> := GroundTruthSensor[NoS].lanes[NoO]
+<preQ>.ObjID <preC>.ObjID - Global ID to identify object (integer)
+<preQ>.UserID <preC>.UserID - User-deﬁned ID to identify object (integer)
+<preQ>.Type <preC>.type - Lane type (integer):
+0 = GTLaneType_Driving
+1 = GTLaneType_Border
+2 = GTLaneType_RoadSide
+3 = GTLaneType_Biking
+4 = GTLaneType_Pedestrian
+5 = GTLaneType_TrafﬁcIsland
+6 = GTLaneType_Parking
+7 = GTLaneType_Bus
+8 = GTLaneType_HOV
+9 = GTLaneType_Emergency
+10 = GTLaneType_OnRamp
+11 = GTLaneType_OffRamp
+12 = GTLaneType_Vegetation
+<preC>.path - Pointer to the path (*tGTObject)
+<preC>.innerLaneBoundary - Pointer to the inner lane boundary (*tGTObject)
+<preC>.outerLaneBoundary - Pointer to the outer lane boundary (*tGTObject)
+<preC>.nPrev - Number of elements in prev (integer)
+<preC>.prev - List of pointers to the previous lanes (*tGTObject)
+<preC>.nNext - Number of elements in next (integer)
+<preC>.next - List of pointers to the next lanes (*tGTObject)
+<preC>.rightAdjacentLane - Pointer to the right adjacend lane with respect to path direc tion
+deﬁned in road (*tGTObject)
+<preC>.leftAdjacentLane - Pointer to the left adjacent lane with respect to path direction deﬁned
+in road (*tGTObject)
+<preC>.isCurrentLane - Flag indicating if the sensor is currently on this lane (integer)
+<preC>.currentLaneData.isRight - Flag indicating the lane direction with respect to current viewing direc-
+tion (integer)
+Only valid, if isCurrentLane = 1 (integer)
+<preC>.currentLaneData.nLanesLeft - Number of left lanes in viewing direction (integer)
+Only valid, if isCurrentLane = 1
+<preC>.currentLaneData.nLanesRight - Number of right lanes in viewing direction (integer)
+Only valid, if isCurrentLane = 1
+<preC>.currentLaneData.currentLaneIndex - Index indicating the position of the current lane in nLanesLeft/nLanes-
+Right from inside to outside (integer)
+Only valid, if isCurrentLane = 1
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<NoS> := 0..n (sensors)
+<NoO> := 0..n (roots)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.GroundTruth.<inst>.<name>.Root.<NoO>
+<preC> := GroundTruthSensor[NoS].roots[NoO]
+--- Page 75 ---
+1318 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.1Data Pointer Trafﬁc Signs<preQ>.ObjID <preC>.ObjID - Global ID to identify object (integer)
+<preQ>.UserID <preC>.UserID - User-deﬁned ID to identify object (integer)
+<preQ>.Type <preC>.type - Lane type (integer):
+0 = GTRootType_Junction
+1 = GTRootType_Link
+<preC>.roadType - Road type (integer):
+0 = GTRoadType_Urban
+1 = GTRoadType_Countryroad
+2 = GTRoadType_Motorway
+3 = GTRoadType_Roundabout
+4 = GTRoadType_Ramp
+5 = GTRoadType_Dirttrack
+6 = GTRoadType_User
+7 = GTRoadType_Undeﬁned
+<preC>.nCenterlines - Number of elements in centerline (integer)
+<preC>.centerline - List of pointers to centerlines (*tGTObject)
+<preC>.nRoadBoundaries - Number of elements in roadBoundaries (integer)
+<preC>.roadBoundaries - List of pointers to road boundaries of this root (*tGTObject)
+<preC>.nConnectedRoots - Number of elements in connectedRoots (integer)
+<preC>.connectedRoots - List of pointers to centerlines of this root (*tGTObject)Name UAQ Name C-Code Unit Info (data type, if not double)
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<NoS> := 0..n (sensors)
+<NoO> := 0..n (trafﬁc signs)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.GroundTruth.<inst>.<name>.TrafﬁcSign.<NoO>
+<preC> := GroundTruthSensor[NoS].trafﬁcSigns[NoO]
+<preQ>.ObjID <preC>.ObjID - Global ID to identify object (integer)
+<preQ>.UserID <preC>.UserID - User-deﬁned ID to identify object (integer)
+<preQ>.Length <preC>.dimensions.length m Length of the object’s bounding box along x-axis
+<preQ>.Width <preC>.dimensions.width m Width of the object’s bounding box along y-axis
+<preQ>.Height <preC>.dimensions.height m Height of the object’s bounding box along z-axis
+<preQ>.SignID <preC>.main.signId - Identiﬁer for the type of the Trafﬁc sign (integer)
+<preQ>.Val0
+<preQ>.Val1<preC>.main.val[0]
+<preC>.main.val[1]- Values 0 / 1 displayed on theTrafﬁc sign (integer)
+<preQ>.IsInFoV <preC>.isInFoV - Flag indicating if the object is inside the sensors FoV (integer)
+<preQ>.PercentageVisible <preC>.percentageVisible % Percentage of the object’s visible area when occlusion is enabled
+<preQ>.IsVisible <preC>.isVisible - Flag indicating if the object is visible for the sensor. 1 if PercentageV-
+isible is > 0 (integer)
+<preQ>.RefPnt <preC>.referencePoint - Center point of the object’s bounding box (observed point)
+<preC>.nearestPoint - Nearest point of the object’s bounding box (observed point)
+<preC>.pos_st[0]
+<preC>.pos_st[1]m s position in link frame, not valid on junctions
+t position in link frame, not valid on junctions
+<preC>.detectionProbability - Detection probability of the object
+<preC>.facing - Flag indicating if the sign is facing towards the sensor (integer)
+<preC>.main - Main sign strcture(tRoadSign)
+See Road API for more information
+<preC>.suppl - Frist supplementary sign structure (tRoadSign)
+See Road API for more information
+<preC>.supp - Second supplementary sign structure (tRoadSign)
+See Road API for more information
+<preC>.isPaintedOnRoad - Flag indicating if the trafﬁc sign is painted on the road (integer)
+<preC>.mount - Pointer to the mount the trafﬁc sign is mounted on (*tGTObject)
+Not valid if isPaintedOnRoad = 1 or “Mount” type is not active
+<preC>.lane - Pointer to the lane the trafﬁc sign is mounted above (*tGTObject)
+Not valid if “Lane” type is not active
+--- Page 76 ---
+1319 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.1Data Pointer Trafﬁc Lights
+Data Pointer Mounts<preC>.root - Pointer to the root the trafﬁc sign is mounted above (*tGTObject)
+Not valid if “Root” type is not activeName UAQ Name C-Code Unit Info (data type, if not double)
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<NoS> := 0..n (sensors)
+<NoO> := 0..n (trafﬁc lights)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.GroundTruth.<inst>.<name>.TrafﬁcLight.<NoO>
+<preC> := GroundTruthSensor[NoS].trafﬁcLights[NoO]
+<preQ>.ObjID <preC>.ObjID - Global ID to identify object (integer)
+<preQ>.UserID <preC>.UserID - User-deﬁned ID to identify object (integer)
+<preQ>.Length <preC>.dimensions.length m Length of the object’s bounding box along x-axis
+<preQ>.Width <preC>.dimensions.width m Width of the object’s bounding box along y-axis
+<preQ>.Height <preC>.dimensions.height m Height of the object’s bounding box along z-axis
+<preQ>.Type <preC>.type - Trafﬁc light type (integer):
+0 = GTTrafﬁcLightType_RYG
+1 = GTTrafﬁcLightType_RYG_straight
+2 = GTTrafﬁcLightType_RYG_left
+3 = GTTrafﬁcLightType_RYG_right
+4 = GTTrafﬁcLightType_RYG_straightLeft
+5 = GTTrafﬁcLightType_RYG_straightRight
+6 = GTTrafﬁcLightType_RYG_small
+7 = GTTrafﬁcLightType_RY
+8 = GTTrafﬁcLightType_YG
+9 = GTTrafﬁcLightType_YG_left
+10 = GTTrafﬁcLightType_YG_right
+11 = GTTrafﬁcLightType_YG_left_large
+12 = GTTrafﬁcLightType_YG_right_large
+13 = GTTrafﬁcLightType_R_large
+14 = GTTrafﬁcLightType_ped_R
+15 = GTTrafﬁcLightType_ped_RG
+<preQ>.State <preC>.state - Trafﬁc light state (integer):
+0 = GTTrafﬁcLightState_Off
+1 = GTTrafﬁcLightState_Green
+2 = GTTrafﬁcLightState_Y ellow
+3 = GTTrafﬁcLightState_Red
+4 = GTTrafﬁcLightState_RedY ellow
+<preQ>.IsInFoV <preC>.isInFoV - Flag indicating if the object is inside the sensors FoV (integer)
+<preQ>.PercentageVisible <preC>.percentageVisible % Percentage of the object’s visible area when occlusion is enabled
+<preQ>.IsVisible <preC>.isVisible - Flag indicating if the object is visible for the sensor. 1 if PercentageV-
+isible is > 0 (integer)
+<preQ>.RefPnt <preC>.referencePoint - Center point of the object’s bounding box (observed point)
+<preC>.nearestPoint - Nearest point of the object’s bounding box (observed point)
+<preC>.pos_st[0]
+<preC>.pos_st[1]m s position in link frame, not valid on junctions
+t position in link frame, not valid on junctions
+<preC>.detectability - Detectability as set in the Scenario Editor (double)
+<preC>.facing - Flag indicating if the light is facing towards the sensor (integer)
+<preC>.mount - Pointer to the mount the trafﬁc light is mounted on (*tGTObject)
+Not valid if isPaintedOnRoad = 1 or “Mount” type is not active
+<preC>.lane - Pointer to the lane the trafﬁc light is mounted above (*tGTObject)
+Not valid if “Lane” type is not active
+<preC>.root - Pointer to the root the trafﬁc light is mounted above (*tGTObject)
+Not valid if “Root” type is not active
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<NoS> := 0..n (sensors)
+<NoO> := 0..n (mounts)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.GroundTruth.<inst>.<name>.Mount.<NoO>
+<preC> := GroundTruthSensor[NoS].mounts[NoO]
+--- Page 77 ---
+1320 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.1Data Pointer Trafﬁc Objects<preQ>.ObjID <preC>.ObjID - Global ID to identify object (integer)
+<preQ>.UserID <preC>.UserID - User-deﬁned ID to identify object (integer)
+<preQ>.Length <preC>.dimensions.length m Length of the object’s bounding box along x-axis
+<preQ>.Width <preC>.dimensions.width m Width of the object’s bounding box along y-axis
+<preQ>.Height <preC>.dimensions.height m Height of the object’s bounding box along z-axis
+<preQ>.Type <preC>.type - Mount type (integer):
+0 = GTMountType_Pole
+3 = GTMountType_PoleTrafﬁcLight
+<preQ>.IsInFoV <preC>.isInFoV - Flag indicating if the object is inside the sensors FoV (integer)
+<preQ>.PercentageVisible <preC>.percentageVisible % Percentage of the object’s visible area when occlusion is enabled
+<preQ>.IsVisible <preC>.isVisible - Flag indicating if the object is visible for the sensor. 1 if PercentageV-
+isible is > 0 (integer)
+<preQ>.RefPnt <preC>.referencePoint - Center point of the object’s bounding box (observed point)
+<preC>.nearestPoint - Nearest point of the object’s bounding box (observed point)
+<preC>.pos_st[0]
+<preC>.pos_st[1]m s position in link frame, not valid on junctions
+t position in link frame, not valid on junctions
+<preC>.lane - Pointer to the lane the mount is placed on (*tGTObject)
+Not valid if “Lane” type is not active
+<preC>.root - Pointer to the root the mount is placed on (*tGTObject)
+Not valid if “Root” type is not activeName UAQ Name C-Code Unit Info (data type, if not double)
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<NoS> := 0..n (sensors)
+<NoO> := 0..n (trafﬁc objects)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.GroundTruth.<inst>.<name>.TrafﬁcObject.<NoO>
+<preC> := GroundTruthSensor[NoS].trafﬁcObjects[NoO]
+<preQ>.ObjID <preC>.ObjID - Global ID to identify object (integer)
+<preQ>.UserID <preC>.UserID - User-deﬁned ID to identify object (integer)
+<preQ>.Length <preC>.dimensions.length m Length of the object’s bounding box along x-axis
+<preQ>.Width <preC>.dimensions.width m Width of the object’s bounding box along y-axis
+<preQ>.Height <preC>.dimensions.height m Height of the object’s bounding box along z-axis
+<preQ>.IsInFoV <preC>.isInFoV - Flag indicating if the object is inside the sensors FoV (integer)
+<preQ>.IsInTrajectory <preC>.isInTrajectory - Flag indicating if the object is in the current projected path of the sen-
+sor (integer)
+<preQ>.PercentageVisible <preC>.percentageVisible % Percentage of the object’s visible area when occlusion is enabled
+<preQ>.IsVisible <preC>.isVisible - Flag indicating if the object is visible for the sensor. 1 if PercentageV-
+isible is > 0 (integer)
+<preQ>.RefPnt <preC>.referencePoint - Reference point of the trafﬁc object (observed point)
+<preC>.nearestPoint - Nearest point of the object’s bounding box (observed point)
+<preC>.pos_st[0]
+<preC>.pos_st[1]m s position in link frame, not valid on junctions
+t position in link frame, not valid on junctions
+<preC>.detectMask - Flag if this object can be seen by sensors or other trafﬁc:
+1st bit -> detectable by sensors
+2nd bit -> detectable by other trafﬁc
+<preC>.lane - Pointer to the lane the trafﬁc object is driving on (*tGTObject)
+Not valid if “Lane” type is not active
+<preC>.root - Pointer to the root the trafﬁc object is driving on (*tGTObject)
+Not valid if “Root” type is not active
+--- Page 78 ---
+1321 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.1Special Trafﬁc Objects (Mounted Object & Relevant Target)
+Data pointer Scene ObjectsName UAQ Name C-Code Unit Info (data type, if not double)
+<NoS> := 0..n (sensors)
+<inst> := Vhcl, Tr
+<objectQ> := MountedObj, RelevantTarget
+<objectC> := mountedObject, relevantTarget
+<preQ> := Sensor.GroundTruth.<inst>.<name>.TrafﬁcObject.<objectQ>
+<preC> := GroundTruthSensor[NoS].<objectC>.trafﬁcObject
+<preQ>.ObjID <preC>.ObjID - Global ID to identify object (integer)
+<preQ>.UserID <preC>.UserID - User-deﬁned ID to identify object (integer)
+<preQ>.Length <preC>.dimensions.length m Length of the object’s bounding box along x-axis
+<preQ>.Width <preC>.dimensions.width m Width of the object’s bounding box along y-axis
+<preQ>.Height <preC>.dimensions.height m Height of the object’s bounding box along z-axis
+<preQ>.IsInFoV <preC>.isInFoV - Flag indicating if the object is inside the sensors FoV (integer)
+<preQ>.IsInTrajectory <preC>.isInTrajectory - Flag indicating if the object is in the current projected path of the sen-
+sor (integer)
+<preQ>.PercentageVisible <preC>.percentageVisible % Percentage of the object’s visible area when occlusion is enabled
+<preQ>.IsVisible <preC>.isVisible - Flag indicating if the object is visible for the sensor. 1 if PercentageV-
+isible is > 0 (integer)
+<preQ>.RefPnt <preC>.referencePoint - Reference point of the trafﬁc object (observed point)
+<preC>.nearestPoint - Nearest point of the object’s bounding box (observed point)
+<preC>.pos_st[0]
+<preC>.pos_st[1]m s position in link frame, not valid on junctions
+t position in link frame, not valid on junctions
+<preC>.detectMask - Flag if this object can be seen by sensors or other trafﬁc:
+1st bit -> detectable by sensors
+2nd bit -> detectable by other trafﬁc
+<preC>.lane - Pointer to the lane the trafﬁc object is driving on (*tGTObject)
+Not valid if “Lane” type is not active
+<preC>.root - Pointer to the root the trafﬁc object is driving on (*tGTObject)
+Not valid if “Root” type is not active
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<NoS> := 0..n (sensors)
+<NoO> := 0..n (scene objects)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.GroundTruth.<inst>.<name>.SceneObject.<NoO>
+<preC> := GroundTruthSensor[NoS].sceneObjects[NoO]
+<preQ>.ObjID <preC>.ObjID - Global ID to identify object (integer)
+<preQ>.UserID <preC>.UserID - User-deﬁned ID to identify object (integer)
+<preQ>.Length <preC>.dimensions.length m Length of the object’s bounding box along x-axis
+<preQ>.Width <preC>.dimensions.width m Width of the object’s bounding box along y-axis
+<preQ>.Height <preC>.dimensions.height m Height of the object’s bounding box along z-axis
+<preQ>.Type <preC>.type - Scene object type:
+0 = GTSceneObjectType_TB_Pole
+1 = GTSceneObjectType_TreeStrip
+2 = GTSceneObjectType_Geometry
+3 = GTSceneObjectType_Guidepost
+4 = GTSceneObjectType_SignPlate (not yet available)
+<preQ>.IsInFoV <preC>.isInFoV - Flag indicating if the object is inside the sensors FoV (integer)
+<preQ>.PercentageVisible <preC>.percentageVisible % Percentage of the object’s visible area when occlusion is enabled
+<preQ>.IsVisible <preC>.isVisible - Flag indicating if the object is visible for the sensor. 1 if PercentageV-
+isible is > 0 (integer)
+<preQ>.RefPnt <preC>.referencePoint - Center point of the object’s bounding box (observed point)
+<preC>.nearestPoint - Nearest point of the object’s bounding box (observed point)
+<preC>.pos_st[0]
+<preC>.pos_st[1]m s position in link frame, not valid on junctions
+t position in link frame, not valid on junctions
+<preC>.detectionProbability - Detection probability of the object
+--- Page 79 ---
+1322 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.1Observed Point
+Quantities for reference points and nearest points used by trafﬁc signs, trafﬁc lights,mounts,
+trafﬁc objects and scene objects.
+26.14.5 Free Space Sensor
+GeneralName UAQ Name C-Code Unit Info (data type, if not double)
+<NoS> := 0..n (ground truth sensors)
+<NoO> := 0..n (trafﬁc signs)
+<inst> := Vhcl, Tr
+<typeQ> := TrafﬁcSign, TrafﬁcLight, Mount, TrafﬁcObject, SceneObject
+<typeC> := trafﬁcSign, trafﬁcLight, mount, trafﬁcObject, sceneObject
+<obsvPntC> := referencePoint, nearestPoint
+<preQ> := Sensor.GroundTruth.<inst>.<name>.<typeQ>.<NoO>.RefPnt
+<preC> := GroundTruthSensor[NoS].<typeC>.[NoO].<obsvPntC<
+<preQ>.PosFr0.x
+<preQ>.PosFr0.y
+<preQ>.PosFr0.z<preC>.posFr0[0]
+<preC>.posFr0[1]
+<preC>.posFr0[2]m x coordinate in global frame
+y coordinate in global frame
+z coordinate in global frame
+<preQ>.RotFr0.roll
+<preQ>.RotFr0.pitch
+<preQ>.RotFr0.yaw<preC>.rotFr0[0]
+<preC>.rotFr0[1]
+<preC>.rotFr0[2]rad roll coordinate in global frame
+pitch coordinate in global frame
+yaw coordinate in global frame
+<preQ>.PosFrS.x
+<preQ>.PosFrS.y
+<preQ>.PosFrS.z<preC>.posFrS[0]
+<preC>.posFrS[1]
+<preC>.posFrS[2]m x coordinate the in sensor frame
+y coordinate the in sensor frame
+z coordinate in sensor frame
+<preQ>.RotFrS.roll
+<preQ>.RotFrS.pitch
+<preQ>.RotFrS.yaw<preC>.rotFrS[0]
+<preC>.rotFrS[1]
+<preC>.rotFrS[2]rad roll coordinate in sensor frame
+pitch coordinate in sensor frame
+yaw coordinate in sensor frame
+<preQ>.velFr0.x
+<preQ>.velFr0.y
+<preQ>.velFr0.z<preC>.velFr0[0]
+<preC>.velFr0[1]
+<preC>.velFr0[2]m/s (only trafﬁc objects) x coordinate of velocity in global frame
+(only trafﬁc objects) y coordinate of velocity in global frame
+(only trafﬁc objects) zcoordinate of velocity in global frame
+<preQ>.velFrS.x
+<preQ>.velFrS.y
+<preQ>.velFrS.z<preC>.velFrS[0]
+<preC>.velFrS[1]
+<preC>.velFrS[2]m/s (only trafﬁc objects) x coordinate of velocity in sensor frame
+(only trafﬁc objects) y coordinate of velocity in sensor frame
+(only trafﬁc objects) zcoordinate of velocity in sensor frame
+<preC>.accFr0[0]
+<preC>.accFr0[1]
+<preC>.accFr0[2]m/s2(only trafﬁc objects) x coordinate of acceleration in global frame
+(only trafﬁc objects) y coordinate of acceleration in global frame
+(only trafﬁc objects) zcoordinate of acceleration in global frame
+<preC>.rotvelFr0[0]
+<preC>.rotvelFr0[1]
+<preC>.rotvelFr0[2]m/s2(only trafﬁc objects) roll rate in global frame
+(only trafﬁc objects) pitch rate in global frame
+(only trafﬁc objects) yaw rate in global frame
+<preQ>.dist <preC>.pos_sphericalFrS[0] m radial distance to the sensor frame
+<preC>.pos_sphericalFrS[1]
+<preC>.pos_sphericalFrS[2]rad azimuthal angle in sensor frame
+elevation angle in sensor frame
+<preC>.vel_radialFrS rad/s (only trafﬁc objects) radial velocity relative to sensor frame
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<Nb> :=0, .., n (number of sensors)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.FSpace.<inst>.<name>
+<preC> := FSpaceSensor[Nb]
+<preQ>.rx_ext
+<preQ>.ry_ext
+<preQ>.rz_ext<preC>.rot_zyx_ext[0]
+<preC>.rot_zyx_ext[1]
+<preC>.rot_zyx_ext[2]rad Additional external rotation of sensor, expressed in mounted frame with ZYX-orienta-
+tion order
+<preQ>.TimeStamp <preC>.TimeStamp s Time-stamp of updated sensor signal
+<preQ>.tx_ext
+<preQ>.ty_ext
+<preQ>.tz_ext<preC>.t_ext[0]
+<preC>.t_ext[1]
+<preC>.t_ext[2]m Additional external travel of sensor, expressed in mounted frame
+--- Page 80 ---
+1323 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.1Segments
+The segment numeration begins on the upper left and ends on the lower right.
+26.14.6 Trafﬁc Sign Sensor
+General
+Detected signsName UAQ Name C-Code Unit Info (data type, if not double)
+<Nb> :=0, .., n (number of sensors)
+<Nb_S> :=0, .., nS (number of segments)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.FSpace.<inst>.<name>
+<preC> := FSpaceSensor[Nb]
+<preQ>.Segm.<Nb_S>.alpha <preC>.Segm[Nb_S].alpha_p rad Bearing azimut of the nearest point in sensor frame (polar coordinates)
+<preQ>.Segm.<Nb_S>.ds <preC>.Segm[Nb_S].ds_p m Distance to the nearest point
+<preQ>.Segm.<Nb_S>.ds.x
+<preQ>.Segm.<Nb_S>.ds.y
+<preQ>.Segm.<Nb_S>.ds.z<preC>.Segm[Nb_S].ds[0]
+<preC>.Segm[Nb_S].ds[1]
+<preC>.Segm[Nb_S].ds[2]m Position of the nearest point in x,y,z-coordinates of sensor frame
+Not provided by Free Space Sensor Plus
+<preQ>.Segm.<Nb_S>.dv <preC>.Segm[Nb_S].dv_p m/s Relative radial speed (distance change rate) of the nearest point
+<preQ>.Segm.<Nb_S>.dv.x
+<preQ>.Segm.<Nb_S>.dv.y
+<preQ>.Segm.<Nb_S>.dv.z<preC>.Segm[Nb_S].dv[0]
+<preC>.Segm[Nb_S].dv[1]
+<preC>.Segm[Nb_S].dv[2]m/s Velocity of the nearest point in x,y,z-coordinates of sensor frame
+Not provided by Free Space Sensor Plus
+<preQ>.Segm.<Nb_S>.theta <preC>.Segm[Nb_S].theta_p rad Bearing elevation of the nearest point in sensor frame ( polar coordi-
+nates)
+<preQ>.Segm.<Nb_S>.ObjId <preC>.Segm[Nb_S].ObjId - Identiﬁcation number of detected global object:
+- value (integer) =-1 means no detection, free space
+(please refer to section 5.4 ’Object ID’  for more information)
+Additional quantities for FSpace Sensor Plus
+<preQ>.Segm.<Nb_S>.MatId <preC>.Segm[Nb_S].MatId Material Id
+<preQ>.Segm.<Nb_S>.CosIncid <preC>.Segm[Nb_S].CosIncid Cosine of angle between sensor ray and the object’s surface normal at
+hit point
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<Nb> :=0, .., n (number)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.TSign.<inst>.<name>
+<preQ>.nSign TSignSensor[Nb].nSign - Total number of detected signs (integer)
+<preQ>.rx_ext
+<preQ>.ry_ext
+<preQ>.rz_extTSignSensor[Nb].rot_zyx_ext[0]
+TSignSensor[Nb].rot_zyx_ext[1]
+TSignSensor[Nb].rot_zyx_ext[2]rad Additional external rotation of sensor, expressed in mounted frame with rota-
+tion sequence ZYX
+<preQ>.TimeStamp TSignSensor[Nb].TimeStamp s Time stamp of updated sensor signals
+<preQ>.tx_ext
+<preQ>.ty_ext
+<preQ>.tz_extTSignSensor[Nb].t_ext[0]
+TSignSensor[Nb].t_ext[1]
+TSignSensor[Nb].t_ext[2]m Additional external travel of sensor, expressed in mounted frame
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<Nb> := 0, ..., n (number)
+<Nb_TS> := 0, ... 39(number of trafﬁc sign)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.TSign.<inst>.<name>.<i> with i=0...39 (if the sensor selects all signs)
+<preQ> := Sensor.TSign.<inst>.<name>.<sign>.<i> with i=0...3 (if the sensor selects speciﬁed signs)
+<preQ>.ds TSignSensor[Nb].Sign[Nb_TS].ds_p m Distance to trafﬁc sign position
+<preQ>.ds.x
+<preQ>.ds.y
+<preQ>.ds.zTSignSensor[Nb].Sign[Nb_TS].ds[0]
+TSignSensor[Nb].Sign[Nb_TS].ds[1]
+TSignSensor[Nb].Sign[Nb_TS].ds[2]m Distance to trafﬁc sign position in sensor frame or mounted frame
+--- Page 81 ---
+1324 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.126.14.7 Line Sensor
+The UAQ LineDetect.* are meant for visualization purposes only.
+General
+Detected lines<preQ>.Main.val0
+<preQ>.Main.val1TSignSensor[Nb].Sign[Nb_TS].main.val[0]
+TSignSensor[Nb].Sign[Nb_TS].main.val[1]- User-deﬁned sign attribute values (ﬂoat)
+<preQ>.ObjId TSignSensor[Nb].Sign[Nb_TS].objId - Trafﬁc sign object Id (integer)
+(please refer to section 5.4 ’Object ID’  for more information)Name UAQ Name C-Code Unit Info (data type, if not double)
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<Nb> := 0, .., n (sensor number)
+<inst> := Vhcl
+<preQ> := Sensor.Line.<inst>.<name>
+<preQ>.nLine_Left
+<preQ>.nLine_RightLineSensor[Nb].LLines.nLine
+LineSensor[Nb].RLines.nLine- Number of lines detected at left
+Number of lines detected at right (integer)
+<preQ>.rx_ext
+<preQ>.ry_ext
+<preQ>.rz_extLineSensor[Nb].rot_zyx_ext[0]
+LineSensor[Nb].rot_zyx_ext[1]
+LineSensor[Nb].rot_zyx_ext[2]rad Additional external rotation of sensor, expressed in mou nted frame
+with ZYX-orientation order
+<preQ>.TimeStamp LineSensor[Nb].TimeStamp s Time stamp of updated sensor signal
+<preQ>.tx_ext
+<preQ>.ty_ext
+<preQ>.tz_extLineSensor[Nb].t_ext[0]
+LineSensor[Nb].t_ext[1]
+LineSensor[Nb].t_ext[2]m Additional external travel of sensor, expressed in mounted frame
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<Nb> := 0, .., n (sensor number)
+<inst> := Vhcl
+<preQ> := Sensor.Line.<inst>.<name>.LLines.<i> or
+<preQ> := Sensor.Line.<inst>.<name>.RLines.<i>
+<preC> := LineSensor[<Nb>].LLines.L[<i>] or
+<preC> := LineSensor[<Nb>].RLines.L[<i>]
+with i=1...100 (1 is the nearest line) for <preQ> and i=0...99 for <preC>
+<preQ>.ColorCode <preC>.colorCode - User-deﬁned color index of detected line left/right (only for sensor, independent of color dis-
+played in IPGMovie) (integer)
+<preQ>.Height <preC>.lineHeight m Line height used for trafﬁc barrier
+<preQ>.Type <preC>.type - Line type (integer):
+1 = continuous single line
+2 = broken line
+3 = dotted line
+4 = double line, continuous
+5 = double line, broken
+6 = double line, dotted
+7 = double line, continuous right, broken left
+8 = double line, continuous left, broken right
+9 = double line, continuous right, dotted left
+10 = double line, continuous left, dotted right
+12 = Trafﬁc barrier
+<preQ>.Width <preC>.lineWidth m Line width
+<preQ>.Id <preC>.id - Line identiﬁcation number (integer)

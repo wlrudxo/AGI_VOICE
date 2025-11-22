@@ -1,0 +1,630 @@
+--- Page 82 ---
+1325 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.126.14.8 Road Sensor
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.Road.<inst>.<name>
+<preC> := RoadSensor[i]
+<preQ>.Lane.Act.isRight
+<preQ>.Lane.OnLeft.isRight
+<preQ>.Lane.OnRight.isRight<preC>.Act.isRight
+<preC>.OnLeft.isRight
+<preC>.OnRight.isRight- Indicates if the actual lane, at which the preview point along the path is, is on right
+side (same for lanes on left / right side) in path direction
+<preQ>.Lane.Act.LaneId
+<preQ>.Lane.OnLeft.LaneId
+<preQ>.Lane.OnRight.LaneId<preC>.Act.LaneId
+<preC>.OnLeft.LaneId
+<preC>.OnRight.LaneId- Indicates the lane Id at which the preview point along the path is, same for lanes on
+left / right side (-1 means no lane found)
+<preQ>.Lane.Act.tMidLane
+<preQ>.Lane.OnLeft.tMidLane
+<preQ>.Lane.OnRight.tMidLane<preC>.Act.tMidLane
+<preC>.OnLeft.tMidLane
+<preC>.OnRight.tMidLanem Lateral offset of actual lane mid to the route center line (same for lanes on left / right
+side) at preview point along path
+<preQ>.Lane.Act.Type
+<preQ>.Lane.OnLeft.Type
+<preQ>.Lane.OnRight.Type<preC>.Act.Type
+<preC>.OnLeft.Type
+<preC>.OnRight.Type- Type of the actual lane at preview point along path (same for lanes on left / right
+side):
+0: legally driveable road
+4: border lane
+5: roadside
+10: bicycle lane
+11: lane only for pedestrian
+12: trafﬁc island
+13: parking area
+14: bus lane
+15: HOV lane
+16: Emergency lane
+17: on-ramp lane
+18: off-ramp lane
+20: Vegetation strip
+<preQ>.Lane.Act.Width
+<preQ>.Lane.OnLeft.Width
+<preQ>.Lane.OnRight.Width<preC>.Act.Width
+<preC>.OnLeft.Width
+<preC>.OnRight.Widthm Width of the actual roadway lane and the lanes on left / right side at preview point
+along the path
+<preQ>.Lane.nLeft
+<preQ>.Lane.nRight<preC>.Lanes.nLanesL
+<preC>.Lanes.nLanesR- Number of left, right roadway lanes along path / route (integer)
+<preQ>.onRoad <preC>.onRoad - Flag: preview point is on the road (boolean)
+0 = not on the road, Road Sensor quantities are not updated
+1 = on the road, Road Sensor quantities are updated
+<preQ>.PreviewDist <preC>.PreviewDist m Sensor preview distance. Can be changed via DVA or by modifying the C-variable.
+<preQ>.RMarker.Attrib.<j> <preC>.MarkerAttrib[j] - User deﬁned attribute <j> of detected road marker (ﬂoat)
+<preQ>.Path.CurveXY
+<preQ>.Route.CurveXY<preC>.Path.CurveXY
+<preC>.Route.CurveXY1/m Route / path curvature at x-y plane at preview point
+<preQ>.Path.DevAng
+<preQ>.Route.DevAng<preC>.Path.Deviation.Ang
+<preC>.Route.Deviation.Angrad Deviation angle at preview point along path / route
+<preQ>.Path.DevDist
+<preQ>.Route.DevDist<preC>.Path.Deviation.Dist
+<preC>.Route.Deviation.Distm Deviation distance at preview point along path projected to the sensor point; devi-
+ation distance to the route
+<preQ>.Path.LatSlope
+<preQ>.Route.LatSlope<preC>.Path.LatSlope
+<preC>.Route.LatSloperad Lateral road slope at preview point along path / route
+<preQ>.Path.LongSlope
+<preQ>.Route.LongSlope<preC>.Path.LongSlope
+<preC>.Route.LongSloperad Longitudinal road slope at preview point along path / route
+<preQ>.Path.tx
+<preQ>.Path.ty
+<preQ>.Path.tz
+<preQ>.Route.tx
+<preQ>.Route.ty
+<preQ>.Route.tz<preC>.Path.P_0[0]
+<preC>.Path.P_0[1]
+<preC>.Path.P_0[2]
+<preC>.Route.P_0[0]
+<preC>.Route.P_0[1]
+<preC>.Route.P_0[2]m Global position (Fr0) of the preview point along the route and path
+<preQ>.tx
+<preQ>.ty
+<preQ>.tz<preC>.P_0[0]
+<preC>.P_0[1]
+<preC>.P_0[2]m Global position (Fr0) of the preview point along the vehicle direction
+<preQ>.Z_0.x
+<preQ>.Z_0.y
+<preQ>.Z_0.z<preC>.Z_0[0]
+<preC>.Z_0[1]
+<preC>.Z_0[2]- Road normal vector at preview point along the vehicle direction
+--- Page 83 ---
+1326 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.126.14.9 Collision Sensor
+26.14.10Object by Lane Sensor
+GeneraI
+Per lane in a LaneScopeName UAQ Name C-Code Unit Info (data type, if not double)
+<preQ> := Sensor.Collision.Vhcl (only possible on ego vehicle)
+<preQ>.Fr1.Count - Counter for detected collision with the vehicle body Fr1
+<preQ>.Fr1.ObjId - Detected collision of vehicle body Fr1 with the global object ObjId:
+- value (integer) =-1 stands for no detection
+(please refer to section 5.4 ’Object ID’  for more information)
+<preQ>.W<pos>.Count - Counter for detected collision with the vehicle wheel <pos>
+<preQ>.W<pos>.ObjId - Detected collision of vehicle wheel <pos> with the global object ObjId:
+- value (integer) =-1 stands for no detection
+(please refer to section 5.4 ’Object ID’  for more information)
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<NoS> := 0..n (sensors)
+<NoLS>:= 0..2 (LaneScopes)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.ObjByLane.<inst>.<name>
+<preC> := ObjByLane[NoS]
+<preQ>.LaneDiff <preC>.LaneDiff - Offset of the current lane (POI) and the lane corresponding to the route
+99 if invalid
+<preQ>.tPOI <preC>.tPOI m t-offset from POI to current path
+<preQ>.tPath <preC>.tPath m t-offset of current path to route
+<preQ>.Active ObjByLane_SetActive(...) - 0 or 1 to deactivate or activate calculation for this sensor instance
+<preQ>.TimeStamp <preC>.TimeStamp s Time-stamp of updated sensor signals
+<preQ>.LanesL.nLanesMax
+<preQ>.LanesC.nLanesMax
+<preQ>.LanesR.nLanesMaxObjByLane_SetNLanes(...) - Set the number of lanes to be considered for each LaneScope
+(0..3 for “L ”, “R” and 0..1 for “C”)
+<preQ>.LanesL.nLanes
+<preQ>.LanesC.nLanes
+<preQ>.LanesR.nLanes<preC>.nLanes[NoLS] - Number of lanes that were found for each LaneScope
+<preQ>.LanesL.RangeMin
+<preQ>.LanesL.RangeMax
+<preQ>.LanesC.RangeMin
+<preQ>.LanesC.RangeMax
+<preQ>.LanesR.RangeMin
+<preQ>.LanesR.RangeMaxObjByLane_SetRange(...) m Set min/max range for each LaneScope
+Min. range has to be less or equal to zero, max. range has to be greater
+or equal to zero.
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<NoS> := 0..n (sensors)
+<NoLS>:= 0..2 (LaneScopes)
+<NoL>:= 0..3 (Lanes)
+<LS>:= L, C, R
+<inst> := Vhcl, Tr
+<preQ> := Sensor.ObjByLane.<inst>.<name>.Lanes<LS>.<NoL>
+<preC> := ObjByLane[NoS].Lane[NoLS][NoL]
+<preQ>.ObjID <preC>.ObjID - Global lane ID
+<preQ>.Type <preC>.Type - Lane type (see enum tLaneType in Sensor_ObjectByLane.h)
+<preQ>.DrvOn <preC>.DrvOn - 1 if allowed to drive on, 0 if only allowed to drive over
+<preQ>.LengthRear
+<preQ>.LengthFront<preC>.LengthRear
+<preC>.LengthFrontm Length of drivable part of the lane
+<preQ>.Width <preC>.Width m Width of lane at s-pos. of POI
+<preQ>.tPathOff <preC>.tPathOff m t-offset from route to current lane-path
+--- Page 84 ---
+1327 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.1Per Object in rear/front lists
+26.14.11Radar Sensor
+General
+Object List<preQ>.InDrvDir <preC>.InDrvDir - -1 for oncoming lane, 1 otherwise
+<preQ>.nObjF
+<preQ>.nObjR<preC>.nObjF
+<preC>.nObjR- No. of objects in front/rear listName UAQ Name C-Code Unit Info (data type, if not double)
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<NoS> := 0..n (sensors)
+<NoLS>:= 0..2 (LaneScopes)
+<NoL>:= 0..3 (Lanes)
+<LS>:= L, C, R
+<NoO>:= 0..m (objects)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.ObjByLane.<inst>.<name>.Lanes<LS>.<NoL>.ObjF .<NoO>
+<preC> := ObjByLane[NoS].Lane[NoLS][NoL].ObjFront[NoO]
+(same with ObjR / ObjRear)
+<preQ>.ObjID <preC>.ObjID - Global object ID
+<preQ>.Oncoming <preC>.Oncoming - 0 if driving in the same direction, 1 for oncoming
+<preQ>.sMin
+<preQ>.sMax
+<preQ>.tMin
+<preQ>.tMax<preC>.sMin
+<preC>.sMax
+<preC>.tMin
+<preC>.tMaxm sMin, sMax relative to the POI
+tMin, tMax relative to the path of the lane the POI is currently on
+<preQ>.VelLong <preC>.VelLong m/s Absolute velocity in direction of the route
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<NoS>:= 0,... , n (sensors)
+<inst> := Vhcl, Tr
+<preQ>:= Sensor.Radar.<inst>
+<preC>:= RadarSensor[NoS].GlobalInf[0]
+<preQ>.nSensors RadarCount - Number of sensors (integer)
+<preQ>.<name>.RolCount <preC>.RolCount - Rolling cycle counter (integer)
+<preQ>.<name>.nObj <preC>.nObj - Number of detected objects (integer)
+<preQ>.<name>.RelvTgt <preC>.RelvTgt - Number of the relevant target in the object list (integer)
+<preQ>.<name>.nLanesL
+<preQ>.<name>.nLanesR<preC>.nLanesL
+<preC>.nLanesR- Number of drivable lanes left/right (integer)
+Includes Driving Lane, On-Ramp, Off-Ramp
+<preQ>.<name>.DistToLeftBorder
+<preQ>.<name>.DistToRightBorder<preC>.DistToLeftBorder
+<preC>.DistToRightBorderm Distance to left/right border
+<preQ>.<name>.TransmitPower RadarSensor[NoS].TransmitPower [dBm] (DVA) Use this quantity to alter the transmit power during simulation
+RadarSensor[NoS].ObjListSize - Size of the object list (integer)
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<NoO:= 0,... , m (objects)
+<inst> := Vhcl, Tr
+<preQ>:= Sensor.Radar.<inst>.<name>.Obj<NoO>
+<preC>:= RadarSensor[NoS].ObjList[NoO]
+<preQ>.ObjId <preC>.ObjId - Global ID to identify object
+(please refer to section 5.4 ’Object ID’  for more information)
+--- Page 85 ---
+1328 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.126.14.12Camera Sensor
+General<preQ>.MeasStat <preC>.MeasStat - Measurement status (integer)
+0: no object
+1: new object
+2: (currently not used)
+3: object measured
+<preQ>.Dist
+<preQ>.DistX
+<preQ>.DistY
+<preQ>.DistZ
+<preQ>.RelCourseAngle<preC>.Dist
+<preC>.DistX
+<preC>.DistY
+<preC>.DistZ
+<preC>.RelCourseAnglem
+m
+m
+m
+radDistance from sensor to bounding box center of the detected object
+Longitudinal displacement in sensor frame
+Lateral displacement in sensor frame
+Vertical displacement in sensor frame
+Relative course angle in sensor frame
+<preQ>.Vrel
+<preQ>.VrelX
+<preQ>.VrelY
+<preQ>.ArelX<preC>.Vrel
+<preC>.VrelX
+<preC>.VrelY
+<preC>.ArelXm/s
+m/s
+m/s
+m/s2Relative velocity of the bounding box center of the detected object
+Relative longitudinal velocity
+Relative lateral velocity
+Relative longitudinal acceleration
+<preQ>.Length
+<preQ>.Width
+<preQ>.LengthClass
+<preQ>.WidthClass<preC>.Length
+<preC>.Width
+<preC>.LengthClass
+<preC>.WidthClassm
+m
+-
+-Length of bounding box
+Width of bounding box
+Length class from 0 to 7 (integer)
+Width class from 0 to 7 (integer)
+0: unknown
+1: < 0.5m
+2: < 1m
+3: < 2m
+4: < 3m
+5: < 4m
+6: < 6m
+7: exceeds
+<preQ>.RCS
+<preQ>.SignalStrength
+<preQ>.SNR<preC>.RCS
+<preC>.SignalStrength
+<preC>.SNRdBm2
+dBW
+dBRCS - value
+Signal
+Signal-to-noise ratio
+<preQ>.DynProp <preC>.DynProp - Dynamic property (integer)
+0: not classiﬁed
+1: stationary
+2: stopped
+3: moving
+4: oncoming
+<preQ>.ProbDetect <preC>.ProbDetect - Probability of detection
+<preQ>.ProbExist <preC>.ProbExist - Probability of existence from 0 to 7 (integer)
+0: not detected
+1: ~ 25%
+2: ~ 50%
+3: ~ 75%
+4: ~ 90%
+5: ~ 99%
+6: ~ 99.9%
+7: ~ 100%
+<preQ>.ProbObst <preC>.ProbObst - Obstacle probability
+<preQ>.LeftInGroup <preC>.LeftInGroup ObjId of the left object in sensor view, if multiple objects are merged
+to a single one (for visualization in Instruments panel).Name UAQ Name C-Code Unit Info (data type, if not double)
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<NoS>:= 0,... , n (sensors)
+<inst> := Vhcl, Tr
+<preQ>:= Sensor.Camera.<inst>
+<preC>:= CameraSensor[NoS]
+<preQ>.<name>.nObj <preC>.nObj - Number of detected objects (integer)
+<preQ>.<name>.TimeStamp <preC>.TimeStamp s Time-stamp of updated sensor signals
+--- Page 86 ---
+1329 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.1Object List
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<NoO:= 0,... , m (objects)
+<inst> := Vhcl, Tr
+<preQ>:= Sensor.Camera.<inst>.<name>.Obj.<NoO>
+<preC>:= CameraSensor[NoS].Obj[NoO]
+<preQ>.ObjID <preC>.ObjID - Global ID to identify object (integer)
+Please refer to section 5.4 ’Object ID’  for more information.
+<preQ>.Type <preC>.Type - Camera object type (integer)
+0 - Car
+1 - Truck
+2 - Bicycle
+3 - Pedestrian
+4 - Trafﬁc sign
+5 - Trafﬁc light
+<preQ>.nVisPixels <preC>.nVisPixels - Number of visible pixels (integer)
+<preQ>.Conﬁdence <preC>.Conﬁdence - Indicates how much of the object is visible
+<preQ>.MBR.BL_X
+<preQ>.MBR.BL_Y
+<preQ>.MBR.BL_Z
+<preQ>.MBR.TR_X
+<preQ>.MBR.TR_Y
+<preQ>.MBR.TR_Z<preC>.MBR[0][0]
+<preC>.MBR[0][1]
+<preC>.MBR[0][2]
+<preC>.MBR[1][0]
+<preC>.MBR[1][1]
+<preC>.MBR[1][2]m Minimum bounding rectangle - bottom left and top right points
+<preQ>.Facing <preC>.Facing - 0: not facing sensor
+1: facing sensor
+(integer)
+<preQ>.LightState <preC>.LightState - Trafﬁc light state/phase (integer):
+0: All lights off
+1: Green light on
+2: Y ellow light on
+3: Red light on
+4: Red-Y ellow light on
+<preQ>.SignMain.Val0
+<preQ>.SignMain.Val1<preC>.SignMainVal[0]
+<preC>.SignMainVal[1]- User -deﬁned sign attribute values
+- <preC>.SignSuppl1Val[0]
+<preC>.SignSuppl1Val[1]- User-deﬁned sign attribute values
+- <preC>.SignSuppl2Val[0]
+<preC>.SignSuppl2Val[1]- User-deﬁned sign attribute values
+--- Page 87 ---
+1330 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.126.14.13Global Navigation Sensor
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<preQ> := Sensor.GNav.Vhcl
+<preQ_Rec> := Sensor.GNav.Vhcl.Receiver
+<preQ_Sat> := Sensor.GNav.Vhcl.Sat
+<preQ_Rinex> := Sensor.GNav.Vhcl.RinexData
+<preQ_RinexEph> := Sensor.GNav.Vhcl.RinexData.Sat_Ephemeris
+<preC> := GNavSensor
+<preC_Rec> := GNavSensor.Receiver
+<preQ_Rec>.Position.ECEF .x
+<preQ_Rec>.Position.ECEF .y
+<preQ_Rec>.Position.ECEF .z<preC_Rec>.UserPosEcefTsa[0]
+<preC_Rec>.UserPosEcefTsa[1]
+<preC_Rec>.UserPosEcefTsa[2]m Exact receiver position in Earth Centered Earth Fixed
+(ECEF) coordinate system.
+<preQ_Rec>.Position.ECEF_fromPsr.x
+<preQ_Rec>.Position.ECEF_fromPsr.y
+<preQ_Rec>.Position.ECEF_fromPsr.z<preC_Rec>.UserPosEcefTsa_fromPsr[0]
+<preC_Rec>.UserPosEcefTsa_fromPsr[1]
+<preC_Rec>.UserPosEcefTsa_fromPsr[2]m Receiver position in Earth Centered Earth Fixed (ECEF)
+coordinate system calculated from pseudorange.
+<preQ_Rec>.Position.ECEF_Delta.x
+<preQ_Rec>.Position.ECEF_Delta.y
+<preQ_Rec>.Position.ECEF_Delta.z<preC_Rec>.Delta_UserPosEcefTsa[0]
+<preC_Rec>.Delta_UserPosEcefTsa[1]
+<preC_Rec>.Delta_UserPosEcefTsa[2]m Difference of receiver position from pseudorange to exact
+position in Earth Centered Earth Fixed (ECEF) coordinate
+system.
+<preQ_Rec>.Position.ECEFVel.x
+<preQ_Rec>.Position.ECEFVel.y
+<preQ_Rec>.Position.ECEFVel.z<preC_Rec>.UserVelEcefTsa[0]
+<preC_Rec>.UserVelEcefTsa[1]
+<preC_Rec>.UserVelEcefTsa[2]m/s Velocity of the receiver in Earth Centered Earth Fixed
+(ECEF) coordinate system.
+<preQ_Rec>.Position.LLH.Lat
+<preQ_Rec>.Position.LLH.Long
+<preQ_Rec>.Position.LLH.H<preC_Rec>.UserPosLlhTsa[0]
+<preC_Rec>.UserPosLlhTsa[1]
+<preC_Rec>.UserPosLlhTsa[2]rad
+rad
+mExact receiver position in LLH (latitude, longitude, heigh t)
+coordinate system.
+<preQ_Rec>.Position.LLH_fromPsr.Lat
+<preQ_Rec>.Position.LLH_fromPsr.Long
+<preQ_Rec>.Position.LLH_fromPsr.H<preC_Rec>.UserPosLlhTsa_fromPsr[0]
+<preC_Rec>.UserPosLlhTsa_fromPsr[1]
+<preC_Rec>.UserPosLlhTsa_fromPsr[2]rad
+rad
+mReceiver position in LLH (latitude, longitude, height) coordi-
+nate system calculated from pseudorange.
+<preQ_Rec>.Position.LLH_Delta.Lat
+<preQ_Rec>.Position.LLH_Delta.Long
+<preQ_Rec>.Position.LLH_Delta.H<preC_Rec>.Delta_UserPosLlhTsa[0]
+<preC_Rec>.Delta_UserPosLlhTsa[1]
+<preC_Rec>.Delta_UserPosLlhTsa[2]rad
+rad
+mDifference of receiver position from pseudorange to exact
+position in LLH (latitude, longitude, height) coordinate sys-
+tem.
+<preQ_Rec>.Time.GPSWeek <preC_Rec>.Time_GpsWeek - Number of GPS week.
+<preQ_Rec>.Time.secsOfWeek <preC_Rec>.Time_secsOfWeek s Secs of GPS week.
+<preQ_Rec>.Time.yday <preC_Rec>.Time_yday - Number of day in the year.
+<preQ_Rec>.Time.ClockError <preC_Rec>.RecClockError m Exact receiver clock error.
+<preQ_Rec>.Time.ClockError_fromPsr <preC_Rec>.RecClockError_fromPsr m Receiver clock error calculated from pseudorange.
+<preQ_Rec>.Time.ClockError_Delta <preC_Rec>.Delta_RecClockError m Difference of receiver clock error from pseudorange to
+exact receiver clock error.
+<preQ_Rec>.SatNoOverElevMask <preC_Rec>.NoVisibleSat - Number of satellites that are above the elevation mask.
+<preQ_Rec>.SatNoDirectView <preC_Rec>.NoVisibleSatDirect - Number of satellites that have a clear line of sight to the
+receiver.
+<preQ_Rec>.GDOP <preC_Rec>.GDOP - Geometrical dilution of precision.
+<preQ_Rec>.TDOP <preC_Rec>.TDOP - Time dilution of precision.
+<preQ_Rec>.PDOP <preC_Rec>.PDOP - Positional dilution of precision.
+<preQ_Rec>.HDOP <preC_Rec>.HDOP - Horizontal dilution of precision.
+<preQ_Rec>.VDOP <preC_Rec>.VDOP - Vertical dilution of precision.
+<preQ_Rec>.XDOP <preC_Rec>.XDOP - Dilution of precision (x).
+<preQ_Rec>.YDOP <preC_Rec>.YDOP - Dilution of precision (y).
+<preQ_Rec>.XYDOP <preC_Rec>.XYDOP - Dilution of precision (xy).
+<preQ_Rec>.channel<i>.PRN <preC_Rec>.Channel[i].PRN - Pseudo random noise (PRN) number of satellite visible for
+receiver channel i.
+<preQ_Rec>.channel<i>.PseudoRange <preC_Rec>.Channel[i].psr m Pseudorange of satellite visible for receiver channel i.
+<preQ_Rec>.channel<i>.RangeRate <preC_Rec>.Channel[i].rr m/s Range rate of satellite visible for receiver channel i.
+<preQ_Rec>.channel<i>.elev <preC_Rec>.Channel[i].elev deg Elevation angle of satellite visible for receiver channel i.
+<preQ_Rec>.channel<i>.azim <preC_Rec>.Channel[i].azim deg Azimuth angle of satellite visible for receiver channel i.
+<preQ_Rec>.channel<i>.geometricRange <preC_Rec>.Channel[i].dist m Geometrical distance to satellite visible for rec. channel i.
+<preQ_Rec>.channel<i>.ephError <preC_Rec>.Channel[i].ephErr m Ephemeris error of satellite visible for receiver channel i.
+<preQ_Rec>.channel<i>.ionoError <preC_Rec>.Channel[i].ionoErr m Ionospheric error of satellite visible for receiver channel i.
+<preQ_Rec>.channel<i>.tropoError <preC_Rec>.Channel[i].tropoErr m Tropospheric error of satellite visible for receiver channel i.
+<preQ_Rec>.channel<i>.SatelliteClockOffset <preC_Rec>.Channel[i].dtsv s Satellite clock offset of satellite visible for rec. channel i.
+--- Page 88 ---
+1331 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.1<preQ_Sat>.sat<i>.PosECEF .x
+<preQ_Sat>.sat<i>.PosECEF .y
+<preQ_Sat>.sat<i>.PosECEF .z<preC>.sat[i].satPosEcef[0]
+<preC>.sat[i].satPosEcef[1]
+<preC>.sat[i].satPosEcef[2]m Position of satellite i in Earth Centered Earth Fixed (ECEF)
+coordinate system.
+<preQ_Sat>.sat<i>.VelECEF .x
+<preQ_Sat>.sat<i>.VelECEF .y
+<preQ_Sat>.sat<i>.VelECEF .z<preC>.sat[i].satVelEcef[0]
+<preC>.sat[i].satVelEcef[1]
+<preC>.sat[i].satVelEcef[2]m/s Velocity of satellite i in Earth Centered Earth Fixed (ECEF)
+coordinate system.
+<preQ_Sat>.sat<i>.elev <preC>.sat[i].elev deg Elevation angle of satellite i.
+<preQ_Sat>.sat<i>.azim <preC>.sat[i].azim deg Azimuth angle of satellite i.
+<preQ_Sat>.sat<i>.isVisible <preC>.sat[i].satIsVisible - Flag: Satellite i is over elevation mask (boolean).
+<preQ_Sat>.sat<i>.DirectView <preC>.sat[i].satDirectVisible - Flag: Satellite i has clear line of sight to receiver (boolean).
+<preQ_Rinex>.Klobuchar.Alpha1
+<preQ_Rinex>.Klobuchar.Alpha2
+<preQ_Rinex>.Klobuchar.Alpha3
+<preQ_Rinex>.Klobuchar.Alpha4- - Ionosphere parameters A0-A3 of almanac
+<preQ_Rinex>.Klobuchar.Beta1
+<preQ_Rinex>.Klobuchar.Beta2
+<preQ_Rinex>.Klobuchar.Beta3
+<preQ_Rinex>.Klobuchar.Beta4- - Ionosphere parameters B0-B3 of almanac
+<preQ_RinexEph>.sat<i>.toe_GPSWeek - - GPS week number - Time of Ephemeris
+<preQ_RinexEph>.sat<i>.toe_secsOfWeek - sec Seconds of GPS week - Time of Ephemeris
+<preQ_RinexEph>.sat<i>.toc_GPSWeek - - GPS week number - Time of Clock
+<preQ_RinexEph>.sat<i>.toc_secsOfWeek - sec Seconds of GPS week - Time of Clock
+<preQ_RinexEph>.sat<i>.clock_a0
+<preQ_RinexEph>.sat<i>.clock_a1
+<preQ_RinexEph>.sat<i>.clock_a2- sec
+s/s
+s/s2Satellite SV clock error bias
+Satellite SV clock error drift
+Satellite SV clock error drift rate
+<preQ_RinexEph>.sat<i>.C_ic - rad Cosine correction of inclination angle
+<preQ_RinexEph>.sat<i>.C_is - rad Sine correction of inclinatin angle
+<preQ_RinexEph>.sat<i>.C_uc - rad Cosine correction of longitude
+<preQ_RinexEph>.sat<i>.C_us - rad Sine correction of longitude
+<preQ_RinexEph>.sat<i>.C_rc - m Cosine correction of radius of orbit
+<preQ_RinexEph>.sat<i>.C_rc - m Sine correction of radius of orbit
+<preQ_RinexEph>.sat<i>.delta_n - rad/s Mean motion difference from computed value
+<preQ_RinexEph>.sat<i>.e - - Eccentricity
+<preQ_RinexEph>.sat<i>.i_0 - rad Inclination angle at Time of Ephemeris
+<preQ_RinexEph>.sat<i>.iDot - rad/s Rate of inclinatino angle
+<preQ_RinexEph>.sat<i>.M_0 - rad Median anomaly at Time of Ephemeris
+<preQ_RinexEph>.sat<i>.omega - rad Argument of perigee
+<preQ_RinexEph>.sat<i>.omega_0 - rad Longitude of ascending node of orbit plane at weekly epoch
+<preQ_RinexEph>.sat<i>.omegaDot - rad/s Rate of right ascension
+<preQ_RinexEph>.sat<i>.sqrtA - sqr t(
+m)Square root of semi-major axisName UAQ Name C-Code Unit Info (data type, if not double)
+--- Page 89 ---
+1332 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.126.14.14Ultrasonic RSI
+26.14.15Radar RSI
+26.14.16Lidar RSIName UAQ Name C-Code Unit Info (data type, if not double)
+<NoT> := 0..n (transmitters)
+<NoR> := 0..n (receivers)
+<NoD> := 0..m (detections)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.USonicRSI.Tx.<inst>.<name>
+<preQE> := Sensor.USonicRSI.<inst>.<name>
+<preC> := USonicRSI[NoT]
+<preQR> := Sensor.USonicRSI.Tx.<inst>.<name>.Rx.<inst>.<name>.
+<preCR> := USonicRSI[NoT].ReceiverUSonic[NoR].
+<preCD> := USonicRSI[NoT].ReceiverUSonic[NoR].DetPoints[NoD].
+<preQ>.TimeFired <preC>.TimeFired s Time stamp of the ray tracing job
+<preQR>.nDetections <preCR>.nDetections - Number of detections (int)
+<preQE>.tx_ext
+<preQE>.ty_ext
+<preQE>.tz_ext<preC>.t_ext[0]
+<preC>.t_ext[1]
+<preC>.t_ext[2]m External sensor travel, expressed in mounted frame
+<preQE>.rx_ext
+<preQE>.ry_ext
+<preQE>.rz_ext<preC>.rot_zyx_ext[0]
+<preC>.rot_zyx_ext[1]
+<preC>.rot_zyx_ext[2]rad External sensor rotation with ZYX-orientation order
+<preCD>.TimeOfFlight s Time of ﬂight
+<preCD>.SPA.real Pa Real component of sound pressure amplitude
+<preCD>.SPA.imag Pa Imaginary component of sound pressure amplitude
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<NoS> := 0..n (sensors)
+<NoD> := 0..m (detections)
+<NoVRx>:= 0..k (virtual receivers)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.RadarRSI.<inst>.<name>
+<preC> := RadarRSI[NoS]
+<preCDP> := RadarRSI[NoS].DetPoints[NoD]
+<preCVRx> := RadarRSI[NoS].DetVRx[NoD]
+<preQ>.nDetections <preC>.nDetections - Number of detections (int)
+<preQ>.TimeFired <preC>.TimeFired s Time stamp of the ray tracing job
+<preQ>.tx_ext
+<preQ>.ty_ext
+<preQ>.tz_ext<preC>.t_ext[0]
+<preC>.t_ext[1]
+<preC>.t_ext[2]m External sensor travel, expressed in mounted frame
+<preQ>.rx_ext
+<preQ>.ry_ext
+<preQ>.rz_ext<preC>.rot_zyx_ext[0]
+<preC>.rot_zyx_ext[1]
+<preC>.rot_zyx_ext[2]rad External sensor rotation with ZYX-orientation order
+<preCDP>.Power dBm Power of detection
+<preCDP>.Velocity m/s Relative radial velocity of detection
+<preCDP>.Coordinates[0] m Longitudinal position of detection in sensor frame (output = cartesian)
+or
+Radial distance of detection in sensor frame (output = spherical)
+<preCDP>.Coordinates[1] m Lateral position of detection in sensor frame (output = cartesian)
+or
+Azimuth angle in sensor frame (output = spherical)
+<preCDP>.Coordinates[2] m Vertical position of detection in sensor frame (output = cartesian)
+or
+Elevation angle in sensor frame (output = spherical)
+<preCVRx>.Velocity m/s Relative radial velocity of detection
+<preCVRx>.Range m Radial distance of detection in sensor frame
+<preCVRx>.AmpVRx[<NoVRx>].real mV Real component of amplitude for <NoVRx> virtual receiver.
+<preCVRx>.AmpVRx[<NoVRx>].imag mV Imaginary component of amplitude for <NoVRx> virtual receiver.
+--- Page 90 ---
+1333 User Accessible Quantities
+Sensors
+CarMaker Reference Manual Version 14.0.1General
+The quantities in the column “Simulink” refer to those with r espect to the “Car LidarRSI”
+block in the CarMaker Simulink library.
+26.14.17Camera RSIName UAQ Name C-Code Name Simulink Unit Info (data type, if not double)
+<NoT> := 0..n (transceivers)
+<NoSP> := 0..m (scan points)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.LidarRSI.<inst>.<name>
+<preC> := LidarRSI[NoT]
+<preCC> := LidarRSI[NoT].ScanPoint[NoSP]
+<preS> := ScanPoint[NoSP]
+<preQ>.nScanPoints <preC>.nScanPoints nScanPoints - Number of scan points (int)
+<preQ>.ScanTime <preC>.ScanTime ScanTime s Time stamp of the ray tracing job
+<preQ>.ScanNumber <preC>.ScanNumber ScanNumber - Number of the ray tracing job
+<preQ>.tx_ext
+<preQ>.ty_ext
+<preQ>.tz_ext<preC>.t_ext[0]
+<preC>.t_ext[1]
+<preC>.t_ext[2]t_ext_x
+t_ext_y
+t_ext_zm External sensor travel, expressed in mounted frame
+<preQ>.rx_ext
+<preQ>.ry_ext
+<preQ>.rz_ext<preC>.rot_zyx_ext[0]
+<preC>.rot_zyx_ext[1]
+<preC>.rot_zyx_ext[2]rot_zyx_ext_x
+rot_zyx_ext_y
+rot_zyx_ext_zrad External sensor rotation with ZYX-orientation order
+<preCC>.TimeOF <preS>.TimeOF ns Time of ﬂight
+<preCC>.LengthOF <preS>.LengthOF m Length of ﬂight
+<preCC>.BeamID <preS>.BeamID - Beam ID corresponds to speciﬁed beam ID in beam-ﬁle
+<preCC>.EchoID <preS>.EchoID - Echo ID (unique per beam) - either 0..2 with signal processing active
+or ray-index within beam otherwise (from bottom left ray to top right)
+<preCC>.Origin[0]
+<preCC>.Origin[1]
+<preCC>.Origin[2]<preS>.Origin_x
+<preS>.Origin_y
+<preS>.Origin_zm x coordinate of ray origin in sensor frame
+y coordinate of ray origin in sensor frame
+z coordinate of ray origin in sensor frame
+<preCC>.Intensity <preS>.Intensity nW Intensity of reﬂected light
+<preCC>.PulseWidth <preS>.PulseWidth ns Echo pulse width
+<preCC>.nReﬂ <preS>.nReﬂ - Number of reﬂections
+For a single ray the number of reﬂections describes how often this ray
+has hit something in the scene before it is reﬂected back to the sen-
+sor. This value applies only if the Separation Distance of the sensor
+is set to 0.
+If theSeparation Distance is not 0, multiple rays may be combined
+to a single ScanPoint . In this case the number of reﬂections is not val-
+id, because a single value would not be as meaningful.
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<NoS> := 0..n (sensors)
+<inst> := Vhcl, Tr
+<preQ> := Sensor.CameraRSI.<inst>.<name>
+<preC> := CameraRSI[NoS]
+<preQ>.TimeStamp <preC>.Proﬁler.TimeStamp s Simulation timestamp of the rendering cycle
+<preQ>.FrameDeltaT <preC>.Proﬁler.FrameDeltaT s Time elapsed between frame start and rendering end
+<preQ>.TotalDeltaT <preC>.Proﬁler.TotalDeltaT s Time elapsed between frame start and frame end
+<preQ>.RelativeStartTime <preC>.Proﬁler.RelativeStartTime s Real time stamp of the frame start, based on the start of the simula-
+tion (optional UAQ, see section 21.22.12 ’Performance Quantities’ ).
+<preQ>.UpdateDeltaT <preC>.Proﬁler.UpdateDeltaT s Time elapsed between frame start and scene update end (optio nal
+UAQ, see section 21.22.12 ’Performance Quantities’ ).

@@ -1,0 +1,1060 @@
+--- Page 25 ---
+1268 User Accessible Quantities
+MBS Suspension
+CarMaker Reference Manual Version 14.0.126.8 MBS Suspension
+26.8.1 Bushing
+Following quantities describe the quantities, which are declared for each bushing compo-
+nent:
+Name UAQ Unit Info (data type, if not double)
+<BushingPre>.tx
+<BushingPre>.ty
+<BushingPre>.tzm Relative compression along the bushing x,y,z- axis
+<BushingPre>.vx
+<BushingPre>.vy
+<BushingPre>.vzm/s Relative compression velocity along the bushing x,y,z- axis
+<BushingPre>.rx
+<BushingPre>.ry
+<BushingPre>.rzrad Relative rotational compression around the bushing x,y,z- axis
+<BushingPre>.Frc.x
+<BushingPre>.Frc.y
+<BushingPre>.Frc.zN Bushing force along the bushing x,y,z- axis
+<BushingPre>.Trq.x
+<BushingPre>.Trq.y
+<BushingPre>.Trq.zNm Bushing torque around the bushing x,y,z- axis
+--- Page 26 ---
+1269 User Accessible Quantities
+MBS Suspension
+CarMaker Reference Manual Version 14.0.126.8.2 McPherson suspension
+Name UAQ Unit Info (data type, if not double)
+<pre> := McPherson.<pos>
+<pos> := SuspF
+<pre>.DamperL.t
+<pre>.DamperL.v
+<pre>.DamperL.am
+m/s
+m/s2Translation of the left damper relative to the wheel carrier along the thrust damper axis
+<pre>.DamperR.t
+<pre>.DamperR.v
+<pre>.DamperR.am
+m/s
+m/s2Translation of the right damper relative to the wheel carrier along the thrust damper axis
+<pre>.OSRate - Model oversampling rate (integer)
+<pre>.PlungL.Frc2Wheel N Normal force at the left tire contact point
+<pre>.PlungR.Frc2Wheel N Normal force at the right tire contact point
+<pre>.StbBarL.ra_y rad/s2Rotation acceleration of the left stabilizer bar body relative to vehicle chassis around the y-axis
+<pre>.StbBarL.rv_y rad/s Rotation velocity of the left stabilizer bar body relative to vehicle chassis around the y-axis
+<pre>.StbBarL.r_y rad Rotation of the left stabilizer bar body relative to vehicle chassis around the y-axis
+<pre>.StbBarR.ra_y rad/s2Rotation acceleration of the right stabilizer bar body relative to vehicle chassis around the y-axis
+<pre>.StbBarR.rv_y rad/s Rotation velocity of the right stabilizer bar body relative to vehicle chassis around the y-axis
+<pre>.StbBarR.r_y rad Rotation of the right stabilizer bar body relative to vehicle chassis around the y-axis
+<pre>.StbLinkL.Bush2WC.* Parameters of the bushing between the left stabilizer link and wheel carrier body
+<pre>.StbLinkR.Bush2WC.* Parameters of the bushing between the right stabilizer link and wheel carrier body
+<pre>.StbLinkL.ra_yx.x
+<pre>.StbLinkL.ra_yx.yrad/s2Rotation acceleration of the left stabilizer link body rela tive to stabilizer bar around the x,y-axis with rotation
+sequence YX
+<pre>.StbLinkL.rv_yx.x
+<pre>.StbLinkL.rv_yx.yrad/s Rotation velocity of the left stabilizer link body relative to stabilizer bar around the x,y-axis with rotation sequence YX
+<pre>.StbLinkL.r_yx.x
+<pre>.StbLinkL.r_yx.yrad Rotation of the left stabilizer link body relative to stabilizer bar around the x,y-axis with rotation sequence YX
+<pre>.StbLinkR.ra_yx.x
+<pre>.StbLinkR.ra_yx.yrad/s2Rotation acceleration of the right stabilizer link body rel ative to stabilizer bar around the x,y-axis with rotation
+sequence YX
+<pre>.StbLinkR.rv_yx.x
+<pre>.StbLinkR.rv_yx.yrad/s Rotation velocity of the right stabilizer link body relative to stabilizer bar around the x,y-axis with rotation sequence
+YX
+<pre>.StbLinkR.r_yx.x
+<pre>.StbLinkR.r_yx.yrad Rotation of the right stabilizer link body relative to stabilizer bar around the x,y-axis with rotation sequence YX
+<pre>.StrRack.a_y m/s2Translation acceleration of the steering rack body relative to the vehicle chassis along the y-axis
+(information imposed by steering model)
+<pre>.StrRack.t_y m Translation of the steering rack body relative to the vehicle chassis along the y-axis
+(information imposed by steering model)
+<pre>.StrRack.v_y m/s Translation velocity of the steering rack body relative to the vehicle chassis along the y-axis
+(information imposed by steering model)
+<pre>.StrRodL.Bush2StrRack.* Parameters of the bushing between the left steering rod and steering rack body
+<pre>.StrRodR.Bush2StrRack.* Parameters of the bushing between the right steering rod and steering rack body
+<pre>.StrRodL.ra_zx.x
+<pre>.StrRodL.ra_zx.zrad/s2Rotation acceleration of the left steering rod relative to t he wheel carrier body around the x,z-axis with rotation
+sequence ZX
+<pre>.StrRodL.rv_zx.x
+<pre>.StrRodL.rv_zx.zrad/s Rotation velocity of the left steering rod relative to the wheel carrier body around the x,z-axis with rotation sequence
+ZX
+<pre>.StrRodL.r_zx.x
+<pre>.StrRodL.r_zx.zrad Rotation of the left steering rod relative to the wheel carrier body around the x,z-axis with rotation sequence ZX
+<pre>.StrRodR.ra_zx.x
+<pre>.StrRodR.ra_zx.zrad/s2Rotation acceleration of the right steering rod relative to the wheel carrier body around the x,z-axis with rotation
+sequence ZX
+<pre>.StrRodR.rv_zx.x
+<pre>.StrRodR.rv_zx.zrad/s Rotation velocity of the right steering rod relative to the wheel carrier body around the x,z-axis with rotation sequence
+ZX
+<pre>.StrRodR.r_zx.x
+<pre>.StrRodR.r_zx.zrad Rotation of the right steering rod relative to the wheel carrier body around the x,z-axis with rotation sequence ZX
+<pre>.Vhcl.Bush2DampL.* Parameters of the strut bushing between the left damper body and vehicle chassis
+<pre>.Vhcl.Bush2DampR.* Parameters of the strut bushing between the right damper body and vehicle chassis
+<pre>.WCL.ra_zxy.x
+<pre>.WCL.ra_zxy.y
+<pre>.WCL.ra_zxy.zrad/s2Rotation acceleration of the left wheel carrier body relati ve to vehicle chassis around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WCL.rv_zxy.x
+<pre>.WCL.rv_zxy.y
+<pre>.WCL.rv_zxy.zrad/s Rotation velocity of the left wheel carrier body relative to vehicle chassis around the x,y,z-axis with rotation sequence
+ZXY
+--- Page 27 ---
+1270 User Accessible Quantities
+MBS Suspension
+CarMaker Reference Manual Version 14.0.1<pre>.WCL.r_zxy.x
+<pre>.WCL.r_zxy.y
+<pre>.WCL.r_zxy.zrad Rotation of the left wheel carrier body relative to vehicle chassis around the x,y,z-axis with rotation sequence ZXY
+<pre>.WCL.tx
+<pre>.WCL.ty
+<pre>.WCL.tzm Translation of the left wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WCL.vx
+<pre>.WCL.vy
+<pre>.WCL.vzm/s Translation velocity of the left wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WCL.ax
+<pre>.WCL.ay
+<pre>.WCL.azm/s2Translation acceleration of the left wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WCR.ra_zxy.x
+<pre>.WCR.ra_zxy.y
+<pre>.WCR.ra_zxy.zrad/s2Rotation acceleration of the right wheel carrier body relative to vehicle chassis around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WCR.rv_zxy.x
+<pre>.WCR.rv_zxy.y
+<pre>.WCR.rv_zxy.zrad/s Rotation velocity of the right wheel carrier body relativ e to vehicle chassis around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WCR.r_zxy.x
+<pre>.WCR.r_zxy.y
+<pre>.WCR.r_zxy.zrad Rotation of the right wheel carrier body relative to vehicle chassis around the x,y,z-axis with rotation sequence ZXY
+<pre>.WCR.tx
+<pre>.WCR.ty
+<pre>.WCR.tzm Translation of the right wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WCR.vx
+<pre>.WCR.vy
+<pre>.WCR.vzm/s Translation velocity of the right wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WCR.ax
+<pre>.WCR.ay
+<pre>.WCR.azm/s2Translation acceleration of the right wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WshbL.BushF2Vhcl.* Parameters of the front bushing between the left wishbone body and vehicle chassis
+<pre>.WshbL.BushR2Vhcl.* Parameters of the rear bushing between the left wishbone body and vehicle chassis
+<pre>.WshbL.ra_zyx.x
+<pre>.WshbL.ra_zyx.y
+<pre>.WshbL.ra_zyx.zrad/s2Rotation acceleration of the left wishbone relative to wheel carrier body around the x,y,z-axis with rotation sequence
+ZYX
+<pre>.WshbL.rv_zyx.x
+<pre>.WshbL.rv_zyx.y
+<pre>.WshbL.rv_zyx.zrad/s Rotation velocity of the left wishbone relative to wheel carrier body around the x,y,z-axis with rotation sequence ZYX
+<pre>.WshbL.r_zyx.x
+<pre>.WshbL.r_zyx.y
+<pre>.WshbL.r_zyx.zrad Rotation of the left wishbone relative to wheel carrier body around the x,y,z-axis with rotation sequence ZYX
+<pre>.WshbR.BushF2Vhcl.* Parameters of the front bushing between the right wishbone body and vehicle chassis
+<pre>.WshbR.BushR2Vhcl.* Parameters of the rear bushing between the right wishbone body and vehicle chassis
+<pre>.WshbR.ra_zyx.x
+<pre>.WshbR.ra_zyx.y
+<pre>.WshbR.ra_zyx.zrad/s2Rotation acceleration of the right wishbone relative to whe el carrier body around the x,y,z-axis with rotation
+sequence ZYX
+<pre>.WshbR.rv_zyx.x
+<pre>.WshbR.rv_zyx.y
+<pre>.WshbR.rv_zyx.zrad/s Rotation velocity of the right wishbone relative to wheel carrier body around the x,y,z-axis with rotation sequence
+ZYX
+<pre>.WshbR.r_zyx.x
+<pre>.WshbR.r_zyx.y
+<pre>.WshbR.r_zyx.zrad Rotation of the right wishbone relative to wheel carrier body around the x,y,z-axis with rotation sequence ZYXName UAQ Unit Info (data type, if not double)
+--- Page 28 ---
+1271 User Accessible Quantities
+MBS Suspension
+CarMaker Reference Manual Version 14.0.126.8.3 McPherson suspension with ForceCoupling
+At this point only the additional quantities for the stabilizer bar due to the numerical compli-
+ance and the resulting forces and torques at the attachment f rame are listed. For the
+description of the other bodies please refer to chapter 26.8.2 .
+26.8.4 McPherson extended suspension
+At this point only the additional quantities for the two bodies subframe and steering box are
+listed. For the description of the other bodies please refer to chapter 26.8.2 .’Name UAQ Unit Info (data type, if not double)
+<pre> := McPherson.<pos>
+<pos> := SuspF
+<pre>.WCL.*
+<pre>.WCR.*All quantities describing the motion of the wheel carrier bodies are expressed in Fr0 with respect to Fr0
+<pre>.StBarL.Bush2Vhcl.* Parameters of numerical bushing between left stabilizer bar and vehicle chassis
+<pre>.StBarR.Bush2Vhcl.* Parameters of numerical bushing between right stabilizer bar and vehicle chassis
+<pre>.FrcCpl.Frc_1.x
+<pre>.FrcCpl.Frc_1.y
+<pre>.FrcCpl.Frc_1.zResulting forces at attachment frame expressed in Fr1
+<pre>.FrcCpl.Trq_1.x
+<pre>.FrcCpl.Trq_1.y
+<pre>.FrcCpl.Trq_1.zResulting torques at attachment frame expressed in Fr1 with respect to Fr1
+<pre>.FrcCpl.Frc_Susp.x
+<pre>.FrcCpl.Frc_Susp.y
+<pre>.FrcCpl.Frc_Susp.zResulting forces at attachment frame expressed in FrSusp
+<pre>.FrcCpl.Trq_Susp.x
+<pre>.FrcCpl.Trq_Susp.y
+<pre>.FrcCpl.Trq_Susp.zResulting torques at attachment frame expressed in FrSusp with respect to FrSusp
+Name UAQ Unit Info (data type, if not double)
+<pre> := McPherson.<pos>
+<pos> := SuspF
+<pre>.StrBox.ra_zx.x
+<pre>.StrBox.ra_zx.zrad/s2Rotation acceleration of the steering box relative to the subframe body around the x,z-axis with rotation sequence ZX
+<pre>.StrBox.rv_zx.x
+<pre>.StrBox.rv_zx.zrad/s Rotation velocity of the steering box relative to the subframe body around the x,z-axis with rotation sequence ZX
+<pre>.StrBox.r_zx.x
+<pre>.StrBox.r_zx.zrad Rotation of the steering box relative to the subframe body around the x,z-axis with rotation sequence ZX
+<pre>.StrBox.tx
+<pre>.StrBox.ty
+<pre>.StrBox.tzm Translation of the steering box relative to the subframe body along the x,y,z-axis
+<pre>.StrBox.vx
+<pre>.StrBox.vy
+<pre>.StrBox.vzm/s Translation velocity of the steering box relative to the subframe body along the x,y,z-axis
+<pre>.StrBox.ax
+<pre>.StrBox.ay
+<pre>.StrBox.azm/s2Translation acceleration of the steering box relative to the subframe body along the x,y,z-axis
+<pre>.Subfrm.BushFL2Vhcl.* Parameters of the front left bushing between the subframe body and vehicle chassis
+<pre>.Subfrm.BushFR2Vhcl.* Parameters of the front right bushing between the subframe and vehicle chassis
+<pre>.Subfrm.BushRL2Vhcl.* Parameters of the rear left bushing between the subframe body and vehicle chassis
+<pre>.Subfrm.BushRR2Vhcl.* Parameters of the rear right bushing between the subframe and vehicle chassis
+<pre>.Subfrm.L2StrBox.* Parameters of the left bushing between the subframe and the steering box body
+<pre>.Subfrm.R2StrBox.* Parameters of the right bushing between the subframe and the steering box body
+<pre>.Subfrm.ra_zyx.x
+<pre>.Subfrm.ra_zyx.y
+<pre>.Subfrm.ra_zyx.zrad/s2Rotation acceleration of the subframe body relative to the vehicle chassis around the x,y,z-axis with rotation sequence
+ZYX
+<pre>.Subfrm.rv_zyx.x
+<pre>.Subfrm.rv_zyx.y
+<pre>.Subfrm.rv_zyx.zrad/s Rotation velocity of the subframe body relative to the vehicle chassis around the x,y,z-axis with rotation sequence ZYX
+<pre>.Subfrm.r_zyx.x
+<pre>.Subfrm.r_zyx.y
+<pre>.Subfrm.r_zyx.zrad Rotation of the subframe body relative to the vehicle chassis around the x,y,z-axis with rotation sequence ZYX
+--- Page 29 ---
+1272 User Accessible Quantities
+MBS Suspension
+CarMaker Reference Manual Version 14.0.1<pre>.Subfrm.tx
+<pre>.Subfrm.ty
+<pre>.Subfrm.tzm Translation of the subframe body relative to the vehicle chassis along the x,y,z-axis
+<pre>.Subfrm.vx
+<pre>.Subfrm.vy
+<pre>.Subfrm.vzm/s Translation velocity of the subframe body relative to the vehicle chassis along the x,y,z-axis
+<pre>.Subfrm.ax
+<pre>.Subfrm.ay
+<pre>.Subfrm.azm/s2Translation acceleration of the subframe body relative to the vehicle chassis along the x,y,z-axisName UAQ Unit Info (data type, if not double)
+--- Page 30 ---
+1273 User Accessible Quantities
+MBS Suspension
+CarMaker Reference Manual Version 14.0.1<pre>.Subfrm.tx
+<pre>.Subfrm.ty
+<pre>.Subfrm.tzm Translation of the subframe body relative to the vehicle chassis along the x,y,z-axis
+<pre>.Subfrm.vx
+<pre>.Subfrm.vy
+<pre>.Subfrm.vzm/s Translation velocity of the subframe body relative to the vehicle chassis along the x,y,z-axis
+<pre>.Subfrm.ax
+<pre>.Subfrm.ay
+<pre>.Subfrm.azm/s2Translation acceleration of the subframe body relative to the vehicle chassis along the x,y,z-axisName UAQ Unit Info (data type, if not double)
+--- Page 31 ---
+1274 User Accessible Quantities
+MBS Suspension
+CarMaker Reference Manual Version 14.0.126.8.5 Fourlink suspension
+Name UAQ Unit Info (data type, if not double)
+<pre> := FourLink.<pos>
+<pos> := SuspR
+<pre>.OSRate - Model oversampling rate (integer)
+<pre>.PlungL.Frc2Wheel N Normal force at the left tire contact point
+<pre>.PlungR.Frc2Wheel N Normal force at the right tire contact point
+<pre>.StbBarL.ra_y rad/s2Rotation acceleration of the left stabilizer bar body relative to vehicle chassis around the y-axis
+<pre>.StbBarL.rv_y rad/s Rotation velocity of the left stabilizer bar body relative to vehicle chassis around the y-axis
+<pre>.StbBarL.r_y rad Rotation of the left stabilizer bar body relative to vehicle chassis around the y-axis
+<pre>.StbBarR.ra_y rad/s2Rotation acceleration of the right stabilizer bar body relative to vehicle chassis around the y-axis
+<pre>.StbBarR.rv_y rad/s Rotation velocity of the right stabilizer bar body relative to vehicle chassis around the y-axis
+<pre>.StbBarR.r_y rad Rotation of the right stabilizer bar body relative to vehicle chassis around the y-axis
+<pre>.StbLinkL.Bush.* Parameters of the bushing between the left stabilizer link and wheel carrier (or lower wishbone) body
+<pre>.StbLinkL.ra_yx.x
+<pre>.StbLinkL.ra_yx.yrad/s2Rotation acceleration of the left stabilizer link body rela tive to stabilizer bar around the x,y-axis with rotation
+sequence YX
+<pre>.StbLinkL.rv_yx.x
+<pre>.StbLinkL.rv_yx.yrad/s Rotation velocity of the left stabilizer link body relative to stabilizer bar around the x,y-axis with rotation sequence
+YX
+<pre>.StbLinkL.r_yx.x
+<pre>.StbLinkL.r_yx.yrad Rotation of the left stabilizer link body relative to stabilizer bar around the x,y-axis with rotation sequence YX
+<pre>.StbLinkR.Bush.* Parameters of the bushing between the right stabilizer link and wheel carrier (or lower wishbone) body
+<pre>.StbLinkR.ra_yx.x
+<pre>.StbLinkR.ra_yx.yrad/s2Rotation acceleration of the right stabilizer link body rel ative to stabilizer bar around the x,y-axis with rotation
+sequence YX
+<pre>.StbLinkR.rv_yx.x
+<pre>.StbLinkR.rv_yx.yrad/s Rotation velocity of the right stabilizer link body relative to stabilizer bar around the x,y-axis with rotation sequence
+YX
+<pre>.StbLinkR.r_yx.x
+<pre>.StbLinkRr_yx.yrad Rotation of the right stabilizer link body relative to stabilizer bar around the x,y-axis with rotation sequence YX
+<pre>.StrRodL.Bush2Vhcl.* Parameters of the bushing between the left steering rod body and vehicle chassis
+<pre>.StrRodL.ra_zxy.x
+<pre>.StrRodL.ra_zxy.y
+<pre>.StrRodL.ra_zxy.zrad/s2Rotation acceleration of the left steering rod relative to the wheel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.StrRodL.rv_zxy.x
+<pre>.StrRodL.rv_zxy.y
+<pre>.StrRodL.rv_zxy.zrad/s Rotation velocity of the left steering rod relative to the wheel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.StrRodL.r_zxy.x
+<pre>.StrRodL.r_zxy.y
+<pre>.StrRodL.r_zxy.zrad Rotation of the left steering rod relative to the wheel carrier body around the x,y,z-axis with rotation sequence ZXY
+<pre>.StrRodR.Bush2Vhcl.* Parameters of the bushing between the right steering rod body and vehicle chassis
+<pre>.StrRodR.ra_zxy.x
+<pre>.StrRodR.ra_zxy.y
+<pre>.StrRodR.ra_zxy.zrad/s2Rotation acceleration of the right steering rod relative to the wheel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.StrRodR.rv_zxy.x
+<pre>.StrRodR.rv_zxy.y
+<pre>.StrRodR.rv_zxy.zrad/s Rotation velocity of the right steering rod relative to th e wheel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.StrRodR.r_zxy.x
+<pre>.StrRodR.r_zxy.y
+<pre>.StrRodR.r_zxy.zrad Rotation of the right steering rod relative to the wheel carrier body around the x,y,z-axis with rotation sequence
+ZXY
+<pre>.TrailArmL.Bush2Vhcl.* Parameters of the bushing between the left trailing arm body and vehicle chassis
+<pre>.TrailArmL.ra_z rad/s2Rotation acceleration of the left trailing arm relative to wheel carrier body around the z-axis
+<pre>.TrailArmL.rv_z rad/s Rotation velocity of the left trailing arm relative to wheel carrier body around the z-axis
+<pre>.TrailArmL.r_z rad Rotation of the left trailing arm relative to wheel carrier body around the z-axis
+<pre>.TrailArmL.Trq2WC_z Nm Spring-damper torque of the left trailing arm body
+<pre>.TrailArmR.Bush2Vhcl.* Parameters of the bushing between the right trailing arm body and vehicle chassis
+<pre>.TrailArmR.ra_z rad/s2Rotation acceleration of the right trailing arm relative to wheel carrier body around the z-axis
+<pre>.TrailArmR.rv_z rad/s Rotation velocity of the right trailing arm relative to wheel carrier body around the z-axis
+<pre>.TrailArmR.r_z rad Rotation of the right trailing arm relative to wheel carrier body around the z-axis
+<pre>.TrailArmR.Trq2WC_z Spring-damper torque of the l right trailing arm body
+<pre>.WCL.ax
+<pre>.WCL.ay
+<pre>.WCL.azm/s2Translation acceleration of the left wheel carrier body relative to vehicle chassis along the x,y,z-axis
+--- Page 32 ---
+1275 User Accessible Quantities
+MBS Suspension
+CarMaker Reference Manual Version 14.0.1<pre>.WCL.ra_zxy.x
+<pre>.WCL.ra_zxy.y
+<pre>.WCL.ra_zxy.zrad/s2Rotation acceleration of the left wheel carrier body relative to vehicle chassis around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WCL.rv_zxy.x
+<pre>.WCL.rv_zxy.y
+<pre>.WCL.rv_zxy.zrad/s Rotation velocity of the left wheel carrier body relative to vehicle chassis around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WCL.r_zxy.x
+<pre>.WCL.r_zxy.y
+<pre>.WCL.r_zxy.zrad Rotation of the left wheel carrier body relative to vehicle chassis around the x,y,z-axis with rotation sequence ZXY
+<pre>.WCL.tx
+<pre>.WCL.ty
+<pre>.WCL.tzm Translation of the left wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WCL.vx
+<pre>.WCL.vy
+<pre>.WCL.vzm/s Translation velocity of the left wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WCR.ax
+<pre>.WCR.ay
+<pre>.WCR.azm/s2Translation acceleration of the right wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WCR.ra_zxy.x
+<pre>.WCR.ra_zxy.y
+<pre>.WCR.ra_zxy.zrad/s2Rotation acceleration of the right wheel carrier body relative to vehicle chassis around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WCR.rv_zxy.x
+<pre>.WCR.rv_zxy.y
+<pre>.WCR.rv_zxy.zrad/s Rotation velocity of the right wheel carrier body relativ e to vehicle chassis around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WCR.r_zxy.x
+<pre>.WCR.r_zxy.y
+<pre>.WCR.r_zxy.zrad Rotation of the right wheel carrier body relative to vehicle chassis around the x,y,z-axis with rotation sequence
+ZXY
+<pre>.WCR.tx
+<pre>.WCR.ty
+<pre>.WCR.tzm Translation of the right wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WCR.vx
+<pre>.WCR.vy
+<pre>.WCR.vzm/s Translation velocity of the right wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WishLowL.Bush2Vhcl.* Parameters of the bushing between the left lower wishbone body and vehicle chassis
+<pre>.WishLowL.ra_zxy.x
+<pre>.WishLowL.ra_zxy.y
+<pre>.WishLowL.ra_zxy.zrad/s2Rotation acceleration of the left lower wishbone relative to wheel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WishLowL.rv_zxy.x
+<pre>.WishLowL.rv_zxy.y
+<pre>.WishLowL.rv_zxy.zrad/s Rotation velocity of the left lower wishbone relative to w heel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WishLowL.r_zxy.x
+<pre>.WishLowL.r_zxy.y
+<pre>.WishLowL.r_zxy.zrad Rotation of the left lower wishbone relative to wheel carrier body around the x,y,z-axis with rotation sequence ZXY
+<pre>.WishLowR.Bush2Vhcl.* Parameters of the bushing between the right lower wishbone body and vehicle chassis
+<pre>.WishLowR.ra_zxy.x
+<pre>.WishLowR.ra_zxy.y
+<pre>.WishLowR.ra_zxy.zrad/s2Rotation acceleration of the right lower wishbone relative to wheel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WishLowR.rv_zxy.x
+<pre>.WishLowR.rv_zxy.y
+<pre>.WishLowR.rv_zxy.zrad/s Rotation velocity of the right lower wishbone relative to wheel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WishLowR.r_zxy.x
+<pre>.WishLowR.r_zxy.y
+<pre>.WishLowR.r_zxy.zrad Rotation of the right lower wishbone relative to wheel carrier body around the x,y,z-axis with rotation sequence
+ZXY
+<pre>.WishUppL.Bush2Vhcl.* Parameters of the bushing between the left upper wishbone body and vehicle chassis
+<pre>.WishUppL.ra_zxy.x
+<pre>.WishUppL.ra_zxy.y
+<pre>.WishUppL.ra_zxy.zrad/s2Rotation acceleration of the left upper wishbone relative to wheel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WishUppL.rv_zxy.x
+<pre>.WishUppL.rv_zxy.y
+<pre>.WishUppL.rv_zxy.zrad/s Rotation velocity of the left upper wishbone relative to w heel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WishUppL.r_zxy.x
+<pre>.WishUppL.r_zxy.y
+<pre>.WishUppL.r_zxy.zrad Rotation of the left upper wishbone relative to wheel carrier body around the x,y,z-axis with rotation sequence ZXY
+<pre>.WishUppR.Bush2Vhcl.* Parameters of the bushing between the right upper wishbone body and vehicle chassis
+<pre>.WishUppR.ra_zxy.x
+<pre>.WishUppR.ra_zxy.y
+<pre>.WishUppR.ra_zxy.zrad/s2Rotation acceleration of the right upper wishbone relative to wheel carrier body around the x,y,z-axis with rotation
+sequence ZXYName UAQ Unit Info (data type, if not double)
+--- Page 33 ---
+1276 User Accessible Quantities
+MBS Suspension
+CarMaker Reference Manual Version 14.0.126.8.6 Fourlink suspension with ForceCoupling
+At this point only the additional quantities for the stabilizer bar due to the numerical compli-
+ance and the resulting forces and torques at the attachment f rame are listed. For the
+description of the other bodies please refer to chapter 26.8.5 .
+26.8.7 Fourlink extended suspension
+At this point only the additional quantities for the body subframe are listed. For the descrip-
+tion of the other bodies please refer to chapter 26.8.5 .<pre>.WishUppR.rv_zxy.x
+<pre>.WishUppR.rv_zxy.y
+<pre>.WishUppR.rv_zxy.zrad/s Rotation velocity of the right upper wishbone relative to wheel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WishUppR.r_zxy.x
+<pre>.WishUppR.r_zxy.y
+<pre>.WishUppR.r_zxy.zrad Rotation of the right upper wishbone relative to wheel carrier body around the x,y,z-axis with rotation sequence
+ZXYName UAQ Unit Info (data type, if not double)
+Name UAQ Unit Info (data type, if not double)
+<pre> := FourLink.<pos>
+<pos> := SuspR
+<pre>.WCL.*
+<pre>.WCR.*All quantities describing the motion of the wheel carrier bodies are expressed in Fr0 with respect to Fr0
+<pre>.StBarL.Bush2Vhcl.* Parameters of numerical bushing between left stabilizer bar and vehicle chassis
+<pre>.StBarR.Bush2Vhcl.* Parameters of numerical bushing between right stabilizer bar and vehicle chassis
+<pre>.FrcCpl.Frc_1.x
+<pre>.FrcCpl.Frc_1.y
+<pre>.FrcCpl.Frc_1.zResulting forces at attachment frame expressed in Fr1
+<pre>.FrcCpl.Trq_1.x
+<pre>.FrcCpl.Trq_1.y
+<pre>.FrcCpl.Trq_1.zResulting torques at attachment frame expressed in Fr1 with respect to Fr1
+<pre>.FrcCpl.Frc_Susp.x
+<pre>.FrcCpl.Frc_Susp.y
+<pre>.FrcCpl.Frc_Susp.zResulting forces at attachment frame expressed in FrSusp
+<pre>.FrcCpl.Trq_Susp.x
+<pre>.FrcCpl.Trq_Susp.y
+<pre>.FrcCpl.Trq_Susp.zResulting torques at attachment frame expressed in FrSusp with respect to FrSusp
+Name UAQ Unit Info (data type, if not double)
+<pre> := FourLink.<pos>
+<pos> := SuspR
+<pre>.Subfrm.BushFL2Vhcl.* Parameters of the front left bushing between the subframe body and vehicle chassis
+<pre>.Subfrm.BushFR2Vhcl.* Parameters of the front right bushing between the subframe and vehicle chassis
+<pre>.Subfrm.BushRL2Vhcl.* Parameters of the rear left bushing between the subframe body and vehicle chassis
+<pre>.Subfrm.BushRR2Vhcl.* Parameters of the rear right bushing between the subframe and vehicle chassis
+<pre>.Subfrm.ra_zyx.x
+<pre>.Subfrm.ra_zyx.y
+<pre>.Subfrm.ra_zyx.zrad/s2Rotation acceleration of the subframe body relative to the vehicle chassis around the x,y,z-axis with rotation sequence
+ZYX
+<pre>.Subfrm.rv_zyx.x
+<pre>.Subfrm.rv_zyx.y
+<pre>.Subfrm.rv_zyx.zrad/s Rotation velocity of the subframe body relative to the vehicle chassis around the x,y,z-axis with rotation sequence ZYX
+<pre>.Subfrm.r_zyx.x
+<pre>.Subfrm.r_zyx.y
+<pre>.Subfrm.r_zyx.zrad Rotation of the subframe body relative to the vehicle chassis around the x,y,z-axis with rotation sequence ZYX
+<pre>.Subfrm.tx
+<pre>.Subfrm.ty
+<pre>.Subfrm.tzm Translation of the subframe body relative to the vehicle chassis along the x,y,z-axis
+<pre>.Subfrm.vx
+<pre>.Subfrm.vy
+<pre>.Subfrm.vzm/s Translation velocity of the subframe body relative to the vehicle chassis along the x,y,z-axis
+--- Page 34 ---
+1277 User Accessible Quantities
+MBS Suspension
+CarMaker Reference Manual Version 14.0.1<pre>.Subfrm.ax
+<pre>.Subfrm.ay
+<pre>.Subfrm.azm/s2Translation acceleration of the subframe body relative to the vehicle chassis along the x,y,z-axisName UAQ Unit Info (data type, if not double)
+--- Page 35 ---
+1278 User Accessible Quantities
+MBS Suspension
+CarMaker Reference Manual Version 14.0.126.8.8 Fourlink modiﬁed extended suspension
+Name UAQ Unit Info (data type, if not double)
+<pre> := FourLink.<pos>
+<pos> := SuspR
+<pre>.OSRate - Model oversampling rate (integer)
+<pre>.PlungL.Frc2Wheel N Normal force at the left tire contact point
+<pre>.PlungR.Frc2Wheel N Normal force at the right tire contact point
+<pre>.StbBarL.ra_y rad/s2Rotation acceleration of the left stabilizer bar body relative to subframe body around the y-axis
+<pre>.StbBarL.rv_y rad/s Rotation velocity of the left stabilizer bar body relative to subframe body around the y-axis
+<pre>.StbBarL.r_y rad Rotation of the left stabilizer bar body relative to subframe body around the y-axis
+<pre>.StbBarR.ra_y rad/s2Rotation acceleration of the right stabilizer bar body relative to subframe body around the y-axis
+<pre>.StbBarR.rv_y rad/s Rotation velocity of the right stabilizer bar body relative to subframe body around the y-axis
+<pre>.StbBarR.r_y rad Rotation of the right stabilizer bar body relative to subframe body around the y-axis
+<pre>.StbLinkL.Bush.* Parameters of the bushing between the left stabilizer link and wheel carrier (or lower/upper wishbone) body
+<pre>.StbLinkL.ra_yx.x
+<pre>.StbLinkL.ra_yx.yrad/s2Rotation acceleration of the left stabilizer link body rela tive to stabilizer bar around the x,y-axis with rotation
+sequence YX
+<pre>.StbLinkL.rv_yx.x
+<pre>.StbLinkL.rv_yx.yrad/s Rotation velocity of the left stabilizer link body relative to stabilizer bar around the x,y-axis with rotation sequence
+YX
+<pre>.StbLinkL.r_yx.x
+<pre>.StbLinkL.r_yx.yrad Rotation of the left stabilizer link body relative to stabilizer bar around the x,y-axis with rotation sequence YX
+<pre>.StbLinkR.Bush.* Parameters of the bushing between the right stabilizer link and wheel carrier (or lower/upper wishbone) body
+<pre>.StbLinkR.ra_yx.x
+<pre>.StbLinkR.ra_yx.yrad/s2Rotation acceleration of the right stabilizer link body rel ative to stabilizer bar around the x,y-axis with rotation
+sequence YX
+<pre>.StbLinkR.rv_yx.x
+<pre>.StbLinkR.rv_yx.yrad/s Rotation velocity of the right stabilizer link body relative to stabilizer bar around the x,y-axis with rotation sequence
+YX
+<pre>.StbLinkR.r_yx.x
+<pre>.StbLinkRr_yx.yrad Rotation of the right stabilizer link body relative to stabilizer bar around the x,y-axis with rotation sequence YX
+<pre>.StrRodL.Bush2Vhcl.* Parameters of the bushing between the left steering rod body and subframe body
+<pre>.StrRodL.ax
+<pre>.StrRodL.ay
+<pre>.StrRodL.azm/s2Translation acceleration of the left steering rod body relative to left wheel carrier body along the x,y,z-axis
+<pre>.StrRodL.ra_zxy.x
+<pre>.StrRodL.ra_zxy.y
+<pre>.StrRodL.ra_zxy.zrad/s2Rotation acceleration of the left steering rod relative to the wheel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.StrRodL.rv_zxy.x
+<pre>.StrRodL.rv_zxy.y
+<pre>.StrRodL.rv_zxy.zrad/s Rotation velocity of the left steering rod relative to the wh eel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.StrRodL.r_zxy.x
+<pre>.StrRodL.r_zxy.y
+<pre>.StrRodL.r_zxy.zrad Rotation of the left steering rod relative to the wheel carrier body around the x,y,z-axis with rotation sequence ZXY
+<pre>.StrRodL.tx
+<pre>.StrRodL.ty
+<pre>.StrRodL.tzm Translation of the left steering rod body relative to left wheel carrier body along the x,y,z-axis
+<pre>.StrRodL.vx
+<pre>.StrRodL.vy
+<pre>.StrRodL.vzm/s Translation velocity of the left steering rod body relative to left wheel carrier body along the x,y,z-axis
+<pre>.StrRodR.Bush2Vhcl.* Parameters of the bushing between the right steering rod body and subframe body
+<pre>.StrRodR.ax
+<pre>.StrRodR.ay
+<pre>.StrRodR.azm/s2Translation acceleration of the right steering rod body relative to left wheel carrier body along the x,y,z-axis
+<pre>.StrRodR.ra_zxy.x
+<pre>.StrRodR.ra_zxy.y
+<pre>.StrRodR.ra_zxy.zrad/s2Rotation acceleration of the right steering rod relative to the wheel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.StrRodR.rv_zxy.x
+<pre>.StrRodR.rv_zxy.y
+<pre>.StrRodR.rv_zxy.zrad/s Rotation velocity of the right steering rod relative to th e wheel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.StrRodR.r_zxy.x
+<pre>.StrRodR.r_zxy.y
+<pre>.StrRodR.r_zxy.zrad Rotation of the right steering rod relative to the wheel carrier body around the x,y,z-axis with rotation sequence
+ZXY
+<pre>.StrRodR.tx
+<pre>.StrRodR.ty
+<pre>.StrRodR.tzm Translation of the right steering rod body relative to left wheel carrier body along the x,y,z-axis
+--- Page 36 ---
+1279 User Accessible Quantities
+MBS Suspension
+CarMaker Reference Manual Version 14.0.1<pre>.StrRodR.vx
+<pre>.StrRodR.vy
+<pre>.StrRodR.vzm/s Translation velocity of the right steering rod body relative to left wheel carrier body along the x,y,z-axis
+<pre>.Subfrm.BushFL2Vhcl.* Parameters of the front left bushing between the subframe body and vehicle chassis
+<pre>.Subfrm.BushFR2Vhcl.* Parameters of the front right bushing between the subframe and vehicle chassis
+<pre>.Subfrm.BushRL2Vhcl.* Parameters of the rear left bushing between the subframe body and vehicle chassis
+<pre>.Subfrm.BushRR2Vhcl.* Parameters of the rear right bushing between the subframe and vehicle chassis
+<pre>.Subfrm.ra_zyx.x
+<pre>.Subfrm.ra_zyx.y
+<pre>.Subfrm.ra_zyx.zrad/s2Rotation acceleration of the subframe body relative to the v ehicle chassis around the x,y,z-axis with rotation
+sequence ZYX
+<pre>.Subfrm.rv_zyx.x
+<pre>.Subfrm.rv_zyx.y
+<pre>.Subfrm.rv_zyx.zrad/s Rotation velocity of the subframe body relative to the vehicle chassis around the x,y,z-axis with rotation sequence
+ZYX
+<pre>.Subfrm.r_zyx.x
+<pre>.Subfrm.r_zyx.y
+<pre>.Subfrm.r_zyx.zrad Rotation of the subframe body relative to the vehicle chassis around the x,y,z-axis with rotation sequence ZYX
+<pre>.Subfrm.tx
+<pre>.Subfrm.ty
+<pre>.Subfrm.tzm Translation of the subframe body relative to the vehicle chassis along the x,y,z-axis
+<pre>.Subfrm.vx
+<pre>.Subfrm.vy
+<pre>.Subfrm.vzm/s Translation velocity of the subframe body relative to the vehicle chassis along the x,y,z-axis
+<pre>.Subfrm.ax
+<pre>.Subfrm.ay
+<pre>.Subfrm.azm/s2Translation acceleration of the subframe body relative to the vehicle chassis along the x,y,z-axis
+<pre>.TrailArmL.Bush2Vhcl.* Parameters of the bushing between the left trailing arm body and the subframe body
+<pre>.TrailArmL.ax
+<pre>.TrailArmL.ay
+<pre>.TrailArmL.azm/s2Translation acceleration of the left trailing arm body relative to left wheel carrier body along the x,y,z-axis
+<pre>.TrailArmL.ra_zxy.x
+<pre>.TrailArmL.ra_zxy.y
+<pre>.TrailArmL.ra_zxy.zrad/s2Rotation acceleration of the left trailing arm relative to the wheel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.TrailArmL.rv_zxy.x
+<pre>.TrailArmL.rv_zxy.y
+<pre>.TrailArmL.rv_zxy.zrad/s Rotation velocity of the left trailing arm relative to the wh eel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.TrailArmL.r_zxy.x
+<pre>.TrailArmL.r_zxy.y
+<pre>.TrailArmL.r_zxy.zrad Rotation of the left trailing arm relative to the wheel carrier body around the x,y,z-axis with rotation sequence ZXY
+<pre>.TrailArmL.tx
+<pre>.TrailArmL.ty
+<pre>.TrailArmL.tzm Translation of the left trailing arm body relative to left wheel carrier body along the x,y,z-axis
+<pre>.TrailArmL.vx
+<pre>.TrailArmL.vy
+<pre>.TrailArmL.vzm/s Translation velocity of the left trailing arm body relative to left wheel carrier body along the x,y,z-axis
+<pre>.TrailArmR.Bush2Vhcl.* Parameters of the bushing between the right trailing arm body and the subframe body
+<pre>.TrailArmR.ax
+<pre>.TrailArmR.ay
+<pre>.TrailArmR.azm/s2Translation acceleration of the right trailing arm body relative to left wheel carrier body along the x,y,z-axis
+<pre>.TrailArmR.ra_zxy.x
+<pre>.TrailArmR.ra_zxy.y
+<pre>.TrailArmR.ra_zxy.zrad/s2Rotation acceleration of the right trailing arm relative to the wheel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.TrailArmR.rv_zxy.x
+<pre>.TrailArmR.rv_zxy.y
+<pre>.TrailArmR.rv_zxy.zrad/s Rotation velocity of the right trailing arm relative to th e wheel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.TrailArmR.r_zxy.x
+<pre>.TrailArmR.r_zxy.y
+<pre>.TrailArmR.r_zxy.zrad Rotation of the right trailing arm relative to the wheel carrier body around the x,y,z-axis with rotation sequence ZXY
+<pre>.TrailArmR.tx
+<pre>.TrailArmR.ty
+<pre>.TrailArmR.tzm Translation of the right trailing arm body relative to left wheel carrier body along the x,y,z-axis
+<pre>.TrailArmR.vx
+<pre>.TrailArmR.vy
+<pre>.TrailArmR.vzm/s Translation velocity of the right trailing arm body relative to left wheel carrier body along the x,y,z-axis
+<pre>.WCL.Bush2WishLow.* Parameters of the bushing between the left lower wishbone body and the wheel carrier body
+<pre>.WCL.Bush2TrailArm.* Parameters of the bushing between the left trailing arm body and the wheel carrier body
+<pre>.WCL.Bush2SteerRod.* Parameters of the bushing between the left steering rod body and the wheel carrier bodyName UAQ Unit Info (data type, if not double)
+--- Page 37 ---
+1280 User Accessible Quantities
+MBS Suspension
+CarMaker Reference Manual Version 14.0.1<pre>.WCL.ax
+<pre>.WCL.ay
+<pre>.WCL.azm/s2Translation acceleration of the left wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WCL.ra_zxy.x
+<pre>.WCL.ra_zxy.y
+<pre>.WCL.ra_zxy.zrad/s2Rotation acceleration of the left wheel carrier body relative to vehicle chassis around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WCL.rv_zxy.x
+<pre>.WCL.rv_zxy.y
+<pre>.WCL.rv_zxy.zrad/s Rotation velocity of the left wheel carrier body relative to vehicle chassis around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WCL.r_zxy.x
+<pre>.WCL.r_zxy.y
+<pre>.WCL.r_zxy.zrad Rotation of the left wheel carrier body relative to vehicle chassis around the x,y,z-axis with rotation sequence ZXY
+<pre>.WCL.tx
+<pre>.WCL.ty
+<pre>.WCL.tzm Translation of the left wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WCL.vx
+<pre>.WCL.vy
+<pre>.WCL.vzm/s Translation velocity of the left wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WCR.Bush2WishLow.* Parameters of the bushing between the right lower wishbone body and the wheel carrier body
+<pre>.WCR.Bush2TrailArm.* Parameters of the bushing between the right trailing arm body and the wheel carrier body
+<pre>.WCR.Bush2SteerRod.* Parameters of the bushing between the right steering rod body and the wheel carrier body
+<pre>.WCR.ax
+<pre>.WCR.ay
+<pre>.WCR.azm/s2Translation acceleration of the right wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WCR.ra_zxy.x
+<pre>.WCR.ra_zxy.y
+<pre>.WCR.ra_zxy.zrad/s2Rotation acceleration of the right wheel carrier body relative to vehicle chassis around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WCR.rv_zxy.x
+<pre>.WCR.rv_zxy.y
+<pre>.WCR.rv_zxy.zrad/s Rotation velocity of the right wheel carrier body relativ e to vehicle chassis around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WCR.r_zxy.x
+<pre>.WCR.r_zxy.y
+<pre>.WCR.r_zxy.zrad Rotation of the right wheel carrier body relative to vehicle chassis around the x,y,z-axis with rotation sequence
+ZXY
+<pre>.WCR.tx
+<pre>.WCR.ty
+<pre>.WCR.tzm Translation of the right wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WCR.vx
+<pre>.WCR.vy
+<pre>.WCR.vzm/s Translation velocity of the right wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WishLowL.Bush2Vhcl.* Parameters of the bushing between the left lower wishbone body and the subframe body
+<pre>.WishLowL.ax
+<pre>.WishLowL.ay
+<pre>.WishLowL.azm/s2Translation acceleration of the left lower wishbone body relative to left wheel carrier body along the x,y,z-axis
+<pre>.WishLowL.ra_zxy.x
+<pre>.WishLowL.ra_zxy.y
+<pre>.WishLowL.ra_zxy.zrad/s2Rotation acceleration of the left lower wishbone relative to wheel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WishLowL.rv_zxy.x
+<pre>.WishLowL.rv_zxy.y
+<pre>.WishLowL.rv_zxy.zrad/s Rotation velocity of the left lower wishbone relative to whe el carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WishLowL.r_zxy.x
+<pre>.WishLowL.r_zxy.y
+<pre>.WishLowL.r_zxy.zrad Rotation of the left lower wishbone relative to wheel carrier body around the x,y,z-axis with rotation sequence ZXY
+<pre>.WishLowL.tx
+<pre>.WishLowL.ty
+<pre>.WishLowL.tzm Translation of the left lower wishbone body relative to left wheel carrier body along the x,y,z-axis
+<pre>.WishLowL.vx
+<pre>.WishLowL.vy
+<pre>.WishLowL.vzm/s Translation velocity of the left lower wishbone body relative to left wheel carrier body along the x,y,z-axis
+<pre>.WishLowR.Bush2Vhcl.* Parameters of the bushing between the right lower wishbone body and the subframe body
+<pre>.WishLowR.ax
+<pre>.WishLowR.ay
+<pre>.WishLowR.azm/s2Translation acceleration of the right lower wishbone body relative to left wheel carrier body along the x,y,z-axis
+<pre>.WishLowR.ra_zxy.x
+<pre>.WishLowR.ra_zxy.y
+<pre>.WishLowR.ra_zxy.zrad/s2Rotation acceleration of the right lower wishbone relative to wheel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WishLowR.rv_zxy.x
+<pre>.WishLowR.rv_zxy.y
+<pre>.WishLowR.rv_zxy.zrad/s Rotation velocity of the right lower wishbone relative to wheel carrier body around the x,y,z-axis with rotation
+sequence ZXYName UAQ Unit Info (data type, if not double)
+--- Page 38 ---
+1281 User Accessible Quantities
+MBS Suspension
+CarMaker Reference Manual Version 14.0.1<pre>.WishLowR.r_zxy.x
+<pre>.WishLowR.r_zxy.y
+<pre>.WishLowR.r_zxy.zrad Rotation of the right lower wishbone relative to wheel carrier body around the x,y,z-axis with rotation sequence
+ZXY
+<pre>.WishLowR.tx
+<pre>.WishLowR.ty
+<pre>.WishLowR.tzm Translation of the right lower wishbone body relative to left wheel carrier body along the x,y,z-axis
+<pre>.WishLowR.vx
+<pre>.WishLowR.vy
+<pre>.WishLowR.vzm/s Translation velocity of the right lower wishbone body relative to left wheel carrier body along the x,y,z-axis
+<pre>.WishUppL.BushF2Vhcl.*
+<pre>.WishUppL.BushR2Vhcl.*Parameters of the bushing between the left front/rear upper wishbone body and the subframe body
+<pre>.WishUppL.ra_zxy.x
+<pre>.WishUppL.ra_zxy.y
+<pre>.WishUppL.ra_zxy.zrad/s2Rotation acceleration of the left upper wishbone relative to wheel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WishUppL.rv_zxy.x
+<pre>.WishUppL.rv_zxy.y
+<pre>.WishUppL.rv_zxy.zrad/s Rotation velocity of the left upper wishbone relative to w heel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WishUppL.r_zxy.x
+<pre>.WishUppL.r_zxy.y
+<pre>.WishUppL.r_zxy.zrad Rotation of the left upper wishbone relative to wheel carrier body around the x,y,z-axis with rotation sequence ZXY
+<pre>.WishUppR.BushF2Vhcl.*
+<pre>.WishUppR.BushR2Vhcl.*Parameters of the bushing between the right front/rear upper wishbone body and the subframe body
+<pre>.WishUppR.ra_zxy.x
+<pre>.WishUppR.ra_zxy.y
+<pre>.WishUppR.ra_zxy.zrad/s2Rotation acceleration of the right upper wishbone relative to wheel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WishUppR.rv_zxy.x
+<pre>.WishUppR.rv_zxy.y
+<pre>.WishUppR.rv_zxy.zrad/s Rotation velocity of the right upper wishbone relative to wheel carrier body around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WishUppR.r_zxy.x
+<pre>.WishUppR.r_zxy.y
+<pre>.WishUppR.r_zxy.zrad Rotation of the right upper wishbone relative to wheel carrier body around the x,y,z-axis with rotation sequence
+ZXYName UAQ Unit Info (data type, if not double)
+--- Page 39 ---
+1282 User Accessible Quantities
+MBS Suspension
+CarMaker Reference Manual Version 14.0.126.8.9 Twistbeam Suspension
+Name UAQ Unit Info (data type, if not double)
+<pre> := TwistBeam.<pos>
+<pos> := SuspR
+<pre>.OSRate - Model oversampling rate (integer)
+<pre>.PlungL.Frc2Wheel N Normal force at the left tire contact point
+<pre>.PlungR.Frc2Wheel N Normal force at the right tire contact point
+<pre>.TorsBeam.ra_zyx.x
+<pre>.TorsBeam.ra_zyx.y
+<pre>.TorsBeam.ra_zyx.zrad/s2Rotation acceleration of the torsion beam body relative to the vehicle chassis around the x,y,z-axis with rotation
+sequence ZYX
+<pre>.TorsBeam.rv_zyx.x
+<pre>.TorsBeam.rv_zyx.y
+<pre>.TorsBeam.rv_zyx.zrad/s Rotation velocity of the torsion beam body relative to the ve hicle chassis around the x,y,z-axis with rotation
+sequence ZYX
+<pre>.TorsBeam.r_zyx.x
+<pre>.TorsBeam.r_zyx.y
+<pre>.TorsBeam.r_zyx.zrad Rotation of the torsion beam body relative to the vehicle chassis around the x,y,z-axis with rotation sequence ZYX
+<pre>.TorsBeam.tx
+<pre>.TorsBeam.ty
+<pre>.TorsBeam.tzm Translation of the torsion beam body relative to the vehicle chassis along the x,y,z-axis
+<pre>.TorsBeam.vx
+<pre>.TorsBeam.vy
+<pre>.TorsBeam.vzm/s Translation velocity of the torsion beam body relative to the vehicle chassis along the x,y,z-axis
+<pre>.TorsBeam.ax
+<pre>.TorsBeam.ay
+<pre>.TorsBeam.azm/s2Translation acceleration of the torsion beam body relative to vehicle chassis along the x,y,z-axis
+<pre>.TrlArmL.Bush2Vhcl.* Parameters of the bushing between the left trailing arm body and vehicle chassis
+<pre>.TrlArmL.ra_zyx.x
+<pre>.TrlArmL.ra_zyx.y
+<pre>.TrlArmL.ra_zyx.zrad/s2Rotation acceleration of the left trailing arm body relativ e to torsion beam around the x,y,z-axis with rotation
+sequence ZYX
+<pre>.TrlArmL.rv_zyx.x
+<pre>.TrlArmL.rv_zyx.y
+<pre>.TrlArmL.rv_zyx.zrad/s Rotation velocity of the left trailing arm body relative to torsion beam around the x,y,z-axis with rotation sequence
+ZYX
+<pre>.TrlArmL.r_zyx.x
+<pre>.TrlArmL.r_zyx.y
+<pre>.TrlArmL.r_zyx.zrad Rotation of the left trailing arm body relative to torsion beam around the x,y,z-axis with rotation sequence ZYX
+<pre>.TrlArmL.Trq2TorsBeam.x
+<pre>.TrlArmL.Trq2TorsBeam.y
+<pre>.TrlArmL.Trq2TorsBeam.zNm Spring-damper torque of the left trailing arm body to the torsion beam around the x,y,z-axis
+<pre>.TrlArmR.Bush2Vhcl.* Parameters of the bushing between the right trailing arm body and vehicle chassis
+<pre>.TrlArmR.ra_zyx.x
+<pre>.TrlArmR.ra_zyx.y
+<pre>.TrlArmR.ra_zyx.zrad/s2Rotation acceleration of the right trailing arm body relati ve to torsion beam around the x,y,z-axis with rotation
+sequence ZYX
+<pre>.TrlArmR.rv_zyx.x
+<pre>.TrlArmR.rv_zyx.y
+<pre>.TrlArmR.rv_zyx.zrad/s Rotation velocity of the right trailing arm body relative to torsion beam around the x,y,z-axis with rotation sequence
+ZYX
+<pre>.TrlArmR.r_zyx.x
+<pre>.TrlArmR.r_zyx.y
+<pre>.TrlArmR.r_zyx.zrad Rotation of the right trailing arm body relative to torsion beam around the x,y,z-axis with rotation sequence ZYX
+<pre>.TrlArmR.Trq2TorsBeam.x
+<pre>.TrlArmR.Trq2TorsBeam.y
+<pre>.TrlArmR.Trq2TorsBeam.zNm Spring-damper torque of the right trailing arm body to the torsion beam around the x,y,z-axis
+<pre>.WCL.ra_z rad/s2Rotation acceleration of the left wheel carrier body relative to trailing body arm around the z-axis
+<pre>.WCL.rv_z rad/s Rotation velocity of the left wheel carrier body relative to trailing arm body around the z-axis
+<pre>.WCL.r_z rad Rotation of the left wheel carrier body relative to trailing arm body around the z-axis
+<pre>.WCL.Trq2TrailArm_z Nm Spring-damper torque of the left wheel carrier body to trailing arm body
+<pre>.WCR.ra_z rad/s2Rotation acceleration of the right wheel carrier body relative to trailing body arm around the z-axis
+<pre>.WCR.rv_z rad/s Rotation velocity of the right wheel carrier body relative to trailing arm body around the z-axis
+<pre>.WCR.r_z rad Rotation of the right wheel carrier body relative to trailing arm body around the z-axis
+<pre>.WCR.Trq2TrailArm_z Nm Spring-damper torque of the right wheel carrier body to trailing arm body
+--- Page 40 ---
+1283 User Accessible Quantities
+MBS Suspension
+CarMaker Reference Manual Version 14.0.126.8.10 Twistbeam Extended Suspension
+At this point only the quantities for the additional model elements are listed. For the descrip-
+tion of the other bodies please refer to chapter 26.8.9 .’
+Name UAQ Unit Info (data type, if not double)
+<pre> := TwistBeam.<pos>
+<pos> := SuspR
+<pre>.TrlArmL.Bush2TorsBeam.* Parameters of the bushing between the left trailing arm body and the torsion beam body
+<pre>.TrlArmL.tx
+<pre>.TrlArmL.ty
+<pre>.TrlArmL.tzm Translation of the left trailing arm body relative to the torsion beam along the x,y,z-axis
+<pre>.TrlArmL.vx
+<pre>.TrlArmL.vy
+<pre>.TrlArmL.vzm/s Translation velocity of the left trailing arm body relative to the torsion beam along the x,y,z-axis
+<pre>.TrlArmL.ax
+<pre>.TrlArmL.ay
+<pre>.TrlArmL.azm/s2Translation acceleration of the left trailing arm body relative to the torsion beam along the x,y,z-axis
+<pre>.TrlArmR.Bush2TorsBeam.* Parameters of the bushing between the right trailing arm body and the torsion beam body
+<pre>.TrlArmR.tx
+<pre>.TrlArmR.ty
+<pre>.TrlArmR.tzm Translation of the right trailing arm body relative to the torsion beam along the x,y,z-axis
+<pre>.TrlArmR.vx
+<pre>.TrlArmR.vy
+<pre>.TrlArmR.vzm/s Translation velocity of the right trailing arm body relative to the torsion beam along the x,y,z-axis
+<pre>.TrlArmR.ax
+<pre>.TrlArmR.ay
+<pre>.TrlArmR.azm/s2Translation acceleration of the right trailing arm body relative to the torsion beam along the x,y,z-axis
+--- Page 41 ---
+1284 User Accessible Quantities
+MBS Suspension
+CarMaker Reference Manual Version 14.0.126.8.11 Double Wishbone Suspension
+Name UAQ Unit Info (data type, if not double)
+<pre> := DoubleWishbone.<pos>
+<pos> := SuspF
+<pre>.OSRate - Model oversampling rate (integer)
+<pre>.PlungL.Frc2Wheel N Normal force at the left tire contact point
+<pre>.PlungR.Frc2Wheel N Normal force at the right tire contact point
+<pre>.StbBarL.ra_y rad/s2Rotation acceleration of the left stabilizer bar body relative to vehicle chassis around the y-axis
+<pre>.StbBarL.rv_y rad/s Rotation velocity of the left stabilizer bar body relative to vehicle chassis around the y-axis
+<pre>.StbBarL.r_y rad Rotation of the left stabilizer bar body relative to vehicle chassis around the y-axis
+<pre>.StbBarR.ra_y rad/s2Rotation acceleration of the right stabilizer bar body relative to vehicle chassis around the y-axis
+<pre>.StbBarR.rv_y rad/s Rotation velocity of the right stabilizer bar body relative to vehicle chassis around the y-axis
+<pre>.StbBarR.r_y rad Rotation of the right stabilizer bar body relative to vehicle chassis around the y-axis
+<pre>.StbLinkL.Bush2WC.* Parameters of the bushing between the left stabilizer link and wheel carrier body
+<pre>.StbLinkR.Bush2WC.* Parameters of the bushing between the right stabilizer link and wheel carrier body
+<pre>.StbLinkL.ra_yx.x
+<pre>.StbLinkL.ra_yx.yrad/s2Rotation acceleration of the left stabilizer link body rela tive to stabilizer bar around the x,y-axis with rotation
+sequence YX
+<pre>.StbLinkL.rv_yx.x
+<pre>.StbLinkL.rv_yx.yrad/s Rotation velocity of the left stabilizer link body relative to stabilizer bar around the x,y-axis with rotation sequence YX
+<pre>.StbLinkL.r_yx.x
+<pre>.StbLinkL.r_yx.yrad Rotation of the left stabilizer link body relative to stabilizer bar around the x,y-axis with rotation sequence YX
+<pre>.StbLinkR.ra_yx.x
+<pre>.StbLinkR.ra_yx.yrad/s2Rotation acceleration of the right stabilizer link body rel ative to stabilizer bar around the x,y-axis with rotation
+sequence YX
+<pre>.StbLinkR.rv_yx.x
+<pre>.StbLinkR.rv_yx.yrad/s Rotation velocity of the right stabilizer link body relative to stabilizer bar around the x,y-axis with rotation sequence
+YX
+<pre>.StbLinkR.r_yx.x
+<pre>.StbLinkR.r_yx.yrad Rotation of the right stabilizer link body relative to stabilizer bar around the x,y-axis with rotation sequence YX
+<pre>.StrRack.a_y m/s2Translation acceleration of the steering rack body relative to the vehicle chassis along the y-axis
+(information imposed by steering model)
+<pre>.StrRack.t_y m Translation of the steering rack body relative to the vehicle chassis along the y-axis
+(information imposed by steering model)
+<pre>.StrRack.v_y m/s Translation velocity of the steering rack body relative to the vehicle chassis along the y-axis
+(information imposed by steering model)
+<pre>.StrRodL.Bush2StrRack.* Parameters of the bushing between the left steering rod and steering rack body
+<pre>.StrRodR.Bush2StrRack.* Parameters of the bushing between the right steering rod and steering rack body
+<pre>.StrRodL.ra_zx.x
+<pre>.StrRodL.ra_zx.zrad/s2Rotation acceleration of the left steering rod relative to t he wheel carrier body around the x,z-axis with rotation
+sequence ZX
+<pre>.StrRodL.rv_zx.x
+<pre>.StrRodL.rv_zx.zrad/s Rotation velocity of the left steering rod relative to the wheel carrier body around the x,z-axis with rotation sequence
+ZX
+<pre>.StrRodL.r_zx.x
+<pre>.StrRodL.r_zx.zrad Rotation of the left steering rod relative to the wheel carrier body around the x,z-axis with rotation sequence ZX
+<pre>.StrRodR.ra_zx.x
+<pre>.StrRodR.ra_zx.zrad/s2Rotation acceleration of the right steering rod relative to the wheel carrier body around the x,z-axis with rotation
+sequence ZX
+<pre>.StrRodR.rv_zx.x
+<pre>.StrRodR.rv_zx.zrad/s Rotation velocity of the right steering rod relative to the wheel carrier body around the x,z-axis with rotation sequence
+ZX
+<pre>.StrRodR.r_zx.x
+<pre>.StrRodR.r_zx.zrad Rotation of the right steering rod relative to the wheel carrier body around the x,z-axis with rotation sequence ZX
+<pre>.Vhcl.Bush2DampL.* Parameters of the strut bushing between the left damper body and vehicle chassis
+<pre>.Vhcl.Bush2DampR.* Parameters of the strut bushing between the right damper body and vehicle chassis
+<pre>.WCL.ax
+<pre>.WCL.ay
+<pre>.WCL.azm/s2Translation acceleration of the left wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WCL.ra_zxy.x
+<pre>.WCL.ra_zxy.y
+<pre>.WCL.ra_zxy.zrad/s2Rotation acceleration of the left wheel carrier body relati ve to vehicle chassis around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WCL.rv_zxy.x
+<pre>.WCL.rv_zxy.y
+<pre>.WCL.rv_zxy.zrad/s Rotation velocity of the left wheel carrier body relative to vehicle chassis around the x,y,z-axis with rotation sequence
+ZXY
+<pre>.WCL.r_zxy.x
+<pre>.WCL.r_zxy.y
+<pre>.WCL.r_zxy.zrad Rotation of the left wheel carrier body relative to vehicle chassis around the x,y,z-axis with rotation sequence ZXY
+--- Page 42 ---
+1285 User Accessible Quantities
+MBS Suspension
+CarMaker Reference Manual Version 14.0.1<pre>.WCL.tx
+<pre>.WCL.ty
+<pre>.WCL.tzm Translation of the left wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WCL.vx
+<pre>.WCL.vy
+<pre>.WCL.vzm/s Translation velocity of the left wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WCR.ax
+<pre>.WCR.ay
+<pre>.WCR.azm/s2Translation acceleration of the right wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WCR.ra_zxy.x
+<pre>.WCR.ra_zxy.y
+<pre>.WCR.ra_zxy.zrad/s2Rotation acceleration of the right wheel carrier body relative to vehicle chassis around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WCR.rv_zxy.x
+<pre>.WCR.rv_zxy.y
+<pre>.WCR.rv_zxy.zrad/s Rotation velocity of the right wheel carrier body relative t o vehicle chassis around the x,y,z-axis with rotation
+sequence ZXY
+<pre>.WCR.r_zxy.x
+<pre>.WCR.r_zxy.y
+<pre>.WCR.r_zxy.zrad Rotation of the right wheel carrier body relative to vehicle chassis around the x,y,z-axis with rotation sequence ZXY
+<pre>.WCR.tx
+<pre>.WCR.ty
+<pre>.WCR.tzm Translation of the right wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WCR.vx
+<pre>.WCR.vy
+<pre>.WCR.vzm/s Translation velocity of the right wheel carrier body relative to vehicle chassis along the x,y,z-axis
+<pre>.WishLowL.BushF2Vhcl.* Parameters of the front bushing between the left lower wishbone body and vehicle chassis
+<pre>.WishLowL.BushR2Vhcl.* Parameters of the rear bushing between the left lower wishbone body and vehicle chassis
+<pre>.WishLowL.ra_zyx.x
+<pre>.WishLowL.ra_zyx.y
+<pre>.WishLowL.ra_zyx.zrad/s2Rotation acceleration of the left lower wishbone relative t o wheel carrier body around the x,y,z-axis with rotation
+sequence ZYX
+<pre>.WishLowL.rv_zyx.x
+<pre>.WishLowL.rv_zyx.y
+<pre>.WishLowL.rv_zyx.zrad/s Rotation velocity of the left lower wishbone relative to w heel carrier body around the x,y,z-axis with rotation
+sequence ZYX
+<pre>.WishLowL.r_zyx.x
+<pre>.WishLowL.r_zyx.y
+<pre>.WishLowL.r_zyx.zrad Rotation of the left lower wishbone relative to wheel carrier body around the x,y,z-axis with rotation sequence ZYX
+<pre>.WishLowR.BushF2Vhcl.* Parameters of the front bushing between the right lower wishbone body and vehicle chassis
+<pre>.WishLowR.BushR2Vhcl.* Parameters of the rear bushing between the right lower wishbone body and vehicle chassis
+<pre>.WishLowR.ra_zyx.x
+<pre>.WishLowR.ra_zyx.y
+<pre>.WishLowR.ra_zyx.zrad/s2Rotation acceleration of the right lower wishbone relative to wheel carrier body around the x,y,z-axis with rotation
+sequence ZYX
+<pre>.WishLowR.rv_zyx.x
+<pre>.WishLowR.rv_zyx.y
+<pre>.WishLowR.rv_zyx.zrad/s Rotation velocity of the right lower wishbone relative to wh eel carrier body around the x,y,z-axis with rotation
+sequence ZYX
+<pre>.WishLowR.r_zyx.x
+<pre>.WishLowR.r_zyx.y
+<pre>.WishLowR.r_zyx.zrad Rotation of the right lower wishbone relative to wheel carrier body around the x,y,z-axis with rotation sequence ZYX
+<pre>.WishUppL.BushF2Vhcl.* Parameters of the front bushing between the left upper wishbone body and vehicle chassis
+<pre>.WishUppL.BushR2Vhcl.* Parameters of the rear bushing between the left upper wishbone body and vehicle chassis
+<pre>.WishUppL.ra_zyx.x
+<pre>.WishUppL.ra_zyx.y
+<pre>.WishUppL.ra_zyx.zrad/s2Rotation acceleration of the left upper wishbone relative to w heel carrier body around the x,y,z-axis with rotation
+sequence ZYX
+<pre>.WishUppL.rv_zyx.x
+<pre>.WishUppL.rv_zyx.y
+<pre>.WishUppL.rv_zyx.zrad/s Rotation velocity of the left upper wishbone relative to w heel carrier body around the x,y,z-axis with rotation
+sequence ZYX
+<pre>.WishUppL.r_zyx.x
+<pre>.WishUppL.r_zyx.y
+<pre>.WishUppL.r_zyx.zrad Rotation of the left upper wishbone relative to wheel carrier body around the x,y,z-axis with rotation sequence ZYX
+<pre>.WishUppR.BushF2Vhcl.* Parameters of the front bushing between the right upper wishbone body and vehicle chassis
+<pre>.WishUppR.BushR2Vhcl.* Parameters of the rear bushing between the right upper wishbone body and vehicle chassis
+<pre>.WishUppR.ra_zyx.x
+<pre>.WishUppR.ra_zyx.y
+<pre>.WishUppR.ra_zyx.zrad/s2Rotation acceleration of the right upper wishbone relative to wheel carrier body around the x,y,z-axis with rotation
+sequence ZYX
+<pre>.WishUppR.rv_zyx.x
+<pre>.WishUppR.rv_zyx.y
+<pre>.WishUppR.rv_zyx.zrad/s Rotation velocity of the right upper wishbone relative to wh eel carrier body around the x,y,z-axis with rotation
+sequence ZYXName UAQ Unit Info (data type, if not double)
+--- Page 43 ---
+1286 User Accessible Quantities
+MBS Suspension
+CarMaker Reference Manual Version 14.0.126.8.12 Double Wishbone suspension with ForceCoupling
+At this point only the additional quantities for the stabilizer bar due to the numerical compli-
+ance and the resulting forces and torques at the attachment f rame are listed. For the
+description of the other bodies please refer to chapter 26.8.11 .
+26.8.13 Double Wishbone Extended Suspension
+At this point only the additional quantities for the two bodies subframe and steering box are
+listed. For the description of the other bodies please refer to chapter 26.8.11 .<pre>.WishUppR.r_zyx.x
+<pre>.WishUppR.r_zyx.y
+<pre>.WishUppR.r_zyx.zrad Rotation of the right upper wishbone relative to wheel carrier body around the x,y,z-axis with rotation sequence ZYXName UAQ Unit Info (data type, if not double)
+Name UAQ Unit Info (data type, if not double)
+<pre> := DoubleWishbone.<pos>
+<pos> := SuspF , SuspR
+<pre>.WCL.*
+<pre>.WCR.*All quantities describing the motion of the wheel carrier bodies are expressed in Fr0 with respect to Fr0
+<pre>.StBarL.Bush2Vhcl.* Parameters of numerical bushing between left stabilizer bar and vehicle chassis
+<pre>.StBarR.Bush2Vhcl.* Parameters of numerical bushing between right stabilizer bar and vehicle chassis
+<pre>.FrcCpl.Frc_1.x
+<pre>.FrcCpl.Frc_1.y
+<pre>.FrcCpl.Frc_1.zResulting forces at attachment frame expressed in Fr1
+<pre>.FrcCpl.Trq_1.x
+<pre>.FrcCpl.Trq_1.y
+<pre>.FrcCpl.Trq_1.zResulting torques at attachment frame expressed in Fr1 with respect to Fr1
+<pre>.FrcCpl.Frc_Susp.x
+<pre>.FrcCpl.Frc_Susp.y
+<pre>.FrcCpl.Frc_Susp.zResulting forces at attachment frame expressed in FrSusp
+<pre>.FrcCpl.Trq_Susp.x
+<pre>.FrcCpl.Trq_Susp.y
+<pre>.FrcCpl.Trq_Susp.zResulting torques at attachment frame expressed in FrSusp with respect to FrSusp
+Name UAQ Unit Info (data type, if not double)
+<pre> := DoubleWishbone.<pos>
+<pos> := SuspF
+<pre>.StrBox.ra_zx.x
+<pre>.StrBox.ra_zx.zrad/s2Rotation acceleration of the steering box relative to the subframe body around the x,z-axis with rotation sequence ZX
+<pre>.StrBox.rv_zx.x
+<pre>.StrBox.rv_zx.zrad/s Rotation velocity of the steering box relative to the subframe body around the x,z-axis with rotation sequence ZX
+<pre>.StrBox.r_zx.x
+<pre>.StrBox.r_zx.zrad Rotation of the steering box relative to the subframe body around the x,z-axis with rotation sequence ZX
+<pre>.StrBox.tx
+<pre>.StrBox.ty
+<pre>.StrBox.tzm Translation of the steering box relative to the subframe body along the x,y,z-axis
+<pre>.StrBox.vx
+<pre>.StrBox.vy
+<pre>.StrBox.vzm/s Translation velocity of the steering box relative to the subframe body along the x,y,z-axis
+<pre>.StrBox.ax
+<pre>.StrBox.ay
+<pre>.StrBox.azm/s2Translation acceleration of the steering box relative to the subframe body along the x,y,z-axis
+<pre>.Subfrm.BushFL2Vhcl.* Parameters of the front left bushing between the subframe body and vehicle chassis
+<pre>.Subfrm.BushFR2Vhcl.* Parameters of the front right bushing between the subframe and vehicle chassis
+<pre>.Subfrm.BushRL2Vhcl.* Parameters of the rear left bushing between the subframe body and vehicle chassis
+<pre>.Subfrm.BushRR2Vhcl.* Parameters of the rear right bushing between the subframe and vehicle chassis
+<pre>.Subfrm.L2StrBox.* Parameters of the left bushing between the subframe and the steering box body
+<pre>.Subfrm.R2StrBox.* Parameters of the right bushing between the subframe and the steering box body
+--- Page 44 ---
+1287 User Accessible Quantities
+MBS Suspension
+CarMaker Reference Manual Version 14.0.1<pre>.Subfrm.ra_zyx.x
+<pre>.Subfrm.ra_zyx.y
+<pre>.Subfrm.ra_zyx.zrad/s2Rotation acceleration of the subframe body relative to the vehicle chassis around the x,y,z-axis with rotation sequence
+ZYX
+<pre>.Subfrm.rv_zyx.x
+<pre>.Subfrm.rv_zyx.y
+<pre>.Subfrm.rv_zyx.zrad/s Rotation velocity of the subframe body relative to the vehicle chassis around the x,y,z-axis with rotation sequence ZYX
+<pre>.Subfrm.r_zyx.x
+<pre>.Subfrm.r_zyx.y
+<pre>.Subfrm.r_zyx.zrad Rotation of the subframe body relative to the vehicle chassis around the x,y,z-axis with rotation sequence ZYX
+<pre>.Subfrm.tx
+<pre>.Subfrm.ty
+<pre>.Subfrm.tzm Translation of the subframe body relative to the vehicle chassis along the x,y,z-axis
+<pre>.Subfrm.vx
+<pre>.Subfrm.vy
+<pre>.Subfrm.vzm/s Translation velocity of the subframe body relative to the vehicle chassis along the x,y,z-axis
+<pre>.Subfrm.ax
+<pre>.Subfrm.ay
+<pre>.Subfrm.azm/s2Translation acceleration of the subframe body relative to the vehicle chassis along the x,y,z-axisName UAQ Unit Info (data type, if not double)

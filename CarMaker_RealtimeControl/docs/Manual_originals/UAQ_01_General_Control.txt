@@ -1,0 +1,654 @@
+--- Page 2 ---
+1245 User Accessible Quantities
+General
+CarMaker Reference Manual Version 14.0.126.1 General
+26.1.1 TCPU
+26.1.2 TGPUName UAQ Name C-Code Unit Info (data type, if not double)
+DeltaT DeltaT s Duration of completed calculation cycle
+DeltaTPeak s Maximum duration of completed calculation cycle
+Implicit - Sample number in IPGControl
+Time SimCore.Time s Simulation-time of the current Test Run
+Time starts after initialization process is finished. This time may be accelerated or
+delayed during non-real-time simulations.
+Time.Global TimeGlobal s Simulation-time since the start of the application.
+This time may be accelerated or delayed during non-real-time simulations.
+Time.WC SimCore.TimeWC s “Wall-clock-time”
+This is the real time elapsed since the start of the application. In non-real-time simula-
+tions this time may differ from Time.Global.
+Name UAQ Name C-Code Unit Info (data type, if not double)
+TCPU.Main.Total s Total time-consumption for calculation of the current cycle. This should not be
+confused with DeltaT  (ﬂoat)
+TCPU.Main.AposEvalSend s Time-consumption for function AposEvalSend during the current calculation
+cycle (ﬂoat)
+TCPU.Main.AposPoll s Time-consumption for function AposPoll during the current calculation cycle
+(ﬂoat)
+TCPU.Main.Brake s Time-consumption for calculation of the Brake module during the current cal-
+culation cycle (ﬂoat)
+TCPU.Main.Sensors s Time-consumption for calculation of the sensor modules during the current
+calculation cycle (ﬂoat)
+TCPU.Main.DrivMan s Time-consumption for calculation of the DrivMan module during the current cal-
+culation cycle (ﬂoat)
+TCPU.Main.In s Time-consumption for calculation of the IO_In module during the current calcu-
+lation cycle (ﬂoat)
+TCPU.Main.Out s Time-consumption for calculation of the IO_Out module during the current cal-
+culation cycle (ﬂoat)
+TCPU.Main.PowerTrain s Time-consumption for calculation of the PowerTrain module during the current
+calculation cycle (ﬂoat)
+TCPU.Main.Trafﬁc s Time-consumption for calculation of the Trafﬁc module during the current cal-
+culation cycle (ﬂoat)
+TCPU.Main.Trailer s Time-consumption for calculation of the Trailer module during the current cal-
+culation cycle (ﬂoat)
+TCPU.Main.User s Time-consumption for calculation of the Usermodule during the current calcu-
+lation cycle (ﬂoat)
+TCPU.Main.Vehicle s Time-consumption for calculation of the Vehicle module during the current cal-
+culation cycle (ﬂoat)
+TCPU.Main.VehicleControl s Time-consumption for calculation of the VehicleControl module during the cur-
+rent calculation cycle (ﬂoat)
+Name UAQ Name C-Code Unit Info (data type, if not double)
+TGPU.GPUSensor.<No>.Total s Time-consumption for GPU Sensor calculation cycle (ﬂoat)
+<No> increments with each cluster starting from 1 for IPGMovie and from 128
+for Movie NX
+Note : this UAQ is not valid for a GPU Sensor instance with CameraRSI sen-
+sor(s) in VIB mode since this instance is not synchronised with the simulation.
+--- Page 3 ---
+1246 User Accessible Quantities
+General
+CarMaker Reference Manual Version 14.0.126.1.3 Misc
+Name UAQ Name C-Code Unit Info (data type, if not double)
+Log.nError Log_nError - Counter for log ﬁle errors (long)
+Log.nLog Log_nLog - Counter for log ﬁle messages (long)
+Log.nWarn Log_nWarn - Counter for log ﬁle warnings (long)
+SC.GPUSensor.<no>.TimeJobStart - s Time stamp sensor calculation started
+SC.GPUSensor.<no>.TimeJobFinish - s Time stamp sensor calculation ﬁnished
+SC.MemFree - For internal use only (unsigned integer)
+SC.MemUsed - For internal use only (unsigned integer)
+SC.MemUsed.TRNo - For internal use only (unsigned integer)
+SC.Start.No SimCore.Start.No - Number of Test Run started and stopped since the start of
+the application (unsigned integer)
+SC.State SimCore.State - Simulation state (integer)
+SC.TAccel SimCore.TAccel - Time acceleration factor for ofﬂine simulation
+RealtimeMeasurement.Percent_at_lower_timeborder<no>
+RealtimeMeasurement.Percent_at_upper_timeborder<no>- % Percentage of cycles at lower or upper timeboarder (Only
+in CarMaker Ofﬁce Extended)
+--- Page 4 ---
+1247 User Accessible Quantities
+Environment
+CarMaker Reference Manual Version 14.0.126.2 Environment
+Name UAQ Name C-CodeName CarMaker for
+SimulinkUnit Info
+Env.AirDensity Env.AirDensity Env AirDensity kg/m3Environment air density
+Env.AirHumidity Env.AirHumidity Env AirHumidity - Environment air relative humidity
+Env.AirPressure Env.AirPressure Env AirPressure bar Environment air pressure
+Env.SpeedOfSound Env.SpeedOfSound Env SpeedOfSound m/s Speed of sound in environmental air
+Env.SolarRadiation Env.SolarRadiation Env SolarRadiation W/m2Environment solar radiation
+Env.Temperature Env.Temperature Env Temperature K Environment air temperature
+Env.RainRate Env.RainRate - mm/h Environment rain rate, read-only, computed from Env.Pre-
+cipitation.Type and Env.Precipitation.Intensity (see (EQ 1)
+insection 5.1 ’General Parameters’ for details).
+Env.VisRangeInFog Env.VisRangeInFog - m Environment visual range in fog
+Env.Time Env.Time Env Time hours Time of day (0..24)
+Env.Y earDay Env.yDay Env yDay days Day of the year
+- - Env PoI_GCS Elev
+Env PoI_GCS Long
+Env PoI_GCS Latm
+rad
+radGlobal position for PoI, expressed in GCS coordinates
+(geodetic elevation, longitude, latitude)
+- - Env sRoad m Vehicle route / path coordinate
+Env.WindVel_ext.x
+Env.WindVel_ext.y
+Env.WindVel_ext.zEnv.WindVel_ext[0]
+Env.WindVel_ext[1]
+Env.WindVel_ext[2]- m/s Additional user deﬁned wind in inertial frame
+Env.WindVel_tot.x
+Env.WindVel_tot.y
+Env.WindVel_tot.zEnv.WindVel_tot[0]
+Env.WindVel_tot[1]
+Env.WindVel_tot[2]Env WindVel_tot x
+Env WindVel_tot y
+Env WindVel_tot zm/s Total environment global wind in inertial frame
+(global + road wind marker + external)
+Env.Event.<i>.State - - - State of event with index i
+0: Initial
+1: Standby
+2: Running
+3: Complete
+4: Final
+Env.Event.<i>.ExecCount - - - Execution count of event with index i
+Env.Event.<i>.Act.No - - - Current action index of event with index i (integer)
+>= 0: number of deﬁned action
+-11: global event control active, but no action
+-12: global event control deactivated, all events completed
+and in state ﬁnal
+Env.Event.<i>.Act.Time s Time of current action in event with index i.
+-1: event is currently not active
+--- Page 5 ---
+1248 User Accessible Quantities
+Driving Maneuvers
+CarMaker Reference Manual Version 14.0.126.3 Driving Maneuvers
+Name UAQ Name C-CodeName CarMaker for
+SimulinkUnit Info (data type, if not double)
+DM.ax.Trgt - - m/s2Target acceleration used for Speed Proﬁle
+DM.Brake DrivMan.Brake DrivMan Brake - Brake/decelerator activity, relative pedal force (0..1)
+DM.BrakePark
+DM.HandbrakeDrivMan.BrakePark DrivMan Brake Park - Park brake activity (0..1)
+DM.Clutch DrivMan.Clutch DrivMan Clutch - Clutch activity (0..1)
+DM.Gas DrivMan.Gas DrivMan Gas - Gas/throttle/accelerator activity (0..1)
+DM.GearNo DrivMan.GearNo DrivMan GearNo - Gear number (integer)
+DM.GearNo.Trgt DrivMan.GearNoTrgt - - Target gear number set at the beginning of the shifting pro-
+cedure during manual shifting (integer)
+DM.Key DrivMan.Key DrivMan Key - Vehicle key position (integer):
+0: Key out
+1: Key in, power off
+2: Key in, power accessory
+3: Key in, power on
+4: Key in, starter active
+DM.LaneOffset DrivMan.LaneOffset - m Lateral offset from center line of vehicle’s current l ane for
+IPGDriver, that is provided by the user
+DM.Lap.No - - Lap number (racing mode) (integer)
+DM.Lap.Time - s Lap time (racing mode)
+DM.Lat.Attrib - - - Integer attribute for the current lateral Step
+DM.Lat.StepDist DrivMan.ActStepLat.Dist m Lateral Step distance
+DM.Lat.ManIdx DrivMan.ActManLat.No - - Current lateral Maneuver index (integer)
+>=0: Number of user deﬁned maneuver
+-1: Start maneuver active (external input)
+-11: internal Default Controller
+-12 Maneuver Control deactivated (idle)
+DM.Lat.StepIdx DrivMan.ActStepLat.No - - Current lateral Step index (integer)
+>=0: Number of user deﬁned step
+-1, -2: Start step active (external input)
+-11: internal Default Controller
+-12 Maneuver Control deactivated (idle)
+DM.Lat.StepTime DrivMan.ActStepLat.Time s Lateral Step time
+DM.Lights.FogFront DrivMan.Lights.FogFront - - Front fog light on (boolean)
+DM.Lights.FogRear DrivMan.Lights.FogRear - - Rear fog light on (boolean)
+DM.Lights.Hazard DrivMan.Lights.Hazard - - Hazard warning light on (boolean)
+DM.Lights.HighBeam DrivMan.Lights.HighBeam - - High beam:
+0=Off;1=On; 2=Automatic
+DM.Lights.Indicator DrivMan.Lights.Indicator - - Turn indicator:
+-1= Right
+0=Off
+1=Left
+DM.Lights.MainLight DrivMan.Lights.MainLight - - Main light switch:
+0=Off
+1=Parking light
+2=Low beam
+3=Automatic
+DM.Long.Attrib - - - Integer attribute for the current longitudinal Step
+DM.Long.StepDist DrivMan.ActStepLong.Dist m Longitudinal Step distance
+DM.Long.ManIdx DrivMan.ActManLong.No - - Current longitudinal Maneuver index (integer)
+>=0: Number of user deﬁned maneuver
+-1: Start maneuver active (external input)
+-11: internal Default Controller
+-12 Maneuver Control deactivated (idle)
+DM.Long.StepIdx DrivMan.ActStepLong.No - - Current longitudinal Step index (integer)
+>=0: Number of user deﬁned step
+-1, -2: Start step active (external input)
+-11: internal Default Controller
+-12 Maneuver Control deactivated (idle)
+DM.Long.StepTime DrivMan.ActStepLong.Time s Longitudinal Step time
+--- Page 6 ---
+1249 User Accessible Quantities
+Driving Maneuvers
+CarMaker Reference Manual Version 14.0.1DM.Man.<i>.ExecCount - - - Execution count of maneuver with index i (by default dis-
+abled, can be enabled in SimParameters file, see section
+3.1.28 )
+DM.Man.<i>.State - - - State of maneuver with index i (by default disabled, can be
+enabled in SimParameters ﬁle, see section 3.1.28 )
+0: Initial
+1: Standby
+2: Running
+3: Complete
+4: Final
+DM.ManCombined DrivMan.ManCombined - - 1: Current Maneuver has combined steps. 0: else
+DM.ManNo DrivMan.ActualMan.No - - Mini maneuver number (integer)
+(negative values indicate pre-maneuver)
+Warning: deprecated since CarMaker 12.0. -99 indicates
+value is undeﬁned
+DM.OperationState_trg DrivMan.OperationState_trg - - Target operation state for the vehicle operator (integer):
+0: Absent (leave the vehicle)
+1: Power off
+2: Power accessory
+3: Power on
+4: Driving
+DM.OperatorActive DrivMan.OperatorActive - - Vehicle operator active (boolean)
+DM.sDelta - - m Deviations between the target position of the Follow trajec-
+torymaneuver step and the actual position on the trajectory
+(disabled by default, see section 6.6.10 )
+DM.SelectorCtrl DrivMan.SelectorCtrl DrivMan SelectorCtrl - Automatic gear selector position (integer):
+-9 = position P (corresponds to gear number -9)
+-1 = position R (corresponds to gear number -1...-8)
+0 = position N (corresponds to gear number = 0)
+1 = position D (corresponds to gear number > 0)
+2 = position M (manual gear selection / Manumatic)
+3 = position S (corresponds to gear number > 0, alternative
+driving program to D)
+DM.DigitalSelectorCtrl.0
+DM.DigitalSelectorCtrl.1
+DM.DigitalSelectorCtrl.2DrivMan.DigitalSelectorCtrl[i] - Generic signals that create a square wave signal, that can
+be used to model a digital selector control joystick
+DM.Shifting DrivMan.Shifting - - Gear shift in progress (boolean)
+DM.SpeedLimit DrivMan.SpeedLimit - m/s Current speed limit set by road marker
+DM.SpeedOffset DrivMan.SpeedOffset - m/s Longitudinal speed offset for IPGDriver
+(considered in the maneuvers ‘IPGDriver’ and ‘Speed Pro-
+ﬁle’)
+DM.SST DrivMan.SST DrivMan SST - Powertrain start-stop button (boolean):
+0=off
+1=on
+DM.Steer.Ang DrivMan.Steering.Ang DrivMan Steering Ang rad Steering angle at steering wheel
+DM.Steer.AngAcc DrivMan.Steering.AngAcc DrivMan Steering AngAcc rad/s2Steering angle acceleration at steering wheel
+DM.Steer.AngVel DrivMan.Steering.AngVel DrivMan Steering AngVel rad/s Steering angle velocity at steering wheel
+DM.SteerBy DrivMan.ActualMan.SteerBy - - Steering mode (integer):
+1=by angle
+2=by torque
+DM.Steer.SinusFreq - Hz Steering angle frequency for sine maneuver
+DM.Steer.Trq DrivMan.Steering.Trq DrivMan Steering Trq Nm Steering torque at steering wheel
+DM.StopDist DrivMan.StopDist - m Distance to the next stop sign
+-1=no stop sign ahead
+DM.StopTime DrivMan.StopTime - s Remaining time standing at current stop sign
+-1=no stop sign ahead
+DM.Trf_Consider_trg - - Target state for the consideration of traffic objects b y
+IPGDriver (integer)
+DM.Trf_Overtake_trg - - Target state for the overtaking of trafﬁc objects by IPGDriver
+(integer)
+DM.TriggerPoint.Dist - m Trigger point distance
+DM.TriggerPoint.Id - - Trigger point Id (integer)Name UAQ Name C-CodeName CarMaker for
+SimulinkUnit Info (data type, if not double)
+--- Page 7 ---
+1250 User Accessible Quantities
+Driver
+CarMaker Reference Manual Version 14.0.126.4 DriverDM.TriggerPoint.Time - s Time measured at trigger point
+DM.UserSignal_<i> DrivMan.UserSignal[] DrivMan UserSignal - User-deﬁned signal <i> from vehicle operator to powertrain
+control (e.g. seat belt, vehicle door, seat sensor)
+DM.vdelta.Trgt - m/s Difference between current velocity and target veloci ty. Is
+used for Speed Control, Speed Profile, Speed Transition,
+Default Controller and Input From File.
+DM.v.Trgt - m/s Target velocity used for Speed Control, Speed Profile,
+Speed Transition, Default Controller and Input From File.
+The value can be manipulated via DVA only for Speed Con-
+trol-
+DM.v.Trgt_LimitLo - m/s Lower target velocity limit (used for Speed Proﬁle)
+DM.v.Trgt_LimitHi - m/s Upper target velocity limit (used for Speed Proﬁle)
+DM.Route.ObjId DrivMan.Route.ObjId - - Object ID of currently active route the IPGDriver follows
+Name UAQ Name C-Code Unit Info (data type, if not double)
+<kind> := FOL (following), ONC (oncoming)
+Driver.Adapt.Phase - Current learning phase during the basic learning procedure (integer)
+Driver.Brake - Brake/decelerator activity, relative pedal force (0..1)
+Driver.Brake_UDrvIn - Brake/decelerator activity from user driver (ﬂoat, 0..1)
+Driver.BrakePark - Park brake activity (0..1)
+Driver.BrakePark_UDrvIn - Park brake activity from user driver (ﬂoat, 0..1
+Driver.Clutch - Clutch activity (0..1)
+Driver.Clutch_UDrvIn - Clutch activity from user driver (ﬂoat, 0..1)
+Driver.Gas - Gas/throttle/accelerator activity (0..1)
+Driver.Gas_UDrvIn - Gas/throttle/accelerator activity from user driver (ﬂoat, 0..1)
+Driver.GearNo - Gear number set by driver (integer)
+Driver.GearNo_UDrvIn - Gear number set by user driver (integer)
+Driver.GearNoTrgt - Target gear number set at the beginning of the shifting procedure (integer)
+Driver.Lat.dy m Lateral deviation from the desired static course
+Driver.Lat.passive - Passive ﬂag of lateral controller (boolean)
+Driver.Long.dv m/s Speed deviation from the desired static velocity
+Driver.Long.passive - Passive ﬂag of longitudinal controller (boolean)
+Driver.ReCon.Accel m/s2Max. admitted acceleration for speeding up the vehicle while driving backwards
+Driver.ReCon.ADAS_LD_Coef - ADAS Interface:
+-1=max. brake
+0=neutral
++1=max. throttle
+Driver.ReCon.ADAS_LD_T s ADAS Interface: Time delay of pedal actuation
+Driver.ReCon.AddDrivOrder_active - Activates IPGDrv_AddDrivOrder for additional, user-defined driver commands
+(project-speciﬁc) (boolean)
+Driver.ReCon.Decel m/s2Max. admitted deceleration e.g. for stopping the vehicle
+Driver.ReCon.DriveChar.CF_axy Correction factor for axmin, axmax, aymax
+Driver.ReCon.DriveChar.CF_GGExp Correction factor for GG-Exponent
+Driver.ReCon.DriveChar.iChange Change ﬂag; no continuous change possible (boolean)
+Driver.ReCon.DriveMode - Driving mode (0..6)
+seesection A.4 ’Driving Mode’  in IPGDriver Manual
+Driver.ReCon.Speed km/h Target speed for the selected driving mode
+Driver.ReCon.StopDist m Distance for stopping (e.g. at trafﬁc sign)
+-1=no stop requestedName UAQ Name C-CodeName CarMaker for
+SimulinkUnit Info (data type, if not double)
+--- Page 8 ---
+1251 User Accessible Quantities
+Driver
+CarMaker Reference Manual Version 14.0.1Driver.ReCon.StopTask - Driver stop task (0..5)
+seesection A.1 ’Stop Task’  in IPGDriver Manual
+Driver.ReCon.StopTime s Time to stop (e.g. at a trafﬁc sign)
+-1=no stop requested
+Driver.ReCon.Task - Driver’s current task for longitudinal dynamics (0..32)
+seesection A.2 ’Longitudinal Task’  in IPGDriver Manual
+Driver.ReCon.Task_lat - Driver’s current task for lateral dynamics (-18..16)
+seesection A.3 ’Lateral Task’  in IPGDriver Manual
+Driver.ReCon.Trf_Consider - Flag: Consider trafﬁc (boolean)
+Driver.ReCon.Trf_<kind>.dDist m Distance to target trafﬁc object
+Driver.ReCon.Trf_<kind>.dSpeed m/s Relative speed of target trafﬁc object
+Driver.ReCon.Trf_<kind>.ObjId - Identiﬁcation number of target object Id:
+- value (integer) =-1 stands for no detection
+(please refer to section 5.4 ’Object ID’  for more information)
+Driver.ReCon.Trf_<kind>.State - State of the current situation (-9..20)
+(details can be found in ipgdriver.h)
+Driver.ReCon.Trf_<kind>.Targ_Dtct - Flag: Target trafﬁc object is detected by driver (boolean)
+Driver.ReCon.Trf_Overtake - Flag: Overtake trafﬁc objects (boolean)
+Driver.SelectorCtrl - Automatic gear selector position (integer):
+-9 = position P (corresponds to gear number -9)
+-1 = position R (corresponds to gear number -1...-8)
+0 = position N (corresponds to gear number =0)
+1 = position D (corresponds to gear number >0)
+2 = position M (manual gear selection / Manumatic)
+3 = position S (corresponds to gear number > 0, alternative driving program to D)
+Driver.SetGearNo - Change gear number to the desired gear (integer)
+Driver.Shifting - Driver is shifting (boolean)
+Driver.Steer.Ang rad Steering angle at steering wheel
+Driver.Steer.AngAcc rad/s2Steering angle acceleration at steering wheel
+Driver.Steer.AngVel rad/s Steering angle velocity at steering wheel
+Driver.Steer.Trq Nm Steering torque at steering wheel
+Driver.UDrv.Active - Flag: User driver is activated (boolean)
+Driver.WaitFlag Flag: Wait to start (boolean)Name UAQ Name C-Code Unit Info (data type, if not double)
+--- Page 9 ---
+1252 User Accessible Quantities
+Vehicle
+CarMaker Reference Manual Version 14.0.126.5 Vehicle
+Name UAQ Name C-CodeName CarMaker for
+SimulinkFrame Unit Info (data type, if not double)
+<pos> := FL, FR, RL, RR
+<pre> := Vehicle.<pos>
+- Vehicle.Trq_DL2Bdy1[0]
+Vehicle.Trq_DL2Bdy1[1]
+Vehicle.Trq_DL2Bdy1[2]Vhcl Trq_DL2Bdy1 x
+Vhcl Trq_DL2Bdy1 y
+Vhcl Trq_DL2Bdy1 zNm Drive torque supported by vehicle body Fr1A
+- Vehicle.Trq_DL2Bdy1B[0]
+Vehicle.Trq_DL2Bdy1B[1]
+Vehicle.Trq_DL2Bdy1B[2]Vhcl Trq_DL2Bdy1B x
+Vhcl Trq_DL2Bdy1B y
+Vhcl Trq_DL2Bdy1B zNm Drive torque supported by vehicle body Fr1B
+- Vehicle.Trq_DL2BdyEng[0]
+Vehicle.Trq_DL2BdyEng[1]Vhcl DL2BdyEng x
+Vhcl DL2BdyEng yNm Drive torque supported by vehicle engine body
+- Vehicle.AeroMarkerPos[0]
+Vehicle.AeroMarkerPos[1]
+Vehicle.AeroMarkerPos[2]Vhcl AeroMarkerPos x
+Vhcl AeroMarkerPos y
+Vhcl AeroMarkerPos zFr0 m Aero marker position in global frame (Fr0)
+Vhcl.Distance Vehicle.Distance Vhcl Distance m Distance the vehicle (center of mass) has travelled
+since the start of simulation
+Vhcl.Engine.rotv Vehicle.Engine_rotv - rad/s Engine rotation speed
+Vhcl.Fr1B.rx
+Vhcl.Fr1B.ryVehicle.Fr1B_r_xy[0]
+Vehicle.Fr1B_r_xy[2]- Fr1 rad Rotation angles of ﬂexible vehicle body with rota-
+tion order XY
+Vhcl.Fr1.x
+Vhcl.Fr1.y
+Vhcl.Fr1.zVehicle.Fr1A.t_0[0]
+Vehicle.Fr1A.t_0[1]
+Vehicle.Fr1A.t_0[2]Vhcl Fr1_Pos x
+Vhcl Fr1_Pos y
+Vhcl Fr1_Pos zFr0 m Position of vehicle frame origin (Fr1) in global
+frame (Fr0)
+Vhcl.GearNo Vehicle.GearNo - - Current gear number (integer)
+Vhcl.Hitch.x
+Vhcl.Hitch.y
+Vhcl.Hitch.zVehicle.Hitch.t_0[0]
+Vehicle.Hitch.t_0[1]
+Vehicle.Hitch.t_0[2]Vhcl Hitch t_0 x
+Vhcl Hitch t_0 y
+Vhcl Hitch t_0 zFr0 m Hitch position in global frame (Fr0)
+Vhcl.Ignition Vehicle.Ignition Vhcl Ignition - Vehicle ignition (boolean)
+Vhcl.OperationError Vehicle.OperationError Vhcl OperationError - Current vehicle operation error from powertrain
+control (integer)
+Vhcl.OperationState Vehicle.OperationState Vhcl OperationState Current vehicle operation state from powertrain
+control (integer):
+0: Absent (leave the vehicle)
+1: Power off
+2: Power accessory
+3: Power on
+4: Driving
+Vhcl.Pitch Vehicle.Pitch Vhcl Pitch rad Vehicle pitch angle
+Vhcl.PitchAcc Vehicle.PitchAcc Vhcl PitchAcc rad/s2Pitch rotation acceleration
+Vhcl.PitchVel Vehicle.PitchVel Vhcl PitchVel rad/s Pitch rotation speed
+Vhcl.PoI.ax_1
+Vhcl.PoI.ay_1
+Vhcl.PoI.az_1Vehicle.PoI_Acc_1[0]
+Vehicle.PoI_Acc_1[1]
+Vehicle.PoI_Acc_1[2]Vhcl PoI_Acc_1 x
+Vhcl PoI_Acc_1 y
+Vhcl PoI_Acc_1 zFr1 m/s2Acceleration vector for PoI ("Point of Interest") in
+vehicle frame (Fr1)
+Vhcl.PoI.ax
+Vhcl.PoI.ay
+Vhcl.PoI.azVehicle.PoI_Acc[0]
+Vehicle.PoI_Acc[1]
+Vehicle.PoI_Acc[2]Vhcl PoI_Acc x
+Vhcl PoI_Acc y
+Vhcl PoI_Acc zFr0 m/s2Acceleration vector for PoI ("Point of Interest") in
+global frame (Fr0)
+Vhcl.PoI.GCS.Elev
+Vhcl.PoI.GCS.Long
+Vhcl.PoI.GCS.LatVehicle.PoI_GCS.Elev
+Vehicle.PoI_GCS.Long
+Vehicle.PoI_GCS.LatVhcl PoI_GCS Elev
+Vhcl PoI_GCS Long
+Vhcl PoI_GCS Latm
+rad
+radGlobal position for PoI, expressed in GCS coordi-
+nates (geodetic elevation, longitude, latitude)
+Vhcl.PoI.vx_1
+Vhcl.PoI.vy_1
+Vhcl.PoI.vz_1Vehicle.PoI_Vel_1[0]
+Vehicle.PoI_Vel_1[1]
+Vehicle.PoI_Vel_1[2]Vhcl PoI_Vel_1 x
+Vhcl PoI_Vel_1 y
+Vhcl PoI_Vel_1 zFr1 m/s Velocity vector for PoI ("Point of Interest") in vehi-
+cle frame (Fr1)
+Vhcl.PoI.vx
+Vhcl.PoI.vy
+Vhcl.PoI.vzVehicle.PoI_Vel[0]
+Vehicle.PoI_Vel[1]
+Vehicle.PoI_Vel[2]Vhcl PoI_Vel x
+Vhcl PoI_Vel y
+Vhcl PoI_Vel zFr0 m/s Velocity vector for PoI ("Point of Interest") in global
+frame (Fr0)
+Vhcl.PoI.x
+Vhcl.PoI.y
+Vhcl.PoI.zVehicle.PoI_Pos[0]
+Vehicle.PoI_Pos[1]
+Vehicle.PoI_Pos[2]Vhcl PoI_Pos x
+Vhcl PoI_Pos y
+Vhcl PoI_Pos zFr0 m Position for PoI ("Point of Interest") in global frame
+(Fr0)
+Vhcl.<pos>.Fx
+Vhcl.<pos>.Fy
+Vhcl.<pos>.Fz
+Vhcl.<pos>.FxTwin
+Vhcl.<pos>.FyTwin
+Vhcl.<pos>.FzTwin<pre>.Fx
+<pre>.Fy
+<pre>.Fz
+<pre>.FxTwin
+<pre>.FyTwin
+<pre>.FzTwinVhcl Wheel <pos> Fx
+Vhcl Wheel <pos> Fy
+Vhcl Wheel <pos> FzFrW N Longitudinal, lateral and vertical ground reaction
+force at wheel/road contact point <pos>
+(using twin wheel, the ﬁrst quantity is for the outer
+and the second is for the inner wheel)
+--- Page 10 ---
+1253 User Accessible Quantities
+Vehicle
+CarMaker Reference Manual Version 14.0.1Vhcl.<pos>.LongSlip <pre>.LongSlip Vhcl Wheel <pos> LongSlip - Longitudinal slip at wheel <pos>
+Vhcl.<pos>.rot <pre>.rot - rad Wheel <pos> rotation angle
+Vhcl.<pos>.rotv <pre>.rotv Vhcl Wheel <pos> rotv rad/s Wheel <pos> rotation speed
+Vhcl.<pos>.rx
+Vhcl.<pos>.ry
+Vhcl.<pos>.rz<pre>.r_zxy[0]
+<pre>.r_zxy[1]
+<pre>.r_zxy[2]Vhcl Wheel <pos> r_zxy x
+Vhcl Wheel <pos> r_zxy y
+Vhcl Wheel <pos> r_zxy zFr1 rad Rotation angles of carrier <pos> at mounted posi-
+tion in rotation order ZXY
+Vhcl.<pos>.SideSlip <pre>.SideSlip Vhcl Wheel <pos> SideSlip rad Sideslip angle at wheel <pos>
+Vhcl.<pos>.Trq_B2WC <pre>.Trq_B2WC Vhcl Wheel <pos>
+Trq_B2WCNm Supported brake torque at wheel carrier <pos>
+Vhcl.<pos>.Trq_Brake <pre>.Trq_Brake Vhcl Wheel <pos>
+Trq_BrakeNm Total brake torque at wheel <pos>
+- <pre>.Trq_BrakeReg_trg Vhcl Wheel <pos>
+Trq_BrakeReg_trgNm Target regenerative brake torque at wheel <pos>
+Vhcl.<pos>.Trq_DL2WC <pre>.Trq_DL2WC Vhcl Wheel <pos>
+Trq_DL2WCNm Supported driving torque at wheel carrier <pos>
+Vhcl.<pos>.Trq_Drive <pre>.Trq_Drive Vhcl Wheel <pos>
+Trq_DriveNm Total driving torque
+Vhcl.<pos>.Trq_T2W <pre>.Trq_T2W Vhcl Wheel <pos> Trq_T2W Nm Tire torque around wheel spin axle of wheel <pos>
+Vhcl.<pos>.Trq_WhlBearing <pre>.Trq_WhlBearing Vhcl Wheel <pos>
+Trq_WhlBearingNm Wheel bearing friction torque around wheel spin
+axle of wheel <pos>
+Vhcl.<pos>.tx
+Vhcl.<pos>.ty
+Vhcl.<pos>.tz<pre>.t[0]
+<pre>.t[1]
+<pre>.t[2]Vhcl Wheel <pos> t x
+Vhcl Wheel <pos> t y
+Vhcl Wheel <pos> t zFr1 m Translation of carrier <pos> at mounted position
+Vhcl.<pos>.vBelt <pre>.vBelt Vhcl Wheel <pos> vBelt m/s Wheel <pos> velocity (based on wheel <pos>
+rotation speed and effective rolling tire radius)
+Vhcl.Roll Vehicle.Roll Vhcl Roll rad Roll angle of the vehicle
+Vhcl.RollAcc Vehicle.RollAcc Vhcl RollAcc rad/s2Roll acceleration of the vehicle
+Vhcl.RollVel Vehicle.RollVel Vhcl RollVel rad/s Roll velocity of the vehicle
+Vhcl.Road.JuncObjId
+Vhcl.Road.nextJuncObjIdVehicle.Road.JuncObjId
+Vehicle.Road.nextJuncObjId- Actual (last) and next road junction object Id
+Vhcl.Road.LinkObjId Vehicle.Road.LinkObjId - Actual road link object Id
+Vhcl.Road.onJunction Vehicle.Road.onJunction - Flag if the vehicle is on junction?
+Vhcl.Road.s2lastJunc
+Vhcl.Road.s2nextJuncVehicle.Road.s2lastJunc
+Vehicle.Road.s2nextJunc- m Road distance along road reference line (from the
+middle of the front axle) to last / next junction
+Vhcl.tRoad Vehicle.tRoad - m Lateral distance to route centerline
+Vhcl.sRoad Vehicle.sRoad Vhcl sRoad m Vehicle route / path coordinate
+Vhcl.Steer.Acc Vehicle.Steering.AngAcc Vhcl Steering AngAcc rad/s2Steering acceleration at steering wheel
+Vhcl.Steer.Ang Vehicle.Steering.Ang Vhcl Steering Ang rad Steering angle at steering wheel
+Vhcl.Steer.Trq Vehicle.Steering.Trq Vhcl Steering Trq Nm Steering torque at steering wheel
+Vhcl.Steer.Vel Vehicle.Steering.AngVel Vhcl Steering AngVel rad/s Steering velocity at steering wheel
+Vhcl.v Vehicle.v Vhcl v m/s Vehicle velocity
+Vhcl.Wind.vx
+Vhcl.Wind.vy
+Vhcl.Wind.vzVehicle.Wind_vel_0[0]
+Vehicle.Wind_vel_0[1]
+Vehicle.Wind_vel_0[2]Vehicle Wind_vel_0 x
+Vehicle Wind_vel_0 y
+Vehicle Wind_vel_0 zFr0 m/s Wind velocity vector
+Vhcl.Y aw Vehicle.Y aw Vhcl Y aw rad Vehicle yaw angle
+Vhcl.Y awAcc Vehicle.Y awAcc Vhcl Y awAcc rad/s2Vehicle yaw acceleration
+Vhcl.Y awRate Vehicle.Y awRate Vhcl Y awRate rad/s Vehicle yaw velocityName UAQ Name C-CodeName CarMaker for
+SimulinkFrame Unit Info (data type, if not double)
+--- Page 11 ---
+1254 User Accessible Quantities
+Vehicle Control
+CarMaker Reference Manual Version 14.0.126.6 Vehicle Control
+26.6.1 General
+Name UAQ Name C-CodeName CarMaker for
+SimulinkUnit Info (data type, if not double)
+<pre>: = VehicleControl
+- - VhclCtrl Steering SteerByTrq - Flag: Steering by torque is active (boolean)
+VC.Brake <pre>.Brake VhclCtrl Brake - Brake/decelerator activity (0..1)
+VC.BrakePark <pre>.BrakePark VhclCtrl BrakePark - Park brake activity (0..1)
+VC.Clutch <pre>.Clutch VhclCtrl Clutch - Clutch activity (0..1)
+VC.Gas <pre>.Gas VhclCtrl Gas - Gas/throttle/accelerator activity (0..1)
+VC.GearNo <pre>.GearNo VhclCtrl GearNo - Target gear number (integer)
+VC.Key <pre>.Key VhclCtrl Key - Vehicle key position (integer):
+0: Key out
+1: Key in, power off
+2: Key in, power accessory
+3: Key in, power on
+4: Key in, starter active
+VC.Lights.bm <pre>.Lights.bm - - For internal use only (unsigned short)
+VC.Lights.Brake <pre>.Lights.Brake VhclCtrl Lights Brake - Brake light on (boolean)
+VC.Lights.Daytime <pre>.Lights.Daytime VhclCtrl Lights Daytime - Daytime running light on (boolean)
+VC.Lights.FogFrontL
+VC.Lights.FogFrontR<pre>.Lights.FogFrontL
+<pre>.Lights.FogFrontRVhclCtrl Lights FogFrontL
+VhclCtrl Lights FogFrontR- Front fog left/right light on (boolean)
+VC.Lights.FogRear <pre>.Lights.FogRear VhclCtrl Lights FogRear - Rear fog light on (boolean)
+VC.Lights.HighBeam <pre>.Lights.HighBeam VhclCtrl Lights HighBeam - High beam/full headlight on (boolean)
+VC.Lights.IndL,
+VC.Lights.IndR<pre>.Lights.IndL
+<pre>.Lights.IndRVhclCtrl Lights IndL
+VhclCtrl Lights IndR- Indicator left/right (integer):
+0=Off
+1=Indicator on, light off
+2=Indicator on, light on
+VC.Lights.LowBeam <pre>.Lights.LowBeam VhclCtrl Lights LowBeam - Low beam/dipped headlight on (boolean)
+VC.Lights.ParkL,
+VC.Lights.ParkR<pre>.Lights.ParkL
+<pre>.Lights.ParkRVhclCtrl Lights ParkL
+VhclCtrl Lights ParkR- Parking left/right light on (boolean)
+VC.Lights.Reverse <pre>.Lights.Reverse VhclCtrl Lights Reverse - Reversing light on (boolean)
+VC.SelectorCtrl <pre>.SelectorCtrl VhclCtrl SelectorCtrl - Automatic gear selector position (integer):
+-9 = position P (corresponds to gear number -9)
+-1 = position R (corresponds to gear number -1...-8)
+0 = position N (corresponds to gear number = 0)
+1 = position D (corresponds to gear number > 0)
+2 = position M (manual gear selection / Manumatic)
+3 = position S (corresponds to gear number > 0, alternative driv-
+ing program to D)
+VC.SST <pre>.SST VhclCtrl SST - Powertrain start-stop button (boolean):
+0=off
+1=on
+VC.Steer.Ang <pre>.Steering.Ang VhclCtrl Steering Ang rad Steering angle at steering wheel
+VC.Steer.AngAcc <pre>.Steering.AngAcc VhclCtrl Steering AngAcc rad/s2Steering acceleration at steering wheel
+VC.Steer.AngVel <pre>.Steering.AngVel VhclCtrl Steering AngVel rad/s Steering velocity at steering wheel
+VC.Steer.Trq <pre>.Steering.Trq VhclCtrl Steering Trq Nm Steering torque at steering wheel
+VC.UserSignal_<i> <pre>.UserSignal[] VhclCtrl UserSignal - User deﬁned signal <i> from vehicle operator to powertrain con-
+trol (e.g. seat belt, vehicle door, seat sensor)
+--- Page 12 ---
+1255 User Accessible Quantities
+Vehicle Control
+CarMaker Reference Manual Version 14.0.126.6.2 ACC-Controller and AccelCtrl
+26.6.3 Generic Longitudinal Control
+26.6.4 Generic Lateral ControlName UAQ Name C-Code Unit Info (data type, if not double)
+<pre> := AccelCtrl.ACC_ECU
+AccelCtrl.DesiredAx AccelCtrl.DesrAx m/s2Desired longitudinal acceleration for the acceleration controller AccelCtrl
+(value NOTSET=-99999 means no desired acceleration to use)
+AccelCtrl.ACC.IsActive <pre>.IsActive Flag if the ACC controller is activated
+AccelCtrl.ACC.DesiredAx <pre>.DesrAx m/s2Desired longitudinal acceleration of ACC controller
+AccelCtrl.ACC.DesiredDist <pre>.DesrDist m Desired distance to the target vehicle
+AccelCtrl.ACC.DesiredSpd <pre>.DesrSpd m/s Desired longitudinal velocity of ACC controller
+AccelCtrl.ACC.DesiredTGap <pre>.DesrTGap s Desired time distance to the target vehicle
+AccelCtrl.ACC.Time2Collision <pre>.Time2Collision s Time to collision with the target vehicle
+Name UAQ Name C-Code Unit Info (data type, if not double)
+LongCtrl.AEB.SwitchedOn Flag if AEB system is switched on
+LongCtrl.AEB.IsActive Flag if AEB system is active (=braking)
+LongCtrl.AEB.Target.ObjId Identiﬁcation number of relevant target global object:
+- value (integer) =-1 stands for no detection
+(please refer to section 5.4 ’Object ID’  for more information)
+LongCtrl.AEB.Target.Vel m/s Longitudinal velocity of relevant target object
+LongCtrl.AEB.Target.Decel m/s2Longitudinal deceleration of relevant target object (positive if braking)
+LongCtrl.AEB.dDist m Relative distance to relevant target object
+LongCtrl.AEB.dVel m/s Relative velocity to relevant target object
+LongCtrl.AEB.dDecel m/s2Relative deceleration to relevant target object
+LongCtrl.AEB.Decel_req m/s2Required deceleration to brake to equal velocity of the target object
+LongCtrl.AEB.Decel_trg m/s2Target deceleration by AEB system for the acceleration controller
+LongCtrl.AEB.Time2Collision s Time to collision with the target vehicle
+LongCtrl.AEB.Time2Brake s Time threshold to brake to equal velocity of the target object
+LongCtrl.FCW.SwitchedOn Flag if FCW system is switched on
+LongCtrl.FCW.WarnLevel Warning level of FCW system:
+0=no warning
+1-2=warning level 1-2
+Name UAQ Name C-Code Unit Info (data type, if not double)
+LatCtrl.LKAS.SwitchedOn Flag if LKAS system is switched on
+LatCtrl.LKAS.IsActive Flag if LKAS system is active (steering assist torque)
+LatCtrl.LKAS.UsePrioLines Flag if priority (=yellow) lines are used for lane identiﬁcation
+LatCtrl.LKAS.AssistTrq Nm Assist steering torque calculated by LKAS system
+LatCtrl.LKAS.AssistTrq_raw Nm Raw (unﬁltered) assist steering torque
+LatCtrl.LKAS.CurveXY_trg 1/m Target path curvature on xy-plane
+LatCtrl.LDW.SwitchedOn Flag if LDW system is switched on
+LatCtrl.LDW.IsReady Flag if LDW system is ready
+LatCtrl.LDW.IsActive Flag if LDW system is active (warning on)
+LatCtrl.LineDetectMode Speciﬁes the line detection mode
+0=with Road Sensor
+1=with Line Sensor
+LatCtrl.DistToLeft
+LatCtrl.DistToRightm Distance to left/right detected line of the identiﬁed lane
+LatCtrl.DevDist m Deviation distance to path (middle of the lane)
+LatCtrl.Lines.ValidPairExists Flag if a valid pair of priority or standard lines exists
+--- Page 13 ---
+1256 User Accessible Quantities
+Vehicle Control
+CarMaker Reference Manual Version 14.0.1LatCtrl.Lines.<LineId>.exists Flag if priority/standard line (<LineId>=PrioL, PrioR, StdL, StdR) existsName UAQ Name C-Code Unit Info (data type, if not double)

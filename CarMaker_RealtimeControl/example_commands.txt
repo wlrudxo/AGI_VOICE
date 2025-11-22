@@ -1,0 +1,17 @@
+# Example batch commands for CarMaker
+# Use with: python carmaker_llm_control.py --batch example_commands.txt
+
+# Start simulation
+StartSim
+
+# Accelerate gently
+DVAWrite DM.Gas 0.4 3000 Abs
+
+# Set target speed to 60 km/h (16.67 m/s)
+DVAWrite DM.v.Trgt 16.67 5000 Abs
+
+# Wait a bit, then apply light brake
+DVAWrite DM.Brake 0.3 2000 Abs
+
+# Stop simulation
+StopSim

@@ -1,0 +1,539 @@
+--- Page 91 ---
+1334 User Accessible Quantities
+Trailer
+CarMaker Reference Manual Version 14.0.126.15 Trailer
+26.15.1 General
+Name UAQ Name C-Code Frame Unit Info (data type, if not double)
+<pos> := FL, FR, RL, RR
+<part> := Buf, Damp, Spring, Stabi
+<preSC> := Tr.SuspControl<j>
+<j> = 0, 1, 2, 3, 4 (control unit number)
+<preParaFric> := Tr.Parasitic.Friction, <preParaStiff> = Tr.Parasitic.Stiffness
+<i> := 0, 1
+Twin := used by the quantities for a twin wheel (describes the inner tire)
+Tr.Aero.Frc_1.x
+Tr.Aero.Frc_1.y
+Tr.Aero.Frc_1.zFr1 N Aerodynamic force acting on trailer
+Tr.Aero.tau_1 Fr1 rad Angle of incidence
+Tr.Aero.tau2_1 Fr1 rad Angle of incidence (shifted by 2pi)
+Tr.Aero.Trq_1.x
+Tr.Aero.Trq_1.y
+Tr.Aero.Trq_1.zFr1 Nm Aerodynamic torque acting on trailer
+Tr.Aero.vres_1.x
+Tr.Aero.vres_1.y
+Tr.Aero.vres_1.zFr1 m/s Relative wind velocity
+Tr.alHori Trailer.ConBdy1.alHori m/s2Horizontal lateral acceleration
+Tr.atHori Trailer.ConBdy1.atHori m/s2Horizontal tangential acceleration
+Tr.ax
+Tr.ay
+Tr.azTrailer.ConBdy1.a_0[0]
+Trailer.ConBdy1.a_0[1]
+Trailer.ConBdy1.a_0[2]Fr1 m/s2Trailer acceleration
+Tr.Brake.Trq_<pos>_ext
+Tr.Brake.Trq_<pos>_tot
+Tr.Brake.Trq_PB_<pos>
+Tr.Brake.Trq_Reg_trg_<pos>
+Tr.Brake.Trq_WB_<pos>TrBrake.Trq_ext[i]
+TrBrake.Trq_tot[i]
+TrBrake.IF .Trq_PB[i]
+TrBrake.IF .Trq_Reg_trg[i]
+TrBrake.IF .Trq_WB[i]Nm Trailer brake torques (for details please refer to section 26.11.1 ’Brake -
+General’ )
+Tr.Buffer<pos>.Frc.q<i> N Buffer force due to the generalized
+coordinate <i>
+Tr.Buffer<pos>.Frc_tot N Total buffer force
+Tr.Buffer<pos>.l
+Tr.Buffer<pos>.l _com
+Tr.Buffer<pos>.l_ext
+Tr.Buffer<pos>.l_kinFr1 m Buffer length at <pos>
+total
+by compliance
+external, offset
+by kinematics
+Tr.Camber<pos>
+Tr.CamberTwin<pos>Trailer.Tire[i].Camber
+Trailer.TwinTire[i].CamberFr1 rad Camber angle (ISO 8855:2011, 7.1.17)
+Tr.Con.ax_1
+Tr.Con.ay_1
+Tr.Con.az_1Trailer.ConBdy1.a_1[0]
+Trailer.ConBdy1.a_1[1]
+Trailer.ConBdy1.a_1[2]Fr1 m/s2Translational acceleration of center of mass in vehicle frame
+Tr.Con.ax
+Tr.Con.ay
+Tr.Con.azTrailer.ConBdy1.a_0[0]
+Trailer.ConBdy1.a_0[1]
+Trailer.ConBdy1.a_0[2]Fr0 m/s2Translational acceleration of center of mass in global frame
+Tr.Con.tx
+Tr.Con.ty
+Tr.Con.tzTrailer.ConBdy1.t_0[0]
+Trailer.ConBdy1.t_0[1]
+Trailer.ConBdy1.t_0[2]Fr0 m Translation of center of mass in global frame
+Tr.Con.v Trailer.ConBdy1.v m/s Velocity of center of mass
+Tr.Con.vHori Trailer.ConBdy1.vHori m/s Horizontal trailer velocity (ISO 8855:2011, 5.1.5)
+Tr.Con.vx_1
+Tr.Con.vy_1
+Tr.Con.vz_1Trailer.ConBdy1.v_1[0|
+Trailer.ConBdy1.v_1[1]
+Trailer.ConBdy1.v_1[2]Fr1 m/s Translational velocity of center of mass in vehicle frame
+Tr.Con.vx
+Tr.Con.vy
+Tr.Con.vzTrailer.ConBdy1.v_0[0]
+Trailer.ConBdy1.v_0[1]
+Trailer.ConBdy1.v_0[2]Fr0 m/s Translational velocity of center of mass in global frame
+Tr.C<pos>.C.a_0.x
+Tr.C<pos>.C.a_0.y
+Tr.C<pos>.C.a_0.zTr.SuspMod[i].WC_a_0[0]
+Tr.SuspMod[i].WC_a_0[1]
+Tr.SuspMod[i].WC_a_0[2]Fr0 m/s2Acceleration of the carrier center point in Fr0
+Tr.C<pos>.AxleFrc Fr1 N Total vertical force on axle <pos>Tr.vHori Tr.vx2Tr.vy2+ =
+--- Page 92 ---
+1335 User Accessible Quantities
+Trailer
+CarMaker Reference Manual Version 14.0.1Tr.C<pos>.C.t_0.x
+Tr.C<pos>.C.t_0.y
+Tr.C<pos>.C.t_0.zFr0 m Translation of carrier center point at <pos> in Fr0
+Tr.C<pos>.C.v_0.x
+Tr.C<pos>.C.v_0.y
+Tr.C<pos>.C.v_0.zFr0 m/s Velocity of carrier center point at <pos> in Fr0
+Tr.C<pos>.Frc2C_1.x
+Tr.C<pos>.Frc2C_1.y
+Tr.C<pos>.Frc2C_1.zFr1 N Total force to the wheel carrier at <pos> in vehicle frame
+Tr.C<pos>.Frc2C_2.x
+Tr.C<pos>.Frc2C_2.y
+Tr.C<pos>.Frc2C_2.zFr2 N Total force to the wheel carrier at <pos> in wheel frame
+Tr.C<pos>.Frc2CExt_0.x
+Tr.C<pos>.Frc2CExt_0.y
+Tr.C<pos>.Frc2CExt_0.zFr0 N External forces to the wheel carrier, deﬁned in global frame
+Tr.C<pos>.Frc2CExt_1.x
+Tr.C<pos>.Frc2CExt_1.y
+Tr.C<pos>.Frc2CExt_1.zFr1 N External forces to the wheel carrier, deﬁned in vehicle frame
+Tr.C<pos>.Frc2CExt_2.x
+Tr.C<pos>.Frc2CExt_2.y
+Tr.C<pos>.Frc2CExt_2.zFr2 N External forces to the wheel carrier, deﬁned in wheel frame
+Tr.C<pos>.GenFrc0
+Tr.C<pos>.GenFrc1N Generalized force at the generalized coordinate <i>
+Tr.C<pos>.GenInert0
+Tr.C<pos>.GenInert1kg Generalized inertia at the generalized coordinate <i>
+Tr.C<pos>.l<part>_dq<i> Fr1 m Change of the length of <part> at <pos> in direction o f the generalized
+coordinate <i>
+Tr.C<pos>.Maggi0.x
+Tr.C<pos>.Maggi0.y
+Tr.C<pos>.Maggi0.zFr1 - Elements of the "Maggi-Matrix":
+Describes the relation between the generalized coordinate q0 and the
+rotation of the wheel carrier
+Tr.C<pos>.Maggi1.x
+Tr.C<pos>.Maggi1.y
+Tr.C<pos>.Maggi1.zFr1 - Elements of the "Maggi-Matrix”:
+Describes the relation between the generalized coordinate q1 and the
+rotation of the wheel carrier
+Tr.C<pos>.P .t_0.x
+Tr.C<pos>.P .t_0.y
+Tr.C<pos>.P .t_0.z
+Tr.C<pos>.Twin.P .t_0.x
+Tr.C<pos>.Twin.P .t_0.y
+Tr.C<pos>.Twin.P .t_0.zFr0 m Coordinates of wheel road contact point P
+Car.C<pos>.P .v01_W.x
+Car.C<pos>.P .v01_W.y
+Car.C<pos>.P .v01_W.z
+Car.C<pos>.Twin.P .v01_W.x
+Car.C<pos>.Twin.P .v01_W.y
+Car.C<pos>.Twin.P .v01_W.zFrW m/s Velocity of the tire contact point in FrW
+Tr.C<pos>.q<i>
+Tr.C<pos>.q<i>p
+Tr.C<pos>.q<i>ppm
+m/s
+m/s2Generalized coordinate q<i> (displacement, velocity, acceleration)
+Tr.C<pos>.rx_com
+Tr.C<pos>.ry_com
+Tr.C<pos>.rz_comFr1 rad Rotation of carrier <pos> at reference point by compliance with rotation
+sequence ZYX
+Tr.C<pos>.rx_dq<i>
+Tr.C<pos>.ry_dq<i>
+Tr.C<pos>.rz_dq<i>rad/m Rotation of wheel carrier at <pos> in direction of the generalized coordi-
+nate <i
+Tr.C<pos>.rx_ext
+Tr.C<pos>.ry_ext
+Tr.C<pos>.rz_extFr1 rad Rotation of carrier <pos> at reference point external, offset with rotation
+sequence ZYX
+Tr.C<pos>.rx_kin
+Tr.C<pos>.ry_kin
+Tr.C<pos>.rz_kinFr1 rad Rotation of carrier <pos> at reference point by kinematics w ith rotation
+sequence ZYX
+Tr.C<pos>.rx
+Tr.C<pos>.ry
+Tr.C<pos>.rzTrailer.SuspMod[i].r_zxy[0]
+Trailer.SuspMod[i].r_zxy[1]
+Trailer.SuspMod[i].r_zxy[2]Fr1 rad Total rotation of carrier <pos> at reference point with rotation sequence
+ZXY
+Tr.C<pos>.rxv_ext
+Tr.C<pos>.r yv_ext
+Tr.C<pos>.rzv_extFr1 rad/s External rotational velocity of the carrier reference poin t with rotation
+sequence ZXY
+Tr.C<pos>.rxv
+Tr.C<pos>.ryv
+Tr.C<pos>.rzvFr1 rad/s Rotational velocity of the carrier reference point by kinematics with rota-
+tion sequence ZXYName UAQ Name C-Code Frame Unit Info (data type, if not double)
+--- Page 93 ---
+1336 User Accessible Quantities
+Trailer
+CarMaker Reference Manual Version 14.0.1Tr.C<pos>.Tire.FrcC.x
+Tr.C<pos>.Tire.FrcC.y
+Tr.C<pos>.Tire.FrcC.zFr2 N Tire force to the wheel carrier
+Tr.C<pos>.Tire.TrqC.x
+Tr.C<pos>.Tire.TrqC.y
+Tr.C<pos>.Tire.TrqC.zFr2 Nm Tire torque to the wheel carrier
+Tr.C<pos>.Trq2C_1.x
+Tr.C<pos>.Trq2C_1.y
+Tr.C<pos>.Trq2C_1.zFr1 Nm Total torque to the wheel carrier at <pos> in vehicle frame
+Tr.C<pos>.Trq2C_2.x
+Tr.C<pos>.Trq2C_2.y
+Tr.C<pos>.Trq2C_2.zFr2 Nm Total torque to the wheel carrier at <pos> in wheel frame
+Tr.C<pos>.Trq2CExt_1.x
+Tr.C<pos>.Trq2CExt_1.y
+Tr.C<pos>.Trq2CExt_1.zFr1 Nm External torques to the wheel carrier at <pos> deﬁned in Fr1
+Tr.C<pos>.Trq2CExt_2.x
+Tr.C<pos>.Trq2CExt_2.y
+Tr.C<pos>.Trq2CExt_2.zFr2 Nm External torques to the wheel carrier at <pos> deﬁned in Fr2
+Tr.C<pos>.Trq_B2C Nm Brake torque at wheel carrier <pos> after reduction
+Tr.C<pos>.TrqGyro_2.x
+Tr.C<pos>.TrqGyro_2.zFr2 Nm Gyroscopic Trq to carrier at <pos> deﬁned in Fr2
+Tr.C<pos>.Trq_T2W
+Tr.C<pos>.Twin.Trq_T2WNm Tire torque around wheel spin axis at <pos>
+Tr.C<pos>.tx_com
+Tr.C<pos>.ty_com
+Tr.C<pos>.tz_comFr1 m Translation of carrier reference point at <pos> by compliance
+Tr.C<pos>.tx_dq<i>
+Tr.C<pos>.ty_dq<i>
+Tr.C<pos>.tz_dq<i>Fr1 m Translation of wheel carrier at <pos> in direction of the generalized coor-
+dinate <i>
+Example: Tr.CFL.tz_dq0
+Tr.C<pos>.tx_ext
+Tr.C<pos>.ty_ext
+Tr.C<pos>.tz_extFr1 m Translation of carrier reference point at <pos> external, offset
+Tr.C<pos>.tx_kin
+Tr.C<pos>.ty_kin
+Tr.C<pos>.tz_kinFr1 m Translation of carrier reference point at <pos> by kinematics
+Tr.C<pos>.tx
+Tr.C<pos>.ty
+Tr.C<pos>.tzTrailer.SuspMod[i].t[0]
+Trailer.SuspMod[i].t[1]
+Trailer.SuspMod[i].t[2]Fr1 m Total translation of carrier reference point at <pos>
+Tr.C<pos>.txv_ext
+Tr.C<pos>.tyv_ext
+Tr.C<pos>.tzv_extFr1 m/s External velocity of the carrier reference point
+Tr.C<pos>.txv
+Tr.C<pos>.txv
+Tr.C<pos>.txvFr1 m/s Velocity of the carrier reference point by kinematics
+Tr.Damp<pos>.Frc_tot.q<i> N Damper force due to the generalized coordinate <i>
+Tr.Damp<pos>.Frc
+Tr.Damp<pos>.Frc_ext
+Tr.Damp<pos>.Frc_totN Damper force
+internal
+external
+total
+Tr.Damp<pos>.l
+Tr.Damp<pos>.l_com
+Tr.Damp<pos>.l_ext
+Tr.Damp<pos>.l_kinm Damper length
+total
+by compliance
+external, offset
+by kinematics
+Tr.Damp<pos>.v m/s Damper velocity
+Tr.Fr1.ax
+Tr.Fr1.ay
+Tr.Fr1.azTrailer.Fr1_a_0[0]
+Trailer.Fr1_a_0[1]
+Trailer.Fr1_a_0[2]Fr0 m/s2Translational acceleration of Fr1 in global frame
+Tr.Fr1.rvx
+Tr.Fr1.rvy
+Tr.Fr1.rvzTrailer.Fr1_rv_zyx[0]
+Trailer.Fr1_rv_zyx[1]
+Trailer.Fr1_rv_zyx[2]Fr0 rad Trailer rotation speed whereby
+Tr.rz = Tr.Y aw.ry = Car.Pitch and
+Car.rz = Car.Roll (ISO 8855:2011, 5.2.1, 5.2.2 and 5.2.3)
+Tr.Fr1.rx
+Tr.Fr1.ry
+Tr.Fr1.rzTrailer.Fr1_r_zyx[0]
+Trailer.Fr1_r_zyx[1]
+Trailer.Fr1_r_zyx[2]Fr0 rad Trailer rotation angles, Cardan angles, whereby
+Tr.rz = Tr.Y aw.ry = Car.Pitch and
+Car.rz = Car.Roll (ISO 8855:2011, 5.2.1, 5.2.2 and 5.2.3)
+Tr.Fr1.tx
+Tr.Fr1.ty
+Tr.Fr1.tzTrailer.Fr1_t_0[0]
+Trailer.Fr1_t_0[1]
+Trailer.Fr1_t_0[2]Fr0 m Position of Fr1 in global frameName UAQ Name C-Code Frame Unit Info (data type, if not double)
+--- Page 94 ---
+1337 User Accessible Quantities
+Trailer
+CarMaker Reference Manual Version 14.0.1Tr.Fr1.vx
+Tr.Fr1.vy
+Tr.Fr1.vzTrailer.Fr1_v_0[0]
+Trailer.Fr1_v_0[1]
+Trailer.Fr1_v_0[2]Fr0 m/s Velocity of Fr1 in global frame
+Tr.Fx<pos>
+Tr.Fy<pos>
+Tr.Fz<pos>
+Tr.FxTwin<pos>
+Tr.FyTwin<pos>
+Tr.FzTwin<pos>Trailer.Tire[i].Frc_W[0]
+Trailer.Tire[i].Frc_W[1]
+Trailer.Tire[i].Frc_W[2]
+Trailer.TwinTire[i].Frc_W[0]
+Trailer.TwinTire[i].Frc_W[1]
+Trailer.TwinTire[i].Frc_W[2]FrW N Longitudinal, lateral and vertical ground reaction force at wheel/road con-
+tact point
+Tr.Hitch.dr_0.x
+Tr.Hitch.dr_0.y
+Tr.Hitch.dr_0.zFr0 rad Rotational angle difference between vehicle and trailer in the hitch point
+Tr.Hitch.dt_0.x
+Tr.Hitch.dt_0.y
+Tr.Hitch.dt_0.zFr0 m Position difference between vehicle and trailer in the hitch point
+Tr.Hitch.Frc2Tr.x_1
+Tr.Hitch.Frc2Tr.y_1
+Tr.Hitch.Frc2Tr.z_1Fr1/
+FrDrwN Hitch force from car to trailer in hitch frame
+(Fr1 for semi trailer or FrDrw for drawbar trailer)
+Tr.Hitch.Frc2TrExt.x_1
+Tr.Hitch.Frc2TrExt.y_1
+Tr.Hitch.Frc2TrExt.z_1Trailer.Hitch.Frc2TrExt_1[0]
+Trailer.Hitch.Frc2TrExt_1[1]
+Trailer.Hitch.Frc2TrExt_1[2]Fr1/
+FrDrwN External, user deﬁned hitch force to trailer in hitch frame
+(Fr1 for semi trailer or FrDrw for drawbar trailer)
+Tr.Hitch.Frc2Tr.x
+Tr.Hitch.Frc2Tr.y
+Tr.Hitch.Frc2Tr.zTrailer.Hitch.Frc2Tr_0[0]
+Trailer.Hitch.Frc2Tr_0[1]
+Trailer.Hitch.Frc2Tr_0[2]Fr0 N Total hitch force from car to trailer in global frame
+Tr.Hitch.Trq2Tr.x_1
+Tr.Hitch.Trq2Tr.y_1
+Tr.Hitch.Trq2Tr.z_1Fr1/
+FrDrwNm Hitch torque from car to trailer in hitch frame
+(Fr1 for semi trailer or FrDrw for drawbar trailer)
+Tr.Hitch.Trq2TrExt.x_1
+Tr.Hitch.Trq2TrExt.y_1
+Tr.Hitch.Trq2TrExt.z_1Trailer.Hitch.Trq2TrExt_1[0]
+Trailer.Hitch.Trq2TrExt_1[1]
+Trailer.Hitch.Trq2TrExt_1[2]Fr1/
+FrDrwNm External, user deﬁned hitch torque to trailer in hitch frame
+(Fr1 for semi-trailer or FrDrw for drawbar trailer)
+Tr.Hitch.Trq2Tr.x
+Tr.Hitch.Trq2Tr.y
+Tr.Hitch.Trq2Tr.zTrailer.Hitch.Trq2Tr_0[0]
+Trailer.Hitch.Trq2Tr_0[1]
+Trailer.Hitch.Trq2Tr_0[2]Fr0 Nm Total hitch torque from car to trailer in global frame
+Tr.Hitch.tx
+Tr.Hitch.ty
+Tr.Hitch.tzTrailer.Hitch.t_0[0]
+Trailer.Hitch.t_0[1]
+Trailer.Hitch.t_0[2]Fr0 m Hitch position in global frame
+Tr.Hitch.vx
+Tr.Hitch.vy
+Tr.Hitch.vzTrailer.Hitch.v_0[0]
+Trailer.Hitch.v_0[1]
+Trailer.Hitch.v_0[2]Fr0 m/s Hitch velocity in global frame
+Tr.InclinAngle<pos>
+Tr.InclinAngleTwin<pos>Trailer.Tire[i].InclinAngle
+TrailerTwinTire[i].InclinAngle.FrW rad Inclination angle of wheel at <pos> (ISO 8855:2011, 7.1.16)
+Tr.LongSlip<pos>
+Tr.LongSlipTwin<pos>Trailer.Tire[i].LongSlip
+Trailer.TwinTire[i].LongSlip– Longitudinal slip of wheel <pos>
+Tr.muRoad<pos>
+Tr.muRoadTwin<pos>Tr.Tire[i].muRoa
+Tr.TwinTire[i].muRoadRoad friction coefﬁcient at tire <pos>
+<preParaFric><pos>.Frc_tot - N Parasitic friction force
+<preParaFric><pos>.Frc_tot.q<i> - N Generalized force for the coordinate q0 due to the parasitic friction force
+<preParaStiff><pos>.Frc_tot - N Parasitic stiffness force
+<preParaStiff><pos>.Frc_tot.q<i> - N Generalized force for the coordinate q0 due to the parasitic stiffness force
+Tr.Pitch Trailer.Pitch rad Pitch angle of the trailer (ISO 8855:2011, 5.2.2).
+Positive, if front goes down and rear of trailer comes up
+Tr.PitchAcc Trailer.PitchAcc rad/s2Pitch angle acceleration (ISO 8855: 2011, 5.2.2)
+Tr.PitchVel Trailer.PitchVel rad/s Pitch angle velocity (ISO 8855:2011, 5.2.2)
+Tr.Roll Trailer.Roll rad Roll angle of the trailer (ISO 8855:2011, 5.2.3),
+Positive, if right side goes down and left side comes up
+Tr.RollAcc Trailer.RollAcc rad/s2Roll angle acceleration (ISO 8855:2011, 5.2.3)
+Tr.RollVel Trailer.RollVel rad/s Roll angle velocity (ISO 8855:2011, 5.2.3)
+Tr.SideSlipAngle Trailer.ConBdy1.SideSlipAngle rad Sideslip angle (ISO 8855:2011, 5.2.9)
+Tr.SideSlipAngle2 Trailer.ConBdy1.SideSlipAngle2 rad Sideslip angle with an offset of 2*PI
+Tr.SideSlipAngleVel Trailer.ConBdy1.SideSlipAngleV-
+elrad/s Sideslip angle velocity (ISO 8855:2011, 5.2.9)
+Tr.SimPhase - Simulation phase (integer)
+Tr.SlipAngle<pos>
+Tr.SlipAngleTwin<pos>Trailer.Tire[i].SlipAngle
+Trailer.TwinTire[i].SlipAnglerad Slip angle at <pos>Name UAQ Name C-Code Frame Unit Info (data type, if not double)
+--- Page 95 ---
+1338 User Accessible Quantities
+Trailer
+CarMaker Reference Manual Version 14.0.1Tr.Spring<pos>.Frc_tot.q<i> N Spring force due to the generalized coordinate <i>
+Tr.Spring<pos>.Frc
+Tr.Spring<pos>.Frc_ext
+Tr.Spring<pos>.Frc_totN Spring force at <pos>
+internal
+external
+total
+Tr.Spring<pos>.l
+Tr.Spring<pos>.l _com
+Tr.Spring<pos>.l _ext
+Tr.Spring<pos>.l _kinm Spring length at <pos>
+total
+by compliance
+external, offset
+by kinematics
+Tr.Stabi<pos>.Frc_tot.q<i> N Stabilizer force due to the generalized coordinate <i>
+Tr.Stabi<pos>.Frc
+Tr.Stabi<pos>.Frc_ext
+Tr.Stabi<pos>.Frc_totN Stabilizer force at <pos>
+internal
+external
+total
+Tr.Stabi<pos>.l
+Tr.Stabi<pos>.l_com
+Tr.Stabi<pos>.l_ext
+Tr.Stabi<pos>.l_kinm Stabilizer length at <pos>
+total
+by compliance
+external, offset
+by kinematics
+<preSC>.Buffer<pos>.CtrlOut Trailer suspension control unit output signal for buffer component at wheel
+carrier <pos> (value NOTSET = -99999 means no buffer control signal at
+<pos>).
+<preSC>.BufferCtrlOutOpt.<i> Trailer suspension control unit optional output signal number <i> for buffer
+component(value NOTSET = -99999 means no optional buffer co ntrol
+output signal <i>, not available for FMU).
+<preSC>.BufferCtrlInOpt.<i> Trailer suspension control unit optional input signal number <i> for buffer
+component (value NOTSET = -99999 means no optional buffer co ntrol
+input signal <i>, not available for FMU).
+<preSC>.Damper<pos>.CtrlOut Trailer suspension control unit output signal for damper component at
+wheel carrier <pos> (value NOTSET = -99999 means no damper control
+signal at <pos>).
+<preSC>.DamperCtrlOutOpt.<i> Trailer suspension control unit optional output signal num ber <i> for
+damper component (value NOTSET = -99999 means no optional damper
+control output signal <i>, not available for FMU).
+<preSC>.DamperCtrlInOpt.<i> Trailer suspension control unit optional input signal number <i> for damp-
+er component (value NOTSET = -99999 means no optional damper con-
+trol input signal <i>, not available for FMU).
+<preSC>.Spring<pos>.CtrlOut Trailer suspension control unit output signal for spring force component at
+wheel carrier <pos> (value NOTSET = -99999 means no spring con trol
+signal at <pos>).
+<preSC>.SpringCtrlOutOpt.<i> Trailer suspension control unit optional output signal number <i> for spring
+component (value NOTSET = -99999 means no optional spring co ntrol
+output signal <i>, not available for FMU).
+<preSC>.SpringCtrlInOpt.<i> Trailer suspension control unit optional input signal number <i> for spring
+component (value NOTSET = -99999 means no optional spring co ntrol
+input signal <i>, not available for FMU).
+<preSC>.Stabi<pos>.CtrlOut Trailer suspension control unit output signal for stabi component at wheel
+carrier <pos> (value NOTSET = -99999 means no stabi control signal at
+<pos>).
+<preSC>.StabiCtrlOutOpt.<i> Trailer suspension control unit optional output signal number <i> for stabi
+component (value NOTSET = -99999 means no optional stabi control out-
+put signal <i>, not available for FMU).
+<preSC>.StabiCtrlInOpt.<i> Trailer suspension control unit optional input signal number <i> for stabi
+component (value NOTSET = -99999 means no optional stabi con trol
+input signal <i>, not available for FMU).
+<preSC>.SystemCtrlOutOpt.<i> Trailer suspension control unit optional additional outpu t signal number
+<i> for force system (value NOTSET = -99999 means no optional f orce
+system control output signal <i>, not available for FMU).
+<preSC>.SystemCtrlInOpt.<i> Trailer suspension control unit optional additional input signal number <i>
+for force system (value NOTSET = -99999 means no optional force sys-
+tem control input signal <i>, not available for FMU).
+Tr.Toe<pos>
+Tr.ToeTwin<pos>Tr.SuspMod[i].Toe rad Toe angle (ISO 8855:2011, 7.1.6).
+The toe angle is positive if the front section of the wheel is turned toward
+the vehicle’s longitudinal center plane and is negative (toe-out) if the front
+section is turned away from this plane.
+Tr.TrqAlign<pos>
+Tr.TrqAlignTwin<pos>Trailer.Tire[i].Trq_W[2]
+Trailer.TwinTire[i].Trq_W[2]FrW Nm Aligning torque in the tire road contact pointName UAQ Name C-Code Frame Unit Info (data type, if not double)
+--- Page 96 ---
+1339 User Accessible Quantities
+Trailer
+CarMaker Reference Manual Version 14.0.1Tr.Trq_Ext2Whl<pos> Trailer.Tire[i].Trq_Ext2W Nm External torque around wheel spin axis. Internally it is use d as follows:
+Wheel_rota = (Trq_Brake2Wheel + Trq_Ext2Wheel +
+c->Trq_Tire2W) / lyy
+Tr.TrqOvert<pos>
+Tr.TrqOvertTwin<pos>Trailer.Tire[i].Trq_W[0]
+Trailer.TwinTire[i].Trq_W[0]FrW Nm Overturning torque in the tire road contact point
+Tr.TrqRoll<pos>
+Tr.TrqRollTwin<pos>Trailer.Tire[i].Trq_W[1]
+Trailer.TwinTire[i].Trq_W[1]FrW Nm Rolling torque in the tire road contact point
+Tr.TurnSlip<pos>
+Tr.TurnSlipTwin<pos>Trailer.Tire[i].TurnSlip
+Trailer.TwinTire[i].TurnSlip1/m Turn slip at <pos>
+Tr.tx
+Tr.ty
+Tr.tzTrailer.ConBdy1.t_0[0]
+Trailer.ConBdy1.t_0[1]
+Trailer.ConBdy1.t_0[2]Fr0 m Trailer translation in global frame
+Tr.v Trailer.ConBdy1.v m/s Trailer velocity
+Tr.Virtual.Frc_0.x
+Tr.Virtual.Frc_0.y
+Tr.Virtual.Ftrc_0.zTrailer.Virtual.Frc_0[0]
+Trailer.Virtual.Frc_0[1]
+Trailer.Virtual.Frc_0[2]Fr0 N External virtual force acting to trailer body in global frame
+Tr.Virtual.Frc_1.x
+Tr.Virtual.Frc_1.y
+Tr.Virtual.Frc_1.zTrailer.Virtual.Frc_1[0]
+Trailer.Virtual.Frc_1[1]
+Trailer.Virtual.Frc_1[2]Fr1 N External virtual force acting to trailer body in vehicle frame
+Tr.Virtual.Trq_0.x
+Tr.Virtual.Trq_0.y
+Tr.Virtual.Trq_0.zTrailer.Virtual.Trq_0[0]
+Trailer.Virtual.Trq_0[1]
+Trailer.Virtual.Trq_0[2]Fr0 Nm External virtual torque acting to trailer body in global frame
+Tr.Virtual.Trq_1.x
+Tr.Virtual.Trq_1.y
+Tr.Virtual.Trq_1.zTrailer.Virtual.Trq_1[0]
+Trailer.Virtual.Trq_1[1]
+Trailer.Virtual.Trq_1[2]Fr1 Nm External virtual torque acting to trailer body in vehicle frame
+Tr.v<pos>
+Tr.vTwin<pos>Trailer.Tire[i].v
+Trailer.TwinTire[i].vm/s Wheel velocity (based on wheel rotation and wheel radius)
+Tr.vx<pos>
+Tr.vxTwin<pos>Trailer.Tire[i].P_vel_W[0]
+Trailer.TwinTire[i].P_vel_W[0]FrW m/s Longitudinal velocity of the tire contact point
+Tr.vy<pos>
+Trr.vyTwin<pos>Trailer.Tire[i].P_vel_W[1]
+Trailer.TwinTire[i].P_vel_W[1]FrW m/s Lateral velocity of the tire contact point
+Tr.vz<pos> Trailer.Tire[i].P_vel_W[2]
+Trailer.TwinTire[i].P_vel_W[2]FrW m/s Vertical velocity of the tire contact point
+Tr.vx
+Tr.vy
+Tr.vzTrailer.ConBdy1.v_0[0]
+Trailer.ConBdy1.v_0[1]
+Trailer.ConBdy1.v_0[2]Fr1 m/s Trailer velocity in vehicle frame
+Tr.WheelSpd_<pos>
+Tr.WheelSpd_Twin<pos>Trailer.Tire[i].WheelSpd
+Trailer.TwinTire[i].WheelSpdrad/s Wheel rotation speed at <pos>
+Tr.WheelTurnSpd_<pos> Trailer.Tire[iS].WheelTurnSpd
+Trailer.TwinTire[i].WheelTurnSpdrad/s Wheel turning speed at <pos>
+Tr.W<pos>.Radius
+Tr.W<pos>.Twin.RadiusTrailer.Tire[i].WRadius
+Trailer.TwinTire[i].WRadiusm Wheel radius at <pos>
+Tr.W<pos>.rot TrailerTire[i].rot. rad Wheel rotation around wheel spin axis at <pos>
+Tr.Y aw Trailer.Y aw rad Y aw angle (ISO 8855:2011, 5.2.1)
+Angle between X-axis of trailer and X-axis of earth ﬁxed system. Positive
+for positive rotation around Z-axis
+Tr.Y awAcc Trailer.Y awAcc rad/s2Y aw angle acceleration (ISO 8855:2011, 5.2.1)
+Tr.Y awVel Trailer.Y awVel rad/s Y aw angle velocity (ISO 8855:2011, 5.2.1)Name UAQ Name C-Code Frame Unit Info (data type, if not double)
+--- Page 97 ---
+1340 User Accessible Quantities
+Trailer
+CarMaker Reference Manual Version 14.0.126.15.2 Trailer Load
+26.15.3 Trailer UncouplingName UAQ Name C-CodeName CarMaker for
+SimulinkFrame Unit Info (data type, if not double)
+Tr.Load.<i>.mass Trailer.Load[i].mass Trailer Load_<i> mass kg Mass of load number i
+Tr.Load.<i>.tx
+Tr.Load.<i>.ty
+Tr.Load.<i>.tzTrailer.Load[i].tx
+Trailer.Load[i].ty
+Trailer.Load[i].tzTrailer Load_<i> tx
+Trailer Load_<i> ty
+Trailer Load_<i> tzFr1 m Position of i-the load in vehicle frame
+Name UAQ Name C-Code Frame Unit Info (data type, if not double)
+Tr.Hitch.Virtual.Active Trailer.HitchVirt.Active Activate virtual hitch (boolean)
+Tr.Hitch.Virtual.Amplify Trailer.HitchVirt.Amplify Ampliﬁcation factor for virtual hitch forces
+Tr.Hitch.Virtual.<tx,ty,tz> Trailer.HitchVirt.Vhcl.t_0 Fr0 m Position of virtual hitch
+Tr.Hitch.Virtual.<vx,vy,vz> Trailer.HitchVirt.Vhcl.v_0 Fr0 m/s Velocity of virtual hitch
+Tr.Hitch.Virtual.<rx,ry,rz> Trailer.HitchVirt.Vhcl.r_zyx Fr0 rad Orientation of virtual hitch

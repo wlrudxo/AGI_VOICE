@@ -59,7 +59,7 @@ AGI Voice V2 is a desktop research application for **AI-based autonomous driving
 - **Icons**: `@iconify/svelte` with Solar duotone icons
 - **Main Pages**:
   - Dashboard (`/`) - Main interface with AI chat widget for autonomous driving research
-  - Map Settings (`/map-settings/*`) - SUMO map management (generator, library)
+  - Map Settings (`/map-settings/*`) - SUMO map management (generator, library, rag-test)
   - AI Settings (`/ai-settings/*`) - AI system configuration (system messages, characters, commands, user info, final message)
   - Settings (`/settings`) - Application settings
 - **State Management**:
@@ -67,6 +67,8 @@ AGI Voice V2 is a desktop research application for **AI-based autonomous driving
   - `uiStore.ts` - UI state (sidebar, chat, widget mode, conversation title)
   - `dbWatcher.svelte.ts` - DB change detection (2s polling, auto-refresh)
   - `settingsStore.ts` - App settings (minimize to tray)
+  - `dialogStore.svelte.ts` - Dialog management (confirm/alert)
+  - `aiConfigStore.ts` - AI configuration (character/prompt selection)
 
 ### Backend (Tauri + Rust)
 - **Framework**: Tauri 2.x with Rust
@@ -247,29 +249,34 @@ src-tauri/
 │   ├── commands/
 │   │   ├── mod.rs           # Command module exports
 │   │   ├── ai_chat.rs       # AI chat command
-│   │   ├── settings.rs      # Settings commands
+│   │   ├── conversations.rs # Conversation CRUD
+│   │   ├── characters.rs    # Character CRUD
 │   │   ├── prompt_templates.rs   # System message CRUD
-│   │   ├── characters.rs         # Character CRUD
 │   │   ├── command_templates.rs  # Command template CRUD
-│   │   ├── conversations.rs      # Conversation CRUD
-│   │   └── maps.rs               # Map CRUD (SUMO maps)
+│   │   ├── maps.rs          # Map CRUD (SUMO maps)
+│   │   ├── settings.rs      # Settings commands
+│   │   ├── common.rs        # Shared command utilities
+│   │   └── utils.rs         # Helper functions (DB timestamp, etc.)
 │   ├── db/
 │   │   ├── mod.rs           # Database initialization (AiChatDb, MapDb wrappers)
 │   │   ├── map_db.rs        # SUMO maps database initialization
-│   │   ├── models/          # SeaORM entity models
-│   │   │   ├── mod.rs
-│   │   │   ├── prompt_template.rs
-│   │   │   ├── character.rs
-│   │   │   ├── command_template.rs
-│   │   │   ├── conversation.rs
-│   │   │   ├── message.rs
-│   │   │   ├── map.rs       # SUMO map entity
-│   │   │   └── map_scenario.rs  # Map scenario entity
-│   │   └── sync.rs          # Database sync utilities
+│   │   ├── schema.rs        # Database schema definitions
+│   │   ├── seed_data.rs     # Default data seeding
+│   │   ├── sync.rs          # Database sync utilities
+│   │   └── models/          # SeaORM entity models
+│   │       ├── mod.rs
+│   │       ├── conversation.rs
+│   │       ├── message.rs
+│   │       ├── prompt_template.rs
+│   │       ├── character.rs
+│   │       ├── command_template.rs
+│   │       ├── map.rs       # SUMO map entity
+│   │       └── map_scenario.rs  # Map scenario entity
 │   └── ai/
 │       ├── mod.rs           # AI module exports
 │       ├── claude_cli.rs    # Claude CLI subprocess manager
-│       └── prompt_builder.rs # Dynamic prompt assembly
+│       ├── prompt_builder.rs # Dynamic prompt assembly
+│       └── embeddings.rs    # OpenAI embeddings integration
 ├── Cargo.toml               # Rust dependencies
 └── tauri.conf.json          # Tauri configuration
 ```
@@ -280,9 +287,12 @@ src-tauri/
 src/
 ├── routes/
 │   ├── +layout.svelte           # Main layout with sidebar
+│   ├── +layout.ts               # Layout load function
 │   ├── +page.svelte             # Dashboard with AI chat
 │   ├── ai-settings/
 │   │   ├── +layout.svelte           # Sub-sidebar layout
+│   │   ├── +page.svelte             # Redirect to chat-settings
+│   │   ├── +page.server.ts          # Server-side redirect
 │   │   ├── chat-settings/+page.svelte    # Chat settings
 │   │   ├── system-messages/+page.svelte  # System message CRUD
 │   │   ├── characters/+page.svelte       # Character CRUD
@@ -290,27 +300,36 @@ src/
 │   │   ├── user-info/+page.svelte        # User info management
 │   │   └── final-message/+page.svelte    # Final message management
 │   ├── map-settings/
-│   │   ├── +layout.svelte           # Sub-sidebar layout (Map 설정)
-│   │   ├── +page.svelte             # Default redirect to generator
+│   │   ├── +layout.svelte           # Sub-sidebar layout
+│   │   ├── +page.svelte             # Redirect to generator
 │   │   ├── generator/+page.svelte   # SUMO map creation/editing
-│   │   └── library/+page.svelte     # Map library with search/filter
-│   └── settings/+page.svelte    # Settings
+│   │   ├── library/+page.svelte     # Map library with search/filter
+│   │   └── rag-test/+page.svelte    # RAG system testing
+│   └── settings/+page.svelte    # Application settings
 ├── lib/
 │   ├── components/
-│   │   ├── TitleBar.svelte       # Custom titlebar with window controls & widget mode
+│   │   ├── TitleBar.svelte       # Custom titlebar with window controls
 │   │   ├── Sidebar.svelte        # Collapsible navigation (14rem ↔ 5.5rem)
 │   │   ├── Tooltip.svelte        # Fixed-position tooltips
-│   │   ├── AIChatWidget.svelte   # AI chat widget with history/chat views
-│   │   ├── ChatView.svelte       # Chat interface with markdown rendering
-│   │   ├── ChatHistoryView.svelte # Conversation history with message counts
-│   │   ├── ChatSettingsView.svelte # Character/prompt selection modal
-│   │   ├── MapCanvas.svelte      # SVG-based SUMO map visualization
-│   │   └── MapCard.svelte        # Map display card (with edit/delete)
-│   └── stores/
-│       ├── uiStore.ts            # UI state (sidebar, chat, widget mode, conversation)
-│       ├── dbWatcher.svelte.ts   # DB change detection (auto-refresh)
-│       └── settingsStore.ts      # App settings (minimize to tray)
-└── app.css                       # Global styles with Tailwind import
+│   │   ├── Dialog.svelte         # Generic dialog component
+│   │   ├── AIChatWidget.svelte   # AI chat widget (3 views)
+│   │   ├── ChatView.svelte       # Chat interface with markdown
+│   │   ├── ChatHistoryView.svelte # Conversation history
+│   │   ├── ChatSettingsView.svelte # Character/prompt selection
+│   │   ├── MapCanvas.svelte      # SVG SUMO map visualization
+│   │   └── MapCard.svelte        # Map display card
+│   ├── stores/
+│   │   ├── uiStore.ts            # UI state (sidebar, chat, widget)
+│   │   ├── dbWatcher.svelte.ts   # DB change detection
+│   │   ├── settingsStore.ts      # App settings
+│   │   ├── dialogStore.svelte.ts # Dialog state management
+│   │   └── aiConfigStore.ts      # AI configuration state
+│   ├── actions/
+│   │   ├── parser.ts             # Tag parser (AI response → actions)
+│   │   ├── executor.ts           # Action executor (invoke Tauri)
+│   │   └── formatter.ts          # Result formatter
+│   └── config.ts                 # App configuration
+└── app.css                       # Global styles + Tailwind import
 ```
 
 
@@ -496,7 +515,8 @@ The AI chat system uses Claude CLI via Rust's `std::process::Command`. On Window
 ├── Map 설정
     └── [Sub-sidebar]
         ├── Map 생성     → Create/Edit maps
-        └── Map 라이브러리 → Browse/Manage maps
+        ├── Map 라이브러리 → Browse/Manage maps
+        └── RAG 테스트   → Test RAG system (Phase 3)
 ```
 
 **SUMO XML Format**:
@@ -545,7 +565,7 @@ npm run dev  # Vite dev server on http://localhost:1420
 
 ---
 
-**Last Updated**: 2025-10-20
+**Last Updated**: 2025-11-22
 **Project Status**: Autonomous Driving Research Application
 
 **Recent Updates**:
@@ -557,7 +577,8 @@ npm run dev  # Vite dev server on http://localhost:1420
   - Map library with search, filter, and edit functionality
   - MapCanvas component (SVG-based visualization)
   - MapCard component (edit/delete buttons)
-  - Nested sidebar structure (Map 설정 → Map 생성, Map 라이브러리)
+  - Nested sidebar structure (Map 설정 → Map 생성, Map 라이브러리, RAG 테스트)
+  - RAG test page placeholder for Phase 3
 
 - ✅ **Generic AI Chat System**:
   - Full dynamic prompt system with conversations, characters, and command templates
@@ -567,6 +588,14 @@ npm run dev  # Vite dev server on http://localhost:1420
   - Custom titlebar with window controls
   - Chat history with message counts
   - Auto-refresh system (2s polling via Tauri commands)
+  - Action processing system (parser, executor, formatter)
+  - Dialog component for confirmations and alerts
+
+- ✅ **Code Architecture**:
+  - Created ARCHITECTURE.md with detailed technical documentation
+  - Complete project structure documentation (frontend/backend)
+  - Data flow diagrams and state management patterns
+  - Naming conventions and migration guidelines
 
 **Next Priority**:
 - **Phase 2**: Implement embedding system for SUMO maps
@@ -575,3 +604,5 @@ npm run dev  # Vite dev server on http://localhost:1420
   - Embed button in map library
   - Embedding progress UI
 - **Phase 3**: RAG search functionality for map recommendations
+  - Semantic search implementation
+  - Context-aware map recommendations

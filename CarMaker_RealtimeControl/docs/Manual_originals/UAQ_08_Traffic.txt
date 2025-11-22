@@ -1,0 +1,247 @@
+--- Page 98 ---
+1341 User Accessible Quantities
+Trafﬁc
+CarMaker Reference Manual Version 14.0.126.16 Trafﬁc
+26.16.1 General
+26.16.2 Trafﬁc object
+The quantities in the column “Simulink“ refer to those with r espect to the “TrafficObject“
+block in the CarMaker Simulink library.Name UAQ Name C-Code Unit Info (data type, if not integer)
+<Nb> :=0, .., n (number)
+Trafﬁc.Freeze Trafﬁc.Freeze - Freeze the motion of all objects (boolean)
+0 = no freeze; 1 = freeze
+Trafﬁc.nObjs Trafﬁc.nObjs - Number of currently active traffic objects (inte ger) / Index+1 of last active
+object
+Trafﬁc.nObjs_max Trafﬁc.nObjs_max - Maximum number of possible trafﬁc objects (integer)
+Trafﬁc.TimeOffset Trafﬁc.TimeOffset s Time offset for the global trafﬁc time
+Name UAQ Name C-CodeName
+SimulinkFrame Unit Info (data type, if not integer)
+<preQ> := Trafﬁc.<ObjectName>
+Pointer tTrafﬁcObj *pObj = Trafﬁc_GetByTrfId(<Internal TrafﬁcId>) or Trafﬁc_GetByObjId(<Global ObjId>)
+FrTrf: Trafﬁc object frame
+- pObj->Tr2Fr0[a][b] Fr2Fr0 <a> <b> - Transformation matrix from FrTrafﬁc to Fr0
+a, b = [0..2]
+<preQ>.AutoDrv.AxTgt m/s2Target longitudinal acceleration of the trafﬁc autonomous driver
+<preQ>.AutoDrv.DesrSpd m/s Desired travel speed of the trafﬁc autonomous driver
+<preQ>.a_0.x
+<preQ>.a_0.y
+<preQ>.a_0.zpObj->a_0[0]
+pObj->a_0[1]
+pObj->a_0[2]a_0 x
+a_0 y
+a_0 zFr0 m/s2Global acceleration of trafﬁc object reference point (locating in the mid-
+dle of the rearmost surface)
+<preQ>.a_1.x
+<preQ>.a_1.y
+<preQ>.a_1.zpObj->a_1[0]
+pObj->a_1[1]
+pObj->a_1[2]FrTrf m/s2Global acceleration of trafﬁc object reference point (locating in the mid-
+dle of the rearmost surface)
+<preQ>.DetectLevel pObj->DetectLevel DetectLevel - Detection level by a sensor of object for IPGMovie visualization (integer):
+0 = not detected
+1 = detected, but not crucial
+2 = detected and crucial
+3-7 = not set by the sensor, but could be used
+for user speciﬁc applications with different colors
+<preQ>.Distance pObj->Distance m Driven distance
+<preQ>.GCS.Long
+<preQ>.GCS.Lat
+<preQ>.GCS.ElevpObj->t_GCS.Long
+pObj->t_GCS.Lat
+pObj->t_GCS.ElevGCS rad
+rad
+mGlobal position (GCS) of the trafﬁc object’s frame origin:
+longitude, latitude, elevation
+By default disabled, can be enabled in SimParameters ﬁle, for details see
+section 3.1.20 ’Geographic coordinate system’ )
+<preQ>.JuncObjId
+<preQ>.nextJuncObjIdpObj->JuncObjId
+pObj->nextJuncOb-
+jIdActual (last) and next road junction object Id
+<preQ>.Lane.Act.*
+isRight / LaneIdpObj->Lane.Act.*
+isRight / LaneIdLane information of the lane, on which the object is currently moving
+<preQ>.LatVel pObj->LatVel LatVel FrR m/s Lateral velocity relative to route, path y axis (derivation of tRoad)
+<preQ>.LinkObjId pObj->LinkObjId Actual road link object Id
+<preQ>.LongAcc pObj->LongAcc LongAcc m/s2Longitudinal acceleration of CoM in course orientation
+<preQ>.LongVel pObj->LongVel LongVel m/s Longitudinal velocity of CoM in course orientation
+<preQ>.Long.ManIdx Current longitudinal maneuver Id, -11 for default maneuvers and -12 if
+the object is deactivated.
+<preQ>.Lat.ManIdx Current lateral maneuver Id, -11 for default maneuvers and -12 if the
+object is deactivated.
+--- Page 99 ---
+1342 User Accessible Quantities
+Trafﬁc
+CarMaker Reference Manual Version 14.0.1<preQ>.Long.StepIdx Current longitudinal maneuver step Id, -11 for default mane uver steps
+and -12 if the object is deactivated. Special treatment:
+- if a start condition for the traffic object is specified and not yet true
+(object is still deactivated), setting StepIdx to a value greater or equal to
+0 bypasses the start condition and starts the maneuver control life cycle
+- if the target maneuver step Id is greater than the number of steps of the
+current active maneuver, the active maneuver is ended
+- if the object after all maneuvers are completed is not deactivated/hid-
+den, the maneuver control life cycle can be restarted with a value greater
+or equal to 0
+<preQ>.Lat.StepIdx Current longitudinal maneuver step Id, -11 for default man euver steps
+and -12 if the object is deactivated. Special treatment:
+- if a start condition for the traffic object is specified and not yet true
+(object is still deactivated), setting the StepIdx to a value greater or equal
+to 0 bypasses the start condition and starts the maneuver con trol life
+cycle
+- if the target maneuver step Id is greater than the number of steps of the
+current active maneuver, the active maneuver is ended
+- if the object is not deactivated/hidden after all maneuvers are complet-
+ed, the maneuver control life cycle can be restarted with a value greater
+or equal to 0
+<preQ>.Long.Attrib - - - - Integer attribute for the current longitudinal maneuver step
+<preQ>.Lat.Attrib - - - - Integer attribute for the current lateral maneuver step
+<preQ>.Man.<i>.
+ExecCount- - - Execution count of maneuver with index i (by default disable d, can be
+enabled in SimParameters ﬁle, see section 3.1.28 )
+<preQ>.Man.<i>.State - - - State of maneuver with index i (by default disabled, can be enabled in
+SimParameters ﬁle, see section 3.1.28 )
+0: Initial
+1: Standby
+2: Running
+3: Complete
+4: Final
+<preQ>.onJunction pObj->onJunction Flag if the trafﬁc object CoM is on junction?
+<preQ>.Pitch_X rad The pitch angle of the motion model 4Wheel relative to road area
+<preQ>.Roll_X rad The roll angle of the motion model 4Wheel relative to road area
+<preQ>.rx
+<preQ>.ry
+<preQ>.rzpObj->r_zyx[0]
+pObj->r_zyx[1]
+pObj->r_zyx[2]r_zyx x
+r_zyx y
+r_zyx zFr0 rad Rotation angles of trafﬁc object
+<preQ>.rxv
+<preQ>.ryv
+<preQ>.rzvpObj->rv_zyx[0]
+pObj->rv_zyx[1]
+pObj->rv_zyx[2]Fr0 rad/s Rotational velocity of trafﬁc object
+<preQ>.s2lastJunc
+<preQ>.s2nextJuncpObj->s2lastJunc
+pObj->s2nextJuncm Road distance along road reference line from CoM to last / next junction
+<preQ>.sRoad pObj->sRoad sRoad m Traffic object road coordinate measured from origin of route / d ynamic
+path (e.g. lane section) to center of mass. All trafﬁc objects on the same
+route/path that are located perpendicular to the reference line have the
+same sRoad-coordinate.
+<preQ>.State pObj->State State - State of trafﬁc object (integer):
+0 = motion deactivated, object hidden
+1 = motion active, object visible
+2 = ﬁxed visible object (e.g: building)
+3 = free motion by user
+4 = temporarily not visualized and detectable by sensors
+<preQ>.SteerAng rad Steering angle of front tire(s) using the motion model 2Wheel or 4Wheel
+<preQ>.tRoad pObj->tRoad tRoad FrR m Trafﬁc object’s lateral distance of CoM to route / path
+<preQ>.t2Ref pObj->t2Ref FrR m Trafﬁc object’s lateral distance of CoM referred to road reference line
+<preQ>.tx
+<preQ>.ty
+<preQ>.tzpObj->t_0[0]
+pObj->t_0[1]
+pObj->t_0[2]t_0 x
+t_0 y
+t_0 zFr0 m Global position of the trafﬁc object reference point (locating in the middle
+of the rearmost surface)
+<preQ>.v_0.x
+<preQ>.v_0.y
+<preQ>.v_0.zpObj->v_0[0]
+pObj->v_0[1]
+pObj->v_0[2]v_0 x
+v_0 y
+v_0 zFr0 m/s Global velocity of trafﬁc object reference point (locating in the middle of
+the rearmost surface)
+<preQ>.v_1.x
+<preQ>.v_1.y
+<preQ>.v_1.zpObj->v_1[0]
+pObj->v_1[1]
+pObj->v_1[2]FrTrf m/s Global velocity of trafﬁc object reference point (locating in the middle of
+the rearmost surface)
+<preQ>.Lights.bm For internal use only
+<preQ>.Lights.Brake Brake light on (boolean)Name UAQ Name C-CodeName
+SimulinkFrame Unit Info (data type, if not integer)
+--- Page 100 ---
+1343 User Accessible Quantities
+Trafﬁc
+CarMaker Reference Manual Version 14.0.126.16.3 Smart Trafﬁc Generator<preQ>.Lights.FogFront Front fog light on (boolean)
+<preQ>.Lights.FogRear Rear fog light on (boolean)
+<preQ>.Lights.Hazard Hazard warning light on (boolean)
+<preQ>.Lights.HighBeam High beam on (boolean)
+<preQ>.Lights.Ignition vehicle ignition, inﬂuences only lighting (boolean)
+<preQ>.Lights.Indicator Turn indicator
+-1=Right
+0=Off
+1=Left
+<preQ>.Lights.MainLight Main light switch:
+0=Off
+1=Parking light
+2=Low beam
+<preQ>.Lights.Reverse Reversing light on (boolean)
+<preQ>.Lights.Custom.0 Custom light 0 on (boolean)
+<preQ>.Lights.Custom.1 Custom light 1 on (boolean)
+<preQ>.Lights.Custom.2 Custom light 2 on (boolean)
+<preQ>.Lights.Custom.3 Custom light 3 on (boolean)Name UAQ Name C-CodeName
+SimulinkFrame Unit Info (data type, if not integer)
+Name UAQ Name C-Code Unit Info (data type, if not integer)
+<pre> := Trafﬁc.SmartGen
+<pre>.TrfSwarm.Density Traffic_SmartGen_TrfSwarm_SetDe
+nsity ()
+Traffic_SmartGen_TrfSwarm_GetDe
+nsity ()- Currently used trafﬁc density for Trafﬁc Swarm
+<pre>.Source.<i>.Active Flag if source is currently enabled (boolean)
+<pre>.Source.<i>.Density Currently used trafﬁc density in source
+<pre>.Source.<i>.Rate Veh/h Currently used vehicle ﬂow rate in source
+<pre>.Source.<i>.Speed m/s Currently used starting speed in source (only for rate)
+<pre>.Source.<i>.Lane.<j>.Den-
+sityCurrently used trafﬁc density on lane of source
+<pre>.Source.<i>.Lane.<j>.Rate Veh/h Currently used vehicle ﬂow rate on lane of source
+<pre>.Source.<i>.Lane.<j>.Spee
+dm/s Currently used starting speed on lane of source (only for rate)
+<pre>.Sink.<i>.Active Flag if sink is currently enabled (boolean)
+<pre>.Sink.<i>.Rate Veh/h Currently used removing trafﬁc ﬂow rate in sink
+<pre>.Sink.<i>.Lane.<j>.Rate Veh/h Currently used removing trafﬁc ﬂow rate on lane of sink
+--- Page 101 ---
+1344 User Accessible Quantities
+Cockpit Package
+CarMaker Reference Manual Version 14.0.126.17 Cockpit Package
+26.17.1 Cockpit Package Pro
+Name UAQ Unit Info (data type, if not integer)
+Senso.Active - Activates/deactivates steering wheel
+Senso.Calibrate - Indicates calibration of steering wheel
+Senso.Ang rad Steering angle, raw signal provided by the steering wheel
+Senso.AngVel rad/s Steering velocity, raw signal provided by the steering wheel
+Senso.AngAcc rad/s2 Steering acceleration, raw signal provided by the steering wheel
+Senso.Trq Nm Steering wheel torque
+Senso.IndexPos deg Index position for calibration
+Senso.Extras bit-
+ﬁeldActivates extra features
+Senso.Pedal.Active - Activates/deactivates pedals
+Senso.Pedal.Calibrate - Indicates calibration of pedals
+Senso.Pedal.Brake - Position of brake pedal
+Senso.Pedal.BrakeFrc N Brake pedal force
+Senso.Pedal.Clutch - Position of clutch pedal
+Senso.Pedal.Gas - Position of gas pedal
+Senso.PosCtrl.Mode - Activates/deactivates Position/Speed Contoller of SENSO-Wheel:
+0 = Off
+1 = Position Controller
+2 = Speed Controller
+Senso.PosCtrl.k_LW % Factor position control k_LW for Position Controller
+Senso.PosCtrl.k_SW % Factor SENSO-Wheel k_SW for Position Controller
+Senso.PosCtrl.DesiredAng rad Desired angle for Position Controller
+Senso.PosCtrl.DesiredVel rad/s Desired velocity for Speed Controller
+--- Page 102 ---
+1345 User Accessible Quantities
+Trafﬁc Light
+CarMaker Reference Manual Version 14.0.126.18 Trafﬁc Light
+Name UAQ Name C-Code Unit Info (type, if not double)
+<pre> = TrfLight.<TrafﬁcLightName>
+<pre>.Mode TrfLight.Objs[Nb].Mode - Trafﬁc light running mode (integer):
+0: Automatic (deﬁned by phase times)
+1: Manual
+<pre>.State TrfLight.Objs[Nb].State - Trafﬁc light state/phase (integer):
+0: All lights off
+1: Green light on
+2: Y ellow light on
+3: Red light on
+4: Red-Y ellow light on
+<pre>.tRemain TrfLight.Objs[Nb].tRemain s Remaining time until next phase
