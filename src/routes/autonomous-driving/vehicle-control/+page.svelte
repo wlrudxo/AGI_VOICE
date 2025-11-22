@@ -102,8 +102,8 @@
         {isMonitoring ? 'Stop Monitoring' : 'Start Monitoring'}
       </button>
     </div>
-    <div class="monitor-table-wrapper">
-      <table class="monitor-table">
+    <div class="table-wrapper" style="max-height: 500px; overflow-y: auto;">
+      <table class="table">
         <thead>
           <tr>
             <th>Variable</th>
@@ -158,45 +158,11 @@
     margin: 0 auto;
   }
 
-  .page-header {
-    margin-bottom: 2rem;
-  }
-
-  .page-header h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--color-text-primary);
-    margin: 0 0 0.5rem 0;
-  }
-
-  .page-description {
-    color: var(--color-text-secondary);
-    margin: 0;
-  }
-
-  /* Section Styles */
+  /* Section Styles - use rounded corners and shadow */
   .section {
     border-radius: 0.75rem;
     padding: 1.5rem;
-    margin-bottom: 1.5rem;
     box-shadow: var(--shadow-sm);
-  }
-
-  .section-title {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-    color: var(--color-text-primary);
-  }
-
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
   }
 
   /* Connection Controls */
@@ -218,25 +184,6 @@
     color: var(--color-text-secondary);
   }
 
-  /* Status Indicator */
-  .status-indicator {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-left: auto;
-  }
-
-  .status-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background-color: var(--color-error);
-  }
-
-  .status-dot.connected {
-    background-color: var(--color-success);
-  }
-
   /* Control Row (Sliders) */
   .control-row {
     display: flex;
@@ -249,34 +196,6 @@
     min-width: 120px;
     font-weight: 500;
     color: var(--color-text-secondary);
-  }
-
-  .slider {
-    flex: 1;
-    height: 6px;
-    border-radius: 3px;
-    background: var(--color-border);
-    outline: none;
-    -webkit-appearance: none;
-  }
-
-  .slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--color-primary);
-    cursor: pointer;
-  }
-
-  .slider::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--color-primary);
-    cursor: pointer;
-    border: none;
   }
 
   .value-display {
@@ -300,55 +219,5 @@
 
   .command-input {
     flex: 1;
-  }
-
-  /* Monitor Table */
-  .monitor-table-wrapper {
-    overflow-x: auto;
-    max-height: 500px;
-    overflow-y: auto;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-  }
-
-  .monitor-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .monitor-table th {
-    position: sticky;
-    top: 0;
-    background-color: var(--color-surface);
-    padding: 0.75rem;
-    text-align: left;
-    font-weight: 600;
-    color: var(--color-text-primary);
-    border-bottom: 2px solid var(--color-border);
-  }
-
-  .monitor-table td {
-    padding: 0.75rem;
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  .monitor-table tbody tr:hover {
-    background-color: var(--color-surface-hover);
-  }
-
-  /* Log Container */
-  .log-container {
-    max-height: 200px;
-    overflow-y: auto;
-    padding: 1rem;
-    background-color: var(--color-background);
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    font-family: 'Courier New', monospace;
-    font-size: 0.875rem;
-  }
-
-  .log-message {
-    padding: 0.25rem 0;
   }
 </style>

@@ -161,22 +161,6 @@
     margin: 0 auto;
   }
 
-  .page-header {
-    margin-bottom: 2rem;
-  }
-
-  .page-header h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--color-text-primary);
-    margin: 0 0 0.5rem 0;
-  }
-
-  .page-description {
-    color: var(--color-text-secondary);
-    margin: 0;
-  }
-
   .settings-form {
     background: var(--color-surface);
     border-radius: 0.75rem;
@@ -191,16 +175,6 @@
 
   .form-section:last-child {
     margin-bottom: 0;
-  }
-
-  .section-title {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--color-text-primary);
-    margin: 0 0 1.5rem 0;
   }
 
   /* Settings Controls */
@@ -227,24 +201,6 @@
   .input-group label {
     font-weight: 600;
     color: var(--color-text-secondary);
-  }
-
-  .status-indicator {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-left: auto;
-  }
-
-  .status-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background-color: var(--color-error);
-  }
-
-  .status-dot.connected {
-    background-color: var(--color-success);
   }
 
   .message {

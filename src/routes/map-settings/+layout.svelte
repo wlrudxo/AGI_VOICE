@@ -21,13 +21,9 @@
 	}
 </script>
 
-<div class="map-settings-layout">
+<div class="sub-sidebar-layout" style={`--sub-sidebar-width: ${subSidebarWidth};`}>
 	<!-- 하위 사이드바 -->
-	<aside
-		class="sub-sidebar"
-		class:collapsed={isCollapsed}
-		style={`--sub-sidebar-width: ${subSidebarWidth};`}
-	>
+	<aside class="sub-sidebar" class:collapsed={isCollapsed}>
 		<div class="sub-sidebar-header" class:collapsed={isCollapsed}>
 			<Icon icon="solar:map-point-wave-bold-duotone" width="24" height="24" />
 			{#if !isCollapsed}
@@ -61,7 +57,7 @@
 		</nav>
 
 		<div class="sub-sidebar-footer">
-			<button class="toggle-btn" on:click={toggleSubSidebar}>
+			<button class="sub-sidebar-toggle-btn" on:click={toggleSubSidebar}>
 				<Icon
 					icon={isCollapsed ? 'solar:alt-arrow-right-bold-duotone' : 'solar:alt-arrow-left-bold-duotone'}
 					width="24"
@@ -76,108 +72,3 @@
 		{@render children?.()}
 	</main>
 </div>
-
-<style>
-	.map-settings-layout {
-		display: flex;
-		height: 100%;
-		background: var(--color-background);
-	}
-
-	.sub-sidebar {
-		width: var(--sub-sidebar-width, 16rem);
-		border-right: 1px solid var(--color-border);
-		display: flex;
-		flex-direction: column;
-		background-color: var(--color-surface);
-		transition: width 200ms ease;
-		overflow: hidden;
-	}
-
-	.sub-sidebar-header {
-		padding: 1.5rem;
-		border-bottom: 1px solid var(--color-border);
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		color: var(--color-primary);
-	}
-
-	.sub-sidebar-header.collapsed {
-		justify-content: center;
-	}
-
-	.sub-sidebar-header h2 {
-		margin: 0;
-		font-size: 1.25rem;
-		font-weight: 600;
-		color: var(--color-text-primary);
-	}
-
-	.sub-nav {
-		padding: 1rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		flex: 1;
-	}
-
-	.sub-nav-item {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 0.75rem 1rem;
-		border-radius: 0.5rem;
-		text-decoration: none;
-		transition: all 0.2s;
-		font-weight: 500;
-		color: var(--color-text-secondary);
-	}
-
-	.sub-nav-item:hover {
-		background-color: var(--color-surface-hover);
-		color: var(--color-text-primary);
-	}
-
-	.sub-nav-item.collapsed {
-		justify-content: center;
-		width: 3.5rem;
-		height: 3.5rem;
-		margin: 0 auto;
-	}
-
-	.sub-nav-item.active {
-		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-		color: white;
-	}
-
-	.sub-sidebar-footer {
-		padding: 1rem;
-		border-top: 1px solid var(--color-border);
-	}
-
-	.sub-content {
-		flex: 1;
-		overflow-y: auto;
-		padding: 2rem;
-	}
-
-	.toggle-btn {
-		width: 3.5rem;
-		height: 3.5rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		border: 1px solid var(--border-light);
-		border-radius: 0.5rem;
-		background: var(--color-surface);
-		color: var(--color-text-primary);
-		cursor: pointer;
-		transition: all 200ms;
-	}
-
-	.toggle-btn:hover {
-		background-color: var(--color-surface-hover);
-		border-color: var(--color-primary);
-	}
-</style>
