@@ -355,6 +355,10 @@ body {
   background-color: var(--color-info);
 }
 
+.bg-info-box {
+  background-color: var(--color-background);
+}
+
 /* Border Colors */
 .border-default {
   border-color: var(--color-border);
@@ -393,4 +397,84 @@ body {
 
 .text-sidebar {
   color: var(--color-sidebar-text);
+}
+
+/* Toggle Switch (Checkbox) */
+.toggle-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.toggle-switch input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-switch-track {
+  width: 2.75rem;
+  height: 1.5rem;
+  background-color: #d1d5db;
+  border-radius: 9999px;
+  position: relative;
+  transition: background-color 200ms;
+}
+
+.toggle-switch input:checked + .toggle-switch-track {
+  background-color: #2563eb;
+}
+
+.toggle-switch input:focus + .toggle-switch-track {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+}
+
+.toggle-switch-thumb {
+  content: '';
+  position: absolute;
+  top: 0.125rem;
+  left: 0.125rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  background-color: white;
+  border-radius: 9999px;
+  transition: transform 200ms;
+  border: 1px solid #d1d5db;
+}
+
+.toggle-switch input:checked + .toggle-switch-track .toggle-switch-thumb {
+  transform: translateX(1.25rem);
+  border-color: white;
+}
+
+/* Message Alert Boxes */
+.alert-success {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background-color: var(--color-success);
+  color: white;
+}
+
+.alert-error {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background-color: var(--color-error);
+  color: white;
+}
+
+.alert-info {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background-color: var(--color-info);
+  color: white;
+}
+
+.alert-warning {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background-color: var(--color-warning);
+  color: white;
 }
