@@ -6,11 +6,6 @@
   let port = $state('16660');
   let isConnected = $state(false);
 
-  // Control settings
-  let duration = $state('2000');
-  let controlMode = $state('Abs');
-  const controlModes = ['Abs', 'Off', 'Fac', 'AbsRamp', 'FacRamp'];
-
   // Driver inputs
   let gasValue = $state(0.0);
   let brakeValue = $state(0.0);
@@ -42,6 +37,9 @@
 
   function sendControl(controlType: string, value: number) {
     // TODO: Implement control command
+    // Settings will be fetched from autonomous-driving/settings page
+    const duration = '2000'; // TODO: Get from settings
+    const controlMode = 'Abs'; // TODO: Get from settings
     const command = `DVAWrite DM.${controlType} ${value} ${duration} ${controlMode}`;
     addLog(`Execute: ${command}`);
   }
@@ -88,13 +86,13 @@
 </script>
 
 <div class="vehicle-control">
-  <h1 class="text-primary page-title">
-    <Icon icon="solar:steering-wheel-bold-duotone" width="32" height="32" />
-    차량 제어
-  </h1>
+  <div class="page-header">
+    <h1>🚗 차량 제어</h1>
+    <p class="page-description">CarMaker 차량을 실시간으로 제어합니다.</p>
+  </div>
 
   <!-- Connection Section -->
-  <section class="section">
+  <section class="card section">
     <h2 class="section-title text-primary">
       <Icon icon="solar:link-circle-bold-duotone" width="24" height="24" />
       CarMaker Connection
@@ -121,14 +119,14 @@
         />
       </div>
       <button
-        class="btn btn-primary"
+        class="btn-primary"
         disabled={isConnected}
         onclick={connect}
       >
         Connect
       </button>
       <button
-        class="btn btn-secondary"
+        class="btn-secondary"
         disabled={!isConnected}
         onclick={disconnect}
       >
@@ -143,35 +141,8 @@
     </div>
   </section>
 
-  <!-- Control Settings -->
-  <section class="section">
-    <h2 class="section-title text-primary">
-      <Icon icon="solar:settings-bold-duotone" width="24" height="24" />
-      Control Settings
-    </h2>
-    <div class="settings-controls">
-      <div class="input-group">
-        <label for="duration">Duration (ms):</label>
-        <input
-          id="duration"
-          type="text"
-          bind:value={duration}
-          class="input-field"
-        />
-      </div>
-      <div class="input-group">
-        <label for="mode">Control Mode:</label>
-        <select id="mode" bind:value={controlMode} class="select-field">
-          {#each controlModes as mode}
-            <option value={mode}>{mode}</option>
-          {/each}
-        </select>
-      </div>
-    </div>
-  </section>
-
   <!-- Driver Inputs -->
-  <section class="section">
+  <section class="card section">
     <h2 class="section-title text-primary">
       <Icon icon="solar:steering-wheel-bold-duotone" width="24" height="24" />
       Driver Inputs
@@ -189,7 +160,7 @@
         class="slider"
       />
       <span class="value-display">{gasValue.toFixed(2)}</span>
-      <button class="btn btn-set" onclick={() => sendControl('Gas', gasValue)}>
+      <button class="btn-primary btn-set" onclick={() => sendControl('Gas', gasValue)}>
         Set
       </button>
     </div>
@@ -206,7 +177,7 @@
         class="slider"
       />
       <span class="value-display">{brakeValue.toFixed(2)}</span>
-      <button class="btn btn-set" onclick={() => sendControl('Brake', brakeValue)}>
+      <button class="btn-primary btn-set" onclick={() => sendControl('Brake', brakeValue)}>
         Set
       </button>
     </div>
@@ -223,14 +194,14 @@
         class="slider"
       />
       <span class="value-display">{steerValue.toFixed(2)}</span>
-      <button class="btn btn-set" onclick={() => sendControl('Steer.Ang', steerValue)}>
+      <button class="btn-primary btn-set" onclick={() => sendControl('Steer.Ang', steerValue)}>
         Set
       </button>
     </div>
   </section>
 
   <!-- Text Command Input -->
-  <section class="section">
+  <section class="card section">
     <h2 class="section-title text-primary">
       <Icon icon="solar:code-bold-duotone" width="24" height="24" />
       Text Command Input
@@ -243,20 +214,20 @@
         class="input-field command-input"
         onkeydown={(e) => e.key === 'Enter' && executeCommand()}
       />
-      <button class="btn btn-primary" onclick={executeCommand}>
+      <button class="btn-primary" onclick={executeCommand}>
         Execute
       </button>
     </div>
   </section>
 
   <!-- Vehicle Data Monitor -->
-  <section class="section">
+  <section class="card section">
     <div class="section-header">
       <h2 class="section-title text-primary">
         <Icon icon="solar:chart-bold-duotone" width="24" height="24" />
         Vehicle Data Monitor
       </h2>
-      <button class="btn btn-primary" onclick={toggleMonitoring}>
+      <button class="btn-primary" onclick={toggleMonitoring}>
         {isMonitoring ? 'Stop Monitoring' : 'Start Monitoring'}
       </button>
     </div>
@@ -293,7 +264,7 @@
   </section>
 
   <!-- Log Section -->
-  <section class="section">
+  <section class="card section">
     <h2 class="section-title text-primary">
       <Icon icon="solar:document-text-bold-duotone" width="24" height="24" />
       Log
@@ -316,31 +287,38 @@
     margin: 0 auto;
   }
 
-  .page-title {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+  .page-header {
+    margin-bottom: 2rem;
+  }
+
+  .page-header h1 {
     font-size: 2rem;
     font-weight: 700;
-    margin-bottom: 2rem;
+    color: var(--color-text-primary);
+    margin: 0 0 0.5rem 0;
+  }
+
+  .page-description {
+    color: var(--color-text-secondary);
+    margin: 0;
   }
 
   /* Section Styles */
   .section {
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
+    border-radius: 0.75rem;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-sm);
   }
 
   .section-title {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     font-weight: 600;
     margin-bottom: 1rem;
+    color: var(--color-text-primary);
   }
 
   .section-header {
@@ -370,26 +348,24 @@
   }
 
   .input-field {
-    padding: 0.5rem;
+    padding: 0.75rem 1rem;
     border: 1px solid var(--color-border);
-    border-radius: 6px;
-    background-color: var(--color-surface);
+    border-radius: 0.5rem;
+    background: var(--color-surface);
     color: var(--color-text-primary);
-    font-size: 0.875rem;
+    font-size: 1rem;
+    transition: all 0.2s;
+  }
+
+  .input-field:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
   }
 
   .input-field:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-  }
-
-  .select-field {
-    padding: 0.5rem;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    background-color: var(--color-surface);
-    color: var(--color-text-primary);
-    font-size: 0.875rem;
   }
 
   /* Status Indicator */
@@ -409,12 +385,6 @@
 
   .status-dot.connected {
     background-color: var(--color-success);
-  }
-
-  /* Settings Controls */
-  .settings-controls {
-    display: flex;
-    gap: 2rem;
   }
 
   /* Control Row (Sliders) */
@@ -467,48 +437,9 @@
     color: var(--color-text-primary);
   }
 
-  /* Buttons */
-  .btn {
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .btn-primary {
-    background-color: var(--color-primary);
-    color: white;
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    opacity: 0.9;
-  }
-
-  .btn-secondary {
-    background-color: var(--color-border);
-    color: var(--color-text-primary);
-  }
-
-  .btn-secondary:hover:not(:disabled) {
-    background-color: var(--color-text-muted);
-  }
-
+  /* Additional button styles */
   .btn-set {
     min-width: 60px;
-    background-color: var(--color-primary);
-    color: white;
-  }
-
-  .btn-set:hover {
-    opacity: 0.9;
   }
 
   /* Command Input */

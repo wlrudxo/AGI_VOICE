@@ -9,8 +9,9 @@
 	// 하위 메뉴
 	const subMenus = [
 		{ path: '/autonomous-driving/vehicle-control', icon: 'solar:widget-2-bold-duotone', label: '차량 제어' },
-		{ path: '/autonomous-driving/stop-conditions', icon: 'solar:close-circle-bold-duotone', label: '정지조건' },
-		{ path: '/autonomous-driving/test', icon: 'solar:clipboard-check-bold-duotone', label: '테스트' }
+		{ path: '/autonomous-driving/stop-conditions', icon: 'solar:atom-bold-duotone', label: '트리거 설정' },
+		{ path: '/autonomous-driving/test', icon: 'solar:gameboy-bold-duotone', label: '수동제어' },
+		{ path: '/autonomous-driving/settings', icon: 'solar:settings-bold-duotone', label: '설정' }
 	];
 
 	const currentPath = $derived($page.url.pathname);
