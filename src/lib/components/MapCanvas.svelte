@@ -292,7 +292,7 @@
 
 	.control-btn {
 		padding: 0.5rem;
-		background: white;
+		background: var(--color-surface);
 		border: 1px solid var(--color-border);
 		border-radius: 0.375rem;
 		cursor: pointer;
@@ -301,10 +301,11 @@
 		justify-content: center;
 		transition: all 0.2s;
 		box-shadow: var(--shadow-sm);
+		color: var(--color-text-secondary);
 	}
 
 	.control-btn:hover {
-		background: var(--color-background);
+		background: var(--color-surface-hover);
 		border-color: var(--color-primary);
 		color: var(--color-primary);
 	}

@@ -111,7 +111,7 @@
 
 <style>
 	.map-card {
-		background: white;
+		background: var(--color-surface);
 		border: 1px solid var(--color-border);
 		border-radius: 0.75rem;
 		padding: 1.25rem;
@@ -230,20 +230,23 @@
 		cursor: pointer;
 		color: var(--color-text-muted);
 		transition: all 0.2s;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.embed-btn:hover {
 		background: rgba(16, 185, 129, 0.1);
-		color: #10b981;
+		color: var(--color-success);
 	}
 
 	.edit-btn:hover {
-		background: rgba(59, 130, 246, 0.1);
+		background: var(--color-primary-bg-light);
 		color: var(--color-primary);
 	}
 
 	.delete-btn:hover {
-		background: rgba(239, 68, 68, 0.1);
+		background: var(--color-error-bg-light);
 		color: var(--color-error);
 	}
 </style>

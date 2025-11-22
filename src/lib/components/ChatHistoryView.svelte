@@ -244,7 +244,7 @@
 		align-items: center;
 		gap: 0.5rem;
 		padding: 1rem;
-		background: var(--color-background);
+		background: var(--color-surface);
 		border: 1px solid var(--color-border);
 		border-radius: 8px;
 		transition: all 0.2s;
@@ -304,6 +304,8 @@
 		border-radius: 6px;
 		font-size: 0.875rem;
 		outline: none;
+		background: var(--color-surface);
+		color: var(--color-text-primary);
 	}
 
 	.edit-actions {

@@ -189,7 +189,7 @@
 
 	/* Search Section */
 	.search-section {
-		background: white;
+		background: var(--color-surface);
 		padding: 1.5rem;
 		border-radius: 0.75rem;
 		box-shadow: var(--shadow-sm);
@@ -210,7 +210,8 @@
 		border: 1px solid var(--color-border);
 		border-radius: 0.5rem;
 		font-size: 1rem;
-		background: var(--color-background);
+		background: var(--color-surface);
+		color: var(--color-text-primary);
 	}
 
 	.search-input:focus {
@@ -222,6 +223,7 @@
 	.search-input:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
+		background: var(--color-surface-hover);
 	}
 
 	.search-options {
@@ -274,7 +276,7 @@
 	}
 
 	.result-card {
-		background: white;
+		background: var(--color-surface);
 		border-radius: 0.75rem;
 		padding: 1.5rem;
 		box-shadow: var(--shadow-sm);
@@ -299,6 +301,7 @@
 		justify-content: center;
 		font-weight: 700;
 		font-size: 0.875rem;
+		box-shadow: var(--shadow-sm);
 	}
 
 	.result-content {

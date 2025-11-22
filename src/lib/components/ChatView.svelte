@@ -774,6 +774,8 @@
 		font-size: 0.9rem;
 		outline: none;
 		transition: border-color 0.2s;
+		background: var(--color-surface);
+		color: var(--color-text-primary);
 	}
 
 	.input-container input:focus {
@@ -783,6 +785,7 @@
 	.input-container input:disabled {
 		background: var(--color-background);
 		cursor: not-allowed;
+		opacity: 0.5;
 	}
 
 

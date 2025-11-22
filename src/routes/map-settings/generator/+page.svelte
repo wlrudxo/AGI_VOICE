@@ -508,7 +508,7 @@
 
 	.input-panel,
 	.preview-panel {
-		background: white;
+		background: var(--color-surface);
 		border-radius: 0.75rem;
 		padding: 1.5rem;
 		box-shadow: var(--shadow-sm);
@@ -553,7 +553,7 @@
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.75rem 1rem;
-		background: rgba(245, 101, 101, 0.1);
+		background: var(--color-error-bg-light);
 		border: 1px solid var(--color-error);
 		border-radius: 0.5rem;
 		color: var(--color-error);
@@ -573,20 +573,20 @@
 
 	.message-box.info {
 		background: rgba(59, 130, 246, 0.1);
-		border: 1px solid #3b82f6;
-		color: #1e40af;
+		border: 1px solid var(--color-info);
+		color: var(--color-info);
 	}
 
 	.message-box.success {
-		background: rgba(16, 185, 129, 0.1);
-		border: 1px solid #10b981;
-		color: #065f46;
+		background: rgba(72, 187, 120, 0.1);
+		border: 1px solid var(--color-success);
+		color: var(--color-success);
 	}
 
 	.message-box.error {
-		background: rgba(245, 101, 101, 0.1);
-		border: 1px solid #ef4444;
-		color: #991b1b;
+		background: var(--color-error-bg-light);
+		border: 1px solid var(--color-error);
+		color: var(--color-error);
 	}
 
 	.input-field {

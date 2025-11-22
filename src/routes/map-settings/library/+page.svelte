@@ -564,7 +564,7 @@
 		margin-bottom: 2rem;
 		flex-wrap: wrap;
 		align-items: center;
-		background: white;
+		background: var(--color-surface);
 		padding: 1.25rem;
 		border-radius: 0.75rem;
 		box-shadow: var(--shadow-sm);
@@ -583,7 +583,8 @@
 		border-radius: 0.5rem;
 		font-size: 0.9rem;
 		min-width: 300px;
-		background: var(--color-background);
+		background: var(--color-surface);
+		color: var(--color-text-primary);
 	}
 
 	.search-input:focus {
@@ -597,7 +598,8 @@
 		border: 1px solid var(--color-border);
 		border-radius: 0.5rem;
 		font-size: 0.9rem;
-		background: var(--color-background);
+		background: var(--color-surface);
+		color: var(--color-text-primary);
 		cursor: pointer;
 	}
 
