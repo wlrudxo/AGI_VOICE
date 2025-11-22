@@ -14,14 +14,13 @@
 	];
 
 	const currentPath = $derived($page.url.pathname);
-	const subSidebarWidth = $derived(isCollapsed ? '5.5rem' : '16rem');
 
 	function toggleSubSidebar() {
 		isCollapsed = !isCollapsed;
 	}
 </script>
 
-<div class="sub-sidebar-layout" style={`--sub-sidebar-width: ${subSidebarWidth};`}>
+<div class="sub-sidebar-layout" style={isCollapsed ? '--sub-sidebar-width: 5.5rem;' : ''}>
 	<!-- 하위 사이드바 -->
 	<aside class="sub-sidebar" class:collapsed={isCollapsed}>
 		<div class="sub-sidebar-header" class:collapsed={isCollapsed}>
