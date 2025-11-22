@@ -169,7 +169,24 @@ npm run tauri build   # Build desktop app
 
 ### Styling Guidelines
 
+**CRITICAL**: Before creating or modifying ANY component:
+
+1. **READ `src/app.css` COMPLETELY** to understand all available utility classes
+2. **USE existing utility classes** instead of creating new styles
+3. **ADD to app.css** only if the style is reusable across multiple components
+4. **AVOID duplicate styles** - search app.css first before writing CSS
+
 **IMPORTANT**: When developing components, **ALWAYS** use semantic utility classes defined in `src/app.css`.
+
+#### Must-Read Before Development
+
+**Before writing ANY styles, read the ENTIRE `src/app.css` file to see:**
+- All color variables (--color-*)
+- All utility classes (.btn-*, .text-*, .bg-*, .section-*, .table-*, etc.)
+- Component patterns (toggle-switch, alert boxes, sliders, etc.)
+- Layout helpers (page-header, sub-sidebar, etc.)
+
+**This prevents duplicate code and ensures consistency.**
 
 #### Available Utility Classes
 
@@ -234,9 +251,83 @@ Example:
 - `@apply bg-surface` inside `<style>` tags - Use `background-color: var(--color-surface);` directly
 - Custom utilities in `@theme` - Define as regular CSS classes
 
-#### Reference
+#### Complete Utility Class Reference (src/app.css)
 
-All available CSS variables and utility classes are defined in `src/app.css`. Check this file first before writing new styles.
+**MUST READ `src/app.css` before development!** The file contains:
+
+**Buttons**: `.btn-primary`, `.btn-secondary`, `.btn-danger`, `.btn-icon`, `.btn-text`
+**Text Colors**: `.text-primary`, `.text-secondary`, `.text-muted`, `.text-accent`, `.text-accent-dark`
+**Backgrounds**: `.bg-surface`, `.bg-surface-hover`, `.bg-primary`, `.bg-error`, `.bg-success`, `.bg-warning`, `.bg-info`, `.bg-info-box`
+**Borders**: `.border-default`, `.border-dark`, `.border-primary`
+**Cards**: `.card`, `.card-hover`
+**Forms**: `.input-field`, `.select-field`, `.toggle-switch`, `.toggle-switch-track`, `.toggle-switch-thumb`
+**Alerts**: `.alert-success`, `.alert-error`, `.alert-info`, `.alert-warning`
+**Layouts**: `.page-header`, `.page-description`, `.section`, `.section-header`, `.section-title`
+**Sub-Sidebar**: `.sub-sidebar-layout`, `.sub-sidebar`, `.sub-sidebar-header`, `.sub-nav`, `.sub-nav-item`, `.sub-sidebar-footer`, `.sub-sidebar-toggle-btn`
+**Status**: `.status-indicator`, `.status-dot` (with `.connected`, `.warning` modifiers)
+**Controls**: `.slider` (range input with custom thumb)
+**Tables**: `.table`, `.table-wrapper` (with sticky header support)
+**Logs**: `.log-container`, `.log-message`
+**Scrollbar**: Custom webkit scrollbar styles
+
+**Development Workflow**:
+1. Open `src/app.css` and read through ALL utility classes
+2. Use existing classes in your component
+3. Only add component-specific styles in `<style>` tags
+4. If a pattern is used 2+ times, add it to app.css
+
+**Example - Good Practice**:
+```svelte
+<script>
+  // Before writing styles, developer read app.css and found:
+  // - .page-header exists
+  // - .section exists
+  // - .btn-primary exists
+  // - .table exists
+</script>
+
+<div class="page-header">
+  <h1>My Page</h1>
+  <p class="page-description">Description here</p>
+</div>
+
+<section class="card section">
+  <h2 class="section-title text-primary">Data</h2>
+  <div class="table-wrapper">
+    <table class="table">...</table>
+  </div>
+</section>
+
+<style>
+  /* Only component-specific styles here */
+  .my-unique-layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+  }
+</style>
+```
+
+**Example - Bad Practice**:
+```svelte
+<!-- ❌ DON'T: Recreating existing utility classes -->
+<style>
+  .my-header {
+    margin-bottom: 2rem;  /* This is .page-header! */
+  }
+
+  .my-section {
+    border-radius: 0.75rem;  /* This is .section! */
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .my-button {
+    background: var(--color-primary);  /* This is .btn-primary! */
+    color: white;
+    padding: 0.5rem 1rem;
+  }
+</style>
+```
 
 ### Backend (Tauri + Rust)
 
