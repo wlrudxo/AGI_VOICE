@@ -591,8 +591,8 @@ body {
 
 /* Page Layout */
 .page-header {
-  padding: 1.5rem 0;
-  margin-bottom: 1rem;
+  padding: 0 0 1rem 0;
+  margin-bottom: 1.5rem;
   border-bottom: 1px solid var(--color-border);
 }
 
