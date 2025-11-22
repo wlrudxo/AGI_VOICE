@@ -154,7 +154,7 @@
 
 <style>
   .vehicle-control {
-    max-width: 1400px;
+    max-width: 800px;
     margin: 0 auto;
   }
 
