@@ -367,7 +367,7 @@
                   </div>
                   <button
                     onclick={() => restoreBackup(backup.path)}
-                    class="px-3 py-1 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                    class="btn-primary btn-sm"
                   >
                     복원
                   </button>

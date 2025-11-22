@@ -215,6 +215,12 @@ body {
   cursor: not-allowed;
 }
 
+/* Small Button Variant */
+.btn-sm {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+}
+
 /* Form Input Styles */
 .input-field {
   padding: 0.5rem 1rem;
