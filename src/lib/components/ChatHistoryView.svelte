@@ -18,18 +18,6 @@
 		try {
 			isLoading = true;
 			conversations = await invoke('get_conversations');
-			console.log('✅ Loaded conversations:', conversations);
-
-			// 각 대화의 데이터 확인
-			conversations.forEach((conv, index) => {
-				console.log(`Conversation ${index}:`, {
-					id: conv.id,
-					title: conv.title,
-					createdAt: conv.createdAt,
-					updatedAt: conv.updatedAt,
-					messageCount: conv.messageCount
-				});
-			});
 		} catch (error) {
 			console.error('❌ Failed to load conversations:', error);
 		} finally {
@@ -39,7 +27,6 @@
 
 	// 새 대화 생성 이벤트 리스너
 	function handleConversationCreated(event) {
-		console.log('New conversation created, refreshing list...');
 		loadConversations();
 	}
 

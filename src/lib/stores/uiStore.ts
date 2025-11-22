@@ -8,6 +8,7 @@ interface UiState {
   currentConversationTitle: string | null;
   isWidgetMode: boolean;
   wasWidgetModeBeforeTray: boolean; // 트레이로 이동하기 전 위젯 모드였는지
+  isChatExpanded: boolean; // 채팅 위젯 확장 상태
 }
 
 // localStorage에서 초기 상태 로드
@@ -20,7 +21,8 @@ function loadInitialState(): UiState {
       currentConversationId: null,
       currentConversationTitle: null,
       isWidgetMode: false,
-      wasWidgetModeBeforeTray: false
+      wasWidgetModeBeforeTray: false,
+      isChatExpanded: false
     };
   }
 
@@ -36,7 +38,8 @@ function loadInitialState(): UiState {
       currentConversationId: storedConversationId ? parseInt(storedConversationId, 10) : null,
       currentConversationTitle: null,
       isWidgetMode: false,
-      wasWidgetModeBeforeTray: storedWasWidgetMode === 'true'
+      wasWidgetModeBeforeTray: storedWasWidgetMode === 'true',
+      isChatExpanded: false
     };
   } catch (error) {
     console.error('Failed to load initial state:', error);
@@ -47,7 +50,8 @@ function loadInitialState(): UiState {
       currentConversationId: null,
       currentConversationTitle: null,
       isWidgetMode: false,
-      wasWidgetModeBeforeTray: false
+      wasWidgetModeBeforeTray: false,
+      isChatExpanded: false
     };
   }
 }
@@ -141,7 +145,11 @@ function createUiStore() {
           isChatOpen: shouldBeWidgetMode ? true : state.isChatOpen
         };
       });
-    }
+    },
+    setChatExpanded: (isExpanded: boolean) => update(state => ({
+      ...state,
+      isChatExpanded: isExpanded
+    }))
   };
 }
 

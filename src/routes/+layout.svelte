@@ -25,6 +25,7 @@
   const sidebarWidth = $derived($uiStore.isSidebarCollapsed ? '5.5rem' : '14rem');
   const isChatOpen = $derived($uiStore.isChatOpen);
   const isWidgetMode = $derived($uiStore.isWidgetMode);
+  const isChatExpanded = $derived($uiStore.isChatExpanded);
 
   // 위젯 모드 변경 감지
   let lastWidgetMode = false;
@@ -187,7 +188,7 @@
   {#if !isWidgetMode}
     <TitleBar />
     <Sidebar />
-    <main class="main-content" class:chat-open={isChatOpen} style="margin-left: {sidebarWidth};">
+    <main class="main-content" class:chat-open={isChatOpen} class:chat-expanded={isChatExpanded} style="margin-left: {sidebarWidth};">
       {@render children?.()}
     </main>
   {/if}
@@ -236,10 +237,14 @@
     padding-right: 2rem;
   }
 
-  /* 중간 화면 (1024px+): 위젯이 메인 컨텐츠를 밀어냄 (작게) */
+  /* 중간 화면 (1024px+): 위젯이 메인 컨텐츠를 밀어냄 (450px) */
   @media (min-width: 1024px) {
     .main-content.chat-open {
       padding-right: 29.25rem; /* 2rem + 450px + 2rem */
+    }
+
+    .main-content.chat-open.chat-expanded {
+      padding-right: 43rem; /* 2rem + 640px + 2rem */
     }
   }
 
@@ -247,6 +252,10 @@
   @media (min-width: 1280px) {
     .main-content.chat-open {
       padding-right: 31.25rem; /* 2rem + 450px + 2rem + 2rem(여유) */
+    }
+
+    .main-content.chat-open.chat-expanded {
+      padding-right: 45rem; /* 2rem + 640px + 2rem + 2rem(여유) */
     }
   }
 

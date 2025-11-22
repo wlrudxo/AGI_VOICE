@@ -9,9 +9,10 @@
 	const appWindow = getCurrentWindow();
 
 	// View mode from store
-	$: viewMode = $uiStore.chatViewMode;
-	$: currentTitle = $uiStore.currentConversationTitle;
-	$: isWidgetMode = $uiStore.isWidgetMode;
+	let viewMode = $derived($uiStore.chatViewMode);
+	let currentTitle = $derived($uiStore.currentConversationTitle);
+	let isWidgetMode = $derived($uiStore.isWidgetMode);
+	let isExpanded = $derived($uiStore.isChatExpanded);
 
 	function closeWidget() {
 		uiStore.setChatOpen(false);
@@ -51,9 +52,13 @@
 		// 대화 선택 후 채팅 뷰로 전환
 		switchToChat();
 	}
+
+	function toggleSize() {
+		uiStore.setChatExpanded(!isExpanded);
+	}
 </script>
 
-<div class="chat-widget" class:fullscreen-widget={isWidgetMode}>
+<div class="chat-widget" class:fullscreen-widget={isWidgetMode} class:expanded={isExpanded}>
 	<!-- 헤더 -->
 	<div class="chat-header">
 		<div class="header-title">
@@ -93,6 +98,9 @@
 					<Icon icon="solar:close-circle-bold" width="20" height="20" />
 				</button>
 			{:else}
+				<button class="icon-btn" onclick={toggleSize} title={isExpanded ? '크기 축소' : '크기 확대'}>
+					<Icon icon={isExpanded ? "solar:minimize-square-bold-duotone" : "solar:maximize-square-bold-duotone"} width="20" height="20" />
+				</button>
 				{#if viewMode === 'chat'}
 					<button class="icon-btn" onclick={switchToSettings} title="설정">
 						<Icon icon="solar:settings-bold-duotone" width="20" height="20" />
@@ -143,6 +151,12 @@
 		border-radius: 12px;
 		box-shadow: var(--shadow-md);
 		overflow: hidden;
+		transition: width 0.3s ease, height 0.3s ease;
+	}
+
+	.chat-widget.expanded {
+		width: 640px;
+		height: 800px;
 	}
 
 	.chat-widget.fullscreen-widget {

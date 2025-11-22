@@ -12,8 +12,6 @@
 	let dialog;
 
 	// State
-	let editMapId = $state(null);
-	let isEditMode = $state(false);
 	let mapName = $state('');
 	let mapDescription = $state('');
 	let mapTags = $state('');
@@ -122,16 +120,17 @@
 		}
 	}
 
-	// Auto-parse on mount
-	onMount(() => {
-		// Check for edit mode
-		const urlParams = new URLSearchParams(window.location.search);
-		const id = urlParams.get('id');
+	// Reactive URL param (read-only)
+	const editMapId = $derived.by(() => {
+		const urlId = $page.url.searchParams.get('id');
+		return urlId ? parseInt(urlId) : null;
+	});
+	const isEditMode = $derived(editMapId !== null);
 
-		if (id) {
-			editMapId = parseInt(id);
-			isEditMode = true;
-			loadMapData(id);
+	// Load map data on mount
+	onMount(() => {
+		if (editMapId) {
+			loadMapData(editMapId);
 		} else {
 			parseXml();
 		}
