@@ -591,19 +591,22 @@ body {
 
 /* Page Layout */
 .page-header {
-  margin-bottom: 2rem;
+  padding: 1.5rem 0;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .page-header h1 {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.25rem 0;
   color: var(--color-text-primary);
 }
 
 .page-description {
   color: var(--color-text-secondary);
   margin: 0;
+  font-size: 0.875rem;
 }
 
 /* Section Styles */
