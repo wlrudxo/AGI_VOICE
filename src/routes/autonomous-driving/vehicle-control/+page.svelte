@@ -91,6 +91,20 @@
       <h1>🚗 차량 제어</h1>
       <p class="page-description">CarMaker 차량을 실시간으로 제어합니다.</p>
     </div>
+    <div class="header-actions">
+      <!-- 설정 탭의 connect와 동일 -->
+      {#if isConnected}
+        <button class="btn-danger" onclick={disconnect}>
+          <Icon icon="solar:link-broken-bold" width="20" height="20" />
+          Disconnect
+        </button>
+      {:else}
+        <button class="btn-primary" onclick={connect}>
+          <Icon icon="solar:link-circle-bold" width="20" height="20" />
+          Connect
+        </button>
+      {/if}
+    </div>
   </div>
 
   <!-- Vehicle Data Monitor -->

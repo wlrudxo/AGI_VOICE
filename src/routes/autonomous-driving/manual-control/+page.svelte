@@ -37,7 +37,7 @@
 <div class="manual-control">
   <div class="page-header">
     <div>
-      <h1>🎮 수동제어</h1>
+      <h1>🎮 메뉴얼 제어</h1>
       <p class="page-description">차량을 수동으로 제어하고 명령을 실행합니다.</p>
     </div>
   </div>
