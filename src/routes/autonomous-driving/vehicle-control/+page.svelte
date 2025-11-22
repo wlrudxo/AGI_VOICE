@@ -1,0 +1,573 @@
+<script lang="ts">
+  import Icon from '@iconify/svelte';
+
+  // Connection state
+  let host = $state('localhost');
+  let port = $state('16660');
+  let isConnected = $state(false);
+
+  // Control settings
+  let duration = $state('2000');
+  let controlMode = $state('Abs');
+  const controlModes = ['Abs', 'Off', 'Fac', 'AbsRamp', 'FacRamp'];
+
+  // Driver inputs
+  let gasValue = $state(0.0);
+  let brakeValue = $state(0.0);
+  let steerValue = $state(0.0);
+
+  // Text command
+  let commandInput = $state('');
+
+  // Monitor
+  let isMonitoring = $state(false);
+  let monitorData: Record<string, number | null> = $state({});
+
+  // Log
+  let logMessages: string[] = $state([]);
+
+  // Functions
+  function connect() {
+    // TODO: Implement connection logic
+    isConnected = true;
+    addLog(`Connecting to ${host}:${port}...`);
+  }
+
+  function disconnect() {
+    // TODO: Implement disconnection logic
+    isConnected = false;
+    isMonitoring = false;
+    addLog('Disconnected from CarMaker');
+  }
+
+  function sendControl(controlType: string, value: number) {
+    // TODO: Implement control command
+    const command = `DVAWrite DM.${controlType} ${value} ${duration} ${controlMode}`;
+    addLog(`Execute: ${command}`);
+  }
+
+  function executeCommand() {
+    if (!commandInput.trim()) return;
+    // TODO: Implement command execution
+    addLog(`Execute: ${commandInput}`);
+    commandInput = '';
+  }
+
+  function toggleMonitoring() {
+    isMonitoring = !isMonitoring;
+    if (isMonitoring) {
+      addLog('Started monitoring');
+      // TODO: Start monitoring
+    } else {
+      addLog('Stopped monitoring');
+      // TODO: Stop monitoring
+    }
+  }
+
+  function addLog(message: string) {
+    const timestamp = new Date().toLocaleTimeString();
+    logMessages = [...logMessages, `[${timestamp}] ${message}`];
+  }
+
+  // Base descriptions for monitor data
+  const baseDescMap: Record<string, string> = {
+    'Time': 'Simulation Time (s)',
+    'DM.Gas': 'Gas Pedal (0-1)',
+    'DM.Brake': 'Brake Pedal (0-1)',
+    'DM.Steer.Ang': 'Steering Angle (rad)',
+    'DM.GearNo': 'Gear Number',
+    'Car.v': 'Vehicle Speed (m/s)',
+    'Vhcl.YawRate': 'Yaw Rate (rad/s)',
+    'Vhcl.Steer.Ang': 'Wheel Steering Angle (rad)',
+    'Vhcl.sRoad': 'Road Position S (m)',
+    'Vhcl.tRoad': 'Lateral Position T (m)',
+    'DM.v.Trgt': 'Target Speed (m/s)',
+    'DM.LaneOffset': 'Lane Offset (m)',
+    'Traffic.nObjs': 'Active Traffic Objects Count',
+  };
+</script>
+
+<div class="vehicle-control">
+  <h1 class="text-primary page-title">
+    <Icon icon="solar:steering-wheel-bold-duotone" width="32" height="32" />
+    차량 제어
+  </h1>
+
+  <!-- Connection Section -->
+  <section class="section">
+    <h2 class="section-title text-primary">
+      <Icon icon="solar:link-circle-bold-duotone" width="24" height="24" />
+      CarMaker Connection
+    </h2>
+    <div class="connection-controls">
+      <div class="input-group">
+        <label for="host">Host:</label>
+        <input
+          id="host"
+          type="text"
+          bind:value={host}
+          disabled={isConnected}
+          class="input-field"
+        />
+      </div>
+      <div class="input-group">
+        <label for="port">Port:</label>
+        <input
+          id="port"
+          type="text"
+          bind:value={port}
+          disabled={isConnected}
+          class="input-field"
+        />
+      </div>
+      <button
+        class="btn btn-primary"
+        disabled={isConnected}
+        onclick={connect}
+      >
+        Connect
+      </button>
+      <button
+        class="btn btn-secondary"
+        disabled={!isConnected}
+        onclick={disconnect}
+      >
+        Disconnect
+      </button>
+      <div class="status-indicator">
+        <span class="status-dot" class:connected={isConnected}></span>
+        <span class="text-secondary">
+          {isConnected ? 'Connected' : 'Disconnected'}
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Control Settings -->
+  <section class="section">
+    <h2 class="section-title text-primary">
+      <Icon icon="solar:settings-bold-duotone" width="24" height="24" />
+      Control Settings
+    </h2>
+    <div class="settings-controls">
+      <div class="input-group">
+        <label for="duration">Duration (ms):</label>
+        <input
+          id="duration"
+          type="text"
+          bind:value={duration}
+          class="input-field"
+        />
+      </div>
+      <div class="input-group">
+        <label for="mode">Control Mode:</label>
+        <select id="mode" bind:value={controlMode} class="select-field">
+          {#each controlModes as mode}
+            <option value={mode}>{mode}</option>
+          {/each}
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <!-- Driver Inputs -->
+  <section class="section">
+    <h2 class="section-title text-primary">
+      <Icon icon="solar:steering-wheel-bold-duotone" width="24" height="24" />
+      Driver Inputs
+    </h2>
+
+    <!-- Gas -->
+    <div class="control-row">
+      <label class="control-label">Gas (0-1):</label>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        bind:value={gasValue}
+        class="slider"
+      />
+      <span class="value-display">{gasValue.toFixed(2)}</span>
+      <button class="btn btn-set" onclick={() => sendControl('Gas', gasValue)}>
+        Set
+      </button>
+    </div>
+
+    <!-- Brake -->
+    <div class="control-row">
+      <label class="control-label">Brake (0-1):</label>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        bind:value={brakeValue}
+        class="slider"
+      />
+      <span class="value-display">{brakeValue.toFixed(2)}</span>
+      <button class="btn btn-set" onclick={() => sendControl('Brake', brakeValue)}>
+        Set
+      </button>
+    </div>
+
+    <!-- Steering -->
+    <div class="control-row">
+      <label class="control-label">Steer (-1~1):</label>
+      <input
+        type="range"
+        min="-1"
+        max="1"
+        step="0.01"
+        bind:value={steerValue}
+        class="slider"
+      />
+      <span class="value-display">{steerValue.toFixed(2)}</span>
+      <button class="btn btn-set" onclick={() => sendControl('Steer.Ang', steerValue)}>
+        Set
+      </button>
+    </div>
+  </section>
+
+  <!-- Text Command Input -->
+  <section class="section">
+    <h2 class="section-title text-primary">
+      <Icon icon="solar:code-bold-duotone" width="24" height="24" />
+      Text Command Input
+    </h2>
+    <div class="command-input-group">
+      <input
+        type="text"
+        bind:value={commandInput}
+        placeholder="Enter command..."
+        class="input-field command-input"
+        onkeydown={(e) => e.key === 'Enter' && executeCommand()}
+      />
+      <button class="btn btn-primary" onclick={executeCommand}>
+        Execute
+      </button>
+    </div>
+  </section>
+
+  <!-- Vehicle Data Monitor -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title text-primary">
+        <Icon icon="solar:chart-bold-duotone" width="24" height="24" />
+        Vehicle Data Monitor
+      </h2>
+      <button class="btn btn-primary" onclick={toggleMonitoring}>
+        {isMonitoring ? 'Stop Monitoring' : 'Start Monitoring'}
+      </button>
+    </div>
+    <div class="monitor-table-wrapper">
+      <table class="monitor-table">
+        <thead>
+          <tr>
+            <th>Variable</th>
+            <th>Value</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#if Object.keys(monitorData).length === 0}
+            {#each Object.entries(baseDescMap) as [key, desc]}
+              <tr>
+                <td class="text-primary">{key}</td>
+                <td class="text-muted">N/A</td>
+                <td class="text-secondary">{desc}</td>
+              </tr>
+            {/each}
+          {:else}
+            {#each Object.entries(monitorData) as [key, value]}
+              <tr>
+                <td class="text-primary">{key}</td>
+                <td class="text-accent">{value !== null ? value.toFixed(4) : 'Err'}</td>
+                <td class="text-secondary">{baseDescMap[key] || ''}</td>
+              </tr>
+            {/each}
+          {/if}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Log Section -->
+  <section class="section">
+    <h2 class="section-title text-primary">
+      <Icon icon="solar:document-text-bold-duotone" width="24" height="24" />
+      Log
+    </h2>
+    <div class="log-container">
+      {#if logMessages.length === 0}
+        <p class="text-muted">No logs yet...</p>
+      {:else}
+        {#each logMessages as message}
+          <div class="log-message text-secondary">{message}</div>
+        {/each}
+      {/if}
+    </div>
+  </section>
+</div>
+
+<style>
+  .vehicle-control {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .page-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+  }
+
+  /* Section Styles */
+  .section {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  /* Connection Controls */
+  .connection-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .input-group label {
+    font-weight: 500;
+    color: var(--color-text-secondary);
+  }
+
+  .input-field {
+    padding: 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+  }
+
+  .input-field:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .select-field {
+    padding: 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+  }
+
+  /* Status Indicator */
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+  }
+
+  .status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--color-error);
+  }
+
+  .status-dot.connected {
+    background-color: var(--color-success);
+  }
+
+  /* Settings Controls */
+  .settings-controls {
+    display: flex;
+    gap: 2rem;
+  }
+
+  /* Control Row (Sliders) */
+  .control-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .control-label {
+    min-width: 120px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+  }
+
+  .slider {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--color-border);
+    outline: none;
+    -webkit-appearance: none;
+  }
+
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    cursor: pointer;
+  }
+
+  .slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    cursor: pointer;
+    border: none;
+  }
+
+  .value-display {
+    min-width: 50px;
+    text-align: right;
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  /* Buttons */
+  .btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background-color: var(--color-primary);
+    color: white;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  .btn-secondary {
+    background-color: var(--color-border);
+    color: var(--color-text-primary);
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background-color: var(--color-text-muted);
+  }
+
+  .btn-set {
+    min-width: 60px;
+    background-color: var(--color-primary);
+    color: white;
+  }
+
+  .btn-set:hover {
+    opacity: 0.9;
+  }
+
+  /* Command Input */
+  .command-input-group {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .command-input {
+    flex: 1;
+  }
+
+  /* Monitor Table */
+  .monitor-table-wrapper {
+    overflow-x: auto;
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+  }
+
+  .monitor-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .monitor-table th {
+    position: sticky;
+    top: 0;
+    background-color: var(--color-surface);
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    border-bottom: 2px solid var(--color-border);
+  }
+
+  .monitor-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .monitor-table tbody tr:hover {
+    background-color: var(--color-surface-hover);
+  }
+
+  /* Log Container */
+  .log-container {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 1rem;
+    background-color: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+  }
+
+  .log-message {
+    padding: 0.25rem 0;
+  }
+</style>

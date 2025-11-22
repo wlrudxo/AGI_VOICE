@@ -12,7 +12,8 @@
 
   const navItems: NavItem[] = [
     { name: '대시보드', path: '/', icon: 'solar:widget-2-bold-duotone' },
-    { name: 'Map 설정', path: '/map-settings', icon: 'solar:map-point-wave-bold-duotone' },
+    { name: '자율주행', path: '/autonomous-driving', icon: 'solar:wheel-bold-duotone' },
+    { name: 'Map 생성', path: '/map-settings', icon: 'solar:map-point-wave-bold-duotone' },
     { name: 'AI 설정', path: '/ai-settings', icon: 'solar:settings-minimalistic-bold-duotone' },
     { name: '설정', path: '/settings', icon: 'solar:settings-bold-duotone' }
   ];
