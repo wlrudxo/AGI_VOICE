@@ -1,6 +1,11 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
 
+  // Connection settings
+  let host = $state('localhost');
+  let port = $state('16660');
+  let isConnected = $state(false);
+
   // Control settings
   let duration = $state('2000');
   let controlMode = $state('Abs');
@@ -9,13 +14,27 @@
   let saving = $state(false);
   let message = $state<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  function connect() {
+    // TODO: Implement connection logic
+    isConnected = true;
+    message = { type: 'success', text: `${host}:${port}에 연결되었습니다.` };
+    setTimeout(() => { message = null; }, 3000);
+  }
+
+  function disconnect() {
+    // TODO: Implement disconnection logic
+    isConnected = false;
+    message = { type: 'success', text: 'CarMaker와의 연결이 해제되었습니다.' };
+    setTimeout(() => { message = null; }, 3000);
+  }
+
   async function saveSettings() {
     try {
       saving = true;
       message = null;
 
       // TODO: Save settings to backend
-      console.log('Settings saved:', { duration, controlMode });
+      console.log('Settings saved:', { host, port, duration, controlMode });
 
       message = { type: 'success', text: '설정이 저장되었습니다.' };
 
@@ -36,6 +55,59 @@
   <div class="page-header">
     <h1>⚙️ 자율주행 설정</h1>
     <p class="page-description">CarMaker 제어와 관련된 설정을 관리합니다.</p>
+  </div>
+
+  <!-- CarMaker Connection Section -->
+  <div class="settings-form">
+    <div class="form-section">
+      <h2 class="section-title">
+        <Icon icon="solar:link-circle-bold-duotone" width="20" height="20" />
+        <span>CarMaker Connection</span>
+      </h2>
+
+      <div class="connection-controls">
+        <div class="input-group">
+          <label for="host">Host:</label>
+          <input
+            id="host"
+            type="text"
+            bind:value={host}
+            disabled={isConnected}
+            class="input-field"
+          />
+        </div>
+        <div class="input-group">
+          <label for="port">Port:</label>
+          <input
+            id="port"
+            type="text"
+            bind:value={port}
+            disabled={isConnected}
+            class="input-field"
+          />
+        </div>
+        <button
+          class="btn-primary"
+          disabled={isConnected}
+          onclick={connect}
+        >
+          Connect
+        </button>
+        <button
+          class="btn-secondary"
+          disabled={!isConnected}
+          onclick={disconnect}
+        >
+          Disconnect
+        </button>
+        <div class="status-indicator">
+          <span class="status-dot" class:connected={isConnected}></span>
+          <span class="text-secondary">
+            {isConnected ? 'Connected' : 'Disconnected'}
+          </span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Control Settings Section -->
@@ -65,25 +137,22 @@
           </select>
         </div>
       </div>
-
-      <!-- 메시지 -->
-      {#if message}
-        <div class="message" class:success={message.type === 'success'} class:error={message.type === 'error'}>
-          {message.text}
-        </div>
-      {/if}
-
-      <!-- 저장 버튼 -->
-      <div class="form-actions">
-        <button type="button" class="btn-primary" onclick={saveSettings} disabled={saving}>
-          <Icon icon="solar:diskette-bold-duotone" width="20" height="20" />
-          <span>{saving ? '저장 중...' : '설정 저장'}</span>
-        </button>
-      </div>
     </div>
   </div>
 
-  <!-- TODO: CarMaker 연결 설정, 트리거 민감도 등 추가 -->
+  <!-- 메시지 & 저장 버튼 -->
+  {#if message}
+    <div class="message" class:success={message.type === 'success'} class:error={message.type === 'error'}>
+      {message.text}
+    </div>
+  {/if}
+
+  <div class="form-actions">
+    <button type="button" class="btn-primary" onclick={saveSettings} disabled={saving}>
+      <Icon icon="solar:diskette-bold-duotone" width="20" height="20" />
+      <span>{saving ? '저장 중...' : '설정 저장'}</span>
+    </button>
+  </div>
 </div>
 
 <style>
@@ -135,6 +204,13 @@
   }
 
   /* Settings Controls */
+  .connection-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
   .settings-controls {
     display: flex;
     align-items: center;
@@ -153,43 +229,28 @@
     color: var(--color-text-secondary);
   }
 
-  .input-field {
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.5rem;
-    background: var(--color-surface);
-    color: var(--color-text-primary);
-    font-size: 1rem;
-    transition: all 0.2s;
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
   }
 
-  .input-field:focus {
-    outline: none;
-    border-color: var(--color-primary);
-    box-shadow: var(--focus-ring);
+  .status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--color-error);
   }
 
-  .select-field {
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.5rem;
-    background: var(--color-surface);
-    color: var(--color-text-primary);
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .select-field:focus {
-    outline: none;
-    border-color: var(--color-primary);
-    box-shadow: var(--focus-ring);
+  .status-dot.connected {
+    background-color: var(--color-success);
   }
 
   .message {
     padding: 1rem;
     border-radius: 0.5rem;
-    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
     font-weight: 500;
   }
 
@@ -206,6 +267,5 @@
   .form-actions {
     display: flex;
     justify-content: flex-end;
-    margin-top: 1.5rem;
   }
 </style>

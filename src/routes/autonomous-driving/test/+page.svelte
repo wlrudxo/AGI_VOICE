@@ -1,43 +1,260 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
+
+  // Driver inputs
+  let gasValue = $state(0.0);
+  let brakeValue = $state(0.0);
+  let steerValue = $state(0.0);
+
+  // Text command
+  let commandInput = $state('');
+
+  // Log
+  let logMessages: string[] = $state([]);
+
+  function sendControl(controlType: string, value: number) {
+    // TODO: Implement control command
+    // Settings will be fetched from autonomous-driving/settings page
+    const duration = '2000'; // TODO: Get from settings
+    const controlMode = 'Abs'; // TODO: Get from settings
+    const command = `DVAWrite DM.${controlType} ${value} ${duration} ${controlMode}`;
+    addLog(`Execute: ${command}`);
+  }
+
+  function executeCommand() {
+    if (!commandInput.trim()) return;
+    // TODO: Implement command execution
+    addLog(`Execute: ${commandInput}`);
+    commandInput = '';
+  }
+
+  function addLog(message: string) {
+    const timestamp = new Date().toLocaleTimeString();
+    logMessages = [...logMessages, `[${timestamp}] ${message}`];
+  }
 </script>
 
-<div class="test">
-  <h1 class="text-primary page-title">테스트</h1>
-
-  <div class="placeholder-content">
-    <Icon icon="solar:test-tube-bold-duotone" width="64" height="64" class="placeholder-icon" />
-    <p class="text-secondary">자율주행 테스트 페이지</p>
-    <p class="text-muted">Coming soon...</p>
+<div class="manual-control">
+  <div class="page-header">
+    <h1>🎮 수동제어</h1>
+    <p class="page-description">차량을 수동으로 제어하고 명령을 실행합니다.</p>
   </div>
+
+  <!-- Driver Inputs -->
+  <section class="card section">
+    <h2 class="section-title text-primary">
+      <Icon icon="solar:steering-wheel-bold-duotone" width="24" height="24" />
+      Driver Inputs
+    </h2>
+
+    <!-- Gas -->
+    <div class="control-row">
+      <label class="control-label">Gas (0-1):</label>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        bind:value={gasValue}
+        class="slider"
+      />
+      <span class="value-display">{gasValue.toFixed(2)}</span>
+      <button class="btn-primary btn-set" onclick={() => sendControl('Gas', gasValue)}>
+        Set
+      </button>
+    </div>
+
+    <!-- Brake -->
+    <div class="control-row">
+      <label class="control-label">Brake (0-1):</label>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        bind:value={brakeValue}
+        class="slider"
+      />
+      <span class="value-display">{brakeValue.toFixed(2)}</span>
+      <button class="btn-primary btn-set" onclick={() => sendControl('Brake', brakeValue)}>
+        Set
+      </button>
+    </div>
+
+    <!-- Steering -->
+    <div class="control-row">
+      <label class="control-label">Steer (-1~1):</label>
+      <input
+        type="range"
+        min="-1"
+        max="1"
+        step="0.01"
+        bind:value={steerValue}
+        class="slider"
+      />
+      <span class="value-display">{steerValue.toFixed(2)}</span>
+      <button class="btn-primary btn-set" onclick={() => sendControl('Steer.Ang', steerValue)}>
+        Set
+      </button>
+    </div>
+  </section>
+
+  <!-- Text Command Input -->
+  <section class="card section">
+    <h2 class="section-title text-primary">
+      <Icon icon="solar:code-bold-duotone" width="24" height="24" />
+      Text Command Input
+    </h2>
+    <div class="command-input-group">
+      <input
+        type="text"
+        bind:value={commandInput}
+        placeholder="Enter command..."
+        class="input-field command-input"
+        onkeydown={(e) => e.key === 'Enter' && executeCommand()}
+      />
+      <button class="btn-primary" onclick={executeCommand}>
+        Execute
+      </button>
+    </div>
+  </section>
+
+  <!-- Log Section -->
+  <section class="card section">
+    <h2 class="section-title text-primary">
+      <Icon icon="solar:document-text-bold-duotone" width="24" height="24" />
+      Log
+    </h2>
+    <div class="log-container">
+      {#if logMessages.length === 0}
+        <p class="text-muted">No logs yet...</p>
+      {:else}
+        {#each logMessages as message}
+          <div class="log-message text-secondary">{message}</div>
+        {/each}
+      {/if}
+    </div>
+  </section>
 </div>
 
 <style>
-  .test {
+  .manual-control {
     max-width: 1400px;
     margin: 0 auto;
   }
 
-  .page-title {
-    font-size: 2rem;
-    font-weight: 700;
+  .page-header {
     margin-bottom: 2rem;
   }
 
-  .placeholder-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 400px;
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
-    gap: 1rem;
+  .page-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin: 0 0 0.5rem 0;
   }
 
-  .placeholder-content :global(.placeholder-icon) {
-    color: var(--color-primary);
-    opacity: 0.5;
+  .page-description {
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+
+  /* Section Styles */
+  .section {
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--color-text-primary);
+  }
+
+  /* Control Row (Sliders) */
+  .control-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .control-label {
+    min-width: 120px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+  }
+
+  .slider {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--color-border);
+    outline: none;
+    -webkit-appearance: none;
+  }
+
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    cursor: pointer;
+  }
+
+  .slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    cursor: pointer;
+    border: none;
+  }
+
+  .value-display {
+    min-width: 50px;
+    text-align: right;
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  /* Additional button styles */
+  .btn-set {
+    min-width: 60px;
+  }
+
+  /* Command Input */
+  .command-input-group {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .command-input {
+    flex: 1;
+  }
+
+  /* Log Container */
+  .log-container {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 1rem;
+    background-color: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+  }
+
+  .log-message {
+    padding: 0.25rem 0;
   }
 </style>
