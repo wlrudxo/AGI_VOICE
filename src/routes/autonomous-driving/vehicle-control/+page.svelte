@@ -158,14 +158,6 @@
     margin: 0 auto;
   }
 
-  /* Section Styles - use rounded corners and shadow */
-  .section {
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    box-shadow: var(--shadow-sm);
-  }
-
-  /* Connection Controls */
   .connection-controls {
     display: flex;
     align-items: center;
@@ -184,7 +176,6 @@
     color: var(--color-text-secondary);
   }
 
-  /* Control Row (Sliders) */
   .control-row {
     display: flex;
     align-items: center;
@@ -206,12 +197,10 @@
     color: var(--color-text-primary);
   }
 
-  /* Additional button styles */
   .btn-set {
     min-width: 60px;
   }
 
-  /* Command Input */
   .command-input-group {
     display: flex;
     gap: 0.5rem;

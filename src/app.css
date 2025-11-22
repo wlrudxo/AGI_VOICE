@@ -603,6 +603,9 @@ body {
 /* Section Styles */
 .section {
   margin-bottom: 1.5rem;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .section-header {
