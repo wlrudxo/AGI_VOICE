@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount } from 'svelte';
   import Icon from '@iconify/svelte';
   import { carmakerStore } from '$lib/stores/carmakerStore.svelte';
 
@@ -8,10 +8,8 @@
     await carmakerStore.checkConnectionStatus();
   });
 
-  // Cleanup on unmount
-  onDestroy(() => {
-    carmakerStore.cleanup();
-  });
+  // Note: No cleanup on unmount - carmakerStore is a global store
+  // shared across all autonomous-driving tabs
 
   // Fixed order signal definitions (matches Python implementation order)
   // Array of [signal, description] tuples to maintain display order
