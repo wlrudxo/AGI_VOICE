@@ -301,13 +301,6 @@
     margin: 0 auto;
   }
 
-  /* Section Styles - use rounded corners and shadow */
-  .section {
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    box-shadow: var(--shadow-sm);
-  }
-
   /* Control Row (Sliders) */
   .control-row {
     display: flex;

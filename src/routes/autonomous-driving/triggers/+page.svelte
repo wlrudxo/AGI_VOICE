@@ -673,7 +673,7 @@
   }
 
   .status-badge.warning {
-    background: rgba(251, 191, 36, 0.1);
+    background: var(--color-warning-bg-light);
     color: var(--color-warning);
   }
 
@@ -727,33 +727,6 @@
     gap: 1.5rem;
   }
 
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .form-group label {
-    font-weight: 600;
-    color: var(--color-text-primary);
-    font-size: 0.9rem;
-  }
-
-  .textarea-field {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.375rem;
-    font-family: inherit;
-    font-size: 0.9rem;
-    resize: vertical;
-  }
-
-  .textarea-field:focus {
-    outline: none;
-    border-color: var(--color-primary);
-    box-shadow: var(--focus-ring);
-  }
 
   .helper-text {
     color: var(--color-text-secondary);
@@ -818,16 +791,7 @@
     border-top: 1px solid var(--color-border);
   }
 
-  /* Empty State */
-  .empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 4rem 2rem;
-    gap: 1rem;
-  }
-
+  /* Empty State Icon */
   .empty-state :global(.empty-icon) {
     color: var(--color-primary);
     opacity: 0.3;
@@ -882,12 +846,13 @@
   }
 
   .trigger-status.active {
-    background: rgba(72, 187, 120, 0.1);
+    background: var(--color-success-bg-light);
     color: var(--color-success);
   }
 
   .trigger-status.inactive {
-    background: rgba(160, 174, 192, 0.1);
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
     color: var(--color-text-muted);
   }
 

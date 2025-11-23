@@ -99,7 +99,7 @@
     </h2>
     <div class="control-buttons">
       <button
-        class="btn-primary control-btn"
+        class="btn-primary btn-compact"
         onclick={startSimulation}
         disabled={!carmakerStore.isConnected}
       >
@@ -107,7 +107,7 @@
         Start
       </button>
       <button
-        class="btn-danger control-btn"
+        class="btn-danger btn-compact"
         onclick={stopSimulation}
         disabled={!carmakerStore.isConnected}
       >
@@ -115,7 +115,7 @@
         Stop
       </button>
       <button
-        class="btn-secondary control-btn"
+        class="btn-secondary btn-compact"
         onclick={pauseSimulation}
         disabled={!carmakerStore.isConnected}
       >
@@ -123,7 +123,7 @@
         Pause (0.001x)
       </button>
       <button
-        class="btn-secondary control-btn"
+        class="btn-secondary btn-compact"
         onclick={resumeSimulation}
         disabled={!carmakerStore.isConnected}
       >
@@ -198,12 +198,6 @@
     grid-template-columns: repeat(4, 1fr);
     gap: 0.75rem;
     margin-top: 1.25rem;
-  }
-
-  /* Override app.css button styles with more specific selector */
-  .control-buttons .control-btn {
-    padding: 0.375rem 0.75rem !important;
-    font-size: 0.875rem !important;
   }
 
   /* Monitor table with fixed column widths */

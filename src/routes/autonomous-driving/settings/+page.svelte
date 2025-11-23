@@ -361,7 +361,7 @@
 
   <!-- 메시지 & 저장 버튼 -->
   {#if message}
-    <div class="message" class:success={message.type === 'success'} class:error={message.type === 'error'}>
+    <div class={message.type === 'success' ? 'alert-success' : 'alert-error'}>
       {message.text}
     </div>
   {/if}
@@ -458,23 +458,6 @@
     color: var(--color-primary);
   }
 
-  .message {
-    padding: 1rem;
-    border-radius: 0.5rem;
-    margin-bottom: 1.5rem;
-    font-weight: 500;
-  }
-
-  .message.success {
-    background: #d1fae5;
-    color: #065f46;
-  }
-
-  .message.error {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-
   .form-actions {
     display: flex;
     justify-content: flex-end;
@@ -486,12 +469,6 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
     margin-top: 1rem;
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
   }
 
   .form-group label {
