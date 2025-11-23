@@ -1,5 +1,7 @@
 <script>
 	import { uiStore } from '$lib/stores/uiStore';
+	import { triggerMonitor } from '$lib/stores/triggerMonitor.svelte';
+	import { carmakerStore } from '$lib/stores/carmakerStore.svelte';
 	import Icon from '@iconify/svelte';
 	import ChatView from './ChatView.svelte';
 	import ChatHistoryView from './ChatHistoryView.svelte';
@@ -13,6 +15,9 @@
 	let currentTitle = $derived($uiStore.currentConversationTitle);
 	let isWidgetMode = $derived($uiStore.isWidgetMode);
 	let isExpanded = $derived($uiStore.isChatExpanded);
+
+	// Trigger monitoring state
+	let isTriggerMonitoring = $derived(triggerMonitor.isMonitoring);
 
 	function closeWidget() {
 		uiStore.setChatOpen(false);
@@ -56,6 +61,34 @@
 	function toggleSize() {
 		uiStore.setChatExpanded(!isExpanded);
 	}
+
+	async function toggleTriggerMonitoring() {
+		// Check if vehicle command parsing is enabled
+		const parsingEnabled = localStorage.getItem('carmaker_command_parsing_enabled') === 'true';
+		if (!parsingEnabled) {
+			alert('먼저 자율주행 설정에서 "AI CarMaker Control"을 활성화해주세요.');
+			return;
+		}
+
+		// Check CarMaker connection
+		if (!carmakerStore.isConnected) {
+			alert('CarMaker에 먼저 연결해주세요. (자율주행 > 설정)');
+			return;
+		}
+
+		// Check vehicle monitoring
+		if (!carmakerStore.isMonitoring) {
+			alert('먼저 차량 모니터링을 시작해주세요. (자율주행 > 차량 제어)');
+			return;
+		}
+
+		// Toggle monitoring
+		if (isTriggerMonitoring) {
+			triggerMonitor.stopMonitoring();
+		} else {
+			await triggerMonitor.startMonitoring();
+		}
+	}
 </script>
 
 <div class="chat-widget" class:fullscreen-widget={isWidgetMode} class:expanded={isExpanded}>
@@ -71,6 +104,17 @@
 			{/if}
 		</div>
 		<div class="header-actions">
+			<!-- 자율주행 모니터링 토글 (채팅 뷰일 때만 표시) -->
+			{#if viewMode === 'chat'}
+				<button
+					class="icon-btn trigger-toggle"
+					class:active={isTriggerMonitoring}
+					onclick={toggleTriggerMonitoring}
+					title={isTriggerMonitoring ? '트리거 모니터링 중지' : '트리거 모니터링 시작'}
+				>
+					<Icon icon="solar:driving-bold-duotone" width="20" height="20" />
+				</button>
+			{/if}
 			{#if isWidgetMode}
 				{#if viewMode === 'chat'}
 					<button class="icon-btn" onclick={switchToSettings} title="설정">
@@ -215,6 +259,23 @@
 
 	.icon-btn.close:hover {
 		background: var(--color-close-hover);
+	}
+
+	.icon-btn.trigger-toggle {
+		border: 1px solid rgba(255, 255, 255, 0.3);
+	}
+
+	.icon-btn.trigger-toggle.active {
+		background: rgba(72, 187, 120, 0.3);
+		border-color: rgba(72, 187, 120, 0.8);
+	}
+
+	.icon-btn.trigger-toggle:hover {
+		background: var(--overlay-white-light);
+	}
+
+	.icon-btn.trigger-toggle.active:hover {
+		background: rgba(72, 187, 120, 0.4);
 	}
 
 	.widget-content {

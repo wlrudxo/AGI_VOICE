@@ -230,6 +230,21 @@ DM.Steer.Ang = <value>
 
 Provide appropriate control values (0.0 to 1.0 for Gas/Brake, rad for Steer.Ang) based on the situation.`;
 
+      // Dispatch event to ChatView (system message)
+      window.dispatchEvent(new CustomEvent('triggerChatMessage', {
+        detail: {
+          type: 'system',
+          triggerName: trigger.name,
+          content: systemContext
+        }
+      }));
+
+      // Load trigger AI settings from localStorage
+      const excludeHistory = localStorage.getItem('trigger_exclude_history') !== 'false'; // Default: true
+      const characterId = localStorage.getItem('trigger_character_id');
+      const promptTemplateId = localStorage.getItem('trigger_prompt_template_id');
+      const model = localStorage.getItem('trigger_model') || 'sonnet';
+
       // Call AI chat with trigger conversation
       const response: any = await invoke('chat', {
         request: {
@@ -237,20 +252,42 @@ Provide appropriate control values (0.0 to 1.0 for Gas/Brake, rad for Steer.Ang)
           message: 'Trigger activated. Please provide vehicle control response.',
           systemContext: systemContext,
           role: 'system',
-          excludeHistory: true, // Don't include previous messages
-          model: 'sonnet'
+          excludeHistory: excludeHistory,
+          characterId: characterId ? parseInt(characterId) : undefined,
+          promptTemplateId: promptTemplateId ? parseInt(promptTemplateId) : undefined,
+          model: model
         }
       });
 
       if (response.responses && response.responses.length > 0) {
         const llmResponse = response.responses[0];
         this.addLog(`  ✓ LLM response received (${llmResponse.length} chars)`);
+
+        // Dispatch event to ChatView (LLM response)
+        window.dispatchEvent(new CustomEvent('triggerChatMessage', {
+          detail: {
+            type: 'llm_response',
+            triggerName: trigger.name,
+            content: llmResponse
+          }
+        }));
+
         return llmResponse;
       }
 
       return null;
     } catch (error: any) {
       this.addLog(`  ✗ LLM request failed: ${error}`);
+
+      // Dispatch error event
+      window.dispatchEvent(new CustomEvent('triggerChatMessage', {
+        detail: {
+          type: 'error',
+          triggerName: trigger.name,
+          content: `LLM 요청 실패: ${error}`
+        }
+      }));
+
       return null;
     }
   }

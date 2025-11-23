@@ -184,6 +184,83 @@
 		loadChatSettings();
 	}
 
+	// 트리거 채팅 메시지 핸들러
+	function handleTriggerChatMessage(event: CustomEvent) {
+		const { type, triggerName, content } = event.detail;
+		const timestamp = new Date();
+
+		if (type === 'system') {
+			// System message (trigger activation)
+			messages.push({
+				role: 'action',
+				label: `⚡ 트리거 발동: ${triggerName}`,
+				timestamp
+			});
+			messages.push({
+				role: 'system',
+				content: content,
+				timestamp
+			});
+		} else if (type === 'llm_response') {
+			// Parse LLM response and display
+			const segments = parseWithSegments(content);
+			for (const segment of segments) {
+				if (segment.type === 'text') {
+					messages.push({
+						role: 'assistant',
+						content: segment.content,
+						timestamp
+					});
+				} else if (segment.type === 'action') {
+					messages.push({
+						role: 'action',
+						label: segment.label,
+						timestamp
+					});
+				}
+			}
+
+			// Execute vehicle commands from LLM response
+			if (isVehicleCommandParsingEnabled()) {
+				const commandSequence = parseVehicleCommands(content);
+				if (commandSequence.commands.length > 0) {
+					messages.push({
+						role: 'action',
+						label: '🚗 차량 제어 명령 실행',
+						timestamp
+					});
+					scrollToBottom();
+
+					executeCommandSequence(commandSequence, (msg) => {
+						console.log(msg);
+					}).then((result) => {
+						messages.push({
+							role: 'action',
+							label: `✓ 차량 제어 명령 실행 완료: ${result.successCount}/${result.totalCommands} (${result.executionTime}ms)`,
+							timestamp: new Date()
+						});
+						scrollToBottom();
+					}).catch((error) => {
+						messages.push({
+							role: 'error',
+							content: `차량 제어 명령 실행 실패: ${error.message || String(error)}`,
+							timestamp: new Date()
+						});
+						scrollToBottom();
+					});
+				}
+			}
+		} else if (type === 'error') {
+			messages.push({
+				role: 'error',
+				content: content,
+				timestamp
+			});
+		}
+
+		scrollToBottom();
+	}
+
 	onMount(() => {
 		loadChatSettings();
 
@@ -195,9 +272,11 @@
 
 		window.addEventListener('selectConversation', handleSelectConversation);
 		window.addEventListener('chatSettingsUpdated', handleSettingsUpdated);
+		window.addEventListener('triggerChatMessage', handleTriggerChatMessage);
 		return () => {
 			window.removeEventListener('selectConversation', handleSelectConversation);
 			window.removeEventListener('chatSettingsUpdated', handleSettingsUpdated);
+			window.removeEventListener('triggerChatMessage', handleTriggerChatMessage);
 		};
 	});
 
