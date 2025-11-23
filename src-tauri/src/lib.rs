@@ -108,6 +108,7 @@ pub fn run() {
             commands::update_trigger,
             commands::delete_trigger,
             commands::toggle_trigger,
+            commands::toggle_rule_control,
         ])
         .setup(|app| {
             // Initialize AI chat database connection

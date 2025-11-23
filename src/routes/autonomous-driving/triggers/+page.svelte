@@ -15,6 +15,8 @@
     logicOperator: 'AND' | 'OR';
     message: string;
     conversationId?: number;
+    useRuleControl: boolean;
+    debugAction: string;
     createdAt: string;
     updatedAt: string;
   }
@@ -61,7 +63,8 @@
     name: '',
     conditions: [{ variable: 'Car.v', operator: '>', value: '' }],
     logicOperator: 'AND' as 'AND' | 'OR',
-    message: ''
+    message: '',
+    debugAction: ''
   });
 
   function startCreate() {
@@ -70,7 +73,8 @@
       name: '',
       conditions: [{ variable: 'Car.v', operator: '>', value: '' }],
       logicOperator: 'AND',
-      message: ''
+      message: '',
+      debugAction: ''
     };
     showForm = true;
   }
@@ -81,7 +85,8 @@
       name: trigger.name,
       conditions: [...trigger.conditions],
       logicOperator: trigger.logicOperator,
-      message: trigger.message
+      message: trigger.message,
+      debugAction: trigger.debugAction
     };
     showForm = true;
   }
@@ -112,17 +117,21 @@
 
     try {
       if (editingTrigger) {
-        // Update existing
+        // Update existing (preserve useRuleControl)
         await invoke('update_trigger', {
           id: editingTrigger.id,
-          request: formData
+          request: {
+            ...formData,
+            useRuleControl: editingTrigger.useRuleControl
+          }
         });
       } else {
-        // Create new
+        // Create new (default useRuleControl to false)
         await invoke('create_trigger', {
           request: {
             ...formData,
-            conversationId: null
+            conversationId: null,
+            useRuleControl: false
           }
         });
       }
@@ -140,6 +149,15 @@
       await loadTriggers();
     } catch (error: any) {
       alert(`트리거 토글 실패: ${error}`);
+    }
+  }
+
+  async function toggleRuleControl(id: number) {
+    try {
+      await invoke('toggle_rule_control', { id });
+      await loadTriggers();
+    } catch (error: any) {
+      alert(`규칙 제어 토글 실패: ${error}`);
     }
   }
 
@@ -261,6 +279,21 @@
           </small>
         </div>
 
+        <!-- Debug Action -->
+        <div class="form-group">
+          <label for="debug-action">Action 예시 (LLM 응답 형식)</label>
+          <textarea
+            id="debug-action"
+            bind:value={formData.debugAction}
+            rows="6"
+            placeholder="예시: DM.Gas = 0.5&#10;DM.Brake = 0.0&#10;DM.Steer.Ang = 0.1"
+            class="textarea-field code-input"
+          ></textarea>
+          <small class="helper-text">
+            LLM 응답 형식으로 작성. 규칙 제어 ON 시 이 액션을 바로 실행합니다.
+          </small>
+        </div>
+
         <!-- Form Actions -->
         <div class="form-actions">
           <button class="btn-secondary" onclick={cancelForm}>취소</button>
@@ -287,16 +320,32 @@
               <div class="trigger-title-row">
                 <h3 class="trigger-name">{trigger.name}</h3>
                 <div class="trigger-actions">
-                  <label class="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={trigger.isActive}
-                      onchange={() => toggleActive(trigger.id)}
-                    />
-                    <span class="toggle-switch-track">
-                      <span class="toggle-switch-thumb"></span>
-                    </span>
-                  </label>
+                  <div class="toggle-group">
+                    <span class="toggle-label">트리거</span>
+                    <label class="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={trigger.isActive}
+                        onchange={() => toggleActive(trigger.id)}
+                      />
+                      <span class="toggle-switch-track">
+                        <span class="toggle-switch-thumb"></span>
+                      </span>
+                    </label>
+                  </div>
+                  <div class="toggle-group">
+                    <span class="toggle-label">규칙</span>
+                    <label class="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={trigger.useRuleControl}
+                        onchange={() => toggleRuleControl(trigger.id)}
+                      />
+                      <span class="toggle-switch-track">
+                        <span class="toggle-switch-thumb"></span>
+                      </span>
+                    </label>
+                  </div>
                   <button class="btn-icon" onclick={() => startEdit(trigger)}>
                     <Icon icon="solar:pen-bold" width="20" height="20" />
                   </button>
@@ -305,9 +354,14 @@
                   </button>
                 </div>
               </div>
-              <span class="trigger-status {trigger.isActive ? 'active' : 'inactive'}">
-                {trigger.isActive ? '활성' : '비활성'}
-              </span>
+              <div class="status-badges">
+                <span class="trigger-status {trigger.isActive ? 'active' : 'inactive'}">
+                  {trigger.isActive ? '활성' : '비활성'}
+                </span>
+                {#if trigger.useRuleControl}
+                  <span class="trigger-status rule-control">규칙 제어</span>
+                {/if}
+              </div>
             </div>
 
             <div class="trigger-body">
@@ -331,6 +385,13 @@
                 <h4>LLM 메시지</h4>
                 <p class="message-preview">{trigger.message}</p>
               </div>
+
+              {#if trigger.debugAction}
+                <div class="trigger-section">
+                  <h4>Action 예시</h4>
+                  <pre class="action-preview">{trigger.debugAction}</pre>
+                </div>
+              {/if}
             </div>
           </div>
         {/each}
@@ -526,6 +587,29 @@
     color: var(--color-text-muted);
   }
 
+  .trigger-status.rule-control {
+    background: var(--color-primary-bg-light);
+    color: var(--color-primary);
+  }
+
+  .status-badges {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .toggle-label {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+  }
+
   .trigger-body {
     display: flex;
     flex-direction: column;
@@ -585,5 +669,25 @@
     color: var(--color-text-secondary);
     font-size: 0.9rem;
     line-height: 1.6;
+  }
+
+  .code-input {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    background: var(--color-background);
+  }
+
+  /* Action preview */
+  .action-preview {
+    margin: 0;
+    padding: 0.75rem;
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
+    color: var(--color-text-secondary);
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    overflow-x: auto;
   }
 </style>

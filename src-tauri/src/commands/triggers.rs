@@ -29,6 +29,8 @@ pub async fn create_trigger(
         request.logic_operator,
         request.message,
         request.conversation_id,
+        request.use_rule_control,
+        request.debug_action,
     );
 
     state.add(trigger).await
@@ -53,6 +55,8 @@ pub async fn update_trigger(
         logic_operator: request.logic_operator,
         message: request.message,
         conversation_id: request.conversation_id,
+        use_rule_control: request.use_rule_control,
+        debug_action: request.debug_action,
         created_at: existing.created_at,
         updated_at: chrono::Utc::now(),
     };
@@ -70,4 +74,10 @@ pub async fn delete_trigger(id: u32, state: State<'_, TriggersState>) -> Result<
 #[tauri::command]
 pub async fn toggle_trigger(id: u32, state: State<'_, TriggersState>) -> Result<Trigger, String> {
     state.toggle(id).await
+}
+
+/// Toggle trigger rule control
+#[tauri::command]
+pub async fn toggle_rule_control(id: u32, state: State<'_, TriggersState>) -> Result<Trigger, String> {
+    state.toggle_rule_control(id).await
 }

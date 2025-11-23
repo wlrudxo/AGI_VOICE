@@ -21,6 +21,10 @@ pub struct Trigger {
     pub logic_operator: String, // "AND" or "OR"
     pub message: String,
     pub conversation_id: Option<i64>,
+    #[serde(default)] // Default to false if missing
+    pub use_rule_control: bool, // Debug mode: skip LLM, execute action directly
+    #[serde(default)] // Default to empty string if missing
+    pub debug_action: String, // Action in LLM response format (always stored, activated by use_rule_control)
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -34,6 +38,8 @@ impl Trigger {
         logic_operator: String,
         message: String,
         conversation_id: Option<i64>,
+        use_rule_control: bool,
+        debug_action: String,
     ) -> Self {
         let now = Utc::now();
         Self {
@@ -44,6 +50,8 @@ impl Trigger {
             logic_operator,
             message,
             conversation_id,
+            use_rule_control,
+            debug_action,
             created_at: now,
             updated_at: now,
         }
@@ -76,6 +84,8 @@ pub struct CreateTriggerRequest {
     pub logic_operator: String,
     pub message: String,
     pub conversation_id: Option<i64>,
+    pub use_rule_control: bool,
+    pub debug_action: String,
 }
 
 /// Request to update a trigger
@@ -87,4 +97,6 @@ pub struct UpdateTriggerRequest {
     pub logic_operator: String,
     pub message: String,
     pub conversation_id: Option<i64>,
+    pub use_rule_control: bool,
+    pub debug_action: String,
 }

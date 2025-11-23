@@ -33,13 +33,17 @@ dirs = "5.0"
 
 # Development profile optimizations for faster builds
 [profile.dev]
-# Optimize dependencies but not our code (much faster rebuilds)
-opt-level = 1
+# No optimization for our code (fastest rebuilds)
+opt-level = 0
 incremental = true
+# Reduce debug info for faster linking
+debug = 1
 
 [profile.dev.package."*"]
-# Optimize all dependencies
+# Optimize all dependencies (but not our code)
 opt-level = 3
+# No debug info for dependencies (faster builds)
+debug = false
 
 # Release profile
 [profile.release]

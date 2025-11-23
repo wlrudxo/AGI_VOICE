@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 use super::types::{Trigger, TriggersData};
 
 /// Triggers state (in-memory + file persistence)
@@ -118,6 +118,23 @@ impl TriggersState {
             .ok_or_else(|| format!("Trigger with id {} not found", id))?;
 
         trigger.is_active = !trigger.is_active;
+        trigger.updated_at = chrono::Utc::now();
+
+        let updated = trigger.clone();
+        drop(data);
+
+        self.save_to_file().await?;
+        Ok(updated)
+    }
+
+    /// Toggle trigger rule control
+    pub async fn toggle_rule_control(&self, id: u32) -> Result<Trigger, String> {
+        let mut data = self.data.write().await;
+
+        let trigger = data.triggers.iter_mut().find(|t| t.id == id)
+            .ok_or_else(|| format!("Trigger with id {} not found", id))?;
+
+        trigger.use_rule_control = !trigger.use_rule_control;
         trigger.updated_at = chrono::Utc::now();
 
         let updated = trigger.clone();
