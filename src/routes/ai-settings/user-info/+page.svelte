@@ -2,12 +2,14 @@
 	import { onMount } from 'svelte';
 	import Icon from '@iconify/svelte';
 	import { dialogStore } from '$lib/stores/dialogStore.svelte';
+	import HelpModal from '$lib/components/HelpModal.svelte';
 
 	// State
 	let userName = $state('');
 	let userInfo = $state('');
 	let isSaving = $state(false);
 	let lastSaved = $state(null);
+	let showHelpModal = $state(false);
 
 	// LocalStorage 키
 	const USER_NAME_KEY = 'agi_voice_user_name';
@@ -52,7 +54,12 @@
 <div class="page-container">
 	<div class="page-header">
 		<div>
-			<h1>유저 정보</h1>
+			<div class="title-row">
+				<h1>유저 정보</h1>
+				<button class="btn-icon help-btn" onclick={() => (showHelpModal = true)}>
+					<Icon icon="solar:question-circle-bold" width="20" height="20" />
+				</button>
+			</div>
 			<p class="page-description">AI가 참고할 사용자 정보를 입력하세요.</p>
 		</div>
 		<button class="btn-primary" onclick={saveUserInfo} disabled={isSaving}>
@@ -101,31 +108,120 @@
 			</div>
 		{/if}
 
-		<div class="hint-box">
-			<Icon icon="solar:lightbulb-bolt-bold-duotone" width="20" height="20" />
-			<div>
-				<strong>💡 변수 치환 시스템:</strong>
-				<p>
-					시스템 메시지, 캐릭터 프롬프트, 명령어 템플릿에서 다음 변수를 사용할 수 있습니다:
-				</p>
-				<ul>
-					<li><code>&#123;&#123;user&#125;&#125;</code> → 사용자 이름으로 대체됩니다</li>
-					<li><code>&#123;&#123;char&#125;&#125;</code> → 선택된 캐릭터 이름으로 대체됩니다</li>
-				</ul>
-				<p class="example">
-					예시: "You are in a text messaging conversation with
-					<code>&#123;&#123;user&#125;&#125;</code>. Respond as <code>&#123;&#123;char&#125;&#125;</code>
-					would."
-				</p>
-			</div>
-		</div>
 	</div>
 </div>
+
+<!-- Help Modal -->
+<HelpModal
+	bind:visible={showHelpModal}
+	title="변수 치환 시스템 도움말"
+	onClose={() => (showHelpModal = false)}
+>
+	<section class="help-section">
+		<h4>🔄 변수 치환 시스템이란?</h4>
+		<p class="help-desc">
+			프롬프트에서 특정 변수를 사용하면 실제 대화 시 자동으로 실제 값으로 치환됩니다.
+			이를 통해 동적이고 개인화된 AI 대화를 구성할 수 있습니다.
+		</p>
+	</section>
+
+	<section class="help-section">
+		<h4>📋 사용 가능한 변수</h4>
+
+		<div class="command-example">
+			<code>&#123;&#123;user&#125;&#125;</code>
+			<p>
+				사용자 이름으로 대체됩니다.
+				예: "홍길동" 입력 시 → "Hello &#123;&#123;user&#125;&#125;!" → "Hello 홍길동!"
+			</p>
+		</div>
+
+		<div class="command-example">
+			<code>&#123;&#123;char&#125;&#125;</code>
+			<p>
+				선택된 캐릭터 이름으로 대체됩니다.
+				예: "Aris" 선택 시 → "Respond as &#123;&#123;char&#125;&#125;" → "Respond as Aris"
+			</p>
+		</div>
+	</section>
+
+	<section class="help-section">
+		<h4>💡 사용 예시</h4>
+
+		<div class="example-card">
+			<h5>시스템 메시지에서 사용</h5>
+			<p>
+				"You are in a text messaging conversation with <code>&#123;&#123;user&#125;&#125;</code>.
+				Respond as <code>&#123;&#123;char&#125;&#125;</code> would, using a friendly and encouraging tone."
+			</p>
+		</div>
+
+		<div class="example-card">
+			<h5>실제 치환 결과</h5>
+			<p>
+				사용자: "홍길동", 캐릭터: "Aris" 선택 시<br/>
+				→ "You are in a text messaging conversation with <strong>홍길동</strong>.
+				Respond as <strong>Aris</strong> would, using a friendly and encouraging tone."
+			</p>
+		</div>
+	</section>
+
+	<section class="help-section">
+		<h4>🎯 변수 사용 위치</h4>
+		<ul class="help-list">
+			<li><strong>시스템 메시지</strong>: AI의 역할과 행동 정의</li>
+			<li><strong>캐릭터 프롬프트</strong>: 캐릭터 성격과 말투 정의</li>
+			<li><strong>명령어 템플릿</strong>: 명령어 실행 시 참고 정보</li>
+		</ul>
+	</section>
+
+	<section class="help-section">
+		<h4>📝 사용자 정보 활용</h4>
+		<p class="help-desc">
+			<strong>사용자 정보</strong> 필드는 변수로 치환되지 않지만,
+			프롬프트 시스템에 포함되어 AI가 사용자의 맥락을 이해하는 데 도움을 줍니다.
+		</p>
+		<ul class="help-list">
+			<li>연구 분야, 관심사, 사용 환경 등을 입력</li>
+			<li>AI가 더 맞춤화된 답변 제공</li>
+			<li>대화 품질 향상</li>
+		</ul>
+	</section>
+</HelpModal>
 
 <style>
 	.page-container {
 		max-width: 900px;
 		margin: 0 auto;
+	}
+
+	/* Title Row with Help Button */
+	.title-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	/* help-btn 스타일은 app.css에 정의됨 */
+
+	.example-card {
+		background: var(--color-background);
+		padding: 1rem;
+		border-radius: 0.5rem;
+		margin-top: 0.75rem;
+	}
+
+	.example-card h5 {
+		margin: 0 0 0.5rem 0;
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: var(--color-primary);
+	}
+
+	.example-card p {
+		margin: 0;
+		color: var(--color-text-secondary);
+		line-height: 1.8;
 	}
 
 

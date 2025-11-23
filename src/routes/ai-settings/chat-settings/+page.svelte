@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import Icon from '@iconify/svelte';
+	import HelpModal from '$lib/components/HelpModal.svelte';
 
 	interface Character {
 		id: number;
@@ -32,6 +33,7 @@
 	let loading = $state(true);
 	let saving = $state(false);
 	let message = $state<{ type: 'success' | 'error'; text: string } | null>(null);
+	let showHelpModal = $state(false);
 
 	async function loadData() {
 		try {
@@ -104,10 +106,13 @@
 
 <div class="chat-settings-page">
 	<div class="page-header">
-		<div>
+		<div class="title-row">
 			<h1>채팅 설정</h1>
-			<p class="page-description">AI 채팅에서 사용할 기본 캐릭터와 시스템 템플릿을 선택하세요.</p>
+			<button class="btn-icon help-btn" onclick={() => (showHelpModal = true)}>
+				<Icon icon="solar:question-circle-bold" width="20" height="20" />
+			</button>
 		</div>
+		<p class="page-description">AI 채팅에서 사용할 기본 캐릭터와 시스템 템플릿을 선택하세요.</p>
 	</div>
 
 	{#if loading}
@@ -175,21 +180,62 @@
 			</div>
 		</form>
 
-		<!-- 안내 카드 -->
-		<div class="info-card">
-			<h3>
-				<Icon icon="solar:info-circle-bold-duotone" width="20" height="20" />
-				설정 안내
-			</h3>
-			<ul>
-				<li>• <strong>시스템 템플릿</strong>: AI의 역할과 행동 방식을 정의하는 프롬프트입니다.</li>
-				<li>• <strong>캐릭터</strong>: AI 채팅 위젯에서 사용할 캐릭터를 선택합니다.</li>
-				<li>• 설정은 자동으로 채팅 위젯에 적용됩니다.</li>
-				<li>• 캐릭터와 템플릿은 AI 설정 메뉴에서 관리할 수 있습니다.</li>
-			</ul>
-		</div>
 	{/if}
 </div>
+
+<!-- Help Modal -->
+<HelpModal
+	bind:visible={showHelpModal}
+	title="채팅 설정 도움말"
+	onClose={() => (showHelpModal = false)}
+>
+	<section class="help-section">
+		<h4>⚙️ 채팅 설정이란?</h4>
+		<p class="help-desc">
+			AI 채팅 위젯에서 사용할 기본 캐릭터와 시스템 템플릿을 설정합니다.
+			이 설정은 새로운 대화를 시작할 때 자동으로 적용됩니다.
+		</p>
+	</section>
+
+	<section class="help-section">
+		<h4>📋 설정 구성 요소</h4>
+
+		<div class="command-example">
+			<code>시스템 템플릿</code>
+			<p>
+				AI의 역할과 행동 방식을 정의하는 프롬프트입니다.
+				예: "자율주행 연구 전문가", "일반 AI 어시스턴트" 등
+			</p>
+		</div>
+
+		<div class="command-example">
+			<code>캐릭터</code>
+			<p>
+				AI의 말투, 성격, 톤을 정의합니다.
+				예: "Aris (Blue Archive)" - 친근하고 격려적인 톤
+			</p>
+		</div>
+	</section>
+
+	<section class="help-section">
+		<h4>🔄 설정 적용 방법</h4>
+		<ol class="help-list">
+			<li><strong>시스템 템플릿</strong>과 <strong>캐릭터</strong>를 선택합니다.</li>
+			<li><strong>설정 저장</strong> 버튼을 클릭합니다.</li>
+			<li>채팅 위젯에서 새 대화를 시작하면 자동으로 적용됩니다.</li>
+			<li>기존 대화는 설정 변경의 영향을 받지 않습니다.</li>
+		</ol>
+	</section>
+
+	<section class="help-section">
+		<h4>💡 Tip</h4>
+		<ul class="help-list">
+			<li>캐릭터와 템플릿은 <strong>AI 설정</strong> 메뉴에서 추가/수정/삭제할 수 있습니다.</li>
+			<li>시스템 템플릿에서는 변수 치환을 지원합니다 (예: <code>&#123;&#123;user&#125;&#125;</code>, <code>&#123;&#123;char&#125;&#125;</code>).</li>
+			<li>설정 변경은 즉시 채팅 위젯에 반영됩니다.</li>
+		</ul>
+	</section>
+</HelpModal>
 
 <style>
 	.chat-settings-page {
@@ -200,6 +246,16 @@
 	.page-header {
 		margin-bottom: 2rem;
 	}
+
+	/* Title Row with Help Button */
+	.title-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-bottom: 0.5rem;
+	}
+
+	/* help-btn 스타일은 app.css에 정의됨 */
 
 
 	.settings-form {

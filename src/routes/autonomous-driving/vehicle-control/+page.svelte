@@ -72,7 +72,7 @@
 <div class="vehicle-control">
   <div class="page-header">
     <div>
-      <h1>🚗 차량 제어</h1>
+      <h1>차량 제어</h1>
       <p class="page-description">CarMaker 차량을 실시간으로 제어합니다.</p>
     </div>
     <div class="header-actions">
@@ -94,7 +94,6 @@
   <!-- Simulation Control -->
   <section class="card section">
     <h2 class="section-title text-primary">
-      <Icon icon="solar:play-circle-bold-duotone" width="24" height="24" />
       Simulation Control
     </h2>
     <div class="control-buttons">
@@ -137,7 +136,6 @@
   <section class="card section">
     <div class="section-header">
       <h2 class="section-title text-primary">
-        <Icon icon="solar:chart-bold-duotone" width="24" height="24" />
         Vehicle Data Monitor
       </h2>
       <button class="btn-primary" onclick={() => carmakerStore.toggleMonitoring()}>
@@ -172,7 +170,6 @@
   <!-- Log Section -->
   <section class="card section">
     <h2 class="section-title text-primary">
-      <Icon icon="solar:document-text-bold-duotone" width="24" height="24" />
       Log
     </h2>
     <div class="log-container">

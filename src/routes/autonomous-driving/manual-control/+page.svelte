@@ -64,7 +64,7 @@
 <div class="manual-control">
   <div class="page-header">
     <div>
-      <h1>🎮 메뉴얼 제어</h1>
+      <h1>메뉴얼 제어</h1>
       <p class="page-description">차량을 수동으로 제어하고 명령을 실행합니다.</p>
     </div>
   </div>
@@ -338,13 +338,5 @@
     flex: 1;
   }
 
-  /* Help button */
-  .help-btn {
-    opacity: 0.7;
-    transition: opacity 0.2s;
-  }
-
-  .help-btn:hover {
-    opacity: 1;
-  }
+  /* help-btn 스타일은 app.css에 정의됨 */
 </style>

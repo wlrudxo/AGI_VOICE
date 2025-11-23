@@ -188,7 +188,7 @@
 <div class="trigger-settings">
   <div class="page-header">
     <div class="title-row">
-      <h1>⚡ 트리거 설정</h1>
+      <h1>트리거 설정</h1>
       <button class="btn-icon help-btn" onclick={() => (showHelpModal = true)}>
         <Icon icon="solar:question-circle-bold" width="20" height="20" />
       </button>
@@ -572,13 +572,7 @@
     gap: 0.5rem;
   }
 
-  .help-btn {
-    color: var(--color-primary);
-  }
-
-  .help-btn:hover {
-    background: var(--color-primary-bg-light);
-  }
+  /* help-btn 스타일은 app.css에 정의됨 */
 
   /* Help Modal Styles */
   :global(.help-section) {

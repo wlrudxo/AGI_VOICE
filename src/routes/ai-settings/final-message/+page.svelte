@@ -2,11 +2,13 @@
 	import { onMount } from 'svelte';
 	import Icon from '@iconify/svelte';
 	import { dialogStore } from '$lib/stores/dialogStore.svelte';
+	import HelpModal from '$lib/components/HelpModal.svelte';
 
 	// State
 	let finalMessage = $state('');
 	let isSaving = $state(false);
 	let lastSaved = $state(null);
+	let showHelpModal = $state(false);
 
 	// LocalStorage 키
 	const STORAGE_KEY = 'agi_voice_final_message';
@@ -59,7 +61,12 @@
 <div class="page-container">
 	<div class="page-header">
 		<div>
-			<h1>최종 메시지</h1>
+			<div class="title-row">
+				<h1>최종 메시지</h1>
+				<button class="btn-icon help-btn" onclick={() => (showHelpModal = true)}>
+					<Icon icon="solar:question-circle-bold" width="20" height="20" />
+				</button>
+			</div>
 			<p class="page-description">AI 응답 생성 전 마지막으로 체크할 사항을 입력하세요.</p>
 		</div>
 		<div class="header-actions">
@@ -90,30 +97,135 @@
 			</div>
 		{/if}
 
-		<div class="hint-box">
-			<Icon icon="solar:lightbulb-bolt-bold-duotone" width="20" height="20" />
-			<div>
-				<strong>💡 Tip:</strong> 최종 메시지는 AI가 응답을 생성하기 전에 마지막으로 확인할 사항입니다.
-				<ul>
-					<li>응답 형식 검증 (태그, 날짜 형식 등)</li>
-					<li>응답 톤 확인 (친근함, 격려 등)</li>
-					<li>데이터 유효성 검사</li>
-					<li>추가 지침 사항</li>
-				</ul>
-			</div>
-		</div>
-
-		<div class="example-box">
-			<h3>기본 템플릿</h3>
-			<pre>{DEFAULT_TEMPLATE}</pre>
-		</div>
 	</div>
 </div>
+
+<!-- Help Modal -->
+<HelpModal
+	bind:visible={showHelpModal}
+	title="최종 메시지 도움말"
+	onClose={() => (showHelpModal = false)}
+>
+	<section class="help-section">
+		<h4>📋 최종 메시지란?</h4>
+		<p class="help-desc">
+			AI가 응답을 생성하기 직전에 마지막으로 참고할 체크리스트입니다.
+			응답의 품질, 형식, 톤 등을 검증하는 지침을 작성할 수 있습니다.
+		</p>
+	</section>
+
+	<section class="help-section">
+		<h4>💡 Tip: 최종 메시지 활용법</h4>
+
+		<div class="command-example">
+			<code>응답 형식 검증</code>
+			<p>
+				태그 형식, 날짜 형식, 데이터 구조 등이 올바른지 확인하도록 지시합니다.
+				예: "Check if all required tags are properly formatted"
+			</p>
+		</div>
+
+		<div class="command-example">
+			<code>응답 톤 확인</code>
+			<p>
+				친근함, 격려, 전문성 등 응답의 톤이 적절한지 확인합니다.
+				예: "Ensure the response is clear and professional"
+			</p>
+		</div>
+
+		<div class="command-example">
+			<code>데이터 유효성 검사</code>
+			<p>
+				자율주행 관련 기술 정보, 계산 결과 등의 정확성을 검증합니다.
+				예: "Verify technical accuracy of autonomous driving concepts"
+			</p>
+		</div>
+
+		<div class="command-example">
+			<code>추가 지침</code>
+			<p>
+				참고 자료 제공, 예시 포함 등 추가적인 응답 개선 지침을 작성합니다.
+				예: "Provide relevant references or examples when appropriate"
+			</p>
+		</div>
+	</section>
+
+	<section class="help-section">
+		<h4>📝 기본 템플릿</h4>
+		<p class="help-desc">초기화 버튼을 클릭하면 아래 기본 템플릿으로 복원됩니다.</p>
+
+		<div class="example-box">
+			<pre>{DEFAULT_TEMPLATE}</pre>
+		</div>
+	</section>
+
+	<section class="help-section">
+		<h4>🎯 사용 시나리오</h4>
+
+		<div class="example-card">
+			<h5>자율주행 연구 프로젝트</h5>
+			<p>
+				"- Verify all SUMO XML tags are properly closed<br/>
+				- Ensure vehicle parameters are within realistic ranges<br/>
+				- Include simulation time estimates when relevant<br/>
+				- Provide references to SUMO documentation"
+			</p>
+		</div>
+
+		<div class="example-card">
+			<h5>일반 AI 채팅</h5>
+			<p>
+				"- Use a friendly and encouraging tone<br/>
+				- Break down complex concepts into simple steps<br/>
+				- Provide actionable examples<br/>
+				- End with a positive note"
+			</p>
+		</div>
+	</section>
+
+	<section class="help-section">
+		<h4>⚠️ 주의사항</h4>
+		<ul class="help-list">
+			<li>너무 복잡한 체크리스트는 응답 생성 시간을 증가시킬 수 있습니다.</li>
+			<li>명확하고 구체적인 지침을 작성하세요.</li>
+			<li>최종 메시지는 모든 대화에 적용됩니다.</li>
+		</ul>
+	</section>
+</HelpModal>
 
 <style>
 	.page-container {
 		max-width: 900px;
 		margin: 0 auto;
+	}
+
+	/* Title Row with Help Button */
+	.title-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	/* help-btn 스타일은 app.css에 정의됨 */
+
+	.example-card {
+		background: var(--color-background);
+		padding: 1rem;
+		border-radius: 0.5rem;
+		margin-top: 0.75rem;
+	}
+
+	.example-card h5 {
+		margin: 0 0 0.5rem 0;
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: var(--color-primary);
+	}
+
+	.example-card p {
+		margin: 0;
+		color: var(--color-text-secondary);
+		line-height: 1.8;
 	}
 
 
@@ -132,6 +244,10 @@
 
 	.textarea-wrapper {
 		margin-bottom: 1rem;
+	}
+
+	.textarea-wrapper textarea {
+		min-height: 300px;
 	}
 
 	.save-info {
