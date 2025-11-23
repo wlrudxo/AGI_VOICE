@@ -4,6 +4,7 @@
   import Icon from '@iconify/svelte';
   import { carmakerStore } from '$lib/stores/carmakerStore.svelte';
   import { triggerMonitor } from '$lib/stores/triggerMonitor.svelte';
+  import HelpModal from '$lib/components/HelpModal.svelte';
 
   interface TriggerCondition {
     id: number;
@@ -25,6 +26,9 @@
 
   // Triggers from backend
   let triggers: TriggerCondition[] = $state([]);
+
+  // Help modal
+  let showHelpModal = $state(false);
 
   // Load triggers on mount
   onMount(async () => {
@@ -183,10 +187,13 @@
 
 <div class="trigger-settings">
   <div class="page-header">
-    <div>
+    <div class="title-row">
       <h1>⚡ 트리거 설정</h1>
-      <p class="page-description">Vehicle Data 조건에 따라 LLM 메시지를 자동으로 전송합니다.</p>
+      <button class="btn-icon help-btn" onclick={() => (showHelpModal = true)}>
+        <Icon icon="solar:question-circle-bold" width="20" height="20" />
+      </button>
     </div>
+    <p class="page-description">Vehicle Data 조건에 따라 LLM 메시지를 자동으로 전송합니다.</p>
     <div class="header-actions">
       <button class="btn-primary" onclick={startCreate}>
         <Icon icon="solar:add-circle-bold" width="20" height="20" />
@@ -453,10 +460,197 @@
   {/if}
 </div>
 
+<!-- Help Modal -->
+<HelpModal
+  bind:visible={showHelpModal}
+  title="트리거 설정 도움말"
+  onClose={() => (showHelpModal = false)}
+>
+  <section class="help-section">
+    <h4>⚡ 트리거란?</h4>
+    <p class="help-desc">
+      트리거는 차량 데이터(속도, 조향각 등)가 특정 조건을 만족할 때 자동으로 LLM에 메시지를 전송하거나 규칙 기반 제어를 실행하는 시스템입니다.
+    </p>
+  </section>
+
+  <section class="help-section">
+    <h4>🎯 트리거 구성 요소</h4>
+    <ul class="help-list">
+      <li><strong>이름</strong>: 트리거를 식별할 수 있는 이름</li>
+      <li><strong>발동 조건</strong>: 차량 데이터 변수와 비교 연산자, 값으로 구성</li>
+      <li><strong>논리 연산자</strong>: AND (모두 충족) 또는 OR (하나 이상 충족)</li>
+      <li><strong>LLM 메시지</strong>: 조건 충족 시 LLM에 전송할 메시지</li>
+      <li><strong>Action 예시</strong>: 규칙 제어 모드에서 실행할 명령</li>
+    </ul>
+  </section>
+
+  <section class="help-section">
+    <h4>🔧 동작 모드</h4>
+
+    <div class="mode-card">
+      <h5>📊 LLM 모드 (트리거 토글 ON, 규칙 토글 OFF)</h5>
+      <p>
+        1. 트리거 감지<br/>
+        2. 시뮬레이션 초감속 (0.001x)<br/>
+        3. LLM에 상황 전달 및 응답 대기<br/>
+        4. 시뮬레이션 정상 속도 (1.0x)<br/>
+        5. LLM 응답 파싱 및 명령 실행
+      </p>
+    </div>
+
+    <div class="mode-card">
+      <h5>📝 규칙 모드 (규칙 토글 ON)</h5>
+      <p>
+        1. 트리거 감지<br/>
+        2. 시뮬레이션 초감속 (0.001x)<br/>
+        3. 1초 대기<br/>
+        4. 시뮬레이션 정상 속도 (1.0x)<br/>
+        5. Action 예시의 명령 실행
+      </p>
+    </div>
+  </section>
+
+  <section class="help-section">
+    <h4>📋 Action 예시 형식</h4>
+    <p class="help-desc">규칙 모드에서 실행할 차량 제어 명령을 작성합니다.</p>
+
+    <div class="command-example">
+      <code>DM.Gas = 0.5</code>
+      <p>가스 페달을 0.5로 설정</p>
+    </div>
+
+    <div class="command-example">
+      <code>DM.Brake = 0.3</code>
+      <p>브레이크 페달을 0.3으로 설정</p>
+    </div>
+
+    <div class="command-example">
+      <code>DM.Steer.Ang = 0.1</code>
+      <p>조향각을 0.1 라디안으로 설정</p>
+    </div>
+  </section>
+
+  <section class="help-section">
+    <h4>📌 사용 예시</h4>
+
+    <div class="example-card">
+      <h5>속도 초과 감지 트리거</h5>
+      <ul class="help-list">
+        <li><strong>이름</strong>: 속도 초과 경고</li>
+        <li><strong>조건</strong>: Car.v > 27.78 (100km/h 초과)</li>
+        <li><strong>메시지</strong>: "차량 속도가 100km/h를 초과했습니다. 감속이 필요합니다."</li>
+        <li><strong>Action</strong>:<br/>
+          <code>DM.Gas = 0.0<br/>DM.Brake = 0.5</code>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="help-section">
+    <h4>⚙️ 모니터링 활성화</h4>
+    <p class="help-desc">
+      트리거를 사용하려면:
+    </p>
+    <ol class="help-list">
+      <li>차량 제어 탭에서 CarMaker 연결</li>
+      <li>차량 제어 탭에서 Vehicle Monitoring 시작</li>
+      <li>트리거 설정 탭에서 "Start Trigger Monitoring" 클릭</li>
+      <li>트리거 활성화 (트리거 토글 ON)</li>
+    </ol>
+  </section>
+</HelpModal>
+
 <style>
   .trigger-settings {
     max-width: 1200px;
     margin: 0 auto;
+  }
+
+  /* Title Row with Help Button */
+  .title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .help-btn {
+    color: var(--color-primary);
+  }
+
+  .help-btn:hover {
+    background: var(--color-primary-bg-light);
+  }
+
+  /* Help Modal Styles */
+  :global(.help-section) {
+    margin-bottom: 1.5rem;
+  }
+
+  :global(.help-section h4) {
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  :global(.help-section h5) {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-primary);
+  }
+
+  :global(.help-desc) {
+    margin: 0;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+  }
+
+  :global(.help-list) {
+    margin: 0.5rem 0 0 1.25rem;
+    padding: 0;
+    color: var(--color-text-secondary);
+    line-height: 1.8;
+  }
+
+  :global(.help-list li) {
+    margin-bottom: 0.375rem;
+  }
+
+  :global(.mode-card),
+  :global(.example-card) {
+    background: var(--color-background);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  :global(.mode-card p),
+  :global(.example-card p) {
+    margin: 0;
+    color: var(--color-text-secondary);
+    line-height: 1.8;
+  }
+
+  :global(.command-example) {
+    background: var(--color-background);
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    margin: 0.5rem 0;
+  }
+
+  :global(.command-example code) {
+    display: block;
+    color: var(--color-primary);
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+  }
+
+  :global(.command-example p) {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
   }
 
   /* Monitoring Control - use existing section styles from app.css */
