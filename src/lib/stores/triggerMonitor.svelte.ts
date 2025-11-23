@@ -149,33 +149,64 @@ class TriggerMonitor {
   }
 
   /**
-   * Execute emergency deceleration sequence
-   * 1. Pause simulation (time scale = 0.001x)
-   * 2. Emergency brake (brake=1.0, gas=0.0)
-   * 3. Wait 1 second (real time)
-   * 4. Resume simulation (time scale = 1.0x)
+   * Execute trigger action sequence
+   * 1. Trigger detected
+   * 2. Pause simulation (time scale = 0.001x - ultra slow motion)
+   * 3. LLM mode: Request LLM and wait for response / Rule mode: Wait 1 second
+   * 4. Resume simulation (time scale = 1.0x) + Execute commands
    */
   private async executeEmergencyDeceleration(trigger: Trigger): Promise<void> {
     try {
       // Step 1: Pause simulation (ultra-slow motion)
-      this.addLog('  → Step 1: Pausing simulation (time scale = 0.001x)');
+      this.addLog('  → Pausing simulation (time scale = 0.001x)');
       const wasMonitoring = await carmakerStore.pauseSimulation();
 
-      // Step 2: Emergency deceleration
-      this.addLog('  → Step 2: Emergency deceleration (brake=1.0, gas=0.0)');
-      await carmakerStore.emergencyDecelerate(5000);
+      if (trigger.useRuleControl) {
+        // Step 2: Rule mode - Wait 1 second
+        this.addLog('  → Rule mode: Waiting 1 second...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Step 3: Wait 1 second (real time)
-      this.addLog('  → Step 3: Waiting 1 second...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
+        // Step 3: Resume simulation and execute rule action
+        this.addLog('  → Resuming simulation (time scale = 1.0x)');
+        await carmakerStore.resumeSimulation(wasMonitoring);
 
-      // Step 4: Resume simulation (normal speed)
-      this.addLog('  → Step 4: Resuming simulation (time scale = 1.0x)');
-      await carmakerStore.resumeSimulation(wasMonitoring);
+        // Execute rule-based commands (parse debugAction)
+        if (trigger.debugAction) {
+          this.addLog('  → Executing rule-based commands');
+          await this.executeRuleCommands(trigger.debugAction);
+        }
+      } else {
+        // LLM mode (to be implemented)
+        this.addLog('  → LLM mode: Not yet implemented');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await carmakerStore.resumeSimulation(wasMonitoring);
+      }
 
-      this.addLog('  ✓ Emergency deceleration sequence completed');
+      this.addLog('  ✓ Trigger action sequence completed');
     } catch (error: any) {
-      this.addLog(`  ✗ Emergency deceleration failed: ${error}`);
+      this.addLog(`  ✗ Trigger action failed: ${error}`);
+    }
+  }
+
+  /**
+   * Execute rule-based commands from debugAction
+   * Parse format: "DM.Gas = 0.5\nDM.Brake = 0.0\n..."
+   */
+  private async executeRuleCommands(debugAction: string): Promise<void> {
+    const lines = debugAction.split('\n').filter(line => line.trim());
+
+    for (const line of lines) {
+      const match = line.match(/^\s*([A-Za-z0-9._]+)\s*=\s*([0-9.-]+)\s*$/);
+      if (match) {
+        const [_, variable, value] = match;
+        const command = `DVAWrite ${variable} ${value} 2000 Abs`;
+        try {
+          await carmakerStore.executeCommand(command);
+          this.addLog(`    ✓ ${variable} = ${value}`);
+        } catch (error: any) {
+          this.addLog(`    ✗ Failed: ${variable} = ${value}`);
+        }
+      }
     }
   }
 
