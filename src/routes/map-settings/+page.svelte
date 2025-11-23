@@ -1,9 +1,10 @@
 <script>
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 
 	onMount(() => {
 		// Redirect to generator as default
-		window.location.href = '/map-settings/generator';
+		goto('/map-settings/generator');
 	});
 </script>
 

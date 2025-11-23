@@ -206,7 +206,7 @@
       <div class="form-body">
         <!-- Trigger Name -->
         <div class="form-group">
-          <label for="trigger-name">트리거 이름</label>
+          <label for="trigger-name" class="form-label">트리거 이름</label>
           <input
             type="text"
             id="trigger-name"
@@ -219,7 +219,7 @@
         <!-- Conditions -->
         <div class="form-group">
           <div class="condition-header">
-            <label>발동 조건</label>
+            <label class="form-label">발동 조건</label>
             <div class="logic-toggle">
               <button
                 class="logic-btn"
@@ -272,7 +272,7 @@
 
         <!-- LLM Message -->
         <div class="form-group">
-          <label for="llm-message">LLM 전송 메시지</label>
+          <label for="llm-message" class="form-label">LLM 전송 메시지</label>
           <textarea
             id="llm-message"
             bind:value={formData.message}
@@ -280,14 +280,14 @@
             placeholder="조건 충족 시 LLM에 전송할 메시지를 입력하세요. Vehicle Data는 자동으로 포함됩니다."
             class="textarea-field"
           ></textarea>
-          <small class="helper-text">
+          <p class="form-hint">
             트리거 발동 시 이 메시지와 함께 현재 Vehicle Data가 LLM에 전송됩니다.
-          </small>
+          </p>
         </div>
 
         <!-- Debug Action -->
         <div class="form-group">
-          <label for="debug-action">Action 예시 (LLM 응답 형식)</label>
+          <label for="debug-action" class="form-label">Action 예시 (LLM 응답 형식)</label>
           <textarea
             id="debug-action"
             bind:value={formData.debugAction}
@@ -295,9 +295,9 @@
             placeholder="예시: DM.Gas = 0.5&#10;DM.Brake = 0.0&#10;DM.Steer.Ang = 0.1"
             class="textarea-field code-input"
           ></textarea>
-          <small class="helper-text">
+          <p class="form-hint">
             LLM 응답 형식으로 작성. 규칙 제어 ON 시 이 액션을 바로 실행합니다.
-          </small>
+          </p>
         </div>
 
         <!-- Form Actions -->
@@ -508,7 +508,7 @@
 
 <style>
   .trigger-settings {
-    max-width: 1200px;
+    max-width: 800px;
     margin: 0 auto;
   }
 
@@ -669,10 +669,6 @@
   }
 
 
-  .helper-text {
-    color: var(--color-text-secondary);
-    font-size: 0.8rem;
-  }
 
   /* Condition Header */
   .condition-header {

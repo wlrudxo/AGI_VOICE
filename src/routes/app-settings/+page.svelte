@@ -3,6 +3,8 @@
   import { settingsStore } from '$lib/stores/settingsStore';
   import { invoke } from '@tauri-apps/api/core';
   import { save, open } from '@tauri-apps/plugin-dialog';
+  import Icon from '@iconify/svelte';
+  import HelpModal from '$lib/components/HelpModal.svelte';
 
   interface Settings {
     claudeWorkspaceDir: string;
@@ -46,6 +48,12 @@
   let dbInfo = $state<DbInfo | null>(null);
   let loadingDbInfo = $state(false);
   let dbMessage = $state<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Help modal
+  let showHelpModal = $state(false);
+
+  // Backup list collapse state
+  let isBackupListCollapsed = $state(true);
 
   async function loadSettings() {
     try {
@@ -213,8 +221,15 @@
 
 <div class="app-settings">
   <div class="page-header">
-    <h1>⚙️ 앱 설정</h1>
-    <p class="page-description">데이터베이스, 백업 및 Claude 작업 디렉토리를 관리합니다.</p>
+    <div>
+      <div class="title-row">
+        <h1>앱 설정</h1>
+        <button class="btn-icon help-btn" onclick={() => (showHelpModal = true)}>
+          <Icon icon="solar:question-circle-bold" width="20" height="20" />
+        </button>
+      </div>
+      <p class="page-description">데이터베이스, 백업 및 Claude 작업 디렉토리를 관리합니다.</p>
+    </div>
   </div>
 
   {#if loading}
@@ -353,28 +368,41 @@
         <!-- Backups -->
         {#if dbInfo.backups.length > 0}
           <div>
-            <h3 class="text-sm font-bold mb-3 text-primary">💾 백업 목록 (최신 {dbInfo.backups.length}개)</h3>
-            <div class="space-y-2">
-              {#each dbInfo.backups as backup}
-                <div class="flex items-center justify-between p-3 rounded-lg border border-default">
-                  <div class="flex-1">
-                    <p class="text-sm font-medium text-primary">{backup.filename}</p>
-                    <p class="text-xs text-muted">
-                      {backup.sizeMb.toFixed(2)} MB
-                      {#if backup.createdAt}
-                        • {new Date(backup.createdAt).toLocaleString()}
-                      {/if}
-                    </p>
+            <button
+              class="backup-header"
+              onclick={() => isBackupListCollapsed = !isBackupListCollapsed}
+            >
+              <h3 class="text-sm font-bold text-primary">💾 백업 목록 (최신 {dbInfo.backups.length}개)</h3>
+              <Icon
+                icon={isBackupListCollapsed ? "solar:alt-arrow-down-bold" : "solar:alt-arrow-up-bold"}
+                width="20"
+                height="20"
+              />
+            </button>
+
+            {#if !isBackupListCollapsed}
+              <div class="space-y-2 mt-3">
+                {#each dbInfo.backups as backup}
+                  <div class="flex items-center justify-between p-3 rounded-lg border border-default">
+                    <div class="flex-1">
+                      <p class="text-sm font-medium text-primary">{backup.filename}</p>
+                      <p class="text-xs text-muted">
+                        {backup.sizeMb.toFixed(2)} MB
+                        {#if backup.createdAt}
+                          • {new Date(backup.createdAt).toLocaleString()}
+                        {/if}
+                      </p>
+                    </div>
+                    <button
+                      onclick={() => restoreBackup(backup.path)}
+                      class="btn-primary btn-sm"
+                    >
+                      복원
+                    </button>
                   </div>
-                  <button
-                    onclick={() => restoreBackup(backup.path)}
-                    class="btn-primary btn-sm"
-                  >
-                    복원
-                  </button>
-                </div>
-              {/each}
-            </div>
+                {/each}
+              </div>
+            {/if}
           </div>
         {:else}
           <p class="text-sm text-muted">백업이 없습니다.</p>
@@ -473,24 +501,85 @@
       </form>
     </div>
 
-    <!-- Info Card -->
-    <div class="card section">
-      <h3 class="section-title text-primary">💡 설정 안내</h3>
-      <ul class="space-y-2 text-sm text-secondary">
-        <li>• <strong>데이터베이스 경로</strong>: 원드라이브 등 클라우드 경로를 지정하면 여러 PC에서 동기화됩니다.</li>
-        <li>• <strong>백업</strong>: 앱 종료 시 자동 백업 (타임스탬프 파일명, 최근 10개 유지).</li>
-        <li>• <strong>Claude 실행 폴더</strong>: AI 채팅 시 Claude CLI가 실행될 작업 디렉토리입니다.</li>
-        <li>• 비어있으면 기본값(<code>AppData\Roaming\AGI_Voice_V2</code>)을 사용합니다.</li>
-        <li>• 폴더가 존재하지 않으면 저장 시 오류가 발생합니다.</li>
-        <li>• 설정은 <code>AppData\Roaming\AGI_Voice_V2\config.json</code>에 저장됩니다.</li>
-      </ul>
-    </div>
   {/if}
 </div>
+
+<!-- Help Modal -->
+<HelpModal
+  bind:visible={showHelpModal}
+  title="앱 설정 도움말"
+  onClose={() => (showHelpModal = false)}
+>
+  <section class="help-section">
+    <h4>💡 설정 안내</h4>
+    <ul class="help-list">
+      <li><strong>데이터베이스 경로</strong>: 원드라이브 등 클라우드 경로를 지정하면 여러 PC에서 동기화됩니다.</li>
+      <li><strong>백업</strong>: 앱 종료 시 자동 백업 (타임스탬프 파일명, 최근 10개 유지).</li>
+      <li><strong>Claude 실행 폴더</strong>: AI 채팅 시 Claude CLI가 실행될 작업 디렉토리입니다.</li>
+      <li>비어있으면 기본값(<code>AppData\Roaming\AGI_Voice_V2</code>)을 사용합니다.</li>
+      <li>폴더가 존재하지 않으면 저장 시 오류가 발생합니다.</li>
+      <li>설정은 <code>AppData\Roaming\AGI_Voice_V2\config.json</code>에 저장됩니다.</li>
+    </ul>
+  </section>
+
+  <section class="help-section">
+    <h4>📊 DB 정보</h4>
+    <p class="help-desc">
+      현재 사용 중인 데이터베이스의 정보를 확인할 수 있습니다.
+      위치, 크기, 마지막 수정 시간 등을 표시합니다.
+    </p>
+  </section>
+
+  <section class="help-section">
+    <h4>💾 백업 관리</h4>
+    <p class="help-desc">
+      최근 10개의 백업 파일 목록을 확인하고 복원할 수 있습니다.
+      각 백업은 타임스탬프 파일명으로 저장되며, 복원 버튼을 통해 이전 상태로 되돌릴 수 있습니다.
+    </p>
+  </section>
+
+  <section class="help-section">
+    <h4>🔄 수동 동기화</h4>
+    <p class="help-desc">
+      데이터베이스 경로가 설정된 경우, 수동 동기화 버튼으로 즉시 동기화할 수 있습니다.
+      일반적으로 앱 시작/종료 시 자동 동기화되지만, 필요시 수동으로 실행할 수 있습니다.
+    </p>
+  </section>
+</HelpModal>
 
 <style>
   .app-settings {
     max-width: 800px;
     margin: 0 auto;
+  }
+
+  /* Title Row with Help Button */
+  .title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* help-btn 스타일은 app.css에 정의됨 */
+
+  /* Backup Header */
+  .backup-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .backup-header:hover {
+    opacity: 0.7;
+  }
+
+  .backup-header h3 {
+    margin: 0;
   }
 </style>

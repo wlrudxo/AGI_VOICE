@@ -106,13 +106,19 @@
 
 <div class="chat-settings-page">
 	<div class="page-header">
-		<div class="title-row">
-			<h1>채팅 설정</h1>
-			<button class="btn-icon help-btn" onclick={() => (showHelpModal = true)}>
-				<Icon icon="solar:question-circle-bold" width="20" height="20" />
-			</button>
+		<div>
+			<div class="title-row">
+				<h1>채팅 설정</h1>
+				<button class="btn-icon help-btn" onclick={() => (showHelpModal = true)}>
+					<Icon icon="solar:question-circle-bold" width="20" height="20" />
+				</button>
+			</div>
+			<p class="page-description">AI 채팅에서 사용할 기본 캐릭터와 시스템 템플릿을 선택하세요.</p>
 		</div>
-		<p class="page-description">AI 채팅에서 사용할 기본 캐릭터와 시스템 템플릿을 선택하세요.</p>
+		<button class="btn-primary" onclick={saveSettings} disabled={saving || loading}>
+			<Icon icon="solar:diskette-bold" width="20" height="20" />
+			{saving ? '저장 중...' : '저장'}
+		</button>
 	</div>
 
 	{#if loading}
@@ -121,7 +127,7 @@
 			<p>설정 로딩 중...</p>
 		</div>
 	{:else}
-		<form onsubmit={(e) => { e.preventDefault(); saveSettings(); }} class="settings-form">
+		<div class="settings-form">
 			<!-- 시스템 템플릿 선택 -->
 			<div class="form-group">
 				<label for="template" class="form-label">
@@ -170,15 +176,7 @@
 					{message.text}
 				</div>
 			{/if}
-
-			<!-- 저장 버튼 -->
-			<div class="form-actions">
-				<button type="submit" class="btn-primary" disabled={saving}>
-					<Icon icon="solar:diskette-bold-duotone" width="20" height="20" />
-					<span>{saving ? '저장 중...' : '설정 저장'}</span>
-				</button>
-			</div>
-		</form>
+		</div>
 
 	{/if}
 </div>
@@ -239,12 +237,8 @@
 
 <style>
 	.chat-settings-page {
-		max-width: 800px;
+		max-width: 1200px;
 		margin: 0 auto;
-	}
-
-	.page-header {
-		margin-bottom: 2rem;
 	}
 
 	/* Title Row with Help Button */
@@ -252,11 +246,9 @@
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		margin-bottom: 0.5rem;
 	}
 
 	/* help-btn 스타일은 app.css에 정의됨 */
-
 
 	.settings-form {
 		background: var(--color-surface);
@@ -268,12 +260,6 @@
 
 	.form-group:last-of-type {
 		margin-bottom: 0;
-	}
-
-	.form-actions {
-		display: flex;
-		justify-content: flex-end;
-		margin-top: 2rem;
 	}
 
 	.info-card {
