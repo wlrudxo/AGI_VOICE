@@ -240,8 +240,8 @@
 
 					// Add execution result message
 					messages.push({
-						role: 'assistant',
-						content: `✓ 차량 제어 명령 실행 완료: ${result.successCount}/${result.totalCommands} (${result.executionTime}ms)`,
+						role: 'action',
+						label: `✓ 차량 제어 명령 실행 완료: ${result.successCount}/${result.totalCommands} (${result.executionTime}ms)`,
 						timestamp: new Date()
 					});
 					scrollToBottom();
@@ -541,7 +541,7 @@
 					<div class="message message-action">
 						<div class="message-content">
 							<div class="action-indicator">
-								📋 {message.label}
+								{message.label}
 							</div>
 						</div>
 					</div>

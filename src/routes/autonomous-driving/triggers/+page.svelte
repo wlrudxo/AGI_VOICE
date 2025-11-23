@@ -193,7 +193,6 @@
         <Icon icon="solar:question-circle-bold" width="20" height="20" />
       </button>
     </div>
-    <p class="page-description">Vehicle Data 조건에 따라 LLM 메시지를 자동으로 전송합니다.</p>
     <div class="header-actions">
       <button class="btn-primary" onclick={startCreate}>
         <Icon icon="solar:add-circle-bold" width="20" height="20" />
