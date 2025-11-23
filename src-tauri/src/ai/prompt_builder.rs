@@ -17,7 +17,12 @@ fn substitute_variables(text: &str, user_name: &str, char_name: &str) -> String 
 }
 
 /// 이전 대화 메시지 포맷팅 (system 메시지 제외, 타임스탬프 포함)
-fn format_previous_messages(messages: &[Message]) -> String {
+fn format_previous_messages(messages: &[Message], exclude_history: bool) -> String {
+    // exclude_history가 true면 대화 기록 제외
+    if exclude_history {
+        return "[이번 요청은 이전 대화 기록 없이 처리합니다]".to_string();
+    }
+
     // system 메시지는 Previous Exchanges에서 제외
     let user_assistant_only: Vec<&Message> = messages
         .iter()
@@ -96,6 +101,7 @@ pub fn build_full_prompt(
     system_context: Option<&str>,
     user_name: &str,
     char_name: &str,
+    exclude_history: bool,
 ) -> (String, String) {
     // CLAUDE.md 내용 조립 (System Message + Character + User Information)
     let mut claude_md = String::new();
@@ -128,7 +134,7 @@ pub fn build_full_prompt(
 
     // 이전 대화
     full_message.push_str("<--Previous Exchanges Start-->\n\n");
-    let formatted_history = format_previous_messages(previous_messages);
+    let formatted_history = format_previous_messages(previous_messages, exclude_history);
     full_message.push_str(&formatted_history);
     full_message.push_str("\n\n<--Previous Response End-->\n\n");
     full_message.push_str("Do not include the content of this response, but continue the story after this response.\n\n");

@@ -26,6 +26,8 @@ pub struct ChatRequest {
     pub system_context: Option<String>,
     #[serde(default = "default_role")]
     pub role: String,
+    #[serde(default)]
+    pub exclude_history: bool,
 }
 
 fn default_model() -> String {
@@ -187,6 +189,7 @@ async fn execute_claude_request(
     system_context: Option<&str>,
     user_name: &str,
     final_message: &str,
+    exclude_history: bool,
 ) -> Result<String, String> {
     // 프롬프트 조립
     let (claude_md_content, full_user_message) = build_full_prompt(
@@ -200,6 +203,7 @@ async fn execute_claude_request(
         system_context,
         user_name,
         &character.name,
+        exclude_history,
     );
 
     // 🐛 디버깅: CLAUDE.md 내용 출력
@@ -294,6 +298,7 @@ pub async fn chat(
         request.system_context.as_deref(),
         &request.user_name.unwrap_or_default(),
         &request.final_message.unwrap_or_default(),
+        request.exclude_history,
     )
     .await?;
 
