@@ -120,7 +120,6 @@
 			// 메시지 파싱 및 변환
 			const parsedMessages = [];
 			for (const msg of messagesData) {
-				if (msg.role === 'system') continue;
 
 				// UTC 시간을 명시적으로 파싱
 				// 백엔드에서 'Z'가 없으면 추가하여 UTC로 파싱되도록 함
@@ -439,6 +438,18 @@
 					</div>
 				{/if}
 
+				{#if message.role === 'system'}
+					<div class="message message-system">
+						<div class="message-content">
+							<div class="system-indicator">
+								<Icon icon="solar:info-circle-bold-duotone" width="16" />
+								<span>시스템</span>
+							</div>
+							<p>{message.content}</p>
+						</div>
+					</div>
+				{/if}
+
 				{#if message.role === 'action'}
 					<div class="message message-action">
 						<div class="message-content">
@@ -576,6 +587,30 @@
 		background: var(--color-chat-assistant-bg);
 		color: var(--color-chat-assistant-text);
 		border-radius: 12px 12px 12px 4px;
+	}
+
+	.message-system {
+		align-self: center;
+		max-width: 90%;
+	}
+
+	.message-system .message-content {
+		background: rgba(100, 116, 139, 0.1);
+		color: var(--color-text-secondary);
+		border-radius: 8px;
+		border: 1px dashed rgba(100, 116, 139, 0.3);
+		padding: 0.5rem 0.75rem;
+		font-size: 0.85rem;
+	}
+
+	.system-indicator {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-weight: 600;
+		font-size: 0.75rem;
+		margin-bottom: 0.25rem;
+		opacity: 0.8;
 	}
 
 	.message-action {
