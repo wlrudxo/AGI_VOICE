@@ -13,6 +13,9 @@ pub mod ai;
 // Commands module
 pub mod commands;
 
+// CarMaker module
+pub mod carmaker;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()

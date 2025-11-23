@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { onMount } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import { dbWatcher } from '$lib/stores/dbWatcher.svelte';
