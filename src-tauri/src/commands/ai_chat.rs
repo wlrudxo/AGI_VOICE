@@ -28,6 +28,8 @@ pub struct ChatRequest {
     pub role: String,
     #[serde(default)]
     pub exclude_history: bool,
+    #[serde(default)]
+    pub no_save: bool, // Don't save conversation/messages to DB
 }
 
 fn default_model() -> String {
@@ -234,6 +236,104 @@ async fn execute_claude_request(
     Ok(raw_response)
 }
 
+// ==================== No-Save Chat Handler ====================
+
+async fn handle_no_save_chat(
+    request: ChatRequest,
+    db: &DatabaseConnection,
+) -> Result<ChatResponse, String> {
+    println!("🔒 No-save mode: Conversation will not be saved to DB");
+
+    // Get character and template IDs (required)
+    let character_id = request
+        .character_id
+        .ok_or("character_id is required for no-save chat")?;
+    let prompt_template_id = request
+        .prompt_template_id
+        .ok_or("prompt_template_id is required for no-save chat")?;
+
+    // Load character and template
+    let character = character::Entity::find_by_id(character_id)
+        .one(db)
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or("Character not found")?;
+
+    let prompt_template = prompt_template::Entity::find_by_id(prompt_template_id)
+        .one(db)
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or("Prompt template not found")?;
+
+    // Load active command templates
+    let command_templates = command_template::Entity::find()
+        .filter(command_template::Column::IsActive.eq(true))
+        .order_by_asc(command_template::Column::Id)
+        .all(db)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let command_info_list: Vec<String> = command_templates
+        .into_iter()
+        .map(|ct| ct.content)
+        .collect();
+
+    println!(
+        "✅ Loaded context: character={}, template={}, commands={}",
+        character.name,
+        prompt_template.name,
+        command_info_list.len()
+    );
+
+    // Get workspace directory
+    let workspace_dir = match load_settings() {
+        Ok(settings) if !settings.claude_workspace_dir.is_empty() => {
+            let path = PathBuf::from(&settings.claude_workspace_dir);
+            println!("✅ Using workspace directory: {}", path.display());
+            Some(path)
+        }
+        _ => {
+            let appdata = std::env::var("APPDATA").unwrap_or_else(|_| {
+                std::env::var("HOME").unwrap_or_else(|_| ".".to_string())
+            });
+            let default_path = PathBuf::from(appdata).join("AGI_Voice_V2");
+
+            if let Err(e) = std::fs::create_dir_all(&default_path) {
+                println!("⚠️ Failed to create workspace directory: {}", e);
+            }
+
+            println!("✅ Using default workspace directory: {}", default_path.display());
+            Some(default_path)
+        }
+    };
+
+    // Execute Claude request (no previous messages)
+    let raw_response = execute_claude_request(
+        &character,
+        &prompt_template,
+        &request.user_info.unwrap_or_default(),
+        &command_info_list,
+        &Vec::new(), // No previous messages
+        &request.message,
+        &request.model,
+        workspace_dir.as_deref(),
+        request.system_context.as_deref(),
+        &request.user_name.unwrap_or_default(),
+        &request.final_message.unwrap_or_default(),
+        true, // Always exclude history for no-save mode
+    )
+    .await?;
+
+    println!("✅ Got response from Claude ({} chars) - NOT SAVED", raw_response.len());
+
+    // Return response without saving to DB (use dummy conversation_id = -1)
+    Ok(ChatResponse {
+        conversation_id: -1, // Indicates no conversation was created
+        responses: vec![raw_response],
+        actions: vec![],
+    })
+}
+
 // ==================== Tauri Command ====================
 
 #[tauri::command]
@@ -242,6 +342,11 @@ pub async fn chat(
     db: State<'_, AiChatDb>,
 ) -> Result<ChatResponse, String> {
     println!("📥 Chat request: {:?}", request.message);
+
+    // Check if no_save mode (temporary conversation)
+    if request.no_save {
+        return handle_no_save_chat(request, &db.0).await;
+    }
 
     // 1. Conversation 로드/생성
     let (conversation, character_id, prompt_template_id, user_info) =

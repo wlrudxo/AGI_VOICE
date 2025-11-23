@@ -282,17 +282,11 @@ Provide appropriate control values (0.0 to 1.0 for Gas/Brake, rad for Steer.Ang)
         systemContext: systemContext,
         role: 'system',
         excludeHistory: excludeHistory,
-        model: model
+        noSave: excludeHistory, // Don't save to DB if excludeHistory is true
+        model: model,
+        characterId: characterId ? parseInt(characterId) : undefined,
+        promptTemplateId: promptTemplateId ? parseInt(promptTemplateId) : undefined
       };
-
-      // Add conversationId if exists (continue conversation)
-      if (trigger.conversationId) {
-        request.conversationId = trigger.conversationId;
-      } else {
-        // New conversation requires characterId and promptTemplateId
-        if (characterId) request.characterId = parseInt(characterId);
-        if (promptTemplateId) request.promptTemplateId = parseInt(promptTemplateId);
-      }
 
       // Call AI chat with trigger conversation
       const response: any = await invoke('chat', { request });
