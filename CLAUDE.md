@@ -17,6 +17,7 @@ AGI Voice V2 is a desktop research application for **AI-based autonomous driving
 **Core Focus**:
 - **Generic AI Chat System**: Reusable conversation system with dynamic prompts, characters, and command templates
 - **Autonomous Driving Research**: Map generation and driving decision analysis using AI chat
+- **CarMaker Integration**: Real-time vehicle control and monitoring with trigger-based automation
 - **Modular Architecture**: AI chat system separated from domain-specific data for reusability
 
 ## Architecture
@@ -61,6 +62,7 @@ AGI Voice V2 is a desktop research application for **AI-based autonomous driving
   - Dashboard (`/`) - Main interface with AI chat widget for autonomous driving research
   - Map Settings (`/map-settings/*`) - SUMO map management (generator, library, rag-test)
   - AI Settings (`/ai-settings/*`) - AI system configuration (system messages, characters, commands, user info, final message)
+  - Autonomous Driving (`/autonomous-driving/*`) - CarMaker integration (vehicle-control, manual-control, triggers, settings)
   - App Settings (`/app-settings`) - Application settings (DB, backup, Claude workspace)
 - **State Management**:
   - Svelte stores (`src/lib/stores/`)
@@ -69,6 +71,8 @@ AGI Voice V2 is a desktop research application for **AI-based autonomous driving
   - `settingsStore.ts` - App settings (minimize to tray)
   - `dialogStore.svelte.ts` - Dialog management (confirm/alert)
   - `aiConfigStore.ts` - AI configuration (character/prompt selection)
+  - `carmakerStore.svelte.ts` - CarMaker connection and vehicle state
+  - `triggerMonitor.svelte.ts` - Trigger monitoring and evaluation
 
 ### Backend (Tauri + Rust)
 - **Framework**: Tauri 2.x with Rust
@@ -345,6 +349,8 @@ src-tauri/
 │   │   ├── prompt_templates.rs   # System message CRUD
 │   │   ├── command_templates.rs  # Command template CRUD
 │   │   ├── maps.rs          # Map CRUD (SUMO maps)
+│   │   ├── carmaker_control.rs   # CarMaker vehicle control
+│   │   ├── triggers.rs      # Trigger management
 │   │   ├── settings.rs      # Settings commands
 │   │   ├── common.rs        # Shared command utilities
 │   │   └── utils.rs         # Helper functions (DB timestamp, etc.)
@@ -363,11 +369,19 @@ src-tauri/
 │   │       ├── command_template.rs
 │   │       ├── map.rs       # SUMO map entity
 │   │       └── map_scenario.rs  # Map scenario entity
-│   └── ai/
-│       ├── mod.rs           # AI module exports
-│       ├── claude_cli.rs    # Claude CLI subprocess manager
-│       ├── prompt_builder.rs # Dynamic prompt assembly
-│       └── embeddings.rs    # OpenAI embeddings integration
+│   ├── ai/
+│   │   ├── mod.rs           # AI module exports
+│   │   ├── claude_cli.rs    # Claude CLI subprocess manager
+│   │   ├── prompt_builder.rs # Dynamic prompt assembly
+│   │   └── embeddings.rs    # OpenAI embeddings integration
+│   ├── carmaker/
+│   │   ├── mod.rs           # CarMaker module exports
+│   │   ├── client.rs        # CarMaker TCP client
+│   │   └── types.rs         # CarMaker data types
+│   └── triggers/
+│       ├── mod.rs           # Trigger module exports
+│       ├── state.rs         # Trigger state management
+│       └── types.rs         # Trigger data types
 ├── Cargo.toml               # Rust dependencies
 └── tauri.conf.json          # Tauri configuration
 ```
@@ -396,13 +410,22 @@ src/
 │   │   ├── generator/+page.svelte   # SUMO map creation/editing
 │   │   ├── library/+page.svelte     # Map library with search/filter
 │   │   └── rag-test/+page.svelte    # RAG system testing
-│   └── settings/+page.svelte    # Application settings
+│   ├── autonomous-driving/
+│   │   ├── +layout.svelte           # Sub-sidebar layout
+│   │   ├── +page.svelte             # Redirect to vehicle-control
+│   │   ├── +page.server.ts          # Server-side redirect
+│   │   ├── vehicle-control/+page.svelte  # Real-time vehicle control
+│   │   ├── manual-control/+page.svelte   # Manual vehicle control
+│   │   ├── triggers/+page.svelte         # Trigger management
+│   │   └── settings/+page.svelte         # CarMaker settings
+│   └── app-settings/+page.svelte  # Application settings
 ├── lib/
 │   ├── components/
 │   │   ├── TitleBar.svelte       # Custom titlebar with window controls
 │   │   ├── Sidebar.svelte        # Collapsible navigation (14rem ↔ 5.5rem)
 │   │   ├── Tooltip.svelte        # Fixed-position tooltips
 │   │   ├── Dialog.svelte         # Generic dialog component
+│   │   ├── HelpModal.svelte      # Help/documentation modal
 │   │   ├── AIChatWidget.svelte   # AI chat widget (3 views)
 │   │   ├── ChatView.svelte       # Chat interface with markdown
 │   │   ├── ChatHistoryView.svelte # Conversation history
@@ -414,11 +437,17 @@ src/
 │   │   ├── dbWatcher.svelte.ts   # DB change detection
 │   │   ├── settingsStore.ts      # App settings
 │   │   ├── dialogStore.svelte.ts # Dialog state management
-│   │   └── aiConfigStore.ts      # AI configuration state
+│   │   ├── aiConfigStore.ts      # AI configuration state
+│   │   ├── carmakerStore.svelte.ts # CarMaker connection & state
+│   │   └── triggerMonitor.svelte.ts # Trigger monitoring
 │   ├── actions/
 │   │   ├── parser.ts             # Tag parser (AI response → actions)
 │   │   ├── executor.ts           # Action executor (invoke Tauri)
-│   │   └── formatter.ts          # Result formatter
+│   │   ├── formatter.ts          # Result formatter
+│   │   ├── vehicleCommandParser.ts # Vehicle command parser
+│   │   └── vehicleCommandExecutor.ts # Vehicle command executor
+│   ├── utils/
+│   │   └── triggerEvaluator.ts   # Trigger condition evaluator
 │   └── config.ts                 # App configuration
 └── app.css                       # Global styles + Tailwind import
 ```

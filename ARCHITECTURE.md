@@ -19,6 +19,8 @@ This document describes the technical architecture of AGI Voice V2.
   - `sumo_maps.db` - Autonomous driving map data
 - **AI Integration**: Claude CLI via subprocess
 - **State Management**: Tauri State with wrapper types (`AiChatDb`, `MapDb`)
+- **CarMaker Integration**: TCP client for real-time vehicle control
+- **Trigger System**: Condition-based action execution with state management
 
 ## Project Structure
 
@@ -49,7 +51,16 @@ src/
 │   │   ├── library/+page.svelte    # Map library with search
 │   │   └── rag-test/+page.svelte   # RAG system testing
 │   │
-│   └── settings/+page.svelte       # Application settings
+│   ├── autonomous-driving/         # CarMaker integration & vehicle control
+│   │   ├── +layout.svelte          # Sub-sidebar layout
+│   │   ├── +page.svelte            # Redirect to vehicle-control
+│   │   ├── +page.server.ts         # Server-side redirect
+│   │   ├── vehicle-control/+page.svelte  # Real-time vehicle control
+│   │   ├── manual-control/+page.svelte   # Manual vehicle control
+│   │   ├── triggers/+page.svelte         # Trigger management
+│   │   └── settings/+page.svelte         # CarMaker settings
+│   │
+│   └── app-settings/+page.svelte   # Application settings
 │
 ├── lib/                            # Shared library code
 │   ├── components/                 # Svelte components
@@ -57,6 +68,7 @@ src/
 │   │   ├── Sidebar.svelte          # Collapsible navigation (14rem ↔ 5.5rem)
 │   │   ├── Tooltip.svelte          # Fixed-position tooltips
 │   │   ├── Dialog.svelte           # Generic dialog component
+│   │   ├── HelpModal.svelte        # Help/documentation modal
 │   │   ├── AIChatWidget.svelte     # AI chat widget (3 views)
 │   │   ├── ChatView.svelte         # Chat interface with markdown
 │   │   ├── ChatHistoryView.svelte  # Conversation history
@@ -69,13 +81,22 @@ src/
 │   │   ├── dbWatcher.svelte.ts     # DB change detection (2s polling)
 │   │   ├── settingsStore.ts        # App settings (minimize to tray)
 │   │   ├── dialogStore.svelte.ts   # Dialog state management
-│   │   └── aiConfigStore.ts        # AI configuration state
+│   │   ├── aiConfigStore.ts        # AI configuration state
+│   │   ├── carmakerStore.svelte.ts # CarMaker connection & state
+│   │   └── triggerMonitor.svelte.ts # Trigger monitoring & evaluation
 │   │
 │   ├── actions/                    # AI action processing
 │   │   ├── parser.ts               # Tag parser (AI response → actions)
 │   │   ├── executor.ts             # Action executor (invoke Tauri commands)
-│   │   └── formatter.ts            # Result formatter
+│   │   ├── formatter.ts            # Result formatter
+│   │   ├── vehicleCommandParser.ts # Vehicle command parser
+│   │   └── vehicleCommandExecutor.ts # Vehicle command executor
 │   │
+│   ├── utils/                      # Utility functions
+│   │   └── triggerEvaluator.ts     # Trigger condition evaluator
+│   │
+│   ├── types/                      # TypeScript type definitions (empty)
+│   ├── api/                        # API utilities (empty)
 │   └── config.ts                   # App configuration
 │
 └── app.css                         # Global styles + Tailwind import
@@ -96,7 +117,9 @@ src-tauri/src/
 │   ├── prompt_templates.rs         # System message CRUD
 │   ├── command_templates.rs        # Command template CRUD
 │   ├── maps.rs                     # SUMO map CRUD
-│   ├── settings.rs                 # App settings (minimize to tray)
+│   ├── carmaker_control.rs         # CarMaker vehicle control commands
+│   ├── triggers.rs                 # Trigger management commands
+│   ├── settings.rs                 # App settings (minimize to tray, CarMaker)
 │   ├── common.rs                   # Shared command utilities
 │   └── utils.rs                    # Helper functions
 │
@@ -117,11 +140,21 @@ src-tauri/src/
 │       ├── map.rs                  # SUMO map entity
 │       └── map_scenario.rs         # Map scenario entity
 │
-└── ai/                             # AI integration layer
-    ├── mod.rs                      # AI module exports
-    ├── claude_cli.rs               # Claude CLI subprocess manager
-    ├── prompt_builder.rs           # Dynamic prompt assembly
-    └── embeddings.rs               # OpenAI embeddings integration
+├── ai/                             # AI integration layer
+│   ├── mod.rs                      # AI module exports
+│   ├── claude_cli.rs               # Claude CLI subprocess manager
+│   ├── prompt_builder.rs           # Dynamic prompt assembly
+│   └── embeddings.rs               # OpenAI embeddings integration
+│
+├── carmaker/                       # CarMaker integration layer
+│   ├── mod.rs                      # CarMaker module exports
+│   ├── client.rs                   # CarMaker TCP client
+│   └── types.rs                    # CarMaker data types
+│
+└── triggers/                       # Trigger system
+    ├── mod.rs                      # Trigger module exports
+    ├── state.rs                    # Trigger state management
+    └── types.rs                    # Trigger data types
 ```
 
 ## Data Flow
@@ -283,6 +316,65 @@ pub async fn create_map(request: CreateMapRequest, map_db: State<'_, MapDb>) -> 
 - `uiStore.isWidgetMode` tracks state
 - `+layout.svelte` handles window resize via Tauri API
 - `AIChatWidget.svelte` adapts UI layout
+
+## CarMaker Integration
+
+**Feature**: Real-time vehicle control and monitoring with CarMaker simulation
+
+**Architecture**:
+- **TCP Client**: Rust-based TCP connection to CarMaker
+- **Real-time Data**: Vehicle state monitoring (speed, acceleration, steering, position)
+- **Vehicle Control**: Speed, acceleration, steering angle commands
+- **Trigger System**: Condition-based action execution (e.g., "if speed > 50, then brake")
+
+**Frontend Components** (`/autonomous-driving`):
+- **Vehicle Control** - Real-time dashboard with AI-based control
+- **Manual Control** - Direct vehicle command input
+- **Triggers** - Create/manage condition-based actions
+- **Settings** - CarMaker connection configuration
+
+**Backend Structure**:
+- **CarMaker Client** (`src-tauri/src/carmaker/client.rs`):
+  - TCP socket connection management
+  - Command sending (speed, acceleration, steering)
+  - Real-time data streaming
+  - Connection state monitoring
+
+- **Trigger System** (`src-tauri/src/triggers/`):
+  - Condition evaluation (mathematical expressions)
+  - Action execution based on vehicle state
+  - State persistence and management
+
+**Stores**:
+- **carmakerStore** - Connection status, vehicle state, real-time updates
+- **triggerMonitor** - Active trigger monitoring and evaluation
+
+**Data Flow**:
+```
+Frontend (vehicle-control page)
+    ↓
+[1] Connect to CarMaker
+    └─ invoke('connect_carmaker', { host, port })
+    ↓
+[2] Rust backend (carmaker/client.rs)
+    └─ Establish TCP connection
+    └─ Start data streaming
+    ↓
+[3] Real-time data updates
+    ├─ Vehicle state → Frontend (carmakerStore)
+    ├─ Trigger evaluation (triggerMonitor)
+    └─ Condition-based actions
+    ↓
+[4] Send vehicle commands
+    └─ invoke('send_carmaker_command', { command, value })
+    └─ TCP send to CarMaker
+```
+
+**Trigger System**:
+- **Conditions**: Mathematical expressions (e.g., `speed > 50`, `acceleration < -2`)
+- **Actions**: Vehicle commands (speed, acceleration, steering)
+- **State Management**: Active/inactive triggers with persistence
+- **Real-time Evaluation**: Continuous condition checking against vehicle state
 
 ## Naming Conventions
 
