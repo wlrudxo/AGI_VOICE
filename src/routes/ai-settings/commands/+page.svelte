@@ -147,12 +147,15 @@
 	</div>
 
 	{#if isLoading}
-		<div class="loading">로딩 중...</div>
+		<div class="loading-state">
+			<Icon icon="solar:ufo-2-duotone" width="48" class="spin" />
+			<p>로딩 중...</p>
+		</div>
 	{:else if error}
-		<div class="error-message">{error}</div>
+		<div class="alert-error">{error}</div>
 	{:else if templates.length === 0}
 		<div class="empty-state">
-			<Icon icon="solar:document-bold-duotone" width="64" height="64" />
+			<Icon icon="solar:document-bold-duotone" width="64" class="empty-state-icon" />
 			<p>등록된 명령어 템플릿이 없습니다.</p>
 			<button class="btn-secondary" onclick={openCreateModal}>템플릿 추가하기</button>
 		</div>
@@ -163,7 +166,7 @@
 					<div class="template-header">
 						<div class="template-title">
 							<h3>{template.name}</h3>
-							<span class="status-badge" class:active={template.isActive === 1}>
+							<span class="badge" class:badge-success={template.isActive === 1} class:badge-neutral={template.isActive === 0}>
 								{template.isActive === 1 ? '활성화' : '비활성화'}
 							</span>
 						</div>
@@ -215,22 +218,24 @@
 
 			<div class="modal-body">
 				<div class="form-group">
-					<label for="name">템플릿 이름</label>
+					<label for="name" class="form-label">템플릿 이름</label>
 					<input
 						type="text"
 						id="name"
 						bind:value={formData.name}
 						placeholder="예: 식단 관리 명령어"
+						class="input-field w-full"
 					/>
 				</div>
 
 				<div class="form-group">
-					<label for="content">명령어 내용</label>
+					<label for="content" class="form-label">명령어 내용</label>
 					<textarea
 						id="content"
 						bind:value={formData.content}
 						placeholder="AI에게 전달할 명령어 정보를 입력하세요..."
 						rows="15"
+						class="textarea-field w-full"
 					></textarea>
 				</div>
 
@@ -263,33 +268,6 @@
 		margin-bottom: 2rem;
 	}
 
-
-
-	.loading {
-		text-align: center;
-		padding: 3rem;
-		color: var(--color-text-secondary);
-	}
-
-	.error-message {
-		background: #fee2e2;
-		color: #991b1b;
-		padding: 1rem;
-		border-radius: 0.5rem;
-		text-align: center;
-	}
-
-	.empty-state {
-		text-align: center;
-		padding: 4rem 2rem;
-		color: var(--color-text-secondary);
-	}
-
-	.empty-state p {
-		margin: 1rem 0;
-		font-size: 1.1rem;
-	}
-
 	.templates-list {
 		display: flex;
 		flex-direction: column;
@@ -297,8 +275,8 @@
 	}
 
 	.template-card {
-		background: white;
-		border: 1px solid #e5e7eb;
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
 		border-radius: 0.75rem;
 		padding: 1.5rem;
 		transition: all 0.2s;
@@ -310,7 +288,7 @@
 
 	.template-card.inactive {
 		opacity: 0.6;
-		background: #f9fafb;
+		background: var(--color-surface-hover);
 	}
 
 	.template-header {
@@ -330,22 +308,7 @@
 		margin: 0;
 		font-size: 1.25rem;
 		font-weight: 600;
-		color: #1f2937;
-	}
-
-	.status-badge {
-		display: inline-block;
-		padding: 0.25rem 0.75rem;
-		border-radius: 9999px;
-		font-size: 0.75rem;
-		font-weight: 600;
-		background: #e5e7eb;
-		color: var(--color-text-secondary);
-	}
-
-	.status-badge.active {
-		background: #d1fae5;
-		color: #065f46;
+		color: var(--color-text-primary);
 	}
 
 	.template-actions {
@@ -355,8 +318,8 @@
 
 	.template-content {
 		margin-bottom: 1rem;
-		background: #f9fafb;
-		border: 1px solid #e5e7eb;
+		background: var(--color-background);
+		border: 1px solid var(--color-border);
 		border-radius: 0.5rem;
 		padding: 1rem;
 		max-height: 300px;
@@ -370,7 +333,7 @@
 		line-height: 1.6;
 		white-space: pre-wrap;
 		word-wrap: break-word;
-		color: #374151;
+		color: var(--color-text-secondary);
 	}
 
 	.template-footer {
@@ -395,7 +358,7 @@
 	}
 
 	.modal-content {
-		background: white;
+		background: var(--color-surface);
 		border-radius: 0.75rem;
 		width: 90%;
 		max-width: 800px;
@@ -410,45 +373,19 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 1.5rem;
-		border-bottom: 1px solid #e5e7eb;
+		border-bottom: 1px solid var(--color-border);
 	}
 
 	.modal-header h2 {
 		margin: 0;
 		font-size: 1.5rem;
 		font-weight: 600;
-		color: #1f2937;
+		color: var(--color-text-primary);
 	}
 
 	.modal-body {
 		padding: 1.5rem;
 		overflow-y: auto;
-	}
-
-	.form-group {
-		margin-bottom: 1.5rem;
-	}
-
-	.form-group label {
-		display: block;
-		margin-bottom: 0.5rem;
-		font-weight: 600;
-		color: #374151;
-	}
-
-	.form-group input[type='text'],
-	.form-group textarea {
-		width: 100%;
-		padding: 0.75rem;
-		border: 1px solid #d1d5db;
-		border-radius: 0.5rem;
-		font-size: 0.95rem;
-		font-family: inherit;
-	}
-
-	.form-group textarea {
-		resize: vertical;
-		font-family: 'Courier New', monospace;
 	}
 
 	.form-group.checkbox label {
@@ -469,6 +406,6 @@
 		justify-content: flex-end;
 		gap: 1rem;
 		padding: 1.5rem;
-		border-top: 1px solid #e5e7eb;
+		border-top: 1px solid var(--color-border);
 	}
 </style>

@@ -92,7 +92,10 @@
 	</div>
 
 	{#if isLoading}
-		<div class="loading">로딩 중...</div>
+		<div class="loading-state">
+			<Icon icon="solar:ufo-2-duotone" width="48" class="spin" />
+			<p>로딩 중...</p>
+		</div>
 	{:else if showForm}
 		<!-- 폼 -->
 		<div class="form-card">
@@ -105,24 +108,26 @@
 
 			<div class="form-body">
 				<div class="form-group">
-					<label for="name">캐릭터 이름</label>
+					<label for="name" class="form-label">캐릭터 이름</label>
 					<input
 						type="text"
 						id="name"
 						bind:value={formData.name}
 						placeholder="예: Aris (블루 아카이브)"
+						class="input-field w-full"
 					/>
 				</div>
 
 				<div class="form-group">
-					<label for="promptContent">캐릭터 프롬프트</label>
+					<label for="promptContent" class="form-label">캐릭터 프롬프트</label>
 					<textarea
 						id="promptContent"
 						bind:value={formData.promptContent}
 						rows="20"
 						placeholder="캐릭터의 성격, 말투, 특징 등을 입력하세요..."
+						class="textarea-field w-full"
 					></textarea>
-					<p class="hint">캐릭터의 성격, 말투, 행동 패턴을 정의합니다.</p>
+					<p class="form-hint">캐릭터의 성격, 말투, 행동 패턴을 정의합니다.</p>
 				</div>
 
 				<div class="form-actions">
@@ -172,16 +177,8 @@
 		margin: 0 auto;
 	}
 
-
-
-	.loading {
-		text-align: center;
-		padding: 3rem;
-		color: var(--color-text-secondary);
-	}
-
 	.form-card {
-		background: white;
+		background: var(--color-surface);
 		border-radius: 0.75rem;
 		box-shadow: var(--shadow-sm);
 	}
@@ -191,51 +188,18 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 1.5rem;
-		border-bottom: 1px solid #e5e7eb;
+		border-bottom: 1px solid var(--color-border);
 	}
 
 	.form-header h2 {
 		margin: 0;
 		font-size: 1.5rem;
 		font-weight: 600;
-		color: #1f2937;
+		color: var(--color-text-primary);
 	}
 
 	.form-body {
 		padding: 1.5rem;
-	}
-
-	.form-group {
-		margin-bottom: 1.5rem;
-	}
-
-	.form-group label {
-		display: block;
-		margin-bottom: 0.5rem;
-		font-weight: 600;
-		color: #374151;
-	}
-
-	.form-group input,
-	.form-group textarea {
-		width: 100%;
-		padding: 0.75rem;
-		border: 1px solid #d1d5db;
-		border-radius: 0.5rem;
-		font-size: 1rem;
-		font-family: inherit;
-	}
-
-	.form-group textarea {
-		resize: vertical;
-		font-family: 'Consolas', 'Monaco', monospace;
-		line-height: 1.6;
-	}
-
-	.hint {
-		margin-top: 0.5rem;
-		font-size: 0.875rem;
-		color: #6b7280;
 	}
 
 	.form-actions {
@@ -244,7 +208,7 @@
 		gap: 1rem;
 		margin-top: 2rem;
 		padding-top: 1.5rem;
-		border-top: 1px solid #e5e7eb;
+		border-top: 1px solid var(--color-border);
 	}
 
 	.characters-grid {
@@ -254,7 +218,7 @@
 	}
 
 	.character-card {
-		background: white;
+		background: var(--color-surface);
 		border-radius: 0.75rem;
 		padding: 1.5rem;
 		box-shadow: var(--shadow-sm);
@@ -275,7 +239,7 @@
 	.character-avatar {
 		width: 3rem;
 		height: 3rem;
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
 		border-radius: 0.75rem;
 		display: flex;
 		align-items: center;
@@ -295,7 +259,7 @@
 		margin: 0;
 		font-size: 1.25rem;
 		font-weight: 600;
-		color: #1f2937;
+		color: var(--color-text-primary);
 	}
 
 	.character-actions {
@@ -313,7 +277,7 @@
 
 	.character-footer {
 		padding-top: 1rem;
-		border-top: 1px solid #e5e7eb;
+		border-top: 1px solid var(--color-border);
 	}
 
 	.character-meta {

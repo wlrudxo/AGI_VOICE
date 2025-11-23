@@ -79,6 +79,7 @@
 			<textarea
 				bind:value={finalMessage}
 				placeholder="최종 체크 사항을 입력하세요..."
+				class="textarea-field w-full"
 			></textarea>
 		</div>
 
@@ -123,7 +124,7 @@
 	}
 
 	.content-card {
-		background: white;
+		background: var(--color-surface);
 		border-radius: 0.75rem;
 		padding: 2rem;
 		box-shadow: var(--shadow-sm);
@@ -133,33 +134,15 @@
 		margin-bottom: 1rem;
 	}
 
-	textarea {
-		width: 100%;
-		min-height: 300px;
-		padding: 1rem;
-		border: 1px solid #d1d5db;
-		border-radius: 0.5rem;
-		font-size: 1rem;
-		font-family: 'Consolas', 'Monaco', monospace;
-		line-height: 1.6;
-		resize: vertical;
-	}
-
-	textarea:focus {
-		outline: none;
-		border-color: #667eea;
-		box-shadow: var(--focus-ring);
-	}
-
 	.save-info {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.75rem 1rem;
-		background: #f0fdf4;
-		border: 1px solid #86efac;
+		background: var(--color-success-bg-light);
+		border: 1px solid var(--color-success);
 		border-radius: 0.5rem;
-		color: #166534;
+		color: var(--color-success-text);
 		font-size: 0.875rem;
 		margin-bottom: 1.5rem;
 	}
@@ -168,10 +151,10 @@
 		display: flex;
 		gap: 1rem;
 		padding: 1.5rem;
-		background: #eff6ff;
-		border: 1px solid #bfdbfe;
+		background: var(--color-info-bg-light);
+		border: 1px solid var(--color-info);
 		border-radius: 0.5rem;
-		color: #1e40af;
+		color: var(--color-info-text);
 		margin-bottom: 1.5rem;
 	}
 
@@ -191,8 +174,8 @@
 
 	.example-box {
 		padding: 1.5rem;
-		background: #f9fafb;
-		border: 1px solid #e5e7eb;
+		background: var(--color-background);
+		border: 1px solid var(--color-border);
 		border-radius: 0.5rem;
 	}
 
@@ -200,7 +183,7 @@
 		margin: 0 0 1rem 0;
 		font-size: 1.125rem;
 		font-weight: 600;
-		color: #374151;
+		color: var(--color-text-primary);
 	}
 
 	.example-box pre {

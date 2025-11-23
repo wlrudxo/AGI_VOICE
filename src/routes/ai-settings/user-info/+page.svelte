@@ -64,7 +64,7 @@
 	<div class="content-card">
 		<!-- User Name Input -->
 		<div class="input-section">
-			<label for="userName">
+			<label for="userName" class="form-label">
 				<Icon icon="solar:user-bold-duotone" width="20" height="20" />
 				사용자 이름
 			</label>
@@ -82,7 +82,7 @@
 
 		<!-- User Info Textarea -->
 		<div class="textarea-wrapper">
-			<label for="userInfo">
+			<label for="userInfo" class="form-label">
 				<Icon icon="solar:document-text-bold-duotone" width="20" height="20" />
 				사용자 정보
 			</label>
@@ -90,6 +90,7 @@
 				id="userInfo"
 				bind:value={userInfo}
 				placeholder="예:&#10;- 연구 분야: 자율주행 시스템 개발&#10;- 관심 주제: SLAM, 경로 계획, 센서 퓨전&#10;- 사용 센서: LiDAR, 카메라, IMU&#10;- 개발 환경: ROS2, Python, C++&#10;- 목표: 실시간 맵 생성 및 주행 판단 알고리즘 최적화&#10;&#10;자유롭게 작성하세요..."
+				class="textarea-field w-full"
 			></textarea>
 		</div>
 
@@ -130,7 +131,7 @@
 
 
 	.content-card {
-		background: white;
+		background: var(--color-surface);
 		border-radius: 0.75rem;
 		padding: 2rem;
 		box-shadow: var(--shadow-sm);
@@ -140,32 +141,7 @@
 		margin-bottom: 2rem;
 	}
 
-	.input-section label,
-	.textarea-wrapper label {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		margin-bottom: 0.5rem;
-		font-weight: 600;
-		color: #374151;
-		font-size: 0.95rem;
-	}
-
-	.input-field {
-		width: 100%;
-		padding: 0.75rem 1rem;
-		border: 1px solid #d1d5db;
-		border-radius: 0.5rem;
-		font-size: 1rem;
-		font-family: inherit;
-		transition: all 0.2s;
-	}
-
-	.input-field:focus {
-		outline: none;
-		border-color: #667eea;
-		box-shadow: var(--focus-ring);
-	}
+	/* Labels use .form-label from app.css */
 
 	.input-hint {
 		margin: 0.5rem 0 0 0;
@@ -174,34 +150,16 @@
 	}
 
 	.input-hint code {
-		background: #f3f4f6;
+		background: var(--color-surface-hover);
 		padding: 0.125rem 0.375rem;
 		border-radius: 0.25rem;
 		font-family: 'Courier New', monospace;
 		font-size: 0.85rem;
-		color: #667eea;
+		color: var(--color-primary);
 	}
 
 	.textarea-wrapper {
 		margin-bottom: 1rem;
-	}
-
-	textarea {
-		width: 100%;
-		min-height: 300px;
-		padding: 1rem;
-		border: 1px solid #d1d5db;
-		border-radius: 0.5rem;
-		font-size: 1rem;
-		font-family: inherit;
-		line-height: 1.6;
-		resize: vertical;
-	}
-
-	textarea:focus {
-		outline: none;
-		border-color: #667eea;
-		box-shadow: var(--focus-ring);
 	}
 
 	.save-info {
@@ -209,10 +167,10 @@
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.75rem 1rem;
-		background: #f0fdf4;
-		border: 1px solid #86efac;
+		background: var(--color-success-bg-light);
+		border: 1px solid var(--color-success);
 		border-radius: 0.5rem;
-		color: #166534;
+		color: var(--color-success-text);
 		font-size: 0.875rem;
 		margin-bottom: 1.5rem;
 	}
@@ -221,10 +179,10 @@
 		display: flex;
 		gap: 1rem;
 		padding: 1.5rem;
-		background: #eff6ff;
-		border: 1px solid #bfdbfe;
+		background: var(--color-info-bg-light);
+		border: 1px solid var(--color-info);
 		border-radius: 0.5rem;
-		color: #1e40af;
+		color: var(--color-info-text);
 	}
 
 	.hint-box strong {
@@ -246,12 +204,12 @@
 	}
 
 	.hint-box code {
-		background: #dbeafe;
+		background: var(--color-surface);
 		padding: 0.125rem 0.375rem;
 		border-radius: 0.25rem;
 		font-family: 'Courier New', monospace;
 		font-size: 0.85rem;
-		color: #1e40af;
+		color: var(--color-info-text);
 	}
 
 	.hint-box .example {

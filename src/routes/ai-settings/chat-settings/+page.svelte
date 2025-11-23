@@ -112,13 +112,14 @@
 
 	{#if loading}
 		<div class="loading-state">
+			<Icon icon="solar:ufo-2-duotone" width="48" class="spin" />
 			<p>설정 로딩 중...</p>
 		</div>
 	{:else}
 		<form onsubmit={(e) => { e.preventDefault(); saveSettings(); }} class="settings-form">
 			<!-- 시스템 템플릿 선택 -->
 			<div class="form-group">
-				<label for="template">
+				<label for="template" class="form-label">
 					<Icon icon="solar:document-text-bold-duotone" width="20" height="20" />
 					<span>시스템 템플릿</span>
 				</label>
@@ -126,6 +127,7 @@
 					id="template"
 					bind:value={settings.defaultPromptTemplateId}
 					required
+					class="select-field w-full"
 				>
 					<option value={null}>템플릿을 선택하세요</option>
 					{#each promptTemplates as template}
@@ -138,7 +140,7 @@
 
 			<!-- 캐릭터 선택 -->
 			<div class="form-group">
-				<label for="character">
+				<label for="character" class="form-label">
 					<Icon icon="solar:user-bold-duotone" width="20" height="20" />
 					<span>캐릭터</span>
 				</label>
@@ -146,6 +148,7 @@
 					id="character"
 					bind:value={settings.defaultCharacterId}
 					required
+					class="select-field w-full"
 				>
 					<option value={null}>캐릭터를 선택하세요</option>
 					{#each characters as character}
@@ -158,7 +161,7 @@
 
 			<!-- 메시지 -->
 			{#if message}
-				<div class="message" class:success={message.type === 'success'} class:error={message.type === 'error'}>
+				<div class:alert-success={message.type === 'success'} class:alert-error={message.type === 'error'}>
 					{message.text}
 				</div>
 			{/if}
@@ -199,70 +202,16 @@
 	}
 
 
-	.loading-state {
-		text-align: center;
-		padding: 3rem;
-		color: var(--color-text-muted);
-	}
-
 	.settings-form {
-		background: white;
+		background: var(--color-surface);
 		border-radius: 0.75rem;
 		padding: 2rem;
 		box-shadow: var(--shadow-sm);
 		margin-bottom: 1.5rem;
 	}
 
-	.form-group {
-		margin-bottom: 2rem;
-	}
-
 	.form-group:last-of-type {
 		margin-bottom: 0;
-	}
-
-	.form-group label {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-weight: 600;
-		color: #374151;
-		margin-bottom: 0.75rem;
-	}
-
-	.form-group select {
-		width: 100%;
-		padding: 0.75rem 1rem;
-		border: 1px solid #d1d5db;
-		border-radius: 0.5rem;
-		font-size: 1rem;
-		color: #1f2937;
-		background: white;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.form-group select:focus {
-		outline: none;
-		border-color: #667eea;
-		box-shadow: var(--focus-ring);
-	}
-
-	.message {
-		padding: 1rem;
-		border-radius: 0.5rem;
-		margin-bottom: 1.5rem;
-		font-weight: 500;
-	}
-
-	.message.success {
-		background: #d1fae5;
-		color: #065f46;
-	}
-
-	.message.error {
-		background: #fee2e2;
-		color: #991b1b;
 	}
 
 	.form-actions {
@@ -272,7 +221,7 @@
 	}
 
 	.info-card {
-		background: white;
+		background: var(--color-surface);
 		border-radius: 0.75rem;
 		padding: 1.5rem;
 		box-shadow: var(--shadow-sm);
@@ -284,7 +233,7 @@
 		gap: 0.5rem;
 		font-size: 1.125rem;
 		font-weight: 600;
-		color: #1f2937;
+		color: var(--color-text-primary);
 		margin: 0 0 1rem 0;
 	}
 
