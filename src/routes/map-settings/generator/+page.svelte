@@ -364,7 +364,7 @@
 	</div>
 
 	{#if saveMessage}
-		<div class="message-box {saveMessage.type}">
+		<div class:alert-success={saveMessage.type === 'success'} class:alert-error={saveMessage.type === 'error'} class:alert-info={saveMessage.type === 'info'}>
 			<Icon icon="solar:info-circle-bold" width="20" height="20" />
 			<span>{saveMessage.text}</span>
 		</div>
@@ -373,8 +373,8 @@
 	<div class="content-grid">
 		<!-- Left Panel: XML Input -->
 		<div class="input-panel">
-			<div class="input-section">
-				<label>
+			<div class="form-group">
+				<label class="form-label">
 					<Icon icon="solar:document-text-bold-duotone" width="20" height="20" />
 					맵 이름
 				</label>
@@ -382,12 +382,12 @@
 					type="text"
 					bind:value={mapName}
 					placeholder="예: crossroad_01"
-					class="input-field"
+					class="input-field w-full"
 				/>
 			</div>
 
-			<div class="input-section">
-				<label>
+			<div class="form-group">
+				<label class="form-label">
 					<Icon icon="solar:text-bold-duotone" width="20" height="20" />
 					맵 설명
 				</label>
@@ -395,11 +395,12 @@
 					bind:value={mapDescription}
 					placeholder="RAG 검색에 사용될 맵 설명을 입력하세요. 예: 신호등이 있는 4거리 교차로. 2차선 도로가 십자형으로 교차함."
 					rows="3"
+					class="textarea-field w-full"
 				></textarea>
 			</div>
 
-			<div class="input-section">
-				<label>
+			<div class="form-group">
+				<label class="form-label">
 					<Icon icon="solar:tag-bold-duotone" width="20" height="20" />
 					태그
 				</label>
@@ -407,13 +408,13 @@
 					type="text"
 					bind:value={mapTags}
 					placeholder="쉼표로 구분하여 입력하세요. 예: 교차로, 신호등, 4거리"
-					class="input-field"
+					class="input-field w-full"
 				/>
-				<small class="helper-text">태그는 쉼표(,)로 구분하여 입력하세요.</small>
+				<p class="form-hint">태그는 쉼표(,)로 구분하여 입력하세요.</p>
 			</div>
 
-			<div class="input-section">
-				<label>
+			<div class="form-group">
+				<label class="form-label">
 					<Icon icon="solar:point-on-map-bold-duotone" width="20" height="20" />
 					Node XML
 				</label>
@@ -421,11 +422,12 @@
 					bind:value={nodeXml}
 					placeholder="노드 XML을 입력하세요..."
 					rows="12"
+					class="textarea-field w-full"
 				></textarea>
 			</div>
 
-			<div class="input-section">
-				<label>
+			<div class="form-group">
+				<label class="form-label">
 					<Icon icon="solar:route-bold-duotone" width="20" height="20" />
 					Edge XML
 				</label>
@@ -433,11 +435,12 @@
 					bind:value={edgeXml}
 					placeholder="엣지 XML을 입력하세요..."
 					rows="12"
+					class="textarea-field w-full"
 				></textarea>
 			</div>
 
 			{#if parseError}
-				<div class="error-box">
+				<div class="alert-error">
 					<Icon icon="solar:danger-triangle-bold" width="20" height="20" />
 					<span>파싱 오류: {parseError}</span>
 				</div>
@@ -490,105 +493,6 @@
 		flex-direction: column;
 	}
 
-	.input-section {
-		margin-bottom: 1.5rem;
-	}
-
-	.input-section label {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		margin-bottom: 0.5rem;
-		font-weight: 600;
-		color: var(--color-text-primary);
-		font-size: 0.95rem;
-	}
-
-	textarea {
-		width: 100%;
-		padding: 1rem;
-		border: 1px solid var(--color-border-dark);
-		border-radius: 0.5rem;
-		font-size: 0.85rem;
-		font-family: 'Consolas', 'Monaco', monospace;
-		line-height: 1.6;
-		resize: vertical;
-		background: var(--color-background);
-	}
-
-	textarea:focus {
-		outline: none;
-		border-color: var(--color-primary);
-		box-shadow: var(--focus-ring);
-	}
-
-	.error-box {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.75rem 1rem;
-		background: var(--color-error-bg-light);
-		border: 1px solid var(--color-error);
-		border-radius: 0.5rem;
-		color: var(--color-error);
-		font-size: 0.875rem;
-	}
-
-	.message-box {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.75rem 1rem;
-		margin-bottom: 1rem;
-		border-radius: 0.5rem;
-		font-size: 0.875rem;
-		animation: slideDown 0.3s ease-out;
-	}
-
-	.message-box.info {
-		background: rgba(59, 130, 246, 0.1);
-		border: 1px solid var(--color-info);
-		color: var(--color-info);
-	}
-
-	.message-box.success {
-		background: rgba(72, 187, 120, 0.1);
-		border: 1px solid var(--color-success);
-		color: var(--color-success);
-	}
-
-	.message-box.error {
-		background: var(--color-error-bg-light);
-		border: 1px solid var(--color-error);
-		color: var(--color-error);
-	}
-
-	.input-field {
-		width: 100%;
-		padding: 0.75rem 1rem;
-		border: 1px solid var(--color-border-dark);
-		border-radius: 0.5rem;
-		font-size: 0.9rem;
-		font-family: inherit;
-	}
-
-	.input-field:focus {
-		outline: none;
-		border-color: var(--color-primary);
-		box-shadow: var(--focus-ring);
-	}
-
-	@keyframes slideDown {
-		from {
-			opacity: 0;
-			transform: translateY(-10px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
 	.preview-panel {
 		display: flex;
 		flex-direction: column;
@@ -627,12 +531,5 @@
 		gap: 0.5rem;
 		color: var(--color-text-secondary);
 		font-size: 0.875rem;
-	}
-
-	.helper-text {
-		display: block;
-		margin-top: 0.25rem;
-		color: var(--color-text-secondary);
-		font-size: 0.75rem;
 	}
 </style>

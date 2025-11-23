@@ -110,17 +110,17 @@
 		return `translate(${midX}, ${midY}) rotate(${angle})`;
 	}
 
-	// Node colors by type
+	// Node colors by type (using CSS variables for consistency)
 	function getNodeColor(type) {
 		switch (type) {
 			case 'traffic_light':
-				return '#ef4444'; // red
+				return 'var(--color-error)'; // red
 			case 'priority':
-				return '#3b82f6'; // blue
+				return 'var(--color-primary)'; // blue
 			case 'right_before_left':
-				return '#10b981'; // green
+				return 'var(--color-success)'; // green
 			default:
-				return '#6b7280'; // gray
+				return 'var(--color-text-muted)'; // gray
 		}
 	}
 
@@ -149,7 +149,7 @@
 			<!-- Grid (optional) -->
 			<defs>
 				<pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-					<path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e5e7eb" stroke-width="0.5"/>
+					<path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--color-border)" stroke-width="0.5"/>
 				</pattern>
 				<!-- Arrow marker -->
 				<marker
@@ -161,7 +161,7 @@
 					orient="auto"
 					markerUnits="strokeWidth"
 				>
-					<path d="M0,0 L0,6 L9,3 z" fill="#64748b" />
+					<path d="M0,0 L0,6 L9,3 z" fill="var(--color-text-secondary)" />
 				</marker>
 			</defs>
 
@@ -179,7 +179,7 @@
 				{#each edges as edge}
 					<path
 						d={getEdgePath(edge)}
-						stroke="#64748b"
+						stroke="var(--color-text-secondary)"
 						stroke-width="2"
 						fill="none"
 						marker-mid="url(#arrowhead)"
@@ -187,7 +187,7 @@
 					/>
 					<!-- Arrow at midpoint -->
 					<g transform={getArrowTransform(edge)}>
-						<circle r="3" fill="#64748b" />
+						<circle r="3" fill="var(--color-text-secondary)" />
 					</g>
 				{/each}
 			</g>
@@ -213,7 +213,7 @@
 							text-anchor="middle"
 							font-size="10"
 							font-weight="600"
-							fill="#1f2937"
+							fill="var(--color-text-primary)"
 						>
 							{node.id}
 						</text>
@@ -223,7 +223,7 @@
 							y={coords.y + 20}
 							text-anchor="middle"
 							font-size="8"
-							fill="#6b7280"
+							fill="var(--color-text-muted)"
 						>
 							{node.type}
 						</text>

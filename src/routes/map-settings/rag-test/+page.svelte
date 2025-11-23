@@ -315,13 +315,6 @@
 		gap: 0.5rem;
 	}
 
-	.badge {
-		padding: 0.25rem 0.75rem;
-		border-radius: 0.375rem;
-		font-size: 0.75rem;
-		font-weight: 600;
-	}
-
 	.badge.category {
 		background: var(--color-primary-bg-light);
 		color: var(--color-primary);
@@ -372,7 +365,7 @@
 	}
 
 	.score-info :global(svg) {
-		color: #f59e0b;
+		color: var(--color-warning);
 	}
 
 	.distance-info :global(svg) {
@@ -395,35 +388,6 @@
 		color: var(--color-error);
 	}
 
-	/* Loading state */
-	.loading-state {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		padding: 4rem 2rem;
-		color: var(--color-text-secondary);
-	}
-
-	.loading-state :global(.spin) {
-		animation: spin 1s linear infinite;
-		color: var(--color-primary);
-	}
-
-	@keyframes spin {
-		from {
-			transform: rotate(0deg);
-		}
-		to {
-			transform: rotate(360deg);
-		}
-	}
-
-	.loading-state p {
-		margin-top: 1rem;
-		font-size: 1rem;
-	}
-
 	/* Error state */
 	.error-state {
 		display: flex;
@@ -437,31 +401,5 @@
 	.error-state p {
 		margin: 1rem 0;
 		font-size: 1rem;
-	}
-
-	/* Empty state */
-	.empty-state {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		padding: 4rem 2rem;
-		color: var(--color-text-secondary);
-	}
-
-	.empty-state h3 {
-		margin: 1rem 0 0.5rem 0;
-		font-size: 1.5rem;
-		font-weight: 600;
-		color: var(--color-text-primary);
-	}
-
-	.empty-state p {
-		margin: 0;
-		font-size: 1rem;
-	}
-
-	.empty-state :global(svg) {
-		color: var(--color-text-muted);
 	}
 </style>

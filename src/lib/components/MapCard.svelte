@@ -146,7 +146,7 @@
 		color: var(--color-text-primary);
 	}
 
-	.badge {
+	.badge.embedded {
 		display: flex;
 		align-items: center;
 		gap: 0.25rem;
@@ -154,11 +154,8 @@
 		border-radius: 0.375rem;
 		font-size: 0.75rem;
 		font-weight: 500;
-	}
-
-	.badge.embedded {
-		background: rgba(16, 185, 129, 0.1);
-		color: #10b981;
+		background: var(--color-success-bg-light);
+		color: var(--color-success);
 	}
 
 	.description {
@@ -220,9 +217,7 @@
 		gap: 0.5rem;
 	}
 
-	.embed-btn,
-	.edit-btn,
-	.delete-btn {
+	.embed-btn {
 		padding: 0.375rem;
 		background: transparent;
 		border: none;
@@ -236,8 +231,22 @@
 	}
 
 	.embed-btn:hover {
-		background: rgba(16, 185, 129, 0.1);
+		background: var(--color-success-bg-light);
 		color: var(--color-success);
+	}
+
+	.edit-btn,
+	.delete-btn {
+		padding: 0.375rem;
+		background: transparent;
+		border: none;
+		border-radius: 0.375rem;
+		cursor: pointer;
+		color: var(--color-text-muted);
+		transition: all 0.2s;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.edit-btn:hover {
