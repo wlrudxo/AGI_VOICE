@@ -7,6 +7,8 @@
 	import { marked } from 'marked';
 	import { parseActions, parseWithSegments, getActionLabel } from '$lib/actions/parser';
 	import { executeActions } from '$lib/actions/executor';
+	import { parseVehicleCommands } from '$lib/actions/vehicleCommandParser';
+	import { executeCommandSequence } from '$lib/actions/vehicleCommandExecutor';
 
 	// Configure marked for safe rendering
 	marked.setOptions({
@@ -199,12 +201,61 @@
 		};
 	});
 
+	// Check if vehicle command parsing is enabled
+	function isVehicleCommandParsingEnabled() {
+		try {
+			return localStorage.getItem('carmaker_command_parsing_enabled') === 'true';
+		} catch (error) {
+			return false;
+		}
+	}
+
 	// 응답 처리 (재귀 가능)
 	async function processResponse(rawResponse, userMessage, hasDbChange) {
 		// 1. 응답 파싱
 		const actions = parseActions(rawResponse);
 		const segments = parseWithSegments(rawResponse);
 		const timestamp = new Date();
+
+		// 1.5. Check for vehicle commands if parsing is enabled
+		let vehicleCommandsExecuted = false;
+		if (isVehicleCommandParsingEnabled()) {
+			try {
+				const commandSequence = parseVehicleCommands(rawResponse);
+				if (commandSequence.commands.length > 0) {
+					console.log('🚗 Vehicle commands detected:', commandSequence);
+
+					// Add vehicle command execution message
+					messages.push({
+						role: 'action',
+						label: '🚗 차량 제어 명령 실행',
+						timestamp
+					});
+					scrollToBottom();
+
+					// Execute vehicle commands
+					const result = await executeCommandSequence(commandSequence, (msg) => {
+						console.log(msg);
+					});
+
+					// Add execution result message
+					messages.push({
+						role: 'assistant',
+						content: `✓ 차량 제어 명령 실행 완료: ${result.successCount}/${result.totalCommands} (${result.executionTime}ms)`,
+						timestamp: new Date()
+					});
+					scrollToBottom();
+					vehicleCommandsExecuted = true;
+				}
+			} catch (error) {
+				console.error('Vehicle command execution error:', error);
+				messages.push({
+					role: 'error',
+					content: `차량 제어 명령 실행 실패: ${error.message || String(error)}`,
+					timestamp: new Date()
+				});
+			}
+		}
 
 		// 2. 응답 표시
 		for (const segment of segments) {
