@@ -668,7 +668,7 @@ color: var(--color-success-dark); /* 추가 필요 */
 - [✅] 중복 `.empty-state` 스타일 제거
 - **실제 코드 감소**: 34줄
 
-#### `settings/+page.svelte` [⏳ 대기]
+#### `app-settings/+page.svelte` (renamed from `settings/+page.svelte`) [⏳ 진행 중]
 - [ ] Tailwind-like 클래스명 제거 (`max-w-4xl`, `mx-auto`)
 - [ ] 일관된 유틸리티 클래스 사용
 - [ ] 하드코딩 색상 변환

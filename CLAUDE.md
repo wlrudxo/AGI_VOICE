@@ -61,7 +61,7 @@ AGI Voice V2 is a desktop research application for **AI-based autonomous driving
   - Dashboard (`/`) - Main interface with AI chat widget for autonomous driving research
   - Map Settings (`/map-settings/*`) - SUMO map management (generator, library, rag-test)
   - AI Settings (`/ai-settings/*`) - AI system configuration (system messages, characters, commands, user info, final message)
-  - Settings (`/settings`) - Application settings
+  - App Settings (`/app-settings`) - Application settings (DB, backup, Claude workspace)
 - **State Management**:
   - Svelte stores (`src/lib/stores/`)
   - `uiStore.ts` - UI state (sidebar, chat, widget mode, conversation title)

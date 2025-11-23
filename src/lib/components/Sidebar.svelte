@@ -15,7 +15,7 @@
     { name: '자율주행', path: '/autonomous-driving', icon: 'solar:wheel-bold-duotone' },
     { name: 'Map 생성', path: '/map-settings', icon: 'solar:map-point-wave-bold-duotone' },
     { name: 'AI 설정', path: '/ai-settings', icon: 'solar:settings-minimalistic-bold-duotone' },
-    { name: '설정', path: '/settings', icon: 'solar:settings-bold-duotone' }
+    { name: '앱 설정', path: '/app-settings', icon: 'solar:settings-bold-duotone' }
   ];
 
   $: currentPath = $page.url.pathname;
