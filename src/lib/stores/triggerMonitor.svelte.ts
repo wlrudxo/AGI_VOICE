@@ -142,7 +142,7 @@ class TriggerMonitor {
     this.addLog(`  Vehicle data: ${dataSnapshot}`);
 
     // Execute trigger action sequence (handles both LLM and Rule modes)
-    await this.executeEmergencyDeceleration(trigger, vehicleData);
+    await this.executeTriggerActionSequence(trigger, vehicleData);
   }
 
   /**
@@ -152,7 +152,7 @@ class TriggerMonitor {
    * 3. LLM mode: Request LLM and wait for response / Rule mode: Wait 1 second
    * 4. Resume simulation (time scale = 1.0x) + Execute commands
    */
-  private async executeEmergencyDeceleration(trigger: Trigger, vehicleData: Record<string, number>): Promise<void> {
+  private async executeTriggerActionSequence(trigger: Trigger, vehicleData: Record<string, number>): Promise<void> {
     try {
       // Step 1: Pause simulation (ultra-slow motion)
       this.addLog('  → Pausing simulation (time scale = 0.001x)');
