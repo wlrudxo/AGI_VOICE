@@ -529,7 +529,7 @@
       <code>캐릭터</code>
       <p>
         AI의 말투, 성격, 톤을 정의합니다.
-        예: "Aris" - 친근하고 격려적인 톤
+        예: "Research Assistant" - 전문적이고 친절한 톤
       </p>
     </div>
 

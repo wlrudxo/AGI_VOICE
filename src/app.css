@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  /* Blue Archive inspired semantic colors */
+  /* Semantic colors */
   --color-primary: #5b9cf5;
   --color-primary-dark: #3b7dd8;
   --color-primary-light: #88b8f7;

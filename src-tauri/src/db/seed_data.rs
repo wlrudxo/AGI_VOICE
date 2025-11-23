@@ -55,7 +55,7 @@ async fn insert_default_prompt_templates(db: &DatabaseConnection) -> Result<(), 
 async fn insert_default_characters(db: &DatabaseConnection) -> Result<(), DbErr> {
     let now = Utc::now().naive_utc();
 
-    let aris = character::ActiveModel {
+    let default_character = character::ActiveModel {
         id: Set(1),
         name: Set("Research Assistant".to_string()),
         prompt_content: Set(r#"# Character: Professional Research Assistant
@@ -82,8 +82,8 @@ async fn insert_default_characters(db: &DatabaseConnection) -> Result<(), DbErr>
         updated_at: Set(now),
     };
 
-    aris.insert(db).await?;
-    println!("✅ Default character (Aris) inserted");
+    default_character.insert(db).await?;
+    println!("✅ Default character inserted");
 
     Ok(())
 }

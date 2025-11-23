@@ -129,7 +129,7 @@ pub async fn get_conversations(db: State<'_, AiChatDb>) -> Result<Vec<Conversati
 The AI chat uses a **template-based dynamic prompt system** stored in the database:
 
 1. **System Message** (prompt_templates): Core AI behavior and instructions
-2. **Character** (characters): Personality, tone, and style (e.g., "Aris" from Blue Archive)
+2. **Character** (characters): Personality, tone, and style
 3. **Command Templates** (command_templates): Tag-based action instructions
    - Multiple templates can be created and activated/deactivated
    - Only active templates are sent to AI

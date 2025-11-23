@@ -27,41 +27,41 @@
 
   <div class="info-section">
     <div class="info-card">
-      <h2 class="text-primary">시작하기</h2>
+      <h2 class="text-primary">AI 채팅</h2>
       <p class="text-secondary">
-        오른쪽 하단의 AI 채팅 버튼을 클릭하여 대화를 시작하세요.
+        Claude CLI 기반 대화형 AI 어시스턴트 시스템
       </p>
       <ul class="feature-list">
-        <li>자율주행 맵 생성 연구</li>
-        <li>주행 판단 알고리즘 분석</li>
-        <li>최신 연구 동향 및 문헌 검색</li>
-        <li>데이터 분석 및 인사이트 제공</li>
+        <li><strong>동적 프롬프트</strong>: 시스템 메시지 + 캐릭터 + 명령어 조합</li>
+        <li><strong>대화 관리</strong>: 히스토리 저장 및 컨텍스트 유지</li>
+        <li><strong>변수 치환</strong>: 사용자 정보 및 캐릭터 자동 적용</li>
+        <li><strong>위젯 모드</strong>: 컴팩트 채팅 전용 인터페이스</li>
       </ul>
     </div>
 
     <div class="info-card">
-      <h2 class="text-primary">주요 기능</h2>
+      <h2 class="text-primary">자율주행</h2>
       <p class="text-secondary">
-        AI 설정 메뉴에서 시스템 동작을 커스터마이징할 수 있습니다.
+        CarMaker 연동 실시간 차량 제어 및 모니터링
       </p>
       <ul class="feature-list">
-        <li><strong>시스템 메시지</strong>: AI 기본 동작 정의</li>
-        <li><strong>캐릭터</strong>: AI 페르소나 설정</li>
-        <li><strong>명령어</strong>: 커스텀 액션 정의</li>
-        <li><strong>대화 히스토리</strong>: 이전 대화 기록 관리</li>
+        <li><strong>실시간 제어</strong>: 가스/브레이크/조향각 직접 제어</li>
+        <li><strong>차량 모니터링</strong>: 13개 신호 실시간 추적</li>
+        <li><strong>트리거 시스템</strong>: 조건 기반 자동 응답 및 제어</li>
+        <li><strong>AI 연동</strong>: LLM 기반 주행 판단 및 규칙 제어</li>
       </ul>
     </div>
 
     <div class="info-card">
-      <h2 class="text-primary">프로젝트 정보</h2>
+      <h2 class="text-primary">Map 생성</h2>
       <p class="text-secondary">
-        이 프로젝트는 범용 AI 채팅 시스템을 기반으로 합니다.
+        SUMO 교통 시뮬레이션 맵 생성 및 관리
       </p>
       <ul class="feature-list">
-        <li><strong>Frontend</strong>: Tauri + SvelteKit + Svelte 5</li>
-        <li><strong>Backend</strong>: Rust + SeaORM + SQLite</li>
-        <li><strong>AI</strong>: Claude CLI Integration</li>
-        <li><strong>Database</strong>: ai_chat.db (Generic & Reusable)</li>
+        <li><strong>맵 편집기</strong>: 노드/엣지 XML 기반 시각적 생성</li>
+        <li><strong>맵 라이브러리</strong>: 저장된 맵 검색 및 관리</li>
+        <li><strong>임베딩 시스템</strong>: OpenAI 벡터화 준비 (Phase 2)</li>
+        <li><strong>RAG 검색</strong>: 자연어 기반 유사 맵 추천 (Phase 3)</li>
       </ul>
     </div>
   </div>

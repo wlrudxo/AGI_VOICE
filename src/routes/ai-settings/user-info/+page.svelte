@@ -140,7 +140,7 @@
 			<code>&#123;&#123;char&#125;&#125;</code>
 			<p>
 				선택된 캐릭터 이름으로 대체됩니다.
-				예: "Aris" 선택 시 → "Respond as &#123;&#123;char&#125;&#125;" → "Respond as Aris"
+				예: "Research Assistant" 선택 시 → "Respond as &#123;&#123;char&#125;&#125;" → "Respond as Research Assistant"
 			</p>
 		</div>
 	</section>
@@ -159,9 +159,9 @@
 		<div class="example-card">
 			<h5>실제 치환 결과</h5>
 			<p>
-				사용자: "홍길동", 캐릭터: "Aris" 선택 시<br/>
+				사용자: "홍길동", 캐릭터: "Research Assistant" 선택 시<br/>
 				→ "You are in a text messaging conversation with <strong>홍길동</strong>.
-				Respond as <strong>Aris</strong> would, using a friendly and encouraging tone."
+				Respond as <strong>Research Assistant</strong> would, using a professional and friendly tone."
 			</p>
 		</div>
 	</section>

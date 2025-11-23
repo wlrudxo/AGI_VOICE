@@ -113,7 +113,7 @@
 						type="text"
 						id="name"
 						bind:value={formData.name}
-						placeholder="예: Aris (블루 아카이브)"
+						placeholder="예: Research Assistant"
 						class="input-field w-full"
 					/>
 				</div>
