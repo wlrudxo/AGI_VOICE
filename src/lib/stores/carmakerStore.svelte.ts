@@ -199,6 +199,69 @@ class CarMakerStore {
   }
 
   /**
+   * Pause simulation (set time acceleration to 0.001x)
+   * Automatically stops monitoring to prevent timeouts
+   */
+  async pauseSimulation(): Promise<void> {
+    try {
+      // Save monitoring state and stop monitoring to avoid timeouts
+      const wasMonitoring = this.isMonitoring;
+      if (wasMonitoring) {
+        await this.stopMonitoring();
+        this.addLog('→ Monitoring paused (prevent timeout in low-speed mode)');
+      }
+
+      // Set time acceleration to 0.001 (nearly paused) for 30 seconds
+      await this.executeCommand('DVAWrite SC.TAccel 0.001 30000 Abs');
+      this.addLog('✓ Simulation paused (time scale = 0.001)');
+
+      return wasMonitoring;
+    } catch (error: any) {
+      this.addLog(`✗ Failed to pause simulation: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Resume simulation (set time acceleration to 1.0x)
+   * @param restartMonitoring - Whether to restart monitoring (default: false)
+   */
+  async resumeSimulation(restartMonitoring: boolean = false): Promise<void> {
+    try {
+      // Set time acceleration to 1.0 (normal speed) for 30 seconds
+      await this.executeCommand('DVAWrite SC.TAccel 1.0 30000 Abs');
+      this.addLog('✓ Simulation resumed (time scale = 1.0)');
+
+      // Resume monitoring if requested
+      if (restartMonitoring) {
+        await this.startMonitoring();
+        this.addLog('→ Monitoring resumed');
+      }
+    } catch (error: any) {
+      this.addLog(`✗ Failed to resume simulation: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Emergency deceleration (for trigger activation)
+   * Immediately sets brake to maximum and gas to 0
+   * @param duration - Duration in milliseconds (default: 5000ms)
+   */
+  async emergencyDecelerate(duration: number = 5000): Promise<void> {
+    try {
+      // Set gas to 0
+      await invoke('set_gas', { value: 0.0, duration });
+      // Set brake to maximum
+      await invoke('set_brake', { value: 1.0, duration });
+      this.addLog('⚠️ Emergency deceleration activated');
+    } catch (error: any) {
+      this.addLog(`✗ Emergency deceleration failed: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
    * Cleanup (called on destroy)
    */
   cleanup(): void {

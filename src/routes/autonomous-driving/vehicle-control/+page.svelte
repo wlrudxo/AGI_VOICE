@@ -55,35 +55,18 @@
 
   async function pauseSimulation() {
     try {
-      // Save monitoring state and stop monitoring to avoid timeouts
-      wasMonitoringBeforePause = carmakerStore.isMonitoring;
-      if (carmakerStore.isMonitoring) {
-        await carmakerStore.stopMonitoring();
-        carmakerStore.addLog('→ Monitoring paused (prevent timeout in low-speed mode)');
-      }
-
-      // Set time acceleration to 0.001 (nearly paused) for 30 seconds
-      await carmakerStore.executeCommand('DVAWrite SC.TAccel 0.001 30000 Abs');
-      carmakerStore.addLog('✓ Simulation paused (time scale = 0.001)');
+      wasMonitoringBeforePause = await carmakerStore.pauseSimulation();
     } catch (error: any) {
-      carmakerStore.addLog(`✗ Failed to pause simulation: ${error}`);
+      // Error already logged in store
     }
   }
 
   async function resumeSimulation() {
     try {
-      // Set time acceleration to 1.0 (normal speed) for 30 seconds
-      await carmakerStore.executeCommand('DVAWrite SC.TAccel 1.0 30000 Abs');
-      carmakerStore.addLog('✓ Simulation resumed (time scale = 1.0)');
-
-      // Resume monitoring if it was active before pause
-      if (wasMonitoringBeforePause) {
-        await carmakerStore.startMonitoring();
-        carmakerStore.addLog('→ Monitoring resumed');
-        wasMonitoringBeforePause = false;
-      }
+      await carmakerStore.resumeSimulation(wasMonitoringBeforePause);
+      wasMonitoringBeforePause = false;
     } catch (error: any) {
-      carmakerStore.addLog(`✗ Failed to resume simulation: ${error}`);
+      // Error already logged in store
     }
   }
 </script>
