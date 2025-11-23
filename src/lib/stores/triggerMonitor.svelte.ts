@@ -40,6 +40,9 @@ class TriggerMonitor {
   private triggeredIds = new Set<number>();
   private resetTimeout: number | null = null;
 
+  // Execution state (prevent checking during trigger execution)
+  private isExecuting = false;
+
   // Logs
   logMessages = $state<string[]>([]);
 
@@ -100,6 +103,11 @@ class TriggerMonitor {
    * Check all triggers against current vehicle data
    */
   private checkTriggers(): void {
+    // Skip if already executing a trigger
+    if (this.isExecuting) {
+      return;
+    }
+
     const vehicleData = carmakerStore.monitorData;
 
     // Skip if no vehicle data available
@@ -108,6 +116,11 @@ class TriggerMonitor {
     }
 
     for (const trigger of this.triggers) {
+      // Skip if not active
+      if (!trigger.isActive) {
+        continue;
+      }
+
       // Skip if already triggered (prevent duplicate execution)
       if (this.triggeredIds.has(trigger.id)) {
         continue;
@@ -141,8 +154,16 @@ class TriggerMonitor {
       .join(', ');
     this.addLog(`  Vehicle data: ${dataSnapshot}`);
 
-    // Execute trigger action sequence (handles both LLM and Rule modes)
-    await this.executeTriggerActionSequence(trigger, vehicleData);
+    // Set executing flag to prevent other triggers during execution
+    this.isExecuting = true;
+
+    try {
+      // Execute trigger action sequence (handles both LLM and Rule modes)
+      await this.executeTriggerActionSequence(trigger, vehicleData);
+    } finally {
+      // Always clear executing flag
+      this.isExecuting = false;
+    }
   }
 
   /**
