@@ -233,7 +233,7 @@
           <h3>Trigger Log</h3>
           <button class="btn-text" onclick={() => triggerMonitor.clearLogs()}>Clear</button>
         </div>
-        <div class="log-container trigger-log">
+        <div class="log-container">
           {#each triggerMonitor.logMessages as message}
             <div class="log-message text-secondary">{message}</div>
           {/each}
@@ -461,17 +461,14 @@
     margin: 0 auto;
   }
 
-  /* Monitoring Control */
-  .monitoring-control {
-    margin-bottom: 2rem;
-  }
-
+  /* Monitoring Control - use existing section styles from app.css */
   .monitoring-actions {
     display: flex;
     gap: 0.75rem;
     align-items: center;
   }
 
+  /* Status badges - custom styles (not in app.css) */
   .status-badge {
     padding: 0.375rem 0.75rem;
     border-radius: 0.375rem;
@@ -480,7 +477,7 @@
   }
 
   .status-badge.disconnected {
-    background: rgba(239, 68, 68, 0.1);
+    background: var(--color-error-bg-light);
     color: var(--color-error);
   }
 
@@ -503,7 +500,7 @@
     color: var(--color-success);
   }
 
-  /* Log Section */
+  /* Log Section - reuse log-container from app.css */
   .log-section {
     margin-top: 1.5rem;
   }
@@ -520,11 +517,6 @@
     font-size: 0.9rem;
     font-weight: 600;
     color: var(--color-text-secondary);
-  }
-
-  .trigger-log {
-    max-height: 300px;
-    overflow-y: auto;
   }
 
   /* Form Card */
