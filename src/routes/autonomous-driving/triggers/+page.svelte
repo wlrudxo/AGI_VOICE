@@ -2,8 +2,6 @@
   import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import Icon from '@iconify/svelte';
-  import { carmakerStore } from '$lib/stores/carmakerStore.svelte';
-  import { triggerMonitor } from '$lib/stores/triggerMonitor.svelte';
   import HelpModal from '$lib/components/HelpModal.svelte';
 
   interface TriggerCondition {
@@ -33,17 +31,11 @@
   // Load triggers on mount
   onMount(async () => {
     await loadTriggers();
-    await carmakerStore.checkConnectionStatus();
   });
-
-  // Note: No cleanup on unmount - triggerMonitor is a global store
-  // shared across all autonomous-driving tabs
 
   async function loadTriggers() {
     try {
       triggers = await invoke('get_triggers');
-      // Update trigger monitor with latest triggers
-      await triggerMonitor.loadTriggers();
     } catch (error: any) {
       console.error('Failed to load triggers:', error);
     }
@@ -200,51 +192,6 @@
       </button>
     </div>
   </div>
-
-  <!-- Trigger Monitoring Control -->
-  <section class="card section monitoring-control">
-    <div class="section-header">
-      <h2 class="section-title text-primary">
-        <Icon icon="solar:monitoring-bold-duotone" width="24" height="24" />
-        Trigger Monitoring
-      </h2>
-      <div class="monitoring-actions">
-        {#if !carmakerStore.isConnected}
-          <span class="status-badge disconnected">CarMaker Disconnected</span>
-        {:else if !carmakerStore.isMonitoring}
-          <span class="status-badge warning">Vehicle Monitoring Off</span>
-        {:else}
-          <button
-            class="btn-primary"
-            onclick={() => triggerMonitor.isMonitoring ? triggerMonitor.stopMonitoring() : triggerMonitor.startMonitoring()}
-          >
-            {triggerMonitor.isMonitoring ? 'Stop Trigger Monitoring' : 'Start Trigger Monitoring'}
-          </button>
-        {/if}
-      </div>
-    </div>
-    {#if triggerMonitor.isMonitoring}
-      <div class="monitoring-status">
-        <Icon icon="solar:power-bold-duotone" width="20" height="20" class="status-icon active" />
-        <span class="text-accent">Monitoring active - {triggers.filter(t => t.isActive).length} triggers enabled</span>
-      </div>
-    {/if}
-
-    <!-- Trigger Monitor Log -->
-    {#if triggerMonitor.logMessages.length > 0}
-      <div class="log-section">
-        <div class="log-header">
-          <h3>Trigger Log</h3>
-          <button class="btn-text" onclick={() => triggerMonitor.clearLogs()}>Clear</button>
-        </div>
-        <div class="log-container">
-          {#each triggerMonitor.logMessages as message}
-            <div class="log-message text-secondary">{message}</div>
-          {/each}
-        </div>
-      </div>
-    {/if}
-  </section>
 
   {#if showForm}
     <!-- Trigger Form -->

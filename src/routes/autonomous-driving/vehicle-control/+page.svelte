@@ -2,13 +2,15 @@
   import { onMount } from 'svelte';
   import Icon from '@iconify/svelte';
   import { carmakerStore } from '$lib/stores/carmakerStore.svelte';
+  import { triggerMonitor } from '$lib/stores/triggerMonitor.svelte';
 
   // Check connection status on mount (for page reload)
   onMount(async () => {
     await carmakerStore.checkConnectionStatus();
+    await triggerMonitor.loadTriggers();
   });
 
-  // Note: No cleanup on unmount - carmakerStore is a global store
+  // Note: No cleanup on unmount - carmakerStore and triggerMonitor are global stores
   // shared across all autonomous-driving tabs
 
   // Fixed order signal definitions (matches Python implementation order)
@@ -75,20 +77,6 @@
       <h1>차량 제어</h1>
       <p class="page-description">CarMaker 차량을 실시간으로 제어합니다.</p>
     </div>
-    <div class="header-actions">
-      <!-- 설정 탭의 connect와 동일 -->
-      {#if carmakerStore.isConnected}
-        <button class="btn-danger" onclick={() => carmakerStore.disconnect()}>
-          <Icon icon="solar:link-broken-bold" width="20" height="20" />
-          Disconnect
-        </button>
-      {:else}
-        <button class="btn-primary" onclick={() => carmakerStore.connect()}>
-          <Icon icon="solar:link-circle-bold" width="20" height="20" />
-          Connect
-        </button>
-      {/if}
-    </div>
   </div>
 
   <!-- Simulation Control -->
@@ -96,6 +84,62 @@
     <h2 class="section-title text-primary">
       Simulation Control
     </h2>
+
+    <!-- Primary Controls -->
+    <div class="control-buttons">
+      {#if carmakerStore.isConnected}
+        <button class="btn-danger btn-compact" onclick={() => carmakerStore.disconnect()}>
+          <Icon icon="solar:link-broken-bold" width="16" height="16" />
+          Disconnect
+        </button>
+      {:else}
+        <button class="btn-primary btn-compact" onclick={() => carmakerStore.connect()}>
+          <Icon icon="solar:link-circle-bold" width="16" height="16" />
+          Connect
+        </button>
+      {/if}
+
+      <button
+        class="btn-compact"
+        class:btn-danger={carmakerStore.isMonitoring}
+        class:btn-primary={!carmakerStore.isMonitoring}
+        onclick={() => carmakerStore.toggleMonitoring()}
+        disabled={!carmakerStore.isConnected}
+      >
+        <Icon
+          icon={carmakerStore.isMonitoring ? 'solar:stop-bold' : 'solar:monitoring-bold'}
+          width="16"
+          height="16"
+        />
+        {carmakerStore.isMonitoring ? 'Stop Monitor' : 'Start Monitor'}
+      </button>
+
+      <button
+        class="btn-compact"
+        class:btn-danger={triggerMonitor.isMonitoring}
+        class:btn-primary={!triggerMonitor.isMonitoring}
+        onclick={() => triggerMonitor.isMonitoring ? triggerMonitor.stopMonitoring() : triggerMonitor.startMonitoring()}
+        disabled={!carmakerStore.isConnected || !carmakerStore.isMonitoring}
+      >
+        <Icon
+          icon={triggerMonitor.isMonitoring ? 'solar:stop-bold' : 'solar:bolt-bold'}
+          width="16"
+          height="16"
+        />
+        {triggerMonitor.isMonitoring ? 'Stop Trigger' : 'Start Trigger'}
+      </button>
+
+      {#if triggerMonitor.isMonitoring}
+        <div class="trigger-status">
+          <Icon icon="solar:power-bold-duotone" width="16" height="16" class="text-accent" />
+          <span class="text-accent">{triggerMonitor.triggers.filter(t => t.isActive).length} active</span>
+        </div>
+      {:else}
+        <div></div>
+      {/if}
+    </div>
+
+    <!-- Simulation Controls -->
     <div class="control-buttons">
       <button
         class="btn-primary btn-compact"
@@ -134,14 +178,9 @@
 
   <!-- Vehicle Data Monitor -->
   <section class="card section">
-    <div class="section-header">
-      <h2 class="section-title text-primary">
-        Vehicle Data Monitor
-      </h2>
-      <button class="btn-primary" onclick={() => carmakerStore.toggleMonitoring()}>
-        {carmakerStore.isMonitoring ? 'Stop Monitoring' : 'Start Monitoring'}
-      </button>
-    </div>
+    <h2 class="section-title text-primary">
+      Vehicle Data Monitor
+    </h2>
     <div class="table-wrapper" style="max-height: 600px; overflow-y: auto;">
       <table class="table monitor-table">
         <thead>
@@ -169,14 +208,25 @@
 
   <!-- Log Section -->
   <section class="card section">
-    <h2 class="section-title text-primary">
-      Log
-    </h2>
+    <div class="section-header">
+      <h2 class="section-title text-primary">
+        System Log
+      </h2>
+      <button class="btn-text" onclick={() => { carmakerStore.logMessages = []; triggerMonitor.clearLogs(); }}>
+        <Icon icon="solar:trash-bin-trash-bold" width="16" height="16" />
+        Clear All
+      </button>
+    </div>
     <div class="log-container">
-      {#if carmakerStore.logMessages.length === 0}
+      {#if carmakerStore.logMessages.length === 0 && triggerMonitor.logMessages.length === 0}
         <p class="text-muted">No logs yet...</p>
       {:else}
+        <!-- CarMaker logs -->
         {#each carmakerStore.logMessages as message}
+          <div class="log-message text-secondary">{message}</div>
+        {/each}
+        <!-- Trigger logs -->
+        {#each triggerMonitor.logMessages as message}
           <div class="log-message text-secondary">{message}</div>
         {/each}
       {/if}
@@ -190,11 +240,25 @@
     margin: 0 auto;
   }
 
+  /* Control Buttons Grid */
   .control-buttons {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 0.75rem;
-    margin-top: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .control-buttons:last-child {
+    margin-bottom: 0;
+  }
+
+  .trigger-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
   }
 
   /* Monitor table with fixed column widths */
