@@ -149,13 +149,31 @@ class TriggerMonitor {
   }
 
   /**
-   * Execute emergency deceleration
+   * Execute emergency deceleration sequence
+   * 1. Pause simulation (time scale = 0.001x)
+   * 2. Emergency brake (brake=1.0, gas=0.0)
+   * 3. Wait 1 second (real time)
+   * 4. Resume simulation (time scale = 1.0x)
    */
   private async executeEmergencyDeceleration(trigger: Trigger): Promise<void> {
     try {
-      this.addLog('  → Executing emergency deceleration...');
+      // Step 1: Pause simulation (ultra-slow motion)
+      this.addLog('  → Step 1: Pausing simulation (time scale = 0.001x)');
+      const wasMonitoring = await carmakerStore.pauseSimulation();
+
+      // Step 2: Emergency deceleration
+      this.addLog('  → Step 2: Emergency deceleration (brake=1.0, gas=0.0)');
       await carmakerStore.emergencyDecelerate(5000);
-      this.addLog('  ✓ Emergency deceleration completed');
+
+      // Step 3: Wait 1 second (real time)
+      this.addLog('  → Step 3: Waiting 1 second...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Step 4: Resume simulation (normal speed)
+      this.addLog('  → Step 4: Resuming simulation (time scale = 1.0x)');
+      await carmakerStore.resumeSimulation(wasMonitoring);
+
+      this.addLog('  ✓ Emergency deceleration sequence completed');
     } catch (error: any) {
       this.addLog(`  ✗ Emergency deceleration failed: ${error}`);
     }

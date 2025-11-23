@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import Icon from '@iconify/svelte';
   import { carmakerStore } from '$lib/stores/carmakerStore.svelte';
@@ -32,10 +32,8 @@
     await carmakerStore.checkConnectionStatus();
   });
 
-  // Cleanup on unmount
-  onDestroy(() => {
-    triggerMonitor.cleanup();
-  });
+  // Note: No cleanup on unmount - triggerMonitor is a global store
+  // shared across all autonomous-driving tabs
 
   async function loadTriggers() {
     try {
