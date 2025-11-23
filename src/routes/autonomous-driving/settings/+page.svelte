@@ -1,31 +1,35 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import Icon from '@iconify/svelte';
+  import { carmakerStore } from '$lib/stores/carmakerStore.svelte';
 
-  // Connection settings
-  let host = $state('localhost');
-  let port = $state('16660');
-  let isConnected = $state(false);
-
-  // Control settings
-  let duration = $state('2000');
-  let controlMode = $state('Abs');
   const controlModes = ['Abs', 'Off', 'Fac', 'AbsRamp', 'FacRamp'];
 
   let saving = $state(false);
   let message = $state<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  function connect() {
-    // TODO: Implement connection logic
-    isConnected = true;
-    message = { type: 'success', text: `${host}:${port}에 연결되었습니다.` };
-    setTimeout(() => { message = null; }, 3000);
+  // Check connection status on mount (for page reload)
+  onMount(async () => {
+    await carmakerStore.checkConnectionStatus();
+  });
+
+  async function connect() {
+    const success = await carmakerStore.connect();
+    if (success) {
+      message = { type: 'success', text: `${carmakerStore.host}:${carmakerStore.port}에 연결되었습니다.` };
+      setTimeout(() => { message = null; }, 3000);
+    } else {
+      message = { type: 'error', text: '연결에 실패했습니다.' };
+      setTimeout(() => { message = null; }, 3000);
+    }
   }
 
-  function disconnect() {
-    // TODO: Implement disconnection logic
-    isConnected = false;
-    message = { type: 'success', text: 'CarMaker와의 연결이 해제되었습니다.' };
-    setTimeout(() => { message = null; }, 3000);
+  async function disconnect() {
+    const success = await carmakerStore.disconnect();
+    if (success) {
+      message = { type: 'success', text: 'CarMaker와의 연결이 해제되었습니다.' };
+      setTimeout(() => { message = null; }, 3000);
+    }
   }
 
   async function saveSettings() {
@@ -33,8 +37,13 @@
       saving = true;
       message = null;
 
-      // TODO: Save settings to backend
-      console.log('Settings saved:', { host, port, duration, controlMode });
+      // TODO: Save settings to backend (if needed)
+      console.log('Settings saved:', {
+        host: carmakerStore.host,
+        port: carmakerStore.port,
+        duration: carmakerStore.duration,
+        controlMode: carmakerStore.controlMode
+      });
 
       message = { type: 'success', text: '설정이 저장되었습니다.' };
 
@@ -73,8 +82,8 @@
           <input
             id="host"
             type="text"
-            bind:value={host}
-            disabled={isConnected}
+            bind:value={carmakerStore.host}
+            disabled={carmakerStore.isConnected}
             class="input-field"
           />
         </div>
@@ -83,29 +92,29 @@
           <input
             id="port"
             type="text"
-            bind:value={port}
-            disabled={isConnected}
+            bind:value={carmakerStore.port}
+            disabled={carmakerStore.isConnected}
             class="input-field"
           />
         </div>
         <button
           class="btn-primary"
-          disabled={isConnected}
+          disabled={carmakerStore.isConnected}
           onclick={connect}
         >
           Connect
         </button>
         <button
           class="btn-secondary"
-          disabled={!isConnected}
+          disabled={!carmakerStore.isConnected}
           onclick={disconnect}
         >
           Disconnect
         </button>
         <div class="status-indicator">
-          <span class="status-dot" class:connected={isConnected}></span>
+          <span class="status-dot" class:connected={carmakerStore.isConnected}></span>
           <span class="text-secondary">
-            {isConnected ? 'Connected' : 'Disconnected'}
+            {carmakerStore.isConnected ? 'Connected' : 'Disconnected'}
           </span>
         </div>
       </div>
@@ -126,13 +135,13 @@
           <input
             id="duration"
             type="text"
-            bind:value={duration}
+            bind:value={carmakerStore.duration}
             class="input-field"
           />
         </div>
         <div class="input-group">
           <label for="mode">Control Mode:</label>
-          <select id="mode" bind:value={controlMode} class="select-field">
+          <select id="mode" bind:value={carmakerStore.controlMode} class="select-field">
             {#each controlModes as mode}
               <option value={mode}>{mode}</option>
             {/each}

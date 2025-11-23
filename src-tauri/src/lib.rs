@@ -84,6 +84,20 @@ pub fn run() {
             ai::embeddings::search_similar_maps,
             ai::embeddings::build_all_embeddings,
             ai::embeddings::embeddings_health,
+            // CarMaker Control
+            commands::connect_carmaker,
+            commands::disconnect_carmaker,
+            commands::get_connection_status,
+            commands::get_vehicle_status,
+            commands::execute_vehicle_command,
+            commands::set_gas,
+            commands::set_brake,
+            commands::set_steer,
+            commands::set_target_speed,
+            commands::start_simulation,
+            commands::stop_simulation,
+            commands::is_monitoring_active,
+            commands::set_monitoring_state,
         ])
         .setup(|app| {
             // Initialize AI chat database connection
@@ -117,6 +131,11 @@ pub fn run() {
                     return Err(e.into());
                 }
             }
+
+            // Initialize CarMaker state
+            let carmaker_state = commands::carmaker_control::CarMakerState::new();
+            app.manage(carmaker_state);
+            println!("✅ CarMaker state initialized");
 
 
             // 트레이 메뉴 생성

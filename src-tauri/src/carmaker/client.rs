@@ -1,12 +1,15 @@
 use tokio::net::TcpStream;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::time::{timeout, Duration};
+use tokio::sync::Mutex;
 use std::collections::HashMap;
+use std::sync::Arc;
 use super::types::{TelemetryData, ESSENTIAL_QUANTITIES};
 
 /// CarMaker TCP client for APO (Application Programming Option) communication
+/// Uses Mutex to prevent concurrent requests (CarMaker APO requires sequential request-response)
 pub struct CarMakerClient {
-    stream: Option<TcpStream>,
+    stream: Option<Arc<Mutex<TcpStream>>>,
     host: String,
     port: u16,
 }
@@ -38,7 +41,7 @@ impl CarMakerClient {
         .map_err(|_| format!("Connection timeout to {}", addr))?
         .map_err(|e| format!("Failed to connect to {}: {}", addr, e))?;
 
-        self.stream = Some(stream);
+        self.stream = Some(Arc::new(Mutex::new(stream)));
         Ok(())
     }
 
@@ -48,25 +51,30 @@ impl CarMakerClient {
     }
 
     /// Send a command to CarMaker and receive response
+    /// Uses Mutex lock to ensure sequential request-response (prevents response mixing)
     pub async fn send_command(&mut self, cmd: &str) -> Result<String, String> {
-        let stream = self.stream.as_mut()
-            .ok_or_else(|| "Not connected to CarMaker".to_string())?;
+        let stream_arc = self.stream.as_ref()
+            .ok_or_else(|| "Not connected to CarMaker".to_string())?
+            .clone();
+
+        // Lock the stream for the entire request-response cycle (like Python's with lock:)
+        let mut stream = stream_arc.lock().await;
 
         // Send command (add newline)
         let full_cmd = format!("{}\n", cmd);
 
         timeout(
-            Duration::from_secs(2),
+            Duration::from_millis(2000),  // Increased to 2s for low-speed simulation compatibility
             stream.write_all(full_cmd.as_bytes())
         )
         .await
         .map_err(|_| "Command send timeout".to_string())?
         .map_err(|e| format!("Failed to send command: {}", e))?;
 
-        // Read response
+        // Read response (within the same lock)
         let mut buffer = vec![0u8; 4096];
         let n = timeout(
-            Duration::from_millis(300),
+            Duration::from_millis(2000),  // Increased to 2s for low-speed simulation compatibility
             stream.read(&mut buffer)
         )
         .await
@@ -74,6 +82,7 @@ impl CarMakerClient {
         .map_err(|e| format!("Failed to read response: {}", e))?;
 
         if n == 0 {
+            drop(stream);  // Release lock before disconnect
             self.disconnect();
             return Err("Connection closed by CarMaker".to_string());
         }
@@ -83,6 +92,7 @@ impl CarMakerClient {
     }
 
     /// Read a single value from CarMaker
+    /// Each read is sequential and locked (via send_command's Mutex)
     pub async fn read_value(&mut self, quantity: &str) -> Result<Option<f64>, String> {
         let cmd = format!("DVARead {}", quantity);
         let response = self.send_command(&cmd).await?;
@@ -99,7 +109,8 @@ impl CarMakerClient {
                 Err(_) => Ok(None),
             }
         } else if response.starts_with('E') {
-            Err(format!("CarMaker error: {}", response))
+            // Don't treat errors as fatal - just return None (like Python)
+            Ok(None)
         } else {
             Ok(None)
         }
@@ -136,10 +147,12 @@ impl CarMakerClient {
     }
 
     /// Read all essential quantities from CarMaker
+    /// Reads sequentially with Mutex lock to prevent response mixing (like Python implementation)
     pub async fn read_essential_quantities(&mut self) -> Result<TelemetryData, String> {
         let mut data = TelemetryData::default();
         let mut raw_data = HashMap::new();
 
+        // Sequential read of essential quantities (like Python's for loop)
         for &quantity in ESSENTIAL_QUANTITIES.iter() {
             match self.read_value(quantity).await {
                 Ok(Some(value)) => {
@@ -163,10 +176,10 @@ impl CarMakerClient {
                     }
                 }
                 Ok(None) => {
-                    // Value is None (empty response)
+                    // Value is None (empty response or error) - continue to next quantity
                 }
                 Err(e) => {
-                    // Log error but continue reading other quantities
+                    // Log error but continue reading other quantities (like Python)
                     eprintln!("Failed to read {}: {}", quantity, e);
                 }
             }
@@ -178,7 +191,9 @@ impl CarMakerClient {
                 data.traffic_n_objs = Some(value);
                 raw_data.insert("Traffic.nObjs".to_string(), value);
             }
-            _ => {}
+            _ => {
+                // Ignore error or None
+            }
         }
 
         data.raw_data = raw_data;

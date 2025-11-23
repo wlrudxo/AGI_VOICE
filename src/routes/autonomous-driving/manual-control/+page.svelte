@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { invoke } from '@tauri-apps/api/core';
   import Icon from '@iconify/svelte';
 
   // Driver inputs
@@ -12,25 +13,47 @@
   // Log
   let logMessages: string[] = $state([]);
 
-  function sendControl(controlType: string, value: number) {
-    // TODO: Implement control command
-    // Settings will be fetched from autonomous-driving/settings page
-    const duration = '2000'; // TODO: Get from settings
-    const controlMode = 'Abs'; // TODO: Get from settings
-    const command = `DVAWrite DM.${controlType} ${value} ${duration} ${controlMode}`;
-    addLog(`Execute: ${command}`);
+  async function sendControl(controlType: string, value: number) {
+    try {
+      const duration = 2000; // Default 2 seconds
+      let result: string;
+
+      if (controlType === 'Gas') {
+        result = await invoke('set_gas', { value, duration });
+      } else if (controlType === 'Brake') {
+        result = await invoke('set_brake', { value, duration });
+      } else if (controlType === 'Steer.Ang') {
+        result = await invoke('set_steer', { value, duration });
+      } else {
+        throw new Error(`Unknown control type: ${controlType}`);
+      }
+
+      addLog(`✓ ${controlType} = ${value.toFixed(2)}`);
+    } catch (error: any) {
+      addLog(`✗ ${controlType} failed: ${error}`);
+    }
   }
 
-  function executeCommand() {
+  async function executeCommand() {
     if (!commandInput.trim()) return;
-    // TODO: Implement command execution
-    addLog(`Execute: ${commandInput}`);
-    commandInput = '';
+
+    try {
+      const result = await invoke('execute_vehicle_command', { command: commandInput });
+      addLog(`✓ ${commandInput} → ${result}`);
+      commandInput = '';
+    } catch (error: any) {
+      addLog(`✗ Command failed: ${error}`);
+    }
   }
 
   function addLog(message: string) {
     const timestamp = new Date().toLocaleTimeString();
     logMessages = [...logMessages, `[${timestamp}] ${message}`];
+
+    // Keep last 100 messages
+    if (logMessages.length > 100) {
+      logMessages = logMessages.slice(-100);
+    }
   }
 </script>
 

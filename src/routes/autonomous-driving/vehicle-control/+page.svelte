@@ -1,88 +1,91 @@
 <script lang="ts">
+  import { onMount, onDestroy } from 'svelte';
   import Icon from '@iconify/svelte';
+  import { carmakerStore } from '$lib/stores/carmakerStore.svelte';
 
-  // Connection state
-  let host = $state('localhost');
-  let port = $state('16660');
-  let isConnected = $state(false);
+  // Check connection status on mount (for page reload)
+  onMount(async () => {
+    await carmakerStore.checkConnectionStatus();
+  });
 
-  // Driver inputs
-  let gasValue = $state(0.0);
-  let brakeValue = $state(0.0);
-  let steerValue = $state(0.0);
+  // Cleanup on unmount
+  onDestroy(() => {
+    carmakerStore.cleanup();
+  });
 
-  // Text command
-  let commandInput = $state('');
+  // Fixed order signal definitions (matches Python implementation order)
+  // Array of [signal, description] tuples to maintain display order
+  const signalDefinitions: [string, string][] = [
+    ['Time', 'Simulation Time (s)'],
+    ['DM.Gas', 'Gas Pedal (0-1)'],
+    ['DM.Brake', 'Brake Pedal (0-1)'],
+    ['DM.Steer.Ang', 'Steering Angle (rad)'],
+    ['DM.GearNo', 'Gear Number'],
+    ['Car.v', 'Vehicle Speed (m/s)'],
+    ['Vhcl.YawRate', 'Yaw Rate (rad/s)'],
+    ['Vhcl.Steer.Ang', 'Wheel Steering Angle (rad)'],
+    ['Vhcl.sRoad', 'Road Position S (m)'],
+    ['Vhcl.tRoad', 'Lateral Position T (m)'],
+    ['DM.v.Trgt', 'Target Speed (m/s)'],
+    ['DM.LaneOffset', 'Lane Offset (m)'],
+    ['Traffic.nObjs', 'Active Traffic Objects Count'],
+  ];
 
-  // Monitor
-  let isMonitoring = $state(false);
-  let monitorData: Record<string, number | null> = $state({});
+  // Track monitoring state before pause
+  let wasMonitoringBeforePause = $state(false);
 
-  // Log
-  let logMessages: string[] = $state([]);
-
-  // Functions
-  function connect() {
-    // TODO: Implement connection logic
-    isConnected = true;
-    addLog(`Connecting to ${host}:${port}...`);
-  }
-
-  function disconnect() {
-    // TODO: Implement disconnection logic
-    isConnected = false;
-    isMonitoring = false;
-    addLog('Disconnected from CarMaker');
-  }
-
-  function sendControl(controlType: string, value: number) {
-    // TODO: Implement control command
-    // Settings will be fetched from autonomous-driving/settings page
-    const duration = '2000'; // TODO: Get from settings
-    const controlMode = 'Abs'; // TODO: Get from settings
-    const command = `DVAWrite DM.${controlType} ${value} ${duration} ${controlMode}`;
-    addLog(`Execute: ${command}`);
-  }
-
-  function executeCommand() {
-    if (!commandInput.trim()) return;
-    // TODO: Implement command execution
-    addLog(`Execute: ${commandInput}`);
-    commandInput = '';
-  }
-
-  function toggleMonitoring() {
-    isMonitoring = !isMonitoring;
-    if (isMonitoring) {
-      addLog('Started monitoring');
-      // TODO: Start monitoring
-    } else {
-      addLog('Stopped monitoring');
-      // TODO: Stop monitoring
+  // Simulation control functions
+  async function startSimulation() {
+    try {
+      await carmakerStore.executeCommand('StartSim');
+      carmakerStore.addLog('✓ Simulation started');
+    } catch (error: any) {
+      carmakerStore.addLog(`✗ Failed to start simulation: ${error}`);
     }
   }
 
-  function addLog(message: string) {
-    const timestamp = new Date().toLocaleTimeString();
-    logMessages = [...logMessages, `[${timestamp}] ${message}`];
+  async function stopSimulation() {
+    try {
+      await carmakerStore.executeCommand('StopSim');
+      carmakerStore.addLog('✓ Simulation stopped');
+    } catch (error: any) {
+      carmakerStore.addLog(`✗ Failed to stop simulation: ${error}`);
+    }
   }
 
-  // Base descriptions for monitor data
-  const baseDescMap: Record<string, string> = {
-    'Time': 'Simulation Time (s)',
-    'DM.Gas': 'Gas Pedal (0-1)',
-    'DM.Brake': 'Brake Pedal (0-1)',
-    'DM.Steer.Ang': 'Steering Angle (rad)',
-    'DM.GearNo': 'Gear Number',
-    'Car.v': 'Vehicle Speed (m/s)',
-    'Vhcl.YawRate': 'Yaw Rate (rad/s)',
-    'Vhcl.Steer.Ang': 'Wheel Steering Angle (rad)',
-    'Vhcl.sRoad': 'Road Position S (m)',
-    'Vhcl.tRoad': 'Lateral Position T (m)',
-    'DM.v.Trgt': 'Target Speed (m/s)',
-    'DM.LaneOffset': 'Lane Offset (m)',
-    'Traffic.nObjs': 'Active Traffic Objects Count',
-  };
+  async function pauseSimulation() {
+    try {
+      // Save monitoring state and stop monitoring to avoid timeouts
+      wasMonitoringBeforePause = carmakerStore.isMonitoring;
+      if (carmakerStore.isMonitoring) {
+        await carmakerStore.stopMonitoring();
+        carmakerStore.addLog('→ Monitoring paused (prevent timeout in low-speed mode)');
+      }
+
+      // Set time acceleration to 0.001 (nearly paused) for 30 seconds
+      await carmakerStore.executeCommand('DVAWrite SC.TAccel 0.001 30000 Abs');
+      carmakerStore.addLog('✓ Simulation paused (time scale = 0.001)');
+    } catch (error: any) {
+      carmakerStore.addLog(`✗ Failed to pause simulation: ${error}`);
+    }
+  }
+
+  async function resumeSimulation() {
+    try {
+      // Set time acceleration to 1.0 (normal speed) for 30 seconds
+      await carmakerStore.executeCommand('DVAWrite SC.TAccel 1.0 30000 Abs');
+      carmakerStore.addLog('✓ Simulation resumed (time scale = 1.0)');
+
+      // Resume monitoring if it was active before pause
+      if (wasMonitoringBeforePause) {
+        await carmakerStore.startMonitoring();
+        carmakerStore.addLog('→ Monitoring resumed');
+        wasMonitoringBeforePause = false;
+      }
+    } catch (error: any) {
+      carmakerStore.addLog(`✗ Failed to resume simulation: ${error}`);
+    }
+  }
 </script>
 
 <div class="vehicle-control">
@@ -93,19 +96,61 @@
     </div>
     <div class="header-actions">
       <!-- 설정 탭의 connect와 동일 -->
-      {#if isConnected}
-        <button class="btn-danger" onclick={disconnect}>
+      {#if carmakerStore.isConnected}
+        <button class="btn-danger" onclick={() => carmakerStore.disconnect()}>
           <Icon icon="solar:link-broken-bold" width="20" height="20" />
           Disconnect
         </button>
       {:else}
-        <button class="btn-primary" onclick={connect}>
+        <button class="btn-primary" onclick={() => carmakerStore.connect()}>
           <Icon icon="solar:link-circle-bold" width="20" height="20" />
           Connect
         </button>
       {/if}
     </div>
   </div>
+
+  <!-- Simulation Control -->
+  <section class="card section">
+    <h2 class="section-title text-primary">
+      <Icon icon="solar:play-circle-bold-duotone" width="24" height="24" />
+      Simulation Control
+    </h2>
+    <div class="control-buttons">
+      <button
+        class="btn-primary control-btn"
+        onclick={startSimulation}
+        disabled={!carmakerStore.isConnected}
+      >
+        <Icon icon="solar:play-bold" width="16" height="16" />
+        Start
+      </button>
+      <button
+        class="btn-danger control-btn"
+        onclick={stopSimulation}
+        disabled={!carmakerStore.isConnected}
+      >
+        <Icon icon="solar:stop-bold" width="16" height="16" />
+        Stop
+      </button>
+      <button
+        class="btn-secondary control-btn"
+        onclick={pauseSimulation}
+        disabled={!carmakerStore.isConnected}
+      >
+        <Icon icon="solar:pause-bold" width="16" height="16" />
+        Pause (0.001x)
+      </button>
+      <button
+        class="btn-secondary control-btn"
+        onclick={resumeSimulation}
+        disabled={!carmakerStore.isConnected}
+      >
+        <Icon icon="solar:restart-bold" width="16" height="16" />
+        Resume (1.0x)
+      </button>
+    </div>
+  </section>
 
   <!-- Vehicle Data Monitor -->
   <section class="card section">
@@ -114,8 +159,8 @@
         <Icon icon="solar:chart-bold-duotone" width="24" height="24" />
         Vehicle Data Monitor
       </h2>
-      <button class="btn-primary" onclick={toggleMonitoring}>
-        {isMonitoring ? 'Stop Monitoring' : 'Start Monitoring'}
+      <button class="btn-primary" onclick={() => carmakerStore.toggleMonitoring()}>
+        {carmakerStore.isMonitoring ? 'Stop Monitoring' : 'Start Monitoring'}
       </button>
     </div>
     <div class="table-wrapper" style="max-height: 500px; overflow-y: auto;">
@@ -128,23 +173,16 @@
           </tr>
         </thead>
         <tbody>
-          {#if Object.keys(monitorData).length === 0}
-            {#each Object.entries(baseDescMap) as [key, desc]}
-              <tr>
-                <td class="text-primary">{key}</td>
-                <td class="text-muted">N/A</td>
-                <td class="text-secondary">{desc}</td>
-              </tr>
-            {/each}
-          {:else}
-            {#each Object.entries(monitorData) as [key, value]}
-              <tr>
-                <td class="text-primary">{key}</td>
-                <td class="text-accent">{value !== null ? value.toFixed(4) : 'Err'}</td>
-                <td class="text-secondary">{baseDescMap[key] || ''}</td>
-              </tr>
-            {/each}
-          {/if}
+          {#each signalDefinitions as [signal, desc]}
+            {@const value = carmakerStore.monitorData[signal]}
+            <tr>
+              <td class="text-primary">{signal}</td>
+              <td class={value !== undefined ? 'text-accent' : 'text-muted'}>
+                {value !== undefined && typeof value === 'number' ? value.toFixed(4) : 'N/A'}
+              </td>
+              <td class="text-secondary">{desc}</td>
+            </tr>
+          {/each}
         </tbody>
       </table>
     </div>
@@ -157,10 +195,10 @@
       Log
     </h2>
     <div class="log-container">
-      {#if logMessages.length === 0}
+      {#if carmakerStore.logMessages.length === 0}
         <p class="text-muted">No logs yet...</p>
       {:else}
-        {#each logMessages as message}
+        {#each carmakerStore.logMessages as message}
           <div class="log-message text-secondary">{message}</div>
         {/each}
       {/if}
@@ -172,6 +210,19 @@
   .vehicle-control {
     max-width: 640px;
     margin: 0 auto;
+  }
+
+  .control-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+  }
+
+  /* Override app.css button styles with more specific selector */
+  .control-buttons .control-btn {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.875rem !important;
   }
 
   .connection-controls {
