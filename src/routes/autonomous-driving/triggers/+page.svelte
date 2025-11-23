@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import { invoke } from '@tauri-apps/api/core';
   import Icon from '@iconify/svelte';
 
   interface TriggerCondition {
@@ -12,35 +14,26 @@
     }[];
     logicOperator: 'AND' | 'OR';
     message: string;
+    conversationId?: number;
     createdAt: string;
+    updatedAt: string;
   }
 
-  // Mock data
-  let triggers: TriggerCondition[] = $state([
-    {
-      id: 1,
-      name: '속도 초과 경고',
-      isActive: true,
-      conditions: [
-        { variable: 'Car.v', operator: '>', value: '30' }
-      ],
-      logicOperator: 'AND',
-      message: '차량이 30m/s를 초과했습니다. 현재 속도와 도로 상태를 분석해주세요.',
-      createdAt: '2025-01-15'
-    },
-    {
-      id: 2,
-      name: '급제동 감지',
-      isActive: false,
-      conditions: [
-        { variable: 'DM.Brake', operator: '>', value: '0.8' },
-        { variable: 'Car.v', operator: '>', value: '10' }
-      ],
-      logicOperator: 'AND',
-      message: '급제동이 감지되었습니다. 제동 원인과 안전성을 평가해주세요.',
-      createdAt: '2025-01-15'
+  // Triggers from backend
+  let triggers: TriggerCondition[] = $state([]);
+
+  // Load triggers on mount
+  onMount(async () => {
+    await loadTriggers();
+  });
+
+  async function loadTriggers() {
+    try {
+      triggers = await invoke('get_triggers');
+    } catch (error: any) {
+      console.error('Failed to load triggers:', error);
     }
-  ]);
+  }
 
   // Available variables (from vehicle-control page)
   const availableVariables = [
@@ -106,7 +99,7 @@
     formData.conditions = formData.conditions.filter((_, i) => i !== index);
   }
 
-  function saveTrigger() {
+  async function saveTrigger() {
     if (!formData.name.trim() || !formData.message.trim()) {
       alert('트리거 이름과 메시지를 입력해주세요.');
       return;
@@ -117,36 +110,47 @@
       return;
     }
 
-    if (editingTrigger) {
-      // Update existing
-      triggers = triggers.map(t =>
-        t.id === editingTrigger.id
-          ? { ...t, ...formData }
-          : t
-      );
-    } else {
-      // Create new
-      const newTrigger: TriggerCondition = {
-        id: Math.max(0, ...triggers.map(t => t.id)) + 1,
-        ...formData,
-        isActive: true,
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-      triggers = [...triggers, newTrigger];
+    try {
+      if (editingTrigger) {
+        // Update existing
+        await invoke('update_trigger', {
+          id: editingTrigger.id,
+          request: formData
+        });
+      } else {
+        // Create new
+        await invoke('create_trigger', {
+          request: {
+            ...formData,
+            conversationId: null
+          }
+        });
+      }
+
+      await loadTriggers();
+      cancelForm();
+    } catch (error: any) {
+      alert(`트리거 저장 실패: ${error}`);
     }
-
-    cancelForm();
   }
 
-  function toggleActive(id: number) {
-    triggers = triggers.map(t =>
-      t.id === id ? { ...t, isActive: !t.isActive } : t
-    );
+  async function toggleActive(id: number) {
+    try {
+      await invoke('toggle_trigger', { id });
+      await loadTriggers();
+    } catch (error: any) {
+      alert(`트리거 토글 실패: ${error}`);
+    }
   }
 
-  function deleteTrigger(id: number) {
+  async function deleteTrigger(id: number) {
     if (confirm('이 트리거를 삭제하시겠습니까?')) {
-      triggers = triggers.filter(t => t.id !== id);
+      try {
+        await invoke('delete_trigger', { id });
+        await loadTriggers();
+      } catch (error: any) {
+        alert(`트리거 삭제 실패: ${error}`);
+      }
     }
   }
 </script>
@@ -326,10 +330,6 @@
               <div class="trigger-section">
                 <h4>LLM 메시지</h4>
                 <p class="message-preview">{trigger.message}</p>
-              </div>
-
-              <div class="trigger-footer">
-                <small class="text-muted">생성일: {trigger.createdAt}</small>
               </div>
             </div>
           </div>
@@ -585,10 +585,5 @@
     color: var(--color-text-secondary);
     font-size: 0.9rem;
     line-height: 1.6;
-  }
-
-  .trigger-footer {
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--color-border);
   }
 </style>

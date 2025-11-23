@@ -8,6 +8,7 @@ pub mod conversations;
 pub mod command_templates;
 pub mod maps;
 pub mod carmaker_control;
+pub mod triggers;
 
 // Re-export common types
 pub use common::*;
@@ -21,3 +22,4 @@ pub use conversations::*;
 pub use command_templates::*;
 pub use maps::*;
 pub use carmaker_control::*;
+pub use triggers::*;

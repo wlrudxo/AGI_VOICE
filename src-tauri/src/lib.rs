@@ -16,6 +16,9 @@ pub mod commands;
 // CarMaker module
 pub mod carmaker;
 
+// Triggers module
+pub mod triggers;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -98,6 +101,13 @@ pub fn run() {
             commands::stop_simulation,
             commands::is_monitoring_active,
             commands::set_monitoring_state,
+            // Triggers
+            commands::get_triggers,
+            commands::get_trigger_by_id,
+            commands::create_trigger,
+            commands::update_trigger,
+            commands::delete_trigger,
+            commands::toggle_trigger,
         ])
         .setup(|app| {
             // Initialize AI chat database connection
@@ -137,6 +147,17 @@ pub fn run() {
             app.manage(carmaker_state);
             println!("✅ CarMaker state initialized");
 
+            // Initialize Triggers state
+            match triggers::TriggersState::new(app.app_handle()) {
+                Ok(triggers_state) => {
+                    app.manage(triggers_state);
+                    println!("✅ Triggers state initialized");
+                }
+                Err(e) => {
+                    eprintln!("❌ Triggers state initialization failed: {}", e);
+                    return Err(e.into());
+                }
+            }
 
             // 트레이 메뉴 생성
             let open_item = MenuItem::with_id(app, "open", "열기", true, None::<&str>)?;
