@@ -7,10 +7,22 @@
 
   let saving = $state(false);
   let message = $state<{ type: 'success' | 'error'; text: string } | null>(null);
+  let vehicleCommandParsingEnabled = $state(false);
+
+  // Load settings from localStorage
+  function loadSettings() {
+    try {
+      const stored = localStorage.getItem('carmaker_command_parsing_enabled');
+      vehicleCommandParsingEnabled = stored === 'true';
+    } catch (error) {
+      console.error('Failed to load parsing settings:', error);
+    }
+  }
 
   // Check connection status on mount (for page reload)
   onMount(async () => {
     await carmakerStore.checkConnectionStatus();
+    loadSettings();
   });
 
   async function connect() {
@@ -37,12 +49,15 @@
       saving = true;
       message = null;
 
-      // TODO: Save settings to backend (if needed)
+      // Save vehicle command parsing setting to localStorage
+      localStorage.setItem('carmaker_command_parsing_enabled', vehicleCommandParsingEnabled.toString());
+
       console.log('Settings saved:', {
         host: carmakerStore.host,
         port: carmakerStore.port,
         duration: carmakerStore.duration,
-        controlMode: carmakerStore.controlMode
+        controlMode: carmakerStore.controlMode,
+        vehicleCommandParsingEnabled
       });
 
       message = { type: 'success', text: '설정이 저장되었습니다.' };
@@ -151,6 +166,37 @@
     </div>
   </div>
 
+  <!-- AI Command Parsing Section -->
+  <div class="settings-form">
+    <div class="form-section">
+      <h2 class="section-title">
+        <Icon icon="solar:code-square-bold-duotone" width="20" height="20" />
+        <span>AI Command Parsing</span>
+      </h2>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <label for="command-parsing">CarMaker 명령 파싱</label>
+          <p class="helper-text">
+            AI 응답에서 차량 제어 명령을 자동으로 파싱하여 실행합니다.
+            <br />
+            형식: <code>DM.Gas = 0.5</code>, <code>DM.Brake = 0.3</code> 등
+          </p>
+        </div>
+        <label class="toggle-switch">
+          <input
+            id="command-parsing"
+            type="checkbox"
+            bind:checked={vehicleCommandParsingEnabled}
+          />
+          <span class="toggle-switch-track">
+            <span class="toggle-switch-thumb"></span>
+          </span>
+        </label>
+      </div>
+    </div>
+  </div>
+
   <!-- 메시지 & 저장 버튼 -->
   {#if message}
     <div class="message" class:success={message.type === 'success'} class:error={message.type === 'error'}>
@@ -212,6 +258,42 @@
   .input-group label {
     font-weight: 600;
     color: var(--color-text-secondary);
+  }
+
+  /* Toggle Row */
+  .toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .toggle-info {
+    flex: 1;
+  }
+
+  .toggle-info label {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--color-text-primary);
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .helper-text {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .helper-text code {
+    background: var(--color-background);
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8125rem;
+    color: var(--color-primary);
   }
 
   .message {
