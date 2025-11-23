@@ -1,6 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
 import { carmakerStore } from './carmakerStore.svelte';
 import { evaluateTrigger } from '$lib/utils/triggerEvaluator';
+import { parseVehicleCommands } from '$lib/actions/vehicleCommandParser';
+import { executeCommandSequence, executeRuleCommands } from '$lib/actions/vehicleCommandExecutor';
 
 interface TriggerCondition {
   variable: string;
@@ -162,24 +164,36 @@ class TriggerMonitor {
       const wasMonitoring = await carmakerStore.pauseSimulation();
 
       if (trigger.useRuleControl) {
-        // Step 2: Rule mode - Wait 1 second
+        // Rule mode: Wait 1 second
         this.addLog('  → Rule mode: Waiting 1 second...');
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Step 3: Resume simulation and execute rule action
+        // Resume simulation and execute rule action
         this.addLog('  → Resuming simulation (time scale = 1.0x)');
         await carmakerStore.resumeSimulation(wasMonitoring);
 
         // Execute rule-based commands (parse debugAction)
         if (trigger.debugAction) {
           this.addLog('  → Executing rule-based commands');
-          await this.executeRuleCommands(trigger.debugAction);
+          const result = await executeRuleCommands(trigger.debugAction, (msg) => this.addLog(msg));
+          this.addLog(`  ✓ Executed ${result.successCount}/${result.totalCommands} commands (${result.executionTime}ms)`);
         }
       } else {
-        // LLM mode (to be implemented)
-        this.addLog('  → LLM mode: Not yet implemented');
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // LLM mode: Request LLM and wait for response
+        this.addLog('  → LLM mode: Requesting AI response...');
+        const llmResponse = await this.requestLLM(trigger, vehicleData);
+
+        // Resume simulation
+        this.addLog('  → Resuming simulation (time scale = 1.0x)');
         await carmakerStore.resumeSimulation(wasMonitoring);
+
+        // Parse and execute LLM response
+        if (llmResponse) {
+          this.addLog('  → Parsing LLM response and executing commands');
+          const sequence = parseVehicleCommands(llmResponse);
+          const result = await executeCommandSequence(sequence, (msg) => this.addLog(msg));
+          this.addLog(`  ✓ Executed ${result.successCount}/${result.totalCommands} commands (${result.executionTime}ms)`);
+        }
       }
 
       this.addLog('  ✓ Trigger action sequence completed');
@@ -189,24 +203,55 @@ class TriggerMonitor {
   }
 
   /**
-   * Execute rule-based commands from debugAction
-   * Parse format: "DM.Gas = 0.5\nDM.Brake = 0.0\n..."
+   * Request LLM response for trigger
    */
-  private async executeRuleCommands(debugAction: string): Promise<void> {
-    const lines = debugAction.split('\n').filter(line => line.trim());
+  private async requestLLM(trigger: Trigger, vehicleData: Record<string, number>): Promise<string | null> {
+    try {
+      // Build vehicle data snapshot
+      const dataSnapshot = Object.entries(vehicleData)
+        .map(([key, value]) => `${key}: ${value.toFixed(4)}`)
+        .join('\n');
 
-    for (const line of lines) {
-      const match = line.match(/^\s*([A-Za-z0-9._]+)\s*=\s*([0-9.-]+)\s*$/);
-      if (match) {
-        const [_, variable, value] = match;
-        const command = `DVAWrite ${variable} ${value} 2000 Abs`;
-        try {
-          await carmakerStore.executeCommand(command);
-          this.addLog(`    ✓ ${variable} = ${value}`);
-        } catch (error: any) {
-          this.addLog(`    ✗ Failed: ${variable} = ${value}`);
+      // Build system context with trigger message and vehicle data
+      const systemContext = `# Trigger Activated: ${trigger.name}
+
+## Current Vehicle Data:
+${dataSnapshot}
+
+## Trigger Message:
+${trigger.message}
+
+**Instructions**: Analyze the current vehicle state and respond with vehicle control commands in the format:
+\`\`\`
+DM.Gas = <value>
+DM.Brake = <value>
+DM.Steer.Ang = <value>
+\`\`\`
+
+Provide appropriate control values (0.0 to 1.0 for Gas/Brake, rad for Steer.Ang) based on the situation.`;
+
+      // Call AI chat with trigger conversation
+      const response: any = await invoke('chat', {
+        request: {
+          conversationId: trigger.conversationId,
+          message: 'Trigger activated. Please provide vehicle control response.',
+          systemContext: systemContext,
+          role: 'system',
+          excludeHistory: true, // Don't include previous messages
+          model: 'sonnet'
         }
+      });
+
+      if (response.responses && response.responses.length > 0) {
+        const llmResponse = response.responses[0];
+        this.addLog(`  ✓ LLM response received (${llmResponse.length} chars)`);
+        return llmResponse;
       }
+
+      return null;
+    } catch (error: any) {
+      this.addLog(`  ✗ LLM request failed: ${error}`);
+      return null;
     }
   }
 
