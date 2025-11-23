@@ -262,20 +262,25 @@
 	}
 
 	.icon-btn.trigger-toggle {
-		border: 1px solid rgba(255, 255, 255, 0.3);
+		border: 2px solid rgba(255, 255, 255, 0.5);
+		background: rgba(255, 255, 255, 0.15);
+		padding: 0.375rem;
 	}
 
 	.icon-btn.trigger-toggle.active {
-		background: rgba(72, 187, 120, 0.3);
-		border-color: rgba(72, 187, 120, 0.8);
+		background: rgba(72, 187, 120, 0.5);
+		border-color: rgba(255, 255, 255, 0.9);
+		box-shadow: 0 0 8px rgba(72, 187, 120, 0.6);
 	}
 
 	.icon-btn.trigger-toggle:hover {
-		background: var(--overlay-white-light);
+		background: rgba(255, 255, 255, 0.25);
+		border-color: rgba(255, 255, 255, 0.7);
 	}
 
 	.icon-btn.trigger-toggle.active:hover {
-		background: rgba(72, 187, 120, 0.4);
+		background: rgba(72, 187, 120, 0.6);
+		border-color: rgba(255, 255, 255, 1);
 	}
 
 	.widget-content {

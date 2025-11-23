@@ -141,13 +141,8 @@ class TriggerMonitor {
       .join(', ');
     this.addLog(`  Vehicle data: ${dataSnapshot}`);
 
-    if (trigger.useRuleControl) {
-      // Rule control mode: Execute emergency deceleration directly
-      await this.executeEmergencyDeceleration(trigger);
-    } else {
-      // LLM mode: Will be implemented in next phase
-      this.addLog('  LLM mode not yet implemented (use rule control for now)');
-    }
+    // Execute trigger action sequence (handles both LLM and Rule modes)
+    await this.executeEmergencyDeceleration(trigger, vehicleData);
   }
 
   /**
@@ -157,7 +152,7 @@ class TriggerMonitor {
    * 3. LLM mode: Request LLM and wait for response / Rule mode: Wait 1 second
    * 4. Resume simulation (time scale = 1.0x) + Execute commands
    */
-  private async executeEmergencyDeceleration(trigger: Trigger): Promise<void> {
+  private async executeEmergencyDeceleration(trigger: Trigger, vehicleData: Record<string, number>): Promise<void> {
     try {
       // Step 1: Pause simulation (ultra-slow motion)
       this.addLog('  → Pausing simulation (time scale = 0.001x)');
