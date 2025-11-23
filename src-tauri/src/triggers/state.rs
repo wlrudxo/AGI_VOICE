@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 use super::types::{Trigger, TriggersData};
 
 /// Triggers state (in-memory + file persistence)
@@ -14,10 +14,11 @@ pub struct TriggersState {
 impl TriggersState {
     /// Create new TriggersState with file path
     pub fn new(app_handle: &AppHandle) -> Result<Self, String> {
-        // Get app data directory
-        let app_data_dir = app_handle
-            .path()
-            .app_data_dir()
+        // Retain handle for API parity (unused here)
+        let _ = app_handle;
+
+        // Get app data directory (unified AppData/Roaming/AGI_VOICE)
+        let app_data_dir = crate::db::get_app_data_dir()
             .map_err(|e| format!("Failed to get app data dir: {}", e))?;
 
         // Ensure directory exists

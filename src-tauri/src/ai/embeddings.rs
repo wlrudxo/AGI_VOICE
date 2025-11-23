@@ -4,10 +4,10 @@ use std::process::Command;
 
 /// FAISS 인덱스 저장 경로 가져오기
 pub fn get_faiss_index_path() -> Result<PathBuf, String> {
-    let app_data = dirs::data_local_dir()
-        .ok_or_else(|| "Cannot find AppData directory".to_string())?;
+    let app_data = crate::db::get_app_data_dir()
+        .map_err(|e| format!("Cannot find AppData directory: {}", e))?;
 
-    let faiss_path = app_data.join("AGI_VOICE_V2").join("faiss_index");
+    let faiss_path = app_data.join("faiss_index");
 
     // Ensure directory exists
     if !faiss_path.exists() {

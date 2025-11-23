@@ -210,7 +210,7 @@ pub fn build_full_prompt(
 ///
 /// # Arguments
 /// * `content` - CLAUDE.md 내용
-/// * `workspace_dir` - 저장할 디렉토리 (None이면 AppData/agi_voice_v2 사용)
+/// * `workspace_dir` - 저장할 디렉토리 (None이면 AppData/AGI_VOICE 사용)
 ///
 /// # Returns
 /// 저장된 파일 경로

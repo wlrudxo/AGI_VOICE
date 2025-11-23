@@ -72,7 +72,7 @@ pub struct BackupInfo {
 // ==================== Helper Functions ====================
 
 fn get_config_path() -> std::path::PathBuf {
-    // Config is now at AppData/agi_voice_v2/config.json
+    // Config is now at AppData/AGI_VOICE/config.json
     crate::db::get_app_data_dir()
         .map(|dir| dir.join("config.json"))
         .unwrap_or_else(|_| {
@@ -85,13 +85,13 @@ fn get_config_path() -> std::path::PathBuf {
 }
 
 fn get_db_path() -> std::path::PathBuf {
-    // DB is now at AppData/agi_voice_v2/agi_voice.db
+    // DB is now at AppData/AGI_VOICE/ai_chat.db
     crate::db::get_db_path()
         .unwrap_or_else(|_| {
             // Fallback to project root if AppData path fails
             std::env::current_dir()
                 .unwrap()
-                .join("agi_voice.db")
+                .join("ai_chat.db")
         })
 }
 

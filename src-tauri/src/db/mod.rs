@@ -13,18 +13,18 @@ pub struct AiChatDb(pub DatabaseConnection);
 pub struct MapDb(pub DatabaseConnection);
 
 /// Get the application data directory path
-/// Returns: %APPDATA%/ai_chat on Windows, ~/.local/share/ai_chat on Linux, ~/Library/Application Support/ai_chat on macOS
+/// Returns: %APPDATA%/AGI_VOICE on Windows, ~/.local/share/AGI_VOICE on Linux, ~/Library/Application Support/AGI_VOICE on macOS
 pub fn get_app_data_dir() -> Result<PathBuf, String> {
     let data_dir = dirs::data_dir()
         .ok_or("Failed to get system data directory")?;
 
-    let app_dir = data_dir.join("ai_chat");
+    let app_dir = data_dir.join("AGI_VOICE");
 
     Ok(app_dir)
 }
 
 /// Get the database file path in AppData
-/// Returns: %APPDATA%/ai_chat/ai_chat.db
+/// Returns: %APPDATA%/AGI_VOICE/ai_chat.db
 pub fn get_db_path() -> Result<PathBuf, String> {
     let app_dir = get_app_data_dir()?;
     Ok(app_dir.join("ai_chat.db"))
@@ -62,7 +62,7 @@ fn migrate_old_db() -> Result<bool, String> {
 
 /// Initialize database connection
 ///
-/// Connects to SQLite database at AppData/ai_chat/ai_chat.db
+/// Connects to SQLite database at AppData/AGI_VOICE/ai_chat.db
 /// Creates the file if it doesn't exist (mode=rwc)
 /// Migrates old database from project root if it exists
 pub async fn init_db() -> Result<DatabaseConnection, DbErr> {

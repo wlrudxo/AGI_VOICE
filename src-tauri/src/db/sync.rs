@@ -5,7 +5,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 /// Get the backup directory path
-/// Returns: %APPDATA%/agi_voice_v2/backups
+/// Returns: %APPDATA%/AGI_VOICE/backups
 fn get_backup_dir() -> Result<PathBuf, String> {
     let app_dir = crate::db::get_app_data_dir()?;
     Ok(app_dir.join("backups"))

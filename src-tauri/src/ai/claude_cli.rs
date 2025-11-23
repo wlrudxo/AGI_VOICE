@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use serde::Deserialize;
+use std::env;
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -37,6 +38,40 @@ impl ClaudeCLIManager {
         }
     }
 
+    /// Resolve Git Bash path on Windows (user env -> PATH -> common installs)
+    fn resolve_bash_path() -> Option<PathBuf> {
+        // 1) User override
+        if let Some(val) = env::var_os("CLAUDE_CODE_GIT_BASH_PATH") {
+            let path = PathBuf::from(val);
+            if path.exists() {
+                return Some(path);
+            }
+        }
+
+        // 2) PATH search
+        if let Some(path) = env::var_os("PATH") {
+            for dir in env::split_paths(&path) {
+                let candidate = dir.join("bash.exe");
+                if candidate.exists() {
+                    return Some(candidate);
+                }
+            }
+        }
+
+        // 3) Common install locations
+        let mut candidates = Vec::new();
+        if let Some(pf) = env::var_os("ProgramFiles") {
+            candidates.push(PathBuf::from(&pf).join("Git\\bin\\bash.exe"));
+            candidates.push(PathBuf::from(&pf).join("Git\\usr\\bin\\bash.exe"));
+        }
+        if let Some(pfx86) = env::var_os("ProgramFiles(x86)") {
+            candidates.push(PathBuf::from(&pfx86).join("Git\\bin\\bash.exe"));
+            candidates.push(PathBuf::from(&pfx86).join("Git\\usr\\bin\\bash.exe"));
+        }
+
+        candidates.into_iter().find(|p| p.exists())
+    }
+
     /// Claude CLI를 subprocess로 실행하여 응답 받기
     pub async fn chat(&self, message: &str, model: &str) -> Result<String> {
         println!("\n🚀 Starting Claude CLI subprocess...");
@@ -56,8 +91,14 @@ impl ClaudeCLIManager {
             command
                 .args(&["/C", &cmd])
                 .env("FORCE_COLOR", "0")
-                .env("NO_COLOR", "1")
-                .env("CLAUDE_CODE_GIT_BASH_PATH", "C:\\Program Files\\Git\\bin\\bash.exe");
+                .env("NO_COLOR", "1");
+
+            if let Some(bash_path) = Self::resolve_bash_path() {
+                println!("✅ Using Git Bash at: {}", bash_path.display());
+                command.env("CLAUDE_CODE_GIT_BASH_PATH", bash_path);
+            } else {
+                println!("⚠️ Git Bash not found; relying on PATH");
+            }
 
             if let Some(ref dir) = self.workspace_dir {
                 command.current_dir(dir);

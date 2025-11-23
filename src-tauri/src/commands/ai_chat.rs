@@ -293,10 +293,13 @@ async fn handle_no_save_chat(
             Some(path)
         }
         _ => {
-            let appdata = std::env::var("APPDATA").unwrap_or_else(|_| {
-                std::env::var("HOME").unwrap_or_else(|_| ".".to_string())
-            });
-            let default_path = PathBuf::from(appdata).join("AGI_Voice_V2");
+            let default_path = match crate::db::get_app_data_dir() {
+                Ok(path) => path,
+                Err(e) => {
+                    println!("⚠️ Failed to get app data dir, using current dir: {}", e);
+                    PathBuf::from(".")
+                }
+            };
 
             if let Err(e) = std::fs::create_dir_all(&default_path) {
                 println!("⚠️ Failed to create workspace directory: {}", e);
@@ -366,7 +369,7 @@ pub async fn chat(
         command_info_list.len()
     );
 
-    // 2.5. Settings에서 workspace_dir 로드 (없으면 %APPDATA%\AGI_Voice_V2 기본값)
+    // 2.5. Settings에서 workspace_dir 로드 (없으면 AppData/Roaming/AGI_VOICE 기본값)
     let workspace_dir = match load_settings() {
         Ok(settings) if !settings.claude_workspace_dir.is_empty() => {
             let path = PathBuf::from(&settings.claude_workspace_dir);
@@ -374,11 +377,14 @@ pub async fn chat(
             Some(path)
         }
         _ => {
-            // 기본값: %APPDATA%\AGI_Voice_V2
-            let appdata = std::env::var("APPDATA").unwrap_or_else(|_| {
-                std::env::var("HOME").unwrap_or_else(|_| ".".to_string())
-            });
-            let default_path = PathBuf::from(appdata).join("AGI_Voice_V2");
+            // 기본값: AppData/Roaming/AGI_VOICE
+            let default_path = match crate::db::get_app_data_dir() {
+                Ok(path) => path,
+                Err(e) => {
+                    println!("⚠️ Failed to get app data dir, using current dir: {}", e);
+                    PathBuf::from(".")
+                }
+            };
 
             // 디렉토리 생성 (없으면)
             if let Err(e) = std::fs::create_dir_all(&default_path) {
