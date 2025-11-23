@@ -236,23 +236,45 @@ Provide appropriate control values (0.0 to 1.0 for Gas/Brake, rad for Steer.Ang)
 
       // Load trigger AI settings from localStorage
       const excludeHistory = localStorage.getItem('trigger_exclude_history') !== 'false'; // Default: true
-      const characterId = localStorage.getItem('trigger_character_id');
-      const promptTemplateId = localStorage.getItem('trigger_prompt_template_id');
+      let characterId = localStorage.getItem('trigger_character_id');
+      let promptTemplateId = localStorage.getItem('trigger_prompt_template_id');
       const model = localStorage.getItem('trigger_model') || 'sonnet';
 
-      // Call AI chat with trigger conversation
-      const response: any = await invoke('chat', {
-        request: {
-          conversationId: trigger.conversationId,
-          message: 'Trigger activated. Please provide vehicle control response.',
-          systemContext: systemContext,
-          role: 'system',
-          excludeHistory: excludeHistory,
-          characterId: characterId ? parseInt(characterId) : undefined,
-          promptTemplateId: promptTemplateId ? parseInt(promptTemplateId) : undefined,
-          model: model
+      // If no trigger settings, fallback to default chat settings
+      if (!characterId || !promptTemplateId) {
+        try {
+          const chatSettings: any = await invoke('get_chat_settings');
+          if (!characterId && chatSettings.defaultCharacterId) {
+            characterId = chatSettings.defaultCharacterId.toString();
+          }
+          if (!promptTemplateId && chatSettings.defaultPromptTemplateId) {
+            promptTemplateId = chatSettings.defaultPromptTemplateId.toString();
+          }
+        } catch (err) {
+          this.addLog('  ⚠ No chat settings found, trigger may fail');
         }
-      });
+      }
+
+      // Build request
+      const request: any = {
+        message: 'Trigger activated. Please provide vehicle control response.',
+        systemContext: systemContext,
+        role: 'system',
+        excludeHistory: excludeHistory,
+        model: model
+      };
+
+      // Add conversationId if exists (continue conversation)
+      if (trigger.conversationId) {
+        request.conversationId = trigger.conversationId;
+      } else {
+        // New conversation requires characterId and promptTemplateId
+        if (characterId) request.characterId = parseInt(characterId);
+        if (promptTemplateId) request.promptTemplateId = parseInt(promptTemplateId);
+      }
+
+      // Call AI chat with trigger conversation
+      const response: any = await invoke('chat', { request });
 
       if (response.responses && response.responses.length > 0) {
         const llmResponse = response.responses[0];
