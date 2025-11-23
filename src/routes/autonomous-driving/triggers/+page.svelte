@@ -1,7 +1,9 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import Icon from '@iconify/svelte';
+  import { carmakerStore } from '$lib/stores/carmakerStore.svelte';
+  import { triggerMonitor } from '$lib/stores/triggerMonitor.svelte';
 
   interface TriggerCondition {
     id: number;
@@ -27,11 +29,19 @@
   // Load triggers on mount
   onMount(async () => {
     await loadTriggers();
+    await carmakerStore.checkConnectionStatus();
+  });
+
+  // Cleanup on unmount
+  onDestroy(() => {
+    triggerMonitor.cleanup();
   });
 
   async function loadTriggers() {
     try {
       triggers = await invoke('get_triggers');
+      // Update trigger monitor with latest triggers
+      await triggerMonitor.loadTriggers();
     } catch (error: any) {
       console.error('Failed to load triggers:', error);
     }
@@ -186,6 +196,51 @@
       </button>
     </div>
   </div>
+
+  <!-- Trigger Monitoring Control -->
+  <section class="card section monitoring-control">
+    <div class="section-header">
+      <h2 class="section-title text-primary">
+        <Icon icon="solar:monitoring-bold-duotone" width="24" height="24" />
+        Trigger Monitoring
+      </h2>
+      <div class="monitoring-actions">
+        {#if !carmakerStore.isConnected}
+          <span class="status-badge disconnected">CarMaker Disconnected</span>
+        {:else if !carmakerStore.isMonitoring}
+          <span class="status-badge warning">Vehicle Monitoring Off</span>
+        {:else}
+          <button
+            class="btn-primary"
+            onclick={() => triggerMonitor.isMonitoring ? triggerMonitor.stopMonitoring() : triggerMonitor.startMonitoring()}
+          >
+            {triggerMonitor.isMonitoring ? 'Stop Trigger Monitoring' : 'Start Trigger Monitoring'}
+          </button>
+        {/if}
+      </div>
+    </div>
+    {#if triggerMonitor.isMonitoring}
+      <div class="monitoring-status">
+        <Icon icon="solar:power-bold-duotone" width="20" height="20" class="status-icon active" />
+        <span class="text-accent">Monitoring active - {triggers.filter(t => t.isActive).length} triggers enabled</span>
+      </div>
+    {/if}
+
+    <!-- Trigger Monitor Log -->
+    {#if triggerMonitor.logMessages.length > 0}
+      <div class="log-section">
+        <div class="log-header">
+          <h3>Trigger Log</h3>
+          <button class="btn-text" onclick={() => triggerMonitor.clearLogs()}>Clear</button>
+        </div>
+        <div class="log-container trigger-log">
+          {#each triggerMonitor.logMessages as message}
+            <div class="log-message text-secondary">{message}</div>
+          {/each}
+        </div>
+      </div>
+    {/if}
+  </section>
 
   {#if showForm}
     <!-- Trigger Form -->
@@ -404,6 +459,72 @@
   .trigger-settings {
     max-width: 1200px;
     margin: 0 auto;
+  }
+
+  /* Monitoring Control */
+  .monitoring-control {
+    margin-bottom: 2rem;
+  }
+
+  .monitoring-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .status-badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .status-badge.disconnected {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--color-error);
+  }
+
+  .status-badge.warning {
+    background: rgba(251, 191, 36, 0.1);
+    color: var(--color-warning);
+  }
+
+  .monitoring-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: var(--color-primary-bg-light);
+    border-radius: 0.375rem;
+  }
+
+  .monitoring-status :global(.status-icon.active) {
+    color: var(--color-success);
+  }
+
+  /* Log Section */
+  .log-section {
+    margin-top: 1.5rem;
+  }
+
+  .log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .log-header h3 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+  }
+
+  .trigger-log {
+    max-height: 300px;
+    overflow-y: auto;
   }
 
   /* Form Card */
