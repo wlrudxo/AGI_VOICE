@@ -7,7 +7,6 @@
 	import { marked } from 'marked';
 	import { parseActions, parseWithSegments, getActionLabel } from '$lib/actions/parser';
 	import { executeActions } from '$lib/actions/executor';
-	import { formatReadResults } from '$lib/actions/formatter';
 
 	// Configure marked for safe rendering
 	marked.setOptions({
@@ -233,51 +232,88 @@
 		}
 		scrollToBottom();
 
-		// 3. READ 액션 실행 및 재요청
+		// 3. 모든 READ 액션 한 번에 실행
 		const readActions = actions.filter(a => a.operation === 'read');
 		if (readActions.length > 0) {
-			console.log('🔍 Executing READ actions:', readActions);
+			console.log(`🔍 Executing ${readActions.length} READ actions:`, readActions);
 			try {
-				const readResults = await executeActions(readActions);
-				console.log('✅ READ results:', readResults);
+				// 병렬 실행하여 모든 READ 결과 수집
+				const readResults = await Promise.all(
+					readActions.map(action => executeActions([action]))
+				);
 
-				// 결과 포맷팅
-				const systemContext = formatReadResults(readResults);
+				// 결과를 system message로 포맷
+				const systemContextParts: string[] = [];
+				for (let i = 0; i < readResults.length; i++) {
+					const resultArray = readResults[i];
+					if (resultArray[0]?.success && resultArray[0]?.result) {
+						systemContextParts.push(`[${readActions[i].type}] ${resultArray[0].result}`);
+					} else if (!resultArray[0]?.success) {
+						systemContextParts.push(`⚠️ 조회 실패: ${resultArray[0]?.error}`);
+					}
+				}
 
-				if (systemContext) {
-					// system 메시지로 재요청
+				if (systemContextParts.length > 0) {
+					const systemContext = systemContextParts.join('\n\n---\n\n');
+
+					// AI에게 모든 조회 결과를 한 번에 전달
 					const followupRequestBody = {
 						conversationId: conversationId,
 						message: userMessage,
 						model: claudeModel,
 						userName: getUserName(),
 						systemContext: systemContext,
-						role: 'system' // READ 재요청은 system 타입 (DB 저장 안 함)
+						role: 'system' // DB 저장 안 함
 					};
 
 					const followupData = await invoke('chat', { request: followupRequestBody });
 					const followupRawResponse = followupData.responses[0];
 
-					// 재귀: 후속 응답도 동일하게 처리
-					await processResponse(followupRawResponse, userMessage, hasDbChange);
+					// 최종 응답 표시
+					const followupSegments = parseWithSegments(followupRawResponse);
+					const followupTimestamp = new Date();
+					for (const segment of followupSegments) {
+						if (segment.type === 'text') {
+							messages.push({
+								role: 'assistant',
+								content: segment.content,
+								timestamp: followupTimestamp
+							});
+						} else if (segment.type === 'action') {
+							messages.push({
+								role: 'action',
+								label: segment.label,
+								timestamp: followupTimestamp
+							});
+						}
+					}
+					scrollToBottom();
+
+					// 최종 응답에 CUD 태그가 있으면 실행
+					const followupActions = parseActions(followupRawResponse);
+					const cudActionsFromFollowup = followupActions.filter(a => a.operation !== 'read');
+					if (cudActionsFromFollowup.length > 0) {
+						console.log('🔧 Executing CUD actions from follow-up:', cudActionsFromFollowup);
+						await executeActions(cudActionsFromFollowup);
+						hasDbChange.value = true;
+					}
 				}
 			} catch (readError) {
 				console.error('❌ READ execution error:', readError);
 				messages.push({
 					role: 'error',
-					content: `READ 액션 실행 실패: ${readError.message || String(readError)}`,
+					content: `조회 실패: ${readError.message || String(readError)}`,
 					timestamp: new Date()
 				});
 			}
 		}
 
-		// 4. CUD 액션 실행
+		// 4. CUD 액션 순차 실행 (READ 없는 경우)
 		const cudActions = actions.filter(a => a.operation !== 'read');
 		if (cudActions.length > 0) {
 			console.log('🔧 Executing CUD actions:', cudActions);
 			try {
-				const cudResults = await executeActions(cudActions);
-				console.log('✅ CUD results:', cudResults);
+				await executeActions(cudActions);
 				hasDbChange.value = true;
 			} catch (cudError) {
 				console.error('❌ CUD execution error:', cudError);
