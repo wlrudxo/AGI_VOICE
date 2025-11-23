@@ -1,6 +1,7 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
   import Icon from '@iconify/svelte';
+  import HelpModal from '$lib/components/HelpModal.svelte';
 
   // Driver inputs
   let gasValue = $state(0.0);
@@ -9,6 +10,9 @@
 
   // Text command
   let commandInput = $state('');
+
+  // Help modal
+  let showHelpModal = $state(false);
 
   // Log
   let logMessages: string[] = $state([]);
@@ -129,6 +133,9 @@
     <h2 class="section-title text-primary">
       <Icon icon="solar:code-bold-duotone" width="24" height="24" />
       Text Command Input
+      <button class="btn-icon help-btn" onclick={() => (showHelpModal = true)} title="도움말">
+        <Icon icon="solar:question-circle-bold" width="20" height="20" />
+      </button>
     </h2>
     <div class="command-input-group">
       <input
@@ -161,6 +168,132 @@
     </div>
   </section>
 </div>
+
+<!-- Help Modal -->
+<HelpModal
+  bind:visible={showHelpModal}
+  title="Text Command 도움말"
+  onClose={() => (showHelpModal = false)}
+>
+  <section class="help-section">
+    <h4>📋 명령어 형식</h4>
+    <p class="help-desc">
+      CarMaker APO 프로토콜을 사용하여 차량을 직접 제어할 수 있습니다.
+    </p>
+  </section>
+
+  <section class="help-section">
+    <h4>🚗 차량 제어 명령어</h4>
+
+    <div class="command-example">
+      <code>DVAWrite DM.Gas 0.5 2000 Abs</code>
+      <p>Gas 페달을 0.5로 2초간 설정</p>
+    </div>
+
+    <div class="command-example">
+      <code>DVAWrite DM.Brake 0.3 1500 Abs</code>
+      <p>Brake 페달을 0.3으로 1.5초간 설정</p>
+    </div>
+
+    <div class="command-example">
+      <code>DVAWrite DM.Steer.Ang 0.2 3000 Abs</code>
+      <p>조향각을 0.2 라디안으로 3초간 설정</p>
+    </div>
+
+    <div class="command-example">
+      <code>DVAWrite DM.v.Trgt 50 -1 Abs</code>
+      <p>목표 속도를 50 m/s로 설정 (무한 지속: -1)</p>
+    </div>
+
+    <div class="command-example">
+      <code>DVAWrite DM.LaneOffset 0.5 5000 Abs</code>
+      <p>차선 오프셋을 0.5m로 5초간 설정</p>
+    </div>
+  </section>
+
+  <section class="help-section">
+    <h4>⚙️ 시뮬레이션 제어</h4>
+
+    <div class="command-example">
+      <code>StartSim</code>
+      <p>시뮬레이션 시작</p>
+    </div>
+
+    <div class="command-example">
+      <code>StopSim</code>
+      <p>시뮬레이션 중지</p>
+    </div>
+
+    <div class="command-example">
+      <code>DVAWrite SC.TAccel 0.001 30000 Abs</code>
+      <p>시간 가속도를 0.001로 설정 (일시정지 효과)</p>
+    </div>
+  </section>
+
+  <section class="help-section">
+    <h4>📊 변수 읽기</h4>
+
+    <div class="command-example">
+      <code>DVARead Car.v</code>
+      <p>차량 속도 읽기 (m/s)</p>
+    </div>
+
+    <div class="command-example">
+      <code>DVARead Vhcl.sRoad</code>
+      <p>도로 위치 S 좌표 읽기 (m)</p>
+    </div>
+
+    <div class="command-example">
+      <code>DVARead Traffic.nObjs</code>
+      <p>주변 차량 수 읽기</p>
+    </div>
+  </section>
+
+  <section class="help-section">
+    <h4>📖 DVAWrite 파라미터</h4>
+    <div class="param-table">
+      <div class="param-row">
+        <span class="param-name">Name</span>
+        <span class="param-desc">변수명 (예: DM.Gas, DM.Brake)</span>
+      </div>
+      <div class="param-row">
+        <span class="param-name">Value</span>
+        <span class="param-desc">설정할 값 (float)</span>
+      </div>
+      <div class="param-row">
+        <span class="param-name">Duration</span>
+        <span class="param-desc">지속 시간 (ms), -1은 무한</span>
+      </div>
+      <div class="param-row">
+        <span class="param-name">Mode</span>
+        <span class="param-desc">
+          <strong>Abs</strong>: 절대값 (즉시 적용)<br />
+          <strong>AbsRamp</strong>: 부드러운 전환<br />
+          <strong>Fac</strong>: 배율
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section class="help-section">
+    <h4>💡 초보자 권장 명령어</h4>
+
+    <div class="command-example highlight">
+      <code>DVAWrite DM.Gas 0.3 2000 Abs</code>
+      <p>부드러운 가속 테스트</p>
+    </div>
+
+    <div class="command-example highlight">
+      <code>DVARead Car.v</code>
+      <p>현재 속도 확인</p>
+    </div>
+
+    <div class="command-example highlight">
+      <code>DVAWrite DM.Brake 0.5 1000 Abs</code>
+      <p>감속 테스트</p>
+    </div>
+  </section>
+</HelpModal>
 
 <style>
   .manual-control {
@@ -210,5 +343,15 @@
 
   .command-input {
     flex: 1;
+  }
+
+  /* Help button */
+  .help-btn {
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+
+  .help-btn:hover {
+    opacity: 1;
   }
 </style>
