@@ -163,8 +163,8 @@
         {carmakerStore.isMonitoring ? 'Stop Monitoring' : 'Start Monitoring'}
       </button>
     </div>
-    <div class="table-wrapper" style="max-height: 500px; overflow-y: auto;">
-      <table class="table">
+    <div class="table-wrapper" style="max-height: 600px; overflow-y: auto;">
+      <table class="table monitor-table">
         <thead>
           <tr>
             <th>Variable</th>
@@ -221,8 +221,28 @@
 
   /* Override app.css button styles with more specific selector */
   .control-buttons .control-btn {
-    padding: 0.5rem 0.75rem !important;
+    padding: 0.375rem 0.75rem !important;
     font-size: 0.875rem !important;
+  }
+
+  /* Monitor table with fixed column widths */
+  .monitor-table {
+    table-layout: fixed;
+  }
+
+  .monitor-table th:nth-child(1),
+  .monitor-table td:nth-child(1) {
+    width: 180px;
+  }
+
+  .monitor-table th:nth-child(2),
+  .monitor-table td:nth-child(2) {
+    width: 120px;
+  }
+
+  .monitor-table th:nth-child(3),
+  .monitor-table td:nth-child(3) {
+    width: auto;
   }
 
   .connection-controls {
