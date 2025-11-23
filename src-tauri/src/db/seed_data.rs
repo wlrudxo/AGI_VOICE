@@ -92,23 +92,116 @@ async fn insert_default_characters(db: &DatabaseConnection) -> Result<(), DbErr>
 async fn insert_default_command_templates(db: &DatabaseConnection) -> Result<(), DbErr> {
     let now = Utc::now().naive_utc();
 
-    // Example command template for autonomous driving research
-    let example_commands = command_template::ActiveModel {
+    // 1. 자율주행 맵 관리 명령어 (활성화)
+    let map_management_commands = command_template::ActiveModel {
         id: Set(1),
-        name: Set("예제 명령어".to_string()),
-        content: Set(r#"## 명령어 템플릿 예제
+        name: Set("자율주행 맵 관리".to_string()),
+        content: Set(r#"## 자율주행 맵 관리 명령어
 
-이 섹션에는 AI가 실행할 수 있는 액션 태그를 정의할 수 있습니다.
-자율주행 연구 프로젝트에 맞는 명령어를 추가하세요.
+당신은 SUMO 자율주행 시뮬레이션 맵을 관리할 수 있습니다.
+사용자가 맵 생성, 조회, 수정, 삭제를 요청하면 아래 태그를 사용하세요.
+
+### 📋 READ 명령어 (정보 조회)
+
+사용자가 맵 정보를 물어보면 READ 태그를 사용하여 DB를 조회하세요.
+시스템이 자동으로 정보를 가져와서 다시 전달합니다.
+
+**맵 전체 조회:**
+<read_map>
+
+**특정 맵 ID로 조회:**
+<read_map|id:123>
+
+**카테고리별 조회:**
+<read_map|category:도심>
+<read_map|category:고속도로>
+
+**이름으로 검색:**
+<read_map|name:강남역>
+
+**대시보드 현황 조회:**
+<read_dashboard>
+
+### ✏️ CREATE 명령어 (맵 생성)
+
+사용자가 새 맵을 만들어달라고 하면 이 태그를 사용하세요.
+
+**기본 형식:**
+<map|name:맵이름|description:설명|category:카테고리|difficulty:난이도>
+
+**예시:**
+<map|name:강남역 교차로|description:복잡한 4거리 교차로|category:도심|difficulty:어려움>
+<map|name:고속도로 진출입로|description:IC 진출입 구간|category:고속도로|difficulty:보통|tags:합류,분기>
+
+**필수 필드:** name
+**선택 필드:** description, category, difficulty, tags, nodeXml, edgeXml, metadata
+
+### 🔄 UPDATE 명령어 (맵 수정)
+
+기존 맵을 수정할 때 사용하세요.
+
+**형식:**
+<update_map|id:맵ID|수정할필드:새값|...>
+
+**예시:**
+<update_map|id:5|name:강남역 사거리|difficulty:매우어려움>
+<update_map|id:3|category:도심|tags:신호등,횡단보도>
+
+**필수 필드:** id
+**선택 필드:** name, description, category, difficulty, tags, nodeXml, edgeXml
+
+### 🗑️ DELETE 명령어 (맵 삭제)
+
+맵을 삭제할 때 사용하세요.
+
+**형식:**
+<delete_map|id:맵ID>
+
+**예시:**
+<delete_map|id:7>
+
+### 💡 사용 가이드
+
+1. **먼저 조회하기**: 사용자가 "맵 있어?" 같은 질문을 하면 `<read_map>`이나 `<read_dashboard>`로 먼저 조회하세요.
+
+2. **자연스러운 대화**: 태그만 던지지 말고 설명과 함께 사용하세요.
+   예: "강남역 교차로 맵을 생성하겠습니다. <map|name:강남역 교차로|description:복잡한 4거리|category:도심>"
+
+3. **확인 후 삭제**: 삭제 전에는 꼭 해당 맵을 조회해서 확인한 후 삭제하세요.
+
+4. **READ 결과 기다리기**: READ 태그를 사용하면 시스템이 정보를 가져와서 다시 알려줍니다. 그 정보를 바탕으로 답변하세요.
+
+5. **여러 작업 동시 수행**: 한 응답에 여러 태그를 사용할 수 있습니다.
+   예: "현재 맵을 확인하겠습니다. <read_dashboard> 그리고 새로운 맵을 추가할게요. <map|name:테스트맵|category:도심>"#.to_string()),
+        is_active: Set(1),  // Active by default
+        created_at: Set(now),
+        updated_at: Set(now),
+    };
+
+    map_management_commands.insert(db).await?;
+    println!("✅ Map management command template inserted (active)");
+
+    // 2. 예제 명령어 (비활성화)
+    let example_commands = command_template::ActiveModel {
+        id: Set(2),
+        name: Set("예제 명령어 템플릿".to_string()),
+        content: Set(r#"## 예제 명령어 템플릿
+
+이 템플릿은 참고용입니다. 프로젝트 요구사항에 맞게 새로운 명령어 템플릿을 추가하세요.
 
 ### 태그 형식
-<action_type|param1:value1|param2:value2|...>
+<action_type|field:value|field:value|...>
 
-### 예시 (사용자 정의)
-프로젝트 요구사항에 따라 명령어를 정의하고 사용하세요.
+### 사용자 정의 명령어 예시
+
+프로젝트에서 필요한 도메인별 명령어를 정의하세요:
+- 센서 데이터 관리
+- 주행 시나리오 생성
+- 성능 지표 분석
+- 실험 결과 기록
 
 참고: 이 명령어 템플릿은 비활성화되어 있습니다."#.to_string()),
-        is_active: Set(0),  // Deactivated by default
+        is_active: Set(0),  // Deactivated
         created_at: Set(now),
         updated_at: Set(now),
     };
