@@ -3,6 +3,8 @@
   import Icon from '@iconify/svelte';
   import { carmakerStore } from '$lib/stores/carmakerStore.svelte';
   import { triggerMonitor } from '$lib/stores/triggerMonitor.svelte';
+  import { dialogStore } from '$lib/stores/dialogStore.svelte';
+  import HelpModal from '$lib/components/HelpModal.svelte';
 
   // Check connection status on mount (for page reload)
   onMount(async () => {
@@ -90,6 +92,9 @@
   // Track monitoring state before pause
   let wasMonitoringBeforePause = $state(false);
 
+  // Help modal
+  let showHelpModal = $state(false);
+
   // Log container auto-scroll
   let logContainer: HTMLDivElement;
 
@@ -146,7 +151,12 @@
    * Sends all DM.* commands with 1ms duration to reset state
    */
   async function resetControl() {
-    if (!confirm('모든 차량 제어 명령을 초기화하시겠습니까?\n\n실행 중인 wait_until 및 AI 스크립트가 전부 중단됩니다.')) {
+    const confirmed = await dialogStore.confirm(
+      '모든 차량 제어 명령을 초기화하시겠습니까?\n\n실행 중인 wait_until 및 AI 스크립트가 전부 중단됩니다.',
+      'Reset Control'
+    );
+
+    if (!confirmed) {
       return;
     }
 
@@ -181,10 +191,13 @@
 
 <div class="vehicle-control">
   <div class="page-header">
-    <div>
+    <div class="title-row">
       <h1>차량 제어</h1>
-      <p class="page-description">CarMaker 차량을 실시간으로 제어합니다.</p>
+      <button class="btn-icon help-btn" onclick={() => (showHelpModal = true)}>
+        <Icon icon="solar:question-circle-bold" width="20" height="20" />
+      </button>
     </div>
+    <p class="page-description">CarMaker 차량을 실시간으로 제어합니다.</p>
   </div>
 
   <!-- Simulation Control -->
@@ -223,7 +236,7 @@
       </button>
 
       <button
-        class="btn-compact"
+        class="btn-compact trigger-btn"
         class:btn-danger={triggerMonitor.isMonitoring}
         class:btn-primary={!triggerMonitor.isMonitoring}
         onclick={() => triggerMonitor.isMonitoring ? triggerMonitor.stopMonitoring() : triggerMonitor.startMonitoring()}
@@ -234,7 +247,11 @@
           width="16"
           height="16"
         />
-        {triggerMonitor.isMonitoring ? 'Stop Trigger' : 'Start Trigger'}
+        {#if triggerMonitor.isMonitoring}
+          {triggerMonitor.triggers.filter(t => t.isActive).length} triggered
+        {:else}
+          Start Trigger
+        {/if}
       </button>
 
       <button
@@ -245,15 +262,6 @@
         <Icon icon="solar:restart-bold" width="16" height="16" />
         Reset Control
       </button>
-
-      {#if triggerMonitor.isMonitoring}
-        <div class="trigger-status">
-          <Icon icon="solar:power-bold-duotone" width="16" height="16" class="text-accent" />
-          <span class="text-accent">{triggerMonitor.triggers.filter(t => t.isActive).length} active</span>
-        </div>
-      {:else}
-        <div></div>
-      {/if}
     </div>
 
     <!-- Simulation Controls -->
@@ -351,13 +359,162 @@
   </section>
 </div>
 
+<!-- Help Modal -->
+<HelpModal
+  bind:visible={showHelpModal}
+  title="차량 제어 도움말"
+  onClose={() => (showHelpModal = false)}
+>
+  <section class="help-section">
+    <h4>🚗 차량 제어란?</h4>
+    <p class="help-desc">
+      CarMaker 시뮬레이션 환경에서 차량을 실시간으로 제어하고 모니터링하는 시스템입니다. TCP 연결을 통해 차량 데이터를 수신하고 제어 명령을 전송합니다.
+    </p>
+  </section>
+
+  <section class="help-section">
+    <h4>🔌 연결 및 모니터링 버튼</h4>
+
+    <div class="button-card">
+      <h5>Connect / Disconnect</h5>
+      <p>
+        CarMaker TCP 서버에 연결하거나 연결을 해제합니다.<br/>
+        • <strong>Connect</strong>: TCP 연결 시작 (기본 포트: 16660)<br/>
+        • <strong>Disconnect</strong>: 연결 해제 및 모든 모니터링 중지
+      </p>
+    </div>
+
+    <div class="button-card">
+      <h5>Start Monitor / Stop Monitor</h5>
+      <p>
+        차량 데이터 모니터링을 시작하거나 중지합니다.<br/>
+        • <strong>Start Monitor</strong>: Vehicle Data Monitor 활성화 (10Hz 폴링)<br/>
+        • <strong>Stop Monitor</strong>: 데이터 수신 중지<br/>
+        • 트리거 모니터링을 사용하려면 반드시 먼저 활성화해야 합니다.
+      </p>
+    </div>
+
+    <div class="button-card">
+      <h5>Start Trigger / {'{'}n{'}'} triggered</h5>
+      <p>
+        트리거 모니터링을 시작하거나 중지합니다.<br/>
+        • <strong>Start Trigger</strong>: 트리거 조건 감지 시작<br/>
+        • <strong>{'{'}n{'}'} triggered</strong>: 활성화된 트리거 개수 표시 (클릭 시 중지)<br/>
+        • Start Monitor가 활성화되어 있어야 사용 가능합니다.
+      </p>
+    </div>
+
+    <div class="button-card">
+      <h5>Reset Control</h5>
+      <p>
+        모든 차량 제어 명령을 초기화합니다.<br/>
+        • DM.Gas, DM.Brake, DM.Steer.Ang를 0으로 리셋<br/>
+        • 실행 중인 wait_until 및 AI 스크립트 중단<br/>
+        • DM.v.Trgt (목표 속도), DM.LaneOffset (차선 오프셋) 리셋
+      </p>
+    </div>
+  </section>
+
+  <section class="help-section">
+    <h4>⚙️ 시뮬레이션 제어 버튼</h4>
+
+    <div class="button-card">
+      <h5>Start</h5>
+      <p>
+        CarMaker 시뮬레이션을 시작합니다.<br/>
+        • TestRun 실행 시작<br/>
+        • 차량 및 환경 초기화
+      </p>
+    </div>
+
+    <div class="button-card">
+      <h5>Stop</h5>
+      <p>
+        실행 중인 시뮬레이션을 중지합니다.<br/>
+        • TestRun 종료<br/>
+        • 모든 차량 데이터 초기화
+      </p>
+    </div>
+
+    <div class="button-card">
+      <h5>Pause (0.001x)</h5>
+      <p>
+        시뮬레이션을 초감속합니다.<br/>
+        • 시간 스케일을 0.001x로 설정 (사실상 일시정지)<br/>
+        • 차량 모니터링이 활성화된 경우 자동으로 중지됩니다.
+      </p>
+    </div>
+
+    <div class="button-card">
+      <h5>Resume (1.0x)</h5>
+      <p>
+        시뮬레이션을 정상 속도로 복원합니다.<br/>
+        • 시간 스케일을 1.0x로 설정<br/>
+        • Pause 전에 모니터링이 활성화되어 있었다면 자동으로 재시작됩니다.
+      </p>
+    </div>
+  </section>
+
+  <section class="help-section">
+    <h4>📊 Vehicle Data Monitor</h4>
+    <p class="help-desc">
+      실시간으로 차량의 상태를 모니터링합니다. Start Monitor 버튼을 클릭하면 10Hz(100ms) 주기로 데이터가 업데이트됩니다.
+    </p>
+
+    <div class="monitor-categories">
+      <h5>주요 모니터링 데이터:</h5>
+      <ul class="help-list">
+        <li><strong>Time</strong>: 시뮬레이션 시간 (초)</li>
+        <li><strong>DM.Gas, DM.Brake, DM.Steer.Ang</strong>: 가스/브레이크/조향 제어 입력</li>
+        <li><strong>Car.v</strong>: 차량 속도 (m/s)</li>
+        <li><strong>Vhcl.sRoad, Vhcl.tRoad</strong>: 도로 상의 위치 (종방향/횡방향)</li>
+        <li><strong>DM.v.Trgt, DM.LaneOffset</strong>: 목표 속도 및 차선 오프셋</li>
+        <li><strong>Traffic.nObjs</strong>: 활성 교통 객체 수</li>
+        <li><strong>Traffic.T00.*, Traffic.T01.*</strong>: 교통 객체별 위치, 속도 등</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="help-section">
+    <h4>📋 System Log</h4>
+    <p class="help-desc">
+      모든 시스템 동작과 명령 실행 결과를 시간순으로 표시합니다.<br/>
+      • CarMaker 명령 실행 로그<br/>
+      • 트리거 발동 로그<br/>
+      • AI 응답 및 차량 제어 명령 실행 로그<br/>
+      • Clear All 버튼으로 로그 삭제 가능
+    </p>
+  </section>
+
+  <section class="help-section">
+    <h4>💡 사용 순서</h4>
+    <ol class="help-list">
+      <li><strong>Connect</strong>: CarMaker TCP 연결</li>
+      <li><strong>Start</strong>: 시뮬레이션 시작</li>
+      <li><strong>Start Monitor</strong>: 차량 데이터 모니터링 활성화</li>
+      <li><strong>Start Trigger</strong>: (선택) 트리거 자동 감지 시작</li>
+      <li>트리거 발동 시 자동으로 Pause → AI 응답 → Resume → 명령 실행</li>
+      <li>필요 시 <strong>Reset Control</strong>로 제어 초기화</li>
+      <li><strong>Stop</strong>: 시뮬레이션 종료</li>
+      <li><strong>Disconnect</strong>: 연결 해제</li>
+    </ol>
+  </section>
+</HelpModal>
+
 <style>
   .vehicle-control {
     max-width: 800px;
     margin: 0 auto;
   }
 
-  /* Control Buttons Grid */
+  /* Title Row with Help Button - component specific */
+  .title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Control Buttons Grid - component specific */
   .control-buttons {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -369,16 +526,7 @@
     margin-bottom: 0;
   }
 
-  .trigger-status {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.375rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-
-  /* Monitor table with fixed column widths */
+  /* Monitor table with fixed column widths - component specific */
   .monitor-table {
     table-layout: fixed;
   }
@@ -396,57 +544,5 @@
   .monitor-table th:nth-child(3),
   .monitor-table td:nth-child(3) {
     width: auto;
-  }
-
-  .connection-controls {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-
-  .input-group {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .input-group label {
-    font-weight: 500;
-    color: var(--color-text-secondary);
-  }
-
-  .control-row {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .control-label {
-    min-width: 120px;
-    font-weight: 500;
-    color: var(--color-text-secondary);
-  }
-
-  .value-display {
-    min-width: 50px;
-    text-align: right;
-    font-family: 'Courier New', monospace;
-    font-weight: 600;
-    color: var(--color-text-primary);
-  }
-
-  .btn-set {
-    min-width: 60px;
-  }
-
-  .command-input-group {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .command-input {
-    flex: 1;
   }
 </style>

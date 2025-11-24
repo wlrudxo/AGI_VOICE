@@ -78,12 +78,13 @@ export async function executeCommandSequence(
           log(`    ↻ Resetting ${pendingInfiniteCommands.length} infinite-duration command(s)...`);
 
           for (const cmd of pendingInfiniteCommands) {
-            // Send same command with 1ms duration to reset
+            // Send same command with 1ms duration to immediately cancel
+            // This releases control back to autonomous driving algorithm
             const resetCmd: VehicleCommand = { ...cmd, duration: 1 };
             const resetResult = await executeSingleCommand(resetCmd);
 
             if (resetResult.success) {
-              log(`    ✓ Reset: ${cmd.variable} = ${cmd.value} | 1ms (was -1ms)`);
+              log(`    ✓ Reset: ${cmd.variable} = ${cmd.value} | 1ms (was ${cmd.duration === -1 ? '99999ms effective' : cmd.duration + 'ms'})`);
             } else {
               log(`    ✗ Failed to reset: ${cmd.variable}`);
             }
@@ -99,7 +100,8 @@ export async function executeCommandSequence(
         results.push(result);
 
         if (result.success) {
-          log(`    ✓ [${i + 1}/${sequence.items.length}] ${cmd.variable} = ${cmd.value} | ${cmd.duration}ms | ${cmd.mode}`);
+          const displayDuration = cmd.duration === -1 ? '99999ms (infinite)' : `${cmd.duration}ms`;
+          log(`    ✓ [${i + 1}/${sequence.items.length}] ${cmd.variable} = ${cmd.value} | ${displayDuration} | ${cmd.mode}`);
 
           // Track commands with duration=-1
           if (cmd.duration === -1) {
@@ -144,7 +146,10 @@ export async function executeCommandSequence(
  */
 async function executeSingleCommand(cmd: VehicleCommand): Promise<ExecutionResult> {
   try {
-    const command = `DVAWrite ${cmd.variable} ${cmd.value} ${cmd.duration} ${cmd.mode}`;
+    // Convert duration=-1 to a very large value for CarMaker compatibility
+    // CarMaker might not accept negative durations, so use 99999ms instead
+    const actualDuration = cmd.duration === -1 ? 99999 : cmd.duration;
+    const command = `DVAWrite ${cmd.variable} ${cmd.value} ${actualDuration} ${cmd.mode}`;
 
     await carmakerStore.executeCommand(command);
 

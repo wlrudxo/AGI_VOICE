@@ -16,6 +16,55 @@
 		gfm: true, // GitHub Flavored Markdown
 	});
 
+	// Helper function to escape HTML in code blocks while preserving markdown
+	function preprocessMarkdown(content: string): string {
+		// Escape < and > only outside of code blocks to prevent HTML interpretation
+		// Split by code blocks (both inline ` and block ```)
+		const parts: string[] = [];
+		let inCodeBlock = false;
+		let inInlineCode = false;
+		let currentPart = '';
+
+		for (let i = 0; i < content.length; i++) {
+			const char = content[i];
+			const nextChars = content.slice(i, i + 3);
+
+			// Check for code block delimiter ```
+			if (nextChars === '```') {
+				parts.push(currentPart);
+				currentPart = '```';
+				inCodeBlock = !inCodeBlock;
+				i += 2; // Skip next 2 chars
+				continue;
+			}
+
+			// Check for inline code delimiter `
+			if (char === '`' && !inCodeBlock) {
+				parts.push(currentPart);
+				currentPart = '`';
+				inInlineCode = !inInlineCode;
+				continue;
+			}
+
+			// Escape < and > only if not in code
+			if (!inCodeBlock && !inInlineCode) {
+				if (char === '<') {
+					currentPart += '&lt;';
+					continue;
+				}
+				if (char === '>') {
+					currentPart += '&gt;';
+					continue;
+				}
+			}
+
+			currentPart += char;
+		}
+
+		parts.push(currentPart);
+		return parts.join('');
+	}
+
 	// State
 	let messages = $state([]);
 	let inputMessage = $state('');
@@ -601,7 +650,7 @@
 					<div class="message-wrapper message-wrapper-assistant">
 						<div class="message message-assistant">
 							<div class="message-content">
-								<div class="markdown-content">{@html marked(message.content)}</div>
+								<div class="markdown-content">{@html marked(preprocessMarkdown(message.content))}</div>
 							</div>
 						</div>
 						{#if shouldShowTime(index)}
@@ -825,12 +874,18 @@
 		padding: 0.75rem;
 		border-radius: 6px;
 		overflow-x: auto;
+		overflow-y: visible; /* 세로로 잘리지 않도록 */
 		margin: 0.5rem 0;
+		white-space: pre-wrap; /* 긴 줄 자동 줄바꿈 */
+		word-break: break-word; /* 단어가 너무 길면 강제 줄바꿈 */
+		max-height: none; /* 높이 제한 없음 */
 	}
 
 	.markdown-content :global(pre code) {
 		background: none;
 		padding: 0;
+		white-space: pre-wrap; /* 코드 내용도 줄바꿈 */
+		word-break: break-word;
 	}
 
 	.markdown-content :global(ul),

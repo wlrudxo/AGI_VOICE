@@ -222,4 +222,56 @@
     color: var(--color-text-primary);
     font-weight: 600;
   }
+
+  /* Additional help content styles */
+  :global(.help-list) {
+    margin: 0.5rem 0 0 1.25rem;
+    padding: 0;
+    color: var(--color-text-secondary);
+    line-height: 1.8;
+  }
+
+  :global(.help-list li) {
+    margin-bottom: 0.375rem;
+  }
+
+  :global(.button-card),
+  :global(.mode-card),
+  :global(.example-card) {
+    background: var(--color-background);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  :global(.button-card h5),
+  :global(.mode-card h5),
+  :global(.example-card h5) {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-primary);
+  }
+
+  :global(.button-card p),
+  :global(.mode-card p),
+  :global(.example-card p) {
+    margin: 0;
+    color: var(--color-text-secondary);
+    line-height: 1.8;
+  }
+
+  :global(.monitor-categories) {
+    margin-top: 0.75rem;
+    padding: 1rem;
+    background: var(--color-background);
+    border-radius: 0.5rem;
+  }
+
+  :global(.monitor-categories h5) {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
 </style>

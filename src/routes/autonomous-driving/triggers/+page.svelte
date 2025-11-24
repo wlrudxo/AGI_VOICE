@@ -4,6 +4,7 @@
   import Icon from '@iconify/svelte';
   import HelpModal from '$lib/components/HelpModal.svelte';
   import { disableAutocomplete } from '$lib/actions/disableAutocomplete';
+  import { triggerMonitor } from '$lib/stores/triggerMonitor.svelte';
 
   interface TriggerCondition {
     id: number;
@@ -126,6 +127,10 @@
       }
 
       await loadTriggers();
+      // IMPORTANT: Reload triggerMonitor's trigger list if monitoring is active
+      if (triggerMonitor.isMonitoring) {
+        await triggerMonitor.loadTriggers();
+      }
       cancelForm();
     } catch (error: any) {
       alert(`트리거 저장 실패: ${error}`);
@@ -136,6 +141,10 @@
     try {
       await invoke('toggle_trigger', { id });
       await loadTriggers();
+      // IMPORTANT: Reload triggerMonitor's trigger list if monitoring is active
+      if (triggerMonitor.isMonitoring) {
+        await triggerMonitor.loadTriggers();
+      }
     } catch (error: any) {
       alert(`트리거 토글 실패: ${error}`);
     }
@@ -145,6 +154,10 @@
     try {
       await invoke('toggle_rule_control', { id });
       await loadTriggers();
+      // IMPORTANT: Reload triggerMonitor's trigger list if monitoring is active
+      if (triggerMonitor.isMonitoring) {
+        await triggerMonitor.loadTriggers();
+      }
     } catch (error: any) {
       alert(`규칙 제어 토글 실패: ${error}`);
     }
@@ -155,6 +168,10 @@
       try {
         await invoke('delete_trigger', { id });
         await loadTriggers();
+        // IMPORTANT: Reload triggerMonitor's trigger list if monitoring is active
+        if (triggerMonitor.isMonitoring) {
+          await triggerMonitor.loadTriggers();
+        }
       } catch (error: any) {
         alert(`트리거 삭제 실패: ${error}`);
       }
@@ -489,78 +506,7 @@
   }
 
   /* help-btn 스타일은 app.css에 정의됨 */
-
-  /* Help Modal Styles */
-  :global(.help-section) {
-    margin-bottom: 1.5rem;
-  }
-
-  :global(.help-section h4) {
-    margin: 0 0 0.75rem 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--color-text-primary);
-  }
-
-  :global(.help-section h5) {
-    margin: 0 0 0.5rem 0;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--color-primary);
-  }
-
-  :global(.help-desc) {
-    margin: 0;
-    color: var(--color-text-secondary);
-    line-height: 1.6;
-  }
-
-  :global(.help-list) {
-    margin: 0.5rem 0 0 1.25rem;
-    padding: 0;
-    color: var(--color-text-secondary);
-    line-height: 1.8;
-  }
-
-  :global(.help-list li) {
-    margin-bottom: 0.375rem;
-  }
-
-  :global(.mode-card),
-  :global(.example-card) {
-    background: var(--color-background);
-    padding: 1rem;
-    border-radius: 0.5rem;
-    margin-top: 0.75rem;
-  }
-
-  :global(.mode-card p),
-  :global(.example-card p) {
-    margin: 0;
-    color: var(--color-text-secondary);
-    line-height: 1.8;
-  }
-
-  :global(.command-example) {
-    background: var(--color-background);
-    padding: 0.75rem;
-    border-radius: 0.375rem;
-    margin: 0.5rem 0;
-  }
-
-  :global(.command-example code) {
-    display: block;
-    color: var(--color-primary);
-    font-family: 'Courier New', monospace;
-    font-size: 0.9rem;
-    margin-bottom: 0.25rem;
-  }
-
-  :global(.command-example p) {
-    margin: 0;
-    font-size: 0.875rem;
-    color: var(--color-text-secondary);
-  }
+  /* Help Modal Styles는 HelpModal.svelte에 정의됨 */
 
   /* Monitoring Control - use existing section styles from app.css */
   .monitoring-actions {

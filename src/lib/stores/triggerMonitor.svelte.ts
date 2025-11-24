@@ -267,54 +267,36 @@ DM.Brake = 0.0 | 100    # Now apply new brake command
 - To ensure sequential execution: use \`wait <duration>\` equal to or greater than previous command duration
 - **Prefer duration=-1 + wait_until pattern** for condition-based control (simpler and more reliable)
 - Only use -1 for **DM.* (vehicle control)** commands, NOT for SC.* (simulation control)
+- **⚠️ LaneOffset WARNING**: When duration expires, vehicle **automatically returns to lane center (0.0)**
+  - If you want to maintain lane offset, use a long duration (e.g., 10000ms or more)
+  - Example: \`DM.LaneOffset = 3.0 | 10000\` keeps offset for 10 seconds, then auto-returns to center
 
-**Example 1 - Fixed Duration**:
+**Example 1 - Emergency Braking**:
 \`\`\`
-DM.Gas = 0.8 | 1000
-wait 1000               # Wait for Gas to complete
-DM.Brake = 0.3 | 2000
-\`\`\`
-
-**Example 2 - Conditional Control (Recommended)**:
-\`\`\`
-DM.Gas = 0.0 | -1       # Stop accelerating (hold)
-DM.Brake = 0.5 | -1     # Apply brake (hold)
+DM.Gas = 0.0 | -1       # Stop accelerating
+DM.Brake = 0.5 | -1     # Apply brake
 wait_until Car.v <= 3.0 # Wait until slow enough (auto-reset Gas/Brake)
 DM.Brake = 0.0 | 100    # Release brake
-wait 200
-DM.Steer.Ang = 0.35 | 2000
+\`\`\`
+
+**Example 2 - Lane Change**:
+\`\`\`
+DM.LaneOffset = 3.0 | 10000  # Move to left lane, hold 10s, then auto-return to center
+\`\`\`
+
+**Example 3 - Speed Control with Overtaking**:
+\`\`\`
+DM.v.Trgt = 38.89 | -1      # Accelerate to 140 kph
+wait_until Car.v >= 38.0    # Wait until speed reached (auto-reset)
+DM.v.Trgt = 27.78 | -1      # Decelerate to 100 kph
+wait_until Car.v <= 28.0    # Wait until decelerated
 \`\`\`
 
 **Value Ranges**:
 - Gas/Brake: 0.0 to 1.0
 - Steer.Ang: radians (typically -0.5 to 0.5)
-- v.Trgt: m/s (target speed, e.g., 13.89 for 50 km/h)
-- LaneOffset: meters (lateral offset from lane center, e.g., 0.5 for left, -0.5 for right)
-
-**Additional Examples**:
-
-**Example 3 - Speed Control**:
-\`\`\`
-DM.v.Trgt = 13.89 | 5000   # Set target speed to 50 km/h
-wait_until Car.v >= 13.0   # Wait until speed reaches ~47 km/h
-DM.v.Trgt = 0.0 | 1000     # Reset target speed
-\`\`\`
-
-**Example 4 - Lane Change**:
-\`\`\`
-DM.LaneOffset = 0.5 | 3000  # Move 0.5m to the left
-wait 3000
-DM.LaneOffset = 0.0 | 2000  # Return to lane center
-\`\`\`
-
-**Example 5 - Combined Control**:
-\`\`\`
-DM.Gas = 0.8 | 2000           # Accelerate
-DM.LaneOffset = 0.5 | 3000    # Change lane while accelerating
-wait_until Car.v >= 20.0      # Wait until speed reaches 20 m/s
-DM.v.Trgt = 20.0 | -1         # Maintain speed at 20 m/s
-wait_until DM.LaneOffset >= 0.45  # Wait until lane change completes
-\`\`\`
+- v.Trgt: m/s (e.g., 27.78 for 100 km/h)
+- LaneOffset: meters (-6.5 to 6.5, 0 = lane center)
 
 Provide appropriate control values based on the situation.`;
 
