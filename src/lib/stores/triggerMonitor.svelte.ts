@@ -4,18 +4,11 @@ import { evaluateTrigger } from '$lib/utils/triggerEvaluator';
 import { parseVehicleCommands } from '$lib/actions/vehicleCommandParser';
 import { executeCommandSequence, executeRuleCommands } from '$lib/actions/vehicleCommandExecutor';
 
-interface TriggerCondition {
-  variable: string;
-  operator: string;
-  value: string;
-}
-
 interface Trigger {
   id: number;
   name: string;
   isActive: boolean;
-  conditions: TriggerCondition[];
-  logicOperator: 'AND' | 'OR';
+  expression: string; // Expression string (e.g., "Traffic.T01.sRoad - Traffic.T00.sRoad < 100")
   message: string;
   conversationId?: number;
   useRuleControl: boolean;

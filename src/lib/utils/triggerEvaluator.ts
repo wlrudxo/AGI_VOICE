@@ -1,64 +1,19 @@
 /**
  * Trigger Evaluator
- * Evaluates trigger conditions against vehicle telemetry data
+ * Evaluates trigger conditions using expression-based evaluation
  */
 
-interface TriggerCondition {
-  variable: string;
-  operator: string;
-  value: string;
-}
+import { evaluateExpression } from './expressionEvaluator';
 
 interface Trigger {
   id: number;
   name: string;
   isActive: boolean;
-  conditions: TriggerCondition[];
-  logicOperator: 'AND' | 'OR';
+  expression: string; // Single expression string (e.g., "Traffic.T01.sRoad - Traffic.T00.sRoad < 100")
   message: string;
   conversationId?: number;
   useRuleControl: boolean;
   debugAction: string;
-}
-
-/**
- * Evaluate a single condition against vehicle data
- */
-function evaluateCondition(
-  condition: TriggerCondition,
-  vehicleData: Record<string, number>
-): boolean {
-  const { variable, operator, value } = condition;
-
-  // Get actual value from vehicle data
-  const actualValue = vehicleData[variable];
-  if (actualValue === undefined || actualValue === null) {
-    return false; // Variable not available
-  }
-
-  // Parse expected value
-  const expectedValue = parseFloat(value);
-  if (isNaN(expectedValue)) {
-    return false; // Invalid value format
-  }
-
-  // Evaluate operator
-  switch (operator) {
-    case '>':
-      return actualValue > expectedValue;
-    case '<':
-      return actualValue < expectedValue;
-    case '>=':
-      return actualValue >= expectedValue;
-    case '<=':
-      return actualValue <= expectedValue;
-    case '==':
-      return Math.abs(actualValue - expectedValue) < 0.0001; // Float comparison with epsilon
-    case '!=':
-      return Math.abs(actualValue - expectedValue) >= 0.0001;
-    default:
-      return false; // Unknown operator
-  }
 }
 
 /**
@@ -73,23 +28,12 @@ export function evaluateTrigger(
     return false; // Skip inactive triggers
   }
 
-  if (trigger.conditions.length === 0) {
-    return false; // No conditions to evaluate
+  if (!trigger.expression || trigger.expression.trim() === '') {
+    return false; // No expression to evaluate
   }
 
-  // Evaluate all conditions
-  const results = trigger.conditions.map(condition =>
-    evaluateCondition(condition, vehicleData)
-  );
-
-  // Apply logic operator
-  if (trigger.logicOperator === 'AND') {
-    return results.every(result => result === true);
-  } else if (trigger.logicOperator === 'OR') {
-    return results.some(result => result === true);
-  }
-
-  return false;
+  // Evaluate expression using expression evaluator
+  return evaluateExpression(trigger.expression, vehicleData);
 }
 
 /**

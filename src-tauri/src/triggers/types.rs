@@ -1,24 +1,14 @@
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 
-/// Trigger condition
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TriggerCondition {
-    pub variable: String,
-    pub operator: String,
-    pub value: String,
-}
-
-/// Trigger definition
+/// Trigger definition (Expression-based)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Trigger {
     pub id: u32,
     pub name: String,
     pub is_active: bool,
-    pub conditions: Vec<TriggerCondition>,
-    pub logic_operator: String, // "AND" or "OR"
+    pub expression: String, // Expression string (e.g., "Traffic.T01.sRoad - Traffic.T00.sRoad < 100")
     pub message: String,
     pub conversation_id: Option<i64>,
     #[serde(default)] // Default to false if missing
@@ -34,8 +24,7 @@ impl Trigger {
     pub fn new(
         id: u32,
         name: String,
-        conditions: Vec<TriggerCondition>,
-        logic_operator: String,
+        expression: String,
         message: String,
         conversation_id: Option<i64>,
         use_rule_control: bool,
@@ -46,8 +35,7 @@ impl Trigger {
             id,
             name,
             is_active: true,
-            conditions,
-            logic_operator,
+            expression,
             message,
             conversation_id,
             use_rule_control,
@@ -80,8 +68,7 @@ impl Default for TriggersData {
 #[serde(rename_all = "camelCase")]
 pub struct CreateTriggerRequest {
     pub name: String,
-    pub conditions: Vec<TriggerCondition>,
-    pub logic_operator: String,
+    pub expression: String,
     pub message: String,
     pub conversation_id: Option<i64>,
     pub use_rule_control: bool,
@@ -93,8 +80,7 @@ pub struct CreateTriggerRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UpdateTriggerRequest {
     pub name: String,
-    pub conditions: Vec<TriggerCondition>,
-    pub logic_operator: String,
+    pub expression: String,
     pub message: String,
     pub conversation_id: Option<i64>,
     pub use_rule_control: bool,

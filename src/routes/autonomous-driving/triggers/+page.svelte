@@ -3,17 +3,13 @@
   import { invoke } from '@tauri-apps/api/core';
   import Icon from '@iconify/svelte';
   import HelpModal from '$lib/components/HelpModal.svelte';
+  import { disableAutocomplete } from '$lib/actions/disableAutocomplete';
 
   interface TriggerCondition {
     id: number;
     name: string;
     isActive: boolean;
-    conditions: {
-      variable: string;
-      operator: string;
-      value: string;
-    }[];
-    logicOperator: 'AND' | 'OR';
+    expression: string; // Expression string (e.g., "Traffic.T01.sRoad - Traffic.T00.sRoad < 100")
     message: string;
     conversationId?: number;
     useRuleControl: boolean;
@@ -65,8 +61,7 @@
   let editingTrigger: TriggerCondition | null = $state(null);
   let formData = $state({
     name: '',
-    conditions: [{ variable: 'Car.v', operator: '>', value: '' }],
-    logicOperator: 'AND' as 'AND' | 'OR',
+    expression: '',
     message: '',
     debugAction: ''
   });
@@ -75,8 +70,7 @@
     editingTrigger = null;
     formData = {
       name: '',
-      conditions: [{ variable: 'Car.v', operator: '>', value: '' }],
-      logicOperator: 'AND',
+      expression: '',
       message: '',
       debugAction: ''
     };
@@ -87,8 +81,7 @@
     editingTrigger = trigger;
     formData = {
       name: trigger.name,
-      conditions: [...trigger.conditions],
-      logicOperator: trigger.logicOperator,
+      expression: trigger.expression,
       message: trigger.message,
       debugAction: trigger.debugAction
     };
@@ -100,22 +93,14 @@
     editingTrigger = null;
   }
 
-  function addCondition() {
-    formData.conditions = [...formData.conditions, { variable: 'Car.v', operator: '>', value: '' }];
-  }
-
-  function removeCondition(index: number) {
-    formData.conditions = formData.conditions.filter((_, i) => i !== index);
-  }
-
   async function saveTrigger() {
     if (!formData.name.trim() || !formData.message.trim()) {
       alert('트리거 이름과 메시지를 입력해주세요.');
       return;
     }
 
-    if (formData.conditions.some(c => !c.value.trim())) {
-      alert('모든 조건의 값을 입력해주세요.');
+    if (!formData.expression.trim()) {
+      alert('트리거 조건식을 입력해주세요.');
       return;
     }
 
@@ -216,58 +201,53 @@
           />
         </div>
 
-        <!-- Conditions -->
+        <!-- Expression -->
         <div class="form-group">
-          <div class="condition-header">
-            <label class="form-label">발동 조건</label>
-            <div class="logic-toggle">
-              <button
-                class="logic-btn"
-                class:active={formData.logicOperator === 'AND'}
-                onclick={() => formData.logicOperator = 'AND'}
-              >
-                AND (모두 충족)
-              </button>
-              <button
-                class="logic-btn"
-                class:active={formData.logicOperator === 'OR'}
-                onclick={() => formData.logicOperator = 'OR'}
-              >
-                OR (하나 이상 충족)
-              </button>
-            </div>
+          <label for="expression" class="form-label">트리거 조건식</label>
+          <textarea
+            id="expression"
+            bind:value={formData.expression}
+            rows="3"
+            placeholder="예시: Car.v > 27.78 && abs(Vhcl.tRoad) > 2.0"
+            class="textarea-field code-input"
+            use:disableAutocomplete
+          ></textarea>
+          <div class="form-hint-box">
+            <p class="form-hint">
+              <strong>지원되는 연산자:</strong><br/>
+              • 비교: &gt;, &lt;, &gt;=, &lt;=, ==, !=<br/>
+              • 논리: &amp;&amp; (AND), || (OR)<br/>
+              • 산술: +, -, *, /, %<br/>
+              • 함수: abs(), sqrt(), pow(), min(), max()<br/>
+              • 괄호: () 로 우선순위 지정
+            </p>
+            <details class="example-details">
+              <summary class="text-primary" style="cursor: pointer; font-weight: 600; margin-top: 0.5rem;">
+                예시 보기
+              </summary>
+              <div class="example-box">
+                <p><strong>1. 속도 초과 감지</strong></p>
+                <code>Car.v > 27.78</code>
+                <p class="text-muted">차량 속도가 100km/h(27.78m/s) 초과</p>
+
+                <p style="margin-top: 1rem;"><strong>2. 전방 차량과의 거리</strong></p>
+                <code>Traffic.T01.sRoad - Traffic.T00.sRoad < 100</code>
+                <p class="text-muted">전방 차량과의 거리가 100m 미만</p>
+
+                <p style="margin-top: 1rem;"><strong>3. 복합 조건 (AND)</strong></p>
+                <code>Car.v > 27.78 && abs(Vhcl.tRoad) > 2.0</code>
+                <p class="text-muted">속도 초과 AND 차선 이탈(2m 이상)</p>
+
+                <p style="margin-top: 1rem;"><strong>4. 복합 조건 (OR)</strong></p>
+                <code>(Car.v > 30 && DM.Brake < 0.1) || abs(Vhcl.tRoad) > 3.0</code>
+                <p class="text-muted">고속에서 브레이크 미작동 OR 심각한 차선 이탈</p>
+
+                <p style="margin-top: 1rem;"><strong>5. 수학 함수 사용</strong></p>
+                <code>sqrt(pow(Vhcl.tRoad, 2) + pow(Vhcl.YawRate, 2)) > 2.5</code>
+                <p class="text-muted">횡방향 가속도 벡터 크기가 2.5 초과</p>
+              </div>
+            </details>
           </div>
-
-          {#each formData.conditions as condition, index}
-            <div class="condition-row">
-              <select bind:value={condition.variable} class="select-field">
-                {#each availableVariables as variable}
-                  <option value={variable.key}>{variable.key} - {variable.desc}</option>
-                {/each}
-              </select>
-              <select bind:value={condition.operator} class="select-field operator-select">
-                {#each operators as op}
-                  <option value={op}>{op}</option>
-                {/each}
-              </select>
-              <input
-                type="text"
-                bind:value={condition.value}
-                placeholder="값"
-                class="input-field value-input"
-              />
-              {#if formData.conditions.length > 1}
-                <button class="btn-icon danger" onclick={() => removeCondition(index)}>
-                  <Icon icon="solar:trash-bin-trash-bold" width="20" height="20" />
-                </button>
-              {/if}
-            </div>
-          {/each}
-
-          <button class="btn-secondary btn-sm" onclick={addCondition}>
-            <Icon icon="solar:add-circle-bold" width="16" height="16" />
-            조건 추가
-          </button>
         </div>
 
         <!-- LLM Message -->
@@ -372,19 +352,8 @@
 
             <div class="trigger-body">
               <div class="trigger-section">
-                <h4>발동 조건 ({trigger.logicOperator})</h4>
-                <div class="conditions-list">
-                  {#each trigger.conditions as condition, index}
-                    <div class="condition-badge">
-                      <code>{condition.variable}</code>
-                      <span class="operator">{condition.operator}</span>
-                      <code>{condition.value}</code>
-                      {#if index < trigger.conditions.length - 1}
-                        <span class="logic-separator">{trigger.logicOperator}</span>
-                      {/if}
-                    </div>
-                  {/each}
-                </div>
+                <h4>발동 조건식</h4>
+                <pre class="expression-preview">{trigger.expression}</pre>
               </div>
 
               <div class="trigger-section">
@@ -888,7 +857,7 @@
     background: var(--color-background);
   }
 
-  /* Action preview */
+  /* Action preview (reusing log-container base) */
   .action-preview {
     margin: 0;
     padding: 0.75rem;
@@ -900,5 +869,55 @@
     font-size: 0.85rem;
     line-height: 1.6;
     overflow-x: auto;
+  }
+
+  /* Expression preview (reusing log-container + primary accent) */
+  .expression-preview {
+    margin: 0;
+    padding: 0.75rem;
+    background: var(--color-primary-bg-light);
+    border: 1px solid var(--color-primary);
+    border-radius: 0.375rem;
+    color: var(--color-primary);
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    overflow-x: auto;
+    font-weight: 600;
+  }
+
+  /* Example details - use existing card + form-hint styles */
+  .example-details {
+    margin-top: 0.75rem;
+  }
+
+  .example-details summary {
+    cursor: pointer;
+    font-weight: 600;
+    margin-top: 0.5rem;
+  }
+
+  .example-box {
+    margin-top: 0.5rem;
+    padding: 1rem;
+    background: var(--color-background);
+    border-radius: 0.375rem;
+    border: 1px solid var(--color-border);
+  }
+
+  .example-box code {
+    display: block;
+    padding: 0.5rem;
+    background: var(--color-primary-bg-light);
+    color: var(--color-primary);
+    border-radius: 0.25rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .example-box p {
+    margin: 0;
+    font-size: 0.875rem;
   }
 </style>
