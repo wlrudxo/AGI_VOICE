@@ -245,20 +245,23 @@ DM.Gas = <value> | <duration_ms>
 DM.Brake = <value> | <duration_ms>
 DM.Steer.Ang = <value> | <duration_ms>
 wait <milliseconds>
+wait_until <condition>
 \`\`\`
 
 **Format Rules**:
 - Each command: \`variable = value | duration\`
 - **duration is REQUIRED** (milliseconds)
 - Use \`wait <ms>\` for explicit delays between commands
+- Use \`wait_until <condition>\` to wait for vehicle state (supports: >, <, >=, <=, ==, !=)
 - All commands execute sequentially (top to bottom)
 
 **Example**:
 \`\`\`
+DM.Gas = 0.8 | 1000
+wait_until Car.v >= 27.78
 DM.Gas = 0.0 | 500
 wait 100
 DM.Brake = 0.3 | 2000
-DM.Steer.Ang = 0.0 | 1000
 \`\`\`
 
 **Value Ranges**:

@@ -6,7 +6,16 @@
  */
 
 import { carmakerStore } from '$lib/stores/carmakerStore.svelte';
-import type { VehicleCommand, SequenceItem, CommandSequence } from './vehicleCommandParser';
+import type { VehicleCommand, SequenceItem, CommandSequence, WaitUntilCommand } from './vehicleCommandParser';
+
+/**
+ * Parsed condition for wait_until evaluation
+ */
+interface ParsedCondition {
+  variable: string;
+  operator: string;
+  value: string;
+}
 
 export interface ExecutionResult {
   success: boolean;
@@ -52,14 +61,10 @@ export async function executeCommandSequence(
         await new Promise(resolve => setTimeout(resolve, item.milliseconds));
         results.push({ success: true, item, executedAt: Date.now() });
       } else if ('type' in item && item.type === 'wait_until') {
-        // Wait until command (not implemented yet)
-        log(`    ⏳ [${i + 1}/${sequence.items.length}] wait_until ${item.condition} (not implemented)`);
-        results.push({
-          success: false,
-          item,
-          error: 'wait_until not implemented yet',
-          executedAt: Date.now()
-        });
+        // Wait until command
+        log(`    ⏳ [${i + 1}/${sequence.items.length}] wait_until ${item.condition}`);
+        const result = await executeWaitUntil(item, log);
+        results.push(result);
       } else {
         // Vehicle command
         const cmd = item as VehicleCommand;
@@ -122,6 +127,147 @@ async function executeSingleCommand(cmd: VehicleCommand): Promise<ExecutionResul
       error: error.message || String(error),
       executedAt: Date.now()
     };
+  }
+}
+
+/**
+ * Parse simple condition string
+ * Supports: "Car.v >= 27.78", "DM.Brake < 0.1", etc.
+ */
+function parseSimpleCondition(condition: string): ParsedCondition | null {
+  const match = condition.match(/^\s*([A-Za-z0-9._]+)\s*(>=|<=|==|!=|>|<)\s*([0-9.-]+)\s*$/);
+
+  if (!match) {
+    return null;
+  }
+
+  return {
+    variable: match[1],
+    operator: match[2],
+    value: match[3]
+  };
+}
+
+/**
+ * Evaluate a simple condition against vehicle data
+ */
+function evaluateSimpleCondition(
+  condition: ParsedCondition,
+  vehicleData: Record<string, number>
+): boolean {
+  const { variable, operator, value } = condition;
+
+  // Get actual value from vehicle data
+  const actualValue = vehicleData[variable];
+  if (actualValue === undefined || actualValue === null) {
+    return false; // Variable not available
+  }
+
+  // Parse expected value
+  const expectedValue = parseFloat(value);
+  if (isNaN(expectedValue)) {
+    return false; // Invalid value format
+  }
+
+  // Evaluate operator
+  switch (operator) {
+    case '>':
+      return actualValue > expectedValue;
+    case '<':
+      return actualValue < expectedValue;
+    case '>=':
+      return actualValue >= expectedValue;
+    case '<=':
+      return actualValue <= expectedValue;
+    case '==':
+      return Math.abs(actualValue - expectedValue) < 0.0001; // Float comparison with epsilon
+    case '!=':
+      return Math.abs(actualValue - expectedValue) >= 0.0001;
+    default:
+      return false; // Unknown operator
+  }
+}
+
+/**
+ * Execute wait_until command
+ * Polls vehicle data at 10Hz (100ms) until condition is met or timeout
+ */
+async function executeWaitUntil(
+  waitCmd: WaitUntilCommand,
+  logger?: (msg: string) => void
+): Promise<ExecutionResult> {
+  const startTime = Date.now();
+  const timeout = waitCmd.timeout || 30000; // Default 30s timeout
+
+  const log = (msg: string) => {
+    if (logger) logger(msg);
+  };
+
+  log(`    ⏳ Waiting for: ${waitCmd.condition} (timeout: ${timeout}ms)`);
+
+  // Parse condition
+  const parsedCondition = parseSimpleCondition(waitCmd.condition);
+  if (!parsedCondition) {
+    const error = `Invalid condition format: ${waitCmd.condition}`;
+    log(`    ✗ ${error}`);
+    return {
+      success: false,
+      item: waitCmd,
+      error,
+      executedAt: Date.now()
+    };
+  }
+
+  let iteration = 0;
+
+  while (true) {
+    // Check timeout
+    const elapsed = Date.now() - startTime;
+    if (elapsed > timeout) {
+      const error = `Timeout after ${timeout}ms: ${waitCmd.condition}`;
+      log(`    ✗ ${error}`);
+      return {
+        success: false,
+        item: waitCmd,
+        error,
+        executedAt: Date.now()
+      };
+    }
+
+    // Get current vehicle data from carmakerStore
+    const vehicleData = carmakerStore.monitorData;
+
+    // Skip if no data available yet
+    if (Object.keys(vehicleData).length === 0) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      continue;
+    }
+
+    // Log current value every 1 second (10 iterations at 100ms)
+    if (iteration % 10 === 0) {
+      const currentValue = vehicleData[parsedCondition.variable];
+      if (currentValue !== undefined) {
+        log(`    → ${parsedCondition.variable} = ${currentValue.toFixed(4)} (checking ${parsedCondition.operator} ${parsedCondition.value})`);
+      }
+    }
+
+    // Evaluate condition
+    const result = evaluateSimpleCondition(parsedCondition, vehicleData);
+
+    if (result) {
+      const currentValue = vehicleData[parsedCondition.variable];
+      log(`    ✓ Condition met: ${parsedCondition.variable} = ${currentValue?.toFixed(4)}`);
+      return {
+        success: true,
+        item: waitCmd,
+        executedAt: Date.now()
+      };
+    }
+
+    iteration++;
+
+    // Wait 100ms before next check (10Hz polling)
+    await new Promise(resolve => setTimeout(resolve, 100));
   }
 }
 

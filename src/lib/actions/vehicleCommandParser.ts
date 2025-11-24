@@ -16,7 +16,7 @@
  * - duration is REQUIRED (in milliseconds)
  * - All commands execute sequentially
  * - wait <ms> adds explicit delay
- * - wait_until <condition> waits for condition (not implemented yet)
+ * - wait_until <condition> waits for condition (supports: >, <, >=, <=, ==, !=)
  *
  * Technical Notes:
  * - Mode is internally set to 'Abs' (absolute value) for all commands

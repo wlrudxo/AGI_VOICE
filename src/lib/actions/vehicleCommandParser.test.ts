@@ -53,7 +53,7 @@ DM.Gas = 0.0 | 500
     }
   },
   {
-    name: 'Commands with wait_until',
+    name: 'Commands with wait_until (default timeout)',
     input: `\`\`\`
 DM.Gas = 0.8 | 1000
 wait_until Car.v >= 27.78
@@ -65,6 +65,34 @@ DM.Gas = 0.0 | 500
         { variable: 'DM.Gas', value: 0.8, duration: 1000, mode: 'Abs' },
         { type: 'wait_until', condition: 'Car.v >= 27.78', timeout: 30000 },
         { variable: 'DM.Gas', value: 0.0, duration: 500, mode: 'Abs' }
+      ]
+    }
+  },
+  {
+    name: 'wait_until with custom timeout',
+    input: `\`\`\`
+wait_until DM.Brake < 0.1 5000
+\`\`\``,
+    expected: {
+      type: 'sequential',
+      items: [
+        { type: 'wait_until', condition: 'DM.Brake < 0.1', timeout: 5000 }
+      ]
+    }
+  },
+  {
+    name: 'wait_until with different operators',
+    input: `\`\`\`
+wait_until Car.v >= 27.78
+wait_until DM.Brake <= 0.5
+wait_until Vhcl.tRoad == 0.0
+\`\`\``,
+    expected: {
+      type: 'sequential',
+      items: [
+        { type: 'wait_until', condition: 'Car.v >= 27.78', timeout: 30000 },
+        { type: 'wait_until', condition: 'DM.Brake <= 0.5', timeout: 30000 },
+        { type: 'wait_until', condition: 'Vhcl.tRoad == 0.0', timeout: 30000 }
       ]
     }
   },

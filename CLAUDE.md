@@ -659,7 +659,11 @@ wait_until <condition>
 - **Duration**: MUST be specified in milliseconds
 - **Sequential Execution**: All commands execute top-to-bottom
 - **Wait**: Use `wait <ms>` for explicit delays between commands
-- **Wait Until**: Use `wait_until <condition>` to wait for vehicle state (not implemented yet)
+- **Wait Until**: Use `wait_until <condition>` to wait for vehicle state
+  - Supported operators: `>`, `<`, `>=`, `<=`, `==`, `!=`
+  - Example: `wait_until Car.v >= 27.78`
+  - Polls at 10Hz (100ms) until condition is met
+  - Default timeout: 30 seconds
 
 **Examples**:
 
@@ -676,6 +680,15 @@ wait 500
 DM.Brake = 0.2 | 2000
 wait 1000
 DM.Gas = 0.0 | 500
+```
+
+3. **Conditional Control with wait_until**:
+```
+DM.Gas = 0.8 | 1000
+wait_until Car.v >= 27.78
+DM.Gas = 0.0 | 500
+wait 200
+DM.Brake = 0.5 | 2000
 ```
 
 **Technical Notes**:
