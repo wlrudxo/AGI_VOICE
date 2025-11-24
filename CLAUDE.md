@@ -647,18 +647,16 @@ The AI chat system uses Claude CLI via Rust's `std::process::Command`. On Window
 **Unified Command Format** (inspired by `CarMaker_RealtimeControl/llm_integration.py`):
 
 ```
-DM.Gas = <value> | <duration_ms> [| <mode>]
-DM.Brake = <value> | <duration_ms> [| <mode>]
-DM.Steer.Ang = <value> | <duration_ms> [| <mode>]
+DM.Gas = <value> | <duration_ms>
+DM.Brake = <value> | <duration_ms>
+DM.Steer.Ang = <value> | <duration_ms>
 wait <milliseconds>
 wait_until <condition>
 ```
 
 **Format Rules**:
 - **Required**: `variable = value | duration`
-- **Optional**: `| mode` (defaults to `Abs`)
 - **Duration**: MUST be specified in milliseconds
-- **Modes**: `Abs`, `Off`, `Fac`, `AbsRamp`, `FacRamp`
 - **Sequential Execution**: All commands execute top-to-bottom
 - **Wait**: Use `wait <ms>` for explicit delays between commands
 - **Wait Until**: Use `wait_until <condition>` to wait for vehicle state (not implemented yet)
@@ -667,29 +665,23 @@ wait_until <condition>
 
 1. **Simple Deceleration**:
 ```
-DM.Gas = 0.0 | 500 | Abs
-DM.Brake = 0.3 | 2000 | Abs
+DM.Gas = 0.0 | 500
+DM.Brake = 0.3 | 2000
 ```
 
 2. **Sequence with Delays**:
 ```
-DM.Gas = 0.8 | 1000 | Abs
+DM.Gas = 0.8 | 1000
 wait 500
 DM.Brake = 0.2 | 2000
 wait 1000
 DM.Gas = 0.0 | 500
 ```
 
-3. **Different Control Modes**:
-```
-DM.Gas = 0.5 | 1000 | Fac
-DM.Brake = 0.3 | 2000 | AbsRamp
-DM.Steer.Ang = 0.1 | 1500 | Off
-```
-
-**Legacy Format Support**:
-- Old format `DM.Gas = 0.5` (without duration) is supported with default 2000ms and Abs mode
-- Console warning shown for legacy format usage
+**Technical Notes**:
+- All commands use `Abs` (absolute value) mode internally for predictable behavior
+- Parser supports multiple CarMaker modes (Abs, Off, Fac, AbsRamp, FacRamp) but they are hidden from LLM interface
+- Legacy format `DM.Gas = 0.5` (without duration) is supported with default 2000ms for backward compatibility
 
 **Trigger System**:
 1. **Monitor**: 10Hz polling of vehicle telemetry data

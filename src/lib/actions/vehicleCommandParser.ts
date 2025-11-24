@@ -4,7 +4,7 @@
  *
  * Unified Format (inspired by CarMaker_RealtimeControl Python implementation):
  * ```
- * DM.Gas = 0.8 | 1000 | Abs
+ * DM.Gas = 0.8 | 1000
  * wait 500
  * DM.Brake = 0.2 | 2000
  * wait_until Car.v <= 13.89
@@ -12,12 +12,17 @@
  * ```
  *
  * Rules:
- * - Format: variable = value | duration [| mode]
+ * - Format: variable = value | duration
  * - duration is REQUIRED (in milliseconds)
- * - mode is OPTIONAL (Abs, Off, Fac, AbsRamp, FacRamp)
  * - All commands execute sequentially
  * - wait <ms> adds explicit delay
  * - wait_until <condition> waits for condition (not implemented yet)
+ *
+ * Technical Notes:
+ * - Mode is internally set to 'Abs' (absolute value) for all commands
+ * - Parser supports multiple modes (Abs, Off, Fac, AbsRamp, FacRamp) but they are
+ *   hidden from LLM interface to ensure predictable behavior
+ * - LLM should only use the simplified format without specifying mode
  */
 
 export interface VehicleCommand {

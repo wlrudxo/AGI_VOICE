@@ -241,28 +241,31 @@ ${trigger.message}
 
 **Required Format** (use code block):
 \`\`\`
-DM.Gas = <value> | <duration_ms> [| <mode>]
-DM.Brake = <value> | <duration_ms> [| <mode>]
-DM.Steer.Ang = <value> | <duration_ms> [| <mode>]
+DM.Gas = <value> | <duration_ms>
+DM.Brake = <value> | <duration_ms>
+DM.Steer.Ang = <value> | <duration_ms>
 wait <milliseconds>
 \`\`\`
 
 **Format Rules**:
-- Each command: \`variable = value | duration [| mode]\`
+- Each command: \`variable = value | duration\`
 - **duration is REQUIRED** (milliseconds)
-- **mode is OPTIONAL** (Abs, Off, Fac, AbsRamp, FacRamp) - defaults to Abs
 - Use \`wait <ms>\` for explicit delays between commands
 - All commands execute sequentially (top to bottom)
 
 **Example**:
 \`\`\`
-DM.Gas = 0.0 | 500 | Abs
+DM.Gas = 0.0 | 500
 wait 100
-DM.Brake = 0.3 | 2000 | Abs
+DM.Brake = 0.3 | 2000
 DM.Steer.Ang = 0.0 | 1000
 \`\`\`
 
-Provide appropriate control values (0.0 to 1.0 for Gas/Brake, rad for Steer.Ang) based on the situation.`;
+**Value Ranges**:
+- Gas/Brake: 0.0 to 1.0
+- Steer.Ang: radians (typically -0.5 to 0.5)
+
+Provide appropriate control values based on the situation.`;
 
       // Dispatch event to ChatView (system message)
       window.dispatchEvent(new CustomEvent('triggerChatMessage', {
