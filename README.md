@@ -33,8 +33,29 @@ AGI Voice V2는 자율주행 연구를 위한 통합 플랫폼으로, 다음 기
 ### 사전 요구사항
 
 1. **Node.js** (v18 이상)
+
 2. **Rust** (최신 stable 버전)
-3. **Claude CLI** (선택사항 - AI 채팅 기능 사용 시 필요)
+
+3. **Visual Studio Build Tools (Windows 필수)**
+   - Rust 빌드를 위한 MSVC 컴파일러가 필요합니다
+   - 두 가지 방법 중 하나 선택:
+
+   **방법 1: Visual Studio Build Tools 설치**
+   - https://visualstudio.microsoft.com/ko/downloads/
+   - "Visual Studio 2022용 빌드 도구" 다운로드
+   - 설치 시 "C++를 사용한 데스크톱 개발" 체크박스 선택
+
+   **방법 2: Visual Studio가 이미 설치된 경우**
+   - Visual Studio Installer 실행
+   - "수정" 버튼 클릭
+   - "C++를 사용한 데스크톱 개발" 체크박스 선택
+   - 우측 패널에서 다음 항목 확인:
+     - ✅ MSVC v143 - VS 2022 C++ x64/x86 빌드 도구
+     - ✅ Windows 11 SDK (또는 Windows 10 SDK)
+
+   ⚠️ **설치 후 PC 재부팅 필수**
+
+4. **Claude CLI** (선택사항 - AI 채팅 기능 사용 시 필요)
    ```bash
    # Claude CLI 설치 (npm)
    npm install -g @anthropic-ai/claude-cli
@@ -42,7 +63,7 @@ AGI Voice V2는 자율주행 연구를 위한 통합 플랫폼으로, 다음 기
    # 또는 다른 방법으로 설치 후 PATH에 추가
    ```
 
-4. **CarMaker** (선택사항 - 차량 제어 기능 사용 시 필요)
+5. **CarMaker** (선택사항 - 차량 제어 기능 사용 시 필요)
 
 ### 프로젝트 클론 및 설치
 
@@ -220,6 +241,27 @@ npm run tauri build        # 프로덕션 빌드
 자세한 내용은 [CLAUDE.md - Styling Guidelines](./CLAUDE.md#styling-guidelines)를 참조하세요.
 
 ## 문제 해결
+
+### Rust 빌드 오류 (Windows)
+
+**증상**: `error: linker 'link.exe' not found`
+
+**원인**: Visual Studio의 C++ 개발 도구가 설치되지 않음
+
+**해결 방법**:
+1. Visual Studio Installer 실행
+2. "수정" 버튼 클릭
+3. "C++를 사용한 데스크톱 개발" 체크박스 선택
+4. 설치 후 **PC 재부팅 필수**
+
+**확인 방법**:
+```bash
+# MSVC 컴파일러가 설치되었는지 확인
+where.exe cl.exe
+
+# 출력 예시:
+# C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\cl.exe
+```
 
 ### Claude CLI 없음 오류
 ```bash
