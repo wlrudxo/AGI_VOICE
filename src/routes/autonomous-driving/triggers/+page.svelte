@@ -227,23 +227,23 @@
               </summary>
               <div class="example-box">
                 <p><strong>1. 속도 초과 감지</strong></p>
-                <code>Car.v > 27.78</code>
+                <code>Car.v &gt; 27.78</code>
                 <p class="text-muted">차량 속도가 100km/h(27.78m/s) 초과</p>
 
                 <p style="margin-top: 1rem;"><strong>2. 전방 차량과의 거리</strong></p>
-                <code>Traffic.T01.sRoad - Traffic.T00.sRoad < 100</code>
+                <code>Traffic.T01.sRoad - Traffic.T00.sRoad &lt; 100</code>
                 <p class="text-muted">전방 차량과의 거리가 100m 미만</p>
 
                 <p style="margin-top: 1rem;"><strong>3. 복합 조건 (AND)</strong></p>
-                <code>Car.v > 27.78 && abs(Vhcl.tRoad) > 2.0</code>
+                <code>Car.v &gt; 27.78 &amp;&amp; abs(Vhcl.tRoad) &gt; 2.0</code>
                 <p class="text-muted">속도 초과 AND 차선 이탈(2m 이상)</p>
 
                 <p style="margin-top: 1rem;"><strong>4. 복합 조건 (OR)</strong></p>
-                <code>(Car.v > 30 && DM.Brake < 0.1) || abs(Vhcl.tRoad) > 3.0</code>
+                <code>(Car.v &gt; 30 &amp;&amp; DM.Brake &lt; 0.1) || abs(Vhcl.tRoad) &gt; 3.0</code>
                 <p class="text-muted">고속에서 브레이크 미작동 OR 심각한 차선 이탈</p>
 
                 <p style="margin-top: 1rem;"><strong>5. 수학 함수 사용</strong></p>
-                <code>sqrt(pow(Vhcl.tRoad, 2) + pow(Vhcl.YawRate, 2)) > 2.5</code>
+                <code>sqrt(pow(Vhcl.tRoad, 2) + pow(Vhcl.YawRate, 2)) &gt; 2.5</code>
                 <p class="text-muted">횡방향 가속도 벡터 크기가 2.5 초과</p>
               </div>
             </details>
