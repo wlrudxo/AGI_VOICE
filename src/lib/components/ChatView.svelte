@@ -202,7 +202,7 @@
 				timestamp
 			});
 		} else if (type === 'llm_response') {
-			// Parse LLM response and display
+			// Parse LLM response and display only (execution handled by triggerMonitor)
 			const segments = parseWithSegments(content);
 			for (const segment of segments) {
 				if (segment.type === 'text') {
@@ -219,37 +219,8 @@
 					});
 				}
 			}
-
-			// Execute vehicle commands from LLM response
-			if (isVehicleCommandParsingEnabled()) {
-				const commandSequence = parseVehicleCommands(content);
-				if (commandSequence.commands.length > 0) {
-					messages.push({
-						role: 'action',
-						label: '🚗 차량 제어 명령 실행',
-						timestamp
-					});
-					scrollToBottom();
-
-					executeCommandSequence(commandSequence, (msg) => {
-						console.log(msg);
-					}).then((result) => {
-						messages.push({
-							role: 'action',
-							label: `✓ 차량 제어 명령 실행 완료: ${result.successCount}/${result.totalCommands} (${result.executionTime}ms)`,
-							timestamp: new Date()
-						});
-						scrollToBottom();
-					}).catch((error) => {
-						messages.push({
-							role: 'error',
-							content: `차량 제어 명령 실행 실패: ${error.message || String(error)}`,
-							timestamp: new Date()
-						});
-						scrollToBottom();
-					});
-				}
-			}
+			// Note: Vehicle command execution is handled by triggerMonitor.executeTriggerActionSequence()
+			// This prevents duplicate execution
 		} else if (type === 'error') {
 			messages.push({
 				role: 'error',
