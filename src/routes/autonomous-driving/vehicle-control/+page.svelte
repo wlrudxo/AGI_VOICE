@@ -34,6 +34,21 @@
   // Track monitoring state before pause
   let wasMonitoringBeforePause = $state(false);
 
+  // Log container auto-scroll
+  let logContainer: HTMLDivElement;
+
+  // Auto-scroll to bottom when logs update
+  $effect(() => {
+    // Track log changes
+    const _carmakerLogs = carmakerStore.logMessages.length;
+    const _triggerLogs = triggerMonitor.logMessages.length;
+
+    // Scroll to bottom
+    if (logContainer) {
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+  });
+
   // Simulation control functions
   async function startSimulation() {
     try {
@@ -217,7 +232,7 @@
         Clear All
       </button>
     </div>
-    <div class="log-container">
+    <div class="log-container" bind:this={logContainer}>
       {#if carmakerStore.logMessages.length === 0 && triggerMonitor.logMessages.length === 0}
         <p class="text-muted">No logs yet...</p>
       {:else}

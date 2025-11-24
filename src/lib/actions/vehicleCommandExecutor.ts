@@ -35,6 +35,12 @@ export interface ExecutionLog {
 /**
  * Execute vehicle command sequence
  * All commands execute sequentially (no parallel execution)
+ *
+ * Special handling for duration=-1:
+ * - Commands with duration=-1 are tracked
+ * - When wait_until is encountered and condition is met, all pending -1 commands
+ *   are automatically reset by sending the same command with duration=1ms
+ * - This releases control back to autonomous driving algorithm
  */
 export async function executeCommandSequence(
   sequence: CommandSequence,
@@ -42,6 +48,7 @@ export async function executeCommandSequence(
 ): Promise<ExecutionLog> {
   const startTime = Date.now();
   const results: ExecutionResult[] = [];
+  const pendingInfiniteCommands: VehicleCommand[] = []; // Track duration=-1 commands
 
   const log = (msg: string) => {
     if (logger) logger(msg);
@@ -65,6 +72,26 @@ export async function executeCommandSequence(
         log(`    ⏳ [${i + 1}/${sequence.items.length}] wait_until ${item.condition}`);
         const result = await executeWaitUntil(item, log);
         results.push(result);
+
+        // If wait_until succeeded, reset all pending infinite commands
+        if (result.success && pendingInfiniteCommands.length > 0) {
+          log(`    ↻ Resetting ${pendingInfiniteCommands.length} infinite-duration command(s)...`);
+
+          for (const cmd of pendingInfiniteCommands) {
+            // Send same command with 1ms duration to reset
+            const resetCmd: VehicleCommand = { ...cmd, duration: 1 };
+            const resetResult = await executeSingleCommand(resetCmd);
+
+            if (resetResult.success) {
+              log(`    ✓ Reset: ${cmd.variable} = ${cmd.value} | 1ms (was -1ms)`);
+            } else {
+              log(`    ✗ Failed to reset: ${cmd.variable}`);
+            }
+          }
+
+          // Clear pending commands after reset
+          pendingInfiniteCommands.length = 0;
+        }
       } else {
         // Vehicle command
         const cmd = item as VehicleCommand;
@@ -73,6 +100,12 @@ export async function executeCommandSequence(
 
         if (result.success) {
           log(`    ✓ [${i + 1}/${sequence.items.length}] ${cmd.variable} = ${cmd.value} | ${cmd.duration}ms | ${cmd.mode}`);
+
+          // Track commands with duration=-1
+          if (cmd.duration === -1) {
+            pendingInfiniteCommands.push(cmd);
+            log(`    → Tracking infinite-duration command: ${cmd.variable}`);
+          }
         } else {
           log(`    ✗ [${i + 1}/${sequence.items.length}] Failed: ${cmd.variable}`);
         }

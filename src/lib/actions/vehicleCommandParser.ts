@@ -14,15 +14,26 @@
  * Rules:
  * - Format: variable = value | duration
  * - duration is REQUIRED (in milliseconds)
+ * - duration can be -1 for infinite duration (until wait_until resets it)
  * - All commands execute sequentially
  * - wait <ms> adds explicit delay
  * - wait_until <condition> waits for condition (supports: >, <, >=, <=, ==, !=)
+ *
+ * Duration -1 Pattern:
+ * ```
+ * DM.Gas = 0.0 | -1       # Hold gas at 0 indefinitely
+ * DM.Brake = 0.5 | -1     # Hold brake at 0.5 indefinitely
+ * wait_until Car.v <= 3.0 # Wait until condition is met
+ *                         # System auto-resets -1 commands to 1ms when condition is met
+ * ```
  *
  * Technical Notes:
  * - Mode is internally set to 'Abs' (absolute value) for all commands
  * - Parser supports multiple modes (Abs, Off, Fac, AbsRamp, FacRamp) but they are
  *   hidden from LLM interface to ensure predictable behavior
  * - LLM should only use the simplified format without specifying mode
+ * - duration=-1 is only supported for DM.* (vehicle control) commands
+ * - SC.* (simulation control) commands should not use -1 duration
  */
 
 export interface VehicleCommand {
@@ -109,7 +120,8 @@ function parseSequentialCommands(text: string): SequenceItem[] {
     // Parse vehicle command: "DM.Gas = 0.8 | 1000 | Abs"
     // Required: variable = value | duration
     // Optional: | mode (longer patterns first to avoid partial matching)
-    const commandMatch = trimmed.match(/^\s*([A-Za-z0-9._]+)\s*=\s*([0-9.-]+)\s*\|\s*(\d+)(?:\s*\|\s*(AbsRamp|FacRamp|Abs|Off|Fac))?/i);
+    // Duration can be -1 for infinite duration (until wait_until resets it)
+    const commandMatch = trimmed.match(/^\s*([A-Za-z0-9._]+)\s*=\s*([0-9.-]+)\s*\|\s*(-?\d+)(?:\s*\|\s*(AbsRamp|FacRamp|Abs|Off|Fac))?/i);
 
     if (commandMatch) {
       const variable = commandMatch[1];

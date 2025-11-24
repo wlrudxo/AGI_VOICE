@@ -251,17 +251,43 @@ wait_until <condition>
 **Format Rules**:
 - Each command: \`variable = value | duration\`
 - **duration is REQUIRED** (milliseconds)
+  - Positive value: Command is active for specified duration
+  - **-1 (infinite)**: Command remains active until reset by \`wait_until\`
 - Use \`wait <ms>\` for explicit delays between commands
 - Use \`wait_until <condition>\` to wait for vehicle state (supports: >, <, >=, <=, ==, !=)
+  - When condition is met, all commands with \`duration=-1\` are **automatically reset**
 - All commands execute sequentially (top to bottom)
 
-**Example**:
+**Duration -1 Pattern** (Recommended for Conditional Control):
+\`\`\`
+DM.Gas = 0.0 | -1       # Hold gas at 0 indefinitely
+DM.Brake = 0.5 | -1     # Hold brake at 0.5 indefinitely
+wait_until Car.v <= 3.0 # Wait until speed drops to 3 m/s
+                        # System auto-resets Gas and Brake when condition is met
+DM.Brake = 0.0 | 100    # Now apply new brake command
+\`\`\`
+
+**Important Notes**:
+- **CarMaker commands execute in parallel**, not sequentially
+- To ensure sequential execution: use \`wait <duration>\` equal to or greater than previous command duration
+- **Prefer duration=-1 + wait_until pattern** for condition-based control (simpler and more reliable)
+- Only use -1 for **DM.* (vehicle control)** commands, NOT for SC.* (simulation control)
+
+**Example 1 - Fixed Duration**:
 \`\`\`
 DM.Gas = 0.8 | 1000
-wait_until Car.v >= 27.78
-DM.Gas = 0.0 | 500
-wait 100
+wait 1000               # Wait for Gas to complete
 DM.Brake = 0.3 | 2000
+\`\`\`
+
+**Example 2 - Conditional Control (Recommended)**:
+\`\`\`
+DM.Gas = 0.0 | -1       # Stop accelerating (hold)
+DM.Brake = 0.5 | -1     # Apply brake (hold)
+wait_until Car.v <= 3.0 # Wait until slow enough (auto-reset Gas/Brake)
+DM.Brake = 0.0 | 100    # Release brake
+wait 200
+DM.Steer.Ang = 0.35 | 2000
 \`\`\`
 
 **Value Ranges**:
