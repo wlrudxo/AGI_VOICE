@@ -140,6 +140,43 @@
       // Error already logged in store
     }
   }
+
+  /**
+   * Reset all vehicle control commands
+   * Sends all DM.* commands with 1ms duration to reset state
+   */
+  async function resetControl() {
+    if (!confirm('모든 차량 제어 명령을 초기화하시겠습니까?\n\n실행 중인 wait_until 및 AI 스크립트가 전부 중단됩니다.')) {
+      return;
+    }
+
+    try {
+      carmakerStore.addLog('🔄 Resetting all vehicle control commands...');
+
+      // Reset all control commands with 1ms duration
+      const resetCommands = [
+        'DM.Gas 0 Abs 1',
+        'DM.Brake 0 Abs 1',
+        'DM.Steer.Ang 0 Abs 1',
+        'DM.v.Trgt 0 Abs 1',
+        'DM.LaneOffset 0 Abs 1'
+      ];
+
+      let successCount = 0;
+      for (const command of resetCommands) {
+        try {
+          await carmakerStore.sendCommand(command);
+          successCount++;
+        } catch (error: any) {
+          carmakerStore.addLog(`  ✗ Failed to reset ${command.split(' ')[0]}: ${error}`);
+        }
+      }
+
+      carmakerStore.addLog(`✓ Reset completed: ${successCount}/${resetCommands.length} commands`);
+    } catch (error: any) {
+      carmakerStore.addLog(`✗ Reset failed: ${error}`);
+    }
+  }
 </script>
 
 <div class="vehicle-control">
@@ -198,6 +235,15 @@
           height="16"
         />
         {triggerMonitor.isMonitoring ? 'Stop Trigger' : 'Start Trigger'}
+      </button>
+
+      <button
+        class="btn-compact btn-secondary"
+        onclick={resetControl}
+        disabled={!carmakerStore.isConnected}
+      >
+        <Icon icon="solar:restart-bold" width="16" height="16" />
+        Reset Control
       </button>
 
       {#if triggerMonitor.isMonitoring}
