@@ -7,6 +7,8 @@
   let gasValue = $state(0.0);
   let brakeValue = $state(0.0);
   let steerValue = $state(0.0);
+  let laneOffsetValue = $state(0.0);
+  let targetVelocityValue = $state(0.0);
 
   // Text command
   let commandInput = $state('');
@@ -28,6 +30,14 @@
         result = await invoke('set_brake', { value, duration });
       } else if (controlType === 'Steer.Ang') {
         result = await invoke('set_steer', { value, duration });
+      } else if (controlType === 'LaneOffset') {
+        // Send DM.LaneOffset command directly
+        const command = `DVAWrite DM.LaneOffset ${value} ${duration} Abs`;
+        result = await invoke('execute_vehicle_command', { command });
+      } else if (controlType === 'v.Trgt') {
+        // Send DM.v.Trgt command directly
+        const command = `DVAWrite DM.v.Trgt ${value} ${duration} Abs`;
+        result = await invoke('execute_vehicle_command', { command });
       } else {
         throw new Error(`Unknown control type: ${controlType}`);
       }
@@ -123,6 +133,40 @@
       />
       <span class="value-display">{steerValue.toFixed(2)}</span>
       <button class="btn-primary btn-set" onclick={() => sendControl('Steer.Ang', steerValue)}>
+        Set
+      </button>
+    </div>
+
+    <!-- Lane Offset -->
+    <div class="control-row">
+      <label class="control-label">LaneOffset (-6.5~6.5):</label>
+      <input
+        type="range"
+        min="-6.5"
+        max="6.5"
+        step="0.1"
+        bind:value={laneOffsetValue}
+        class="slider"
+      />
+      <span class="value-display">{laneOffsetValue.toFixed(1)}</span>
+      <button class="btn-primary btn-set" onclick={() => sendControl('LaneOffset', laneOffsetValue)}>
+        Set
+      </button>
+    </div>
+
+    <!-- Target Velocity -->
+    <div class="control-row">
+      <label class="control-label">v.Trgt (0~50 m/s):</label>
+      <input
+        type="range"
+        min="0"
+        max="50"
+        step="0.5"
+        bind:value={targetVelocityValue}
+        class="slider"
+      />
+      <span class="value-display">{targetVelocityValue.toFixed(1)}</span>
+      <button class="btn-primary btn-set" onclick={() => sendControl('v.Trgt', targetVelocityValue)}>
         Set
       </button>
     </div>
