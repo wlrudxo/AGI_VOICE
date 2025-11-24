@@ -4,6 +4,7 @@
   import Sidebar from '$lib/components/Sidebar.svelte';
   import AIChatWidget from '$lib/components/AIChatWidget.svelte';
   import Dialog from '$lib/components/Dialog.svelte';
+  import { disableAutocomplete } from '$lib/actions/disableAutocomplete';
   import { uiStore } from '$lib/stores/uiStore';
   import { settingsStore } from '$lib/stores/settingsStore';
   import { dialogStore } from '$lib/stores/dialogStore.svelte';
@@ -184,7 +185,7 @@
   });
 </script>
 
-<div class="layout" class:widget-mode={isWidgetMode}>
+<div class="layout" class:widget-mode={isWidgetMode} use:disableAutocomplete>
   {#if !isWidgetMode}
     <TitleBar />
     <Sidebar />

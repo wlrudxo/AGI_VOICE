@@ -663,10 +663,17 @@
     margin-top: 1rem;
   }
 
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
   .form-group label {
     font-weight: 600;
     color: var(--color-text-secondary);
     font-size: 0.875rem;
+    display: block;
   }
 
   /* Label with Help Button */

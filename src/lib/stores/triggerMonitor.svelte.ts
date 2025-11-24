@@ -244,6 +244,8 @@ ${trigger.message}
 DM.Gas = <value> | <duration_ms>
 DM.Brake = <value> | <duration_ms>
 DM.Steer.Ang = <value> | <duration_ms>
+DM.v.Trgt = <value> | <duration_ms>
+DM.LaneOffset = <value> | <duration_ms>
 wait <milliseconds>
 wait_until <condition>
 \`\`\`
@@ -293,6 +295,33 @@ DM.Steer.Ang = 0.35 | 2000
 **Value Ranges**:
 - Gas/Brake: 0.0 to 1.0
 - Steer.Ang: radians (typically -0.5 to 0.5)
+- v.Trgt: m/s (target speed, e.g., 13.89 for 50 km/h)
+- LaneOffset: meters (lateral offset from lane center, e.g., 0.5 for left, -0.5 for right)
+
+**Additional Examples**:
+
+**Example 3 - Speed Control**:
+\`\`\`
+DM.v.Trgt = 13.89 | 5000   # Set target speed to 50 km/h
+wait_until Car.v >= 13.0   # Wait until speed reaches ~47 km/h
+DM.v.Trgt = 0.0 | 1000     # Reset target speed
+\`\`\`
+
+**Example 4 - Lane Change**:
+\`\`\`
+DM.LaneOffset = 0.5 | 3000  # Move 0.5m to the left
+wait 3000
+DM.LaneOffset = 0.0 | 2000  # Return to lane center
+\`\`\`
+
+**Example 5 - Combined Control**:
+\`\`\`
+DM.Gas = 0.8 | 2000           # Accelerate
+DM.LaneOffset = 0.5 | 3000    # Change lane while accelerating
+wait_until Car.v >= 20.0      # Wait until speed reaches 20 m/s
+DM.v.Trgt = 20.0 | -1         # Maintain speed at 20 m/s
+wait_until DM.LaneOffset >= 0.45  # Wait until lane change completes
+\`\`\`
 
 Provide appropriate control values based on the situation.`;
 

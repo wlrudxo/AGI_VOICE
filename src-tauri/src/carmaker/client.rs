@@ -116,6 +116,43 @@ impl CarMakerClient {
         }
     }
 
+    /// Read multiple values from CarMaker in a single batch request
+    /// Returns HashMap with variable names as keys and values as Option<f64>
+    pub async fn read_values_batch(&mut self, quantities: &[&str]) -> Result<HashMap<String, Option<f64>>, String> {
+        if quantities.is_empty() {
+            return Ok(HashMap::new());
+        }
+
+        // Build batch command: "DVARead var1 var2 var3 ..."
+        let cmd = format!("DVARead {}", quantities.join(" "));
+        let response = self.send_command(&cmd).await?;
+
+        let mut results = HashMap::new();
+
+        // CarMaker response format: "O<value1> <value2> <value3> ..." for success
+        if response.starts_with('O') {
+            let values_str = response[1..].trim();
+            let values: Vec<&str> = values_str.split_whitespace().collect();
+
+            // Map values back to variable names
+            for (i, &quantity) in quantities.iter().enumerate() {
+                if i < values.len() {
+                    let value = values[i].parse::<f64>().ok();
+                    results.insert(quantity.to_string(), value);
+                } else {
+                    results.insert(quantity.to_string(), None);
+                }
+            }
+        } else {
+            // Error or no response - return None for all quantities
+            for &quantity in quantities.iter() {
+                results.insert(quantity.to_string(), None);
+            }
+        }
+
+        Ok(results)
+    }
+
     /// Write a value to CarMaker
     pub async fn write_value(
         &mut self,
@@ -146,16 +183,24 @@ impl CarMakerClient {
         }
     }
 
-    /// Read all essential quantities from CarMaker
-    /// Reads sequentially with Mutex lock to prevent response mixing (like Python implementation)
+    /// Read all essential quantities from CarMaker using batch DVARead
+    /// Strategy (same as Python implementation):
+    /// 1. Batch read: Ego quantities + Traffic.nObjs (1 request)
+    /// 2. If traffic exists: Batch read all traffic data (1 request per batch)
     pub async fn read_essential_quantities(&mut self) -> Result<TelemetryData, String> {
         let mut data = TelemetryData::default();
         let mut raw_data = HashMap::new();
 
-        // Sequential read of essential quantities (like Python's for loop)
+        // Step 1: Batch read ego quantities + Traffic.nObjs
+        let mut batch_vars: Vec<&str> = ESSENTIAL_QUANTITIES.to_vec();
+        batch_vars.push("Traffic.nObjs");
+
+        let batch_results = self.read_values_batch(&batch_vars).await?;
+
+        // Process ego quantities
         for &quantity in ESSENTIAL_QUANTITIES.iter() {
-            match self.read_value(quantity).await {
-                Ok(Some(value)) => {
+            if let Some(&value_opt) = batch_results.get(quantity) {
+                if let Some(value) = value_opt {
                     raw_data.insert(quantity.to_string(), value);
 
                     // Map to TelemetryData fields
@@ -175,24 +220,56 @@ impl CarMakerClient {
                         _ => {}
                     }
                 }
-                Ok(None) => {
-                    // Value is None (empty response or error) - continue to next quantity
-                }
-                Err(e) => {
-                    // Log error but continue reading other quantities (like Python)
-                    eprintln!("Failed to read {}: {}", quantity, e);
-                }
             }
         }
 
-        // Read Traffic.nObjs separately
-        match self.read_value("Traffic.nObjs").await {
-            Ok(Some(value)) => {
+        // Process Traffic.nObjs
+        let n_objs = if let Some(&value_opt) = batch_results.get("Traffic.nObjs") {
+            if let Some(value) = value_opt {
                 data.traffic_n_objs = Some(value);
                 raw_data.insert("Traffic.nObjs".to_string(), value);
+                value as i32
+            } else {
+                0
             }
-            _ => {
-                // Ignore error or None
+        } else {
+            0
+        };
+
+        // Step 2: If traffic exists, batch read all traffic data
+        if n_objs > 0 {
+            // Traffic object quantities (same as Python)
+            const TRAFFIC_OBJ_QUANTITIES: &[&str] = &[
+                "tx", "ty", "v_0.x", "v_0.y", "LongVel", "sRoad", "tRoad"
+            ];
+
+            // Build all traffic variable names (T00 ~ T{nObjs-1})
+            let mut traffic_vars: Vec<String> = Vec::new();
+            for i in 0..n_objs {
+                let obj_name = format!("T{:02}", i);
+                for &qty in TRAFFIC_OBJ_QUANTITIES.iter() {
+                    let var = format!("Traffic.{}.{}", obj_name, qty);
+                    traffic_vars.push(var);
+                }
+            }
+
+            // Convert to &str for batch read
+            let traffic_vars_refs: Vec<&str> = traffic_vars.iter().map(|s| s.as_str()).collect();
+
+            // Batch read all traffic data in one request
+            if !traffic_vars_refs.is_empty() {
+                match self.read_values_batch(&traffic_vars_refs).await {
+                    Ok(traffic_results) => {
+                        for (var, value_opt) in traffic_results {
+                            if let Some(value) = value_opt {
+                                raw_data.insert(var, value);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to read traffic data: {}", e);
+                    }
+                }
             }
         }
 

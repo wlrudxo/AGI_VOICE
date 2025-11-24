@@ -2,6 +2,7 @@
 	import { uiStore } from '$lib/stores/uiStore';
 	import { triggerMonitor } from '$lib/stores/triggerMonitor.svelte';
 	import { carmakerStore } from '$lib/stores/carmakerStore.svelte';
+	import { dialogStore } from '$lib/stores/dialogStore.svelte';
 	import Icon from '@iconify/svelte';
 	import ChatView from './ChatView.svelte';
 	import ChatHistoryView from './ChatHistoryView.svelte';
@@ -66,19 +67,19 @@
 		// Check if vehicle command parsing is enabled
 		const parsingEnabled = localStorage.getItem('carmaker_command_parsing_enabled') === 'true';
 		if (!parsingEnabled) {
-			alert('먼저 자율주행 설정에서 "AI CarMaker Control"을 활성화해주세요.');
+			await dialogStore.alert('먼저 자율주행 설정에서 "AI CarMaker Control"을 활성화해주세요.', '알림');
 			return;
 		}
 
 		// Check CarMaker connection
 		if (!carmakerStore.isConnected) {
-			alert('CarMaker에 먼저 연결해주세요. (자율주행 > 설정)');
+			await dialogStore.alert('CarMaker에 먼저 연결해주세요.\n\n경로: 자율주행 > 설정', 'CarMaker 연결 필요');
 			return;
 		}
 
 		// Check vehicle monitoring
 		if (!carmakerStore.isMonitoring) {
-			alert('먼저 차량 모니터링을 시작해주세요. (자율주행 > 차량 제어)');
+			await dialogStore.alert('먼저 차량 모니터링을 시작해주세요.\n\n경로: 자율주행 > 차량 제어', '차량 모니터링 필요');
 			return;
 		}
 

@@ -31,6 +31,62 @@
     ['Traffic.nObjs', 'Active Traffic Objects Count'],
   ];
 
+  // Traffic quantity descriptions (same as Python implementation)
+  const trafficDescMap: Record<string, string> = {
+    'tx': 'Position X (m)',
+    'ty': 'Position Y (m)',
+    'v_0.x': 'Velocity X (m/s)',
+    'v_0.y': 'Velocity Y (m/s)',
+    'LongVel': 'Long Velocity (m/s)',
+    'sRoad': 'Road Pos S (m)',
+    'tRoad': 'Lateral Pos T (m)',
+  };
+
+  // Get description for any key (ego or traffic)
+  function getDescription(key: string): string {
+    // Check if it's a base signal
+    const baseSignal = signalDefinitions.find(([signal]) => signal === key);
+    if (baseSignal) {
+      return baseSignal[1];
+    }
+
+    // Check if it's a traffic object variable
+    if (key.startsWith('Traffic.T')) {
+      // Extract: Traffic.T00.v_0.x -> T00, v_0.x
+      const withoutPrefix = key.substring(8); // Remove "Traffic."
+      const parts = withoutPrefix.split('.', 2);
+      if (parts.length === 2) {
+        const objName = parts[0]; // T00, T01, ...
+        const qty = parts[1]; // tx, ty, v_0.x, ...
+        const desc = trafficDescMap[qty];
+        if (desc) {
+          return `Traffic ${objName} ${desc}`;
+        }
+      }
+    }
+
+    return '';
+  }
+
+  // Get all display signals (base signals + dynamic traffic signals)
+  const allSignals = $derived(() => {
+    const signals: [string, string][] = [...signalDefinitions];
+
+    // Add traffic object signals dynamically
+    const trafficKeys = Object.keys(carmakerStore.monitorData)
+      .filter(key => key.startsWith('Traffic.T'))
+      .sort();
+
+    for (const key of trafficKeys) {
+      const desc = getDescription(key);
+      if (desc) {
+        signals.push([key, desc]);
+      }
+    }
+
+    return signals;
+  });
+
   // Track monitoring state before pause
   let wasMonitoringBeforePause = $state(false);
 
@@ -206,7 +262,7 @@
           </tr>
         </thead>
         <tbody>
-          {#each signalDefinitions as [signal, desc]}
+          {#each allSignals() as [signal, desc]}
             {@const value = carmakerStore.monitorData[signal]}
             <tr>
               <td class="text-primary">{signal}</td>
