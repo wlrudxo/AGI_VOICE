@@ -123,7 +123,6 @@ class TriggerMonitor {
       const isTriggered = evaluateTrigger(trigger, vehicleData);
 
       if (isTriggered) {
-        this.addLog(`⚡ Trigger "${trigger.name}" condition met: ${trigger.expression}`);
         this.executeTrigger(trigger, vehicleData);
         this.triggeredIds.add(trigger.id);
 

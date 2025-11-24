@@ -130,14 +130,6 @@ export function evaluateExpression(
     // Step 1: Replace variables with their values
     const processedExpression = replaceVariables(expression, vehicleData);
 
-    // Debug log (only if expression contains variables that couldn't be replaced)
-    if (processedExpression.match(/[A-Za-z_][A-Za-z0-9._]*/)) {
-      console.warn('[Expression] Unresolved variables detected');
-      console.warn('  Expression:', expression);
-      console.warn('  Processed:', processedExpression);
-      console.warn('  Available data:', Object.keys(vehicleData).join(', '));
-    }
-
     // Step 2: Evaluate using Function constructor (safer than eval)
     // Wrap in try-catch to handle any evaluation errors
     const result = new Function(`
