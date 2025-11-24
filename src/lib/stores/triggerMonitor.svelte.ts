@@ -237,11 +237,29 @@ ${dataSnapshot}
 ## Trigger Message:
 ${trigger.message}
 
-**Instructions**: Analyze the current vehicle state and respond with vehicle control commands in the format:
+**Instructions**: Analyze the current vehicle state and respond with vehicle control commands.
+
+**Required Format** (use code block):
 \`\`\`
-DM.Gas = <value>
-DM.Brake = <value>
-DM.Steer.Ang = <value>
+DM.Gas = <value> | <duration_ms> [| <mode>]
+DM.Brake = <value> | <duration_ms> [| <mode>]
+DM.Steer.Ang = <value> | <duration_ms> [| <mode>]
+wait <milliseconds>
+\`\`\`
+
+**Format Rules**:
+- Each command: \`variable = value | duration [| mode]\`
+- **duration is REQUIRED** (milliseconds)
+- **mode is OPTIONAL** (Abs, Off, Fac, AbsRamp, FacRamp) - defaults to Abs
+- Use \`wait <ms>\` for explicit delays between commands
+- All commands execute sequentially (top to bottom)
+
+**Example**:
+\`\`\`
+DM.Gas = 0.0 | 500 | Abs
+wait 100
+DM.Brake = 0.3 | 2000 | Abs
+DM.Steer.Ang = 0.0 | 1000
 \`\`\`
 
 Provide appropriate control values (0.0 to 1.0 for Gas/Brake, rad for Steer.Ang) based on the situation.`;

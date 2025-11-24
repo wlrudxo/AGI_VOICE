@@ -1,20 +1,22 @@
 /**
  * Vehicle Command Executor
  * Executes vehicle control commands via CarMaker
+ *
+ * Executes all commands sequentially with optional wait delays
  */
 
 import { carmakerStore } from '$lib/stores/carmakerStore.svelte';
-import type { VehicleCommand, CommandSequence } from './vehicleCommandParser';
+import type { VehicleCommand, SequenceItem, CommandSequence } from './vehicleCommandParser';
 
 export interface ExecutionResult {
   success: boolean;
-  command?: VehicleCommand;
+  item?: SequenceItem;
   error?: string;
   executedAt?: number;
 }
 
 export interface ExecutionLog {
-  totalCommands: number;
+  totalItems: number;
   successCount: number;
   failureCount: number;
   results: ExecutionResult[];
@@ -23,6 +25,7 @@ export interface ExecutionLog {
 
 /**
  * Execute vehicle command sequence
+ * All commands execute sequentially (no parallel execution)
  */
 export async function executeCommandSequence(
   sequence: CommandSequence,
@@ -36,58 +39,51 @@ export async function executeCommandSequence(
   };
 
   try {
-    if (sequence.type === 'script') {
-      // Rust script execution (Phase 3 - not implemented yet)
-      log('  → Script mode not yet implemented');
-      return {
-        totalCommands: 0,
-        successCount: 0,
-        failureCount: 1,
-        results: [{ success: false, error: 'Script execution not implemented' }],
-        executionTime: Date.now() - startTime
-      };
-    } else if (sequence.type === 'sequential') {
-      // Sequential execution with delays
-      log('  → Sequential execution mode');
-      for (let i = 0; i < sequence.commands.length; i++) {
-        const cmd = sequence.commands[i];
+    log('  → Sequential execution mode');
+
+    // Execute all items sequentially
+    for (let i = 0; i < sequence.items.length; i++) {
+      const item = sequence.items[i];
+
+      // Execute based on item type
+      if ('type' in item && item.type === 'wait') {
+        // Wait command
+        log(`    ⏱️  [${i + 1}/${sequence.items.length}] wait ${item.milliseconds}ms`);
+        await new Promise(resolve => setTimeout(resolve, item.milliseconds));
+        results.push({ success: true, item, executedAt: Date.now() });
+      } else if ('type' in item && item.type === 'wait_until') {
+        // Wait until command (not implemented yet)
+        log(`    ⏳ [${i + 1}/${sequence.items.length}] wait_until ${item.condition} (not implemented)`);
+        results.push({
+          success: false,
+          item,
+          error: 'wait_until not implemented yet',
+          executedAt: Date.now()
+        });
+      } else {
+        // Vehicle command
+        const cmd = item as VehicleCommand;
         const result = await executeSingleCommand(cmd);
         results.push(result);
 
         if (result.success) {
-          log(`    ✓ [${i + 1}/${sequence.commands.length}] ${cmd.variable} = ${cmd.value}`);
+          log(`    ✓ [${i + 1}/${sequence.items.length}] ${cmd.variable} = ${cmd.value} | ${cmd.duration}ms | ${cmd.mode}`);
         } else {
-          log(`    ✗ [${i + 1}/${sequence.commands.length}] Failed: ${cmd.variable}`);
-        }
-
-        // Delay between commands (default 200ms)
-        if (i < sequence.commands.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, sequence.delay || 200));
+          log(`    ✗ [${i + 1}/${sequence.items.length}] Failed: ${cmd.variable}`);
         }
       }
-    } else {
-      // Simple parallel execution
-      log('  → Simple execution mode');
-      const execResults = await Promise.all(
-        sequence.commands.map(cmd => executeSingleCommand(cmd))
-      );
-      results.push(...execResults);
 
-      execResults.forEach((result, i) => {
-        const cmd = sequence.commands[i];
-        if (result.success) {
-          log(`    ✓ ${cmd.variable} = ${cmd.value}`);
-        } else {
-          log(`    ✗ Failed: ${cmd.variable}`);
-        }
-      });
+      // Small delay between commands (50ms) to prevent command flooding
+      if (i < sequence.items.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
     }
 
     const successCount = results.filter(r => r.success).length;
     const failureCount = results.filter(r => !r.success).length;
 
     return {
-      totalCommands: results.length,
+      totalItems: results.length,
       successCount,
       failureCount,
       results,
@@ -96,9 +92,9 @@ export async function executeCommandSequence(
   } catch (error: any) {
     log(`  ✗ Execution failed: ${error}`);
     return {
-      totalCommands: sequence.commands.length,
+      totalItems: sequence.items.length,
       successCount: 0,
-      failureCount: sequence.commands.length,
+      failureCount: sequence.items.length,
       results: [{ success: false, error: error.message || String(error) }],
       executionTime: Date.now() - startTime
     };
@@ -110,21 +106,19 @@ export async function executeCommandSequence(
  */
 async function executeSingleCommand(cmd: VehicleCommand): Promise<ExecutionResult> {
   try {
-    const duration = cmd.duration || 2000;
-    const mode = cmd.mode || 'Abs';
-    const command = `DVAWrite ${cmd.variable} ${cmd.value} ${duration} ${mode}`;
+    const command = `DVAWrite ${cmd.variable} ${cmd.value} ${cmd.duration} ${cmd.mode}`;
 
     await carmakerStore.executeCommand(command);
 
     return {
       success: true,
-      command: cmd,
+      item: cmd,
       executedAt: Date.now()
     };
   } catch (error: any) {
     return {
       success: false,
-      command: cmd,
+      item: cmd,
       error: error.message || String(error),
       executedAt: Date.now()
     };
@@ -133,7 +127,7 @@ async function executeSingleCommand(cmd: VehicleCommand): Promise<ExecutionResul
 
 /**
  * Execute rule-based commands (from debugAction)
- * Simple text parsing: "DM.Gas = 0.5\nDM.Brake = 0.0"
+ * Supports both legacy format and new unified format
  */
 export async function executeRuleCommands(
   debugAction: string,
@@ -148,20 +142,48 @@ export async function executeRuleCommands(
   };
 
   for (const line of lines) {
-    const match = line.match(/^\s*([A-Za-z0-9._]+)\s*=\s*([0-9.-]+)\s*$/);
-    if (match) {
-      const variable = match[1];
-      const value = parseFloat(match[2]);
+    const trimmed = line.trim();
+
+    // Try new format first: "DM.Gas = 0.5 | 2000 | Abs"
+    // Note: Longer patterns first to avoid partial matching
+    const newFormatMatch = trimmed.match(/^\s*([A-Za-z0-9._]+)\s*=\s*([0-9.-]+)\s*\|\s*(\d+)(?:\s*\|\s*(AbsRamp|FacRamp|Abs|Off|Fac))?/i);
+    if (newFormatMatch) {
+      const variable = newFormatMatch[1];
+      const value = parseFloat(newFormatMatch[2]);
+      const duration = parseInt(newFormatMatch[3]);
+      const mode = newFormatMatch[4] || 'Abs';
+
+      try {
+        const command = `DVAWrite ${variable} ${value} ${duration} ${mode}`;
+        await carmakerStore.executeCommand(command);
+        results.push({ success: true, item: { variable, value, duration, mode } });
+        log(`    ✓ ${variable} = ${value} | ${duration}ms | ${mode}`);
+      } catch (error: any) {
+        results.push({
+          success: false,
+          item: { variable, value, duration, mode },
+          error: error.message || String(error)
+        });
+        log(`    ✗ Failed: ${variable} = ${value}`);
+      }
+      continue;
+    }
+
+    // Fallback to legacy format: "DM.Gas = 0.5"
+    const legacyMatch = trimmed.match(/^\s*([A-Za-z0-9._]+)\s*=\s*([0-9.-]+)\s*$/);
+    if (legacyMatch) {
+      const variable = legacyMatch[1];
+      const value = parseFloat(legacyMatch[2]);
 
       try {
         const command = `DVAWrite ${variable} ${value} 2000 Abs`;
         await carmakerStore.executeCommand(command);
-        results.push({ success: true, command: { variable, value } });
-        log(`    ✓ ${variable} = ${value}`);
+        results.push({ success: true, item: { variable, value, duration: 2000, mode: 'Abs' } });
+        log(`    ✓ ${variable} = ${value} (legacy format, 2000ms Abs)`);
       } catch (error: any) {
         results.push({
           success: false,
-          command: { variable, value },
+          item: { variable, value, duration: 2000, mode: 'Abs' },
           error: error.message || String(error)
         });
         log(`    ✗ Failed: ${variable} = ${value}`);
@@ -173,7 +195,7 @@ export async function executeRuleCommands(
   const failureCount = results.filter(r => !r.success).length;
 
   return {
-    totalCommands: results.length,
+    totalItems: results.length,
     successCount,
     failureCount,
     results,

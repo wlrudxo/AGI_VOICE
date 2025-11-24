@@ -648,6 +648,82 @@ The AI chat system uses Claude CLI via Rust's `std::process::Command`. On Window
 - **Phase 2**: Embedding system with OpenAI API + FAISS vector DB
 - **Phase 3**: RAG search functionality for map recommendations
 
+### CarMaker LLM Control System
+
+**Feature**: AI-based vehicle control with trigger-based automation
+
+**Architecture**:
+- **Parser**: `src/lib/actions/vehicleCommandParser.ts` - Parse LLM responses into executable commands
+- **Executor**: `src/lib/actions/vehicleCommandExecutor.ts` - Execute commands via CarMaker TCP connection
+- **Trigger Monitor**: `src/lib/stores/triggerMonitor.svelte.ts` - Monitor vehicle state and activate triggers
+- **CarMaker Store**: `src/lib/stores/carmakerStore.svelte.ts` - Manage TCP connection and vehicle data
+
+**Unified Command Format** (inspired by `CarMaker_RealtimeControl/llm_integration.py`):
+
+```
+DM.Gas = <value> | <duration_ms> [| <mode>]
+DM.Brake = <value> | <duration_ms> [| <mode>]
+DM.Steer.Ang = <value> | <duration_ms> [| <mode>]
+wait <milliseconds>
+wait_until <condition>
+```
+
+**Format Rules**:
+- **Required**: `variable = value | duration`
+- **Optional**: `| mode` (defaults to `Abs`)
+- **Duration**: MUST be specified in milliseconds
+- **Modes**: `Abs`, `Off`, `Fac`, `AbsRamp`, `FacRamp`
+- **Sequential Execution**: All commands execute top-to-bottom
+- **Wait**: Use `wait <ms>` for explicit delays between commands
+- **Wait Until**: Use `wait_until <condition>` to wait for vehicle state (not implemented yet)
+
+**Examples**:
+
+1. **Simple Deceleration**:
+```
+DM.Gas = 0.0 | 500 | Abs
+DM.Brake = 0.3 | 2000 | Abs
+```
+
+2. **Sequence with Delays**:
+```
+DM.Gas = 0.8 | 1000 | Abs
+wait 500
+DM.Brake = 0.2 | 2000
+wait 1000
+DM.Gas = 0.0 | 500
+```
+
+3. **Different Control Modes**:
+```
+DM.Gas = 0.5 | 1000 | Fac
+DM.Brake = 0.3 | 2000 | AbsRamp
+DM.Steer.Ang = 0.1 | 1500 | Off
+```
+
+**Legacy Format Support**:
+- Old format `DM.Gas = 0.5` (without duration) is supported with default 2000ms and Abs mode
+- Console warning shown for legacy format usage
+
+**Trigger System**:
+1. **Monitor**: 10Hz polling of vehicle telemetry data
+2. **Evaluate**: Check trigger conditions against current vehicle state
+3. **Pause**: Simulation pauses (time scale = 0.001x) when trigger activates
+4. **LLM/Rule**: Request AI response OR execute predefined rule commands
+5. **Resume**: Simulation resumes (time scale = 1.0x) + execute commands
+6. **Cooldown**: 5-second reset period to prevent duplicate trigger activation
+
+**LLM Prompt Template** (triggerMonitor.svelte.ts:232-265):
+- System sends vehicle data snapshot to AI
+- AI responds with command sequence in unified format
+- Commands are parsed and executed sequentially
+- Logs shown in trigger monitor and chat view
+
+**Testing**:
+- Test suite: `src/lib/actions/vehicleCommandParser.test.ts`
+- Run: `npx tsx src/lib/actions/vehicleCommandParser.test.ts`
+- All test cases validate unified format parsing
+
 ## Common Issues & Solutions
 
 ### Issue: Command templates not working
