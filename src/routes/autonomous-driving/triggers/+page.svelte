@@ -877,6 +877,11 @@
     line-height: 1.6;
   }
 
+  .textarea-field {
+    width: 100%;
+    resize: vertical;
+  }
+
   .code-input {
     font-family: 'Courier New', monospace;
     font-size: 0.85rem;
