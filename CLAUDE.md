@@ -625,28 +625,14 @@ The AI chat system uses Claude CLI via Rust's `std::process::Command`. On Window
 - **MapCard** (`src/lib/components/MapCard.svelte`):
   - Card display for individual maps
   - Shows metadata: name, description, category, difficulty, tags
-  - Embedding status badge (Phase 2)
   - Edit button (pen icon) - navigate to generator
   - Delete button (trash icon) - remove map
-
-**Navigation Flow**:
-```
-[Main Sidebar]
-├── Map 설정
-    └── [Sub-sidebar]
-        ├── Map 생성     → Create/Edit maps
-        ├── Map 라이브러리 → Browse/Manage maps
-        └── RAG 테스트   → Test RAG system (Phase 3)
-```
 
 **SUMO XML Format**:
 - **Nodes**: Junction/intersection definitions (id, x, y, type)
 - **Edges**: Road connections (id, from, to, numLanes, speed)
 - Parsed with DOMParser, visualized in SVG canvas
 
-**Future Phases**:
-- **Phase 2**: Embedding system with OpenAI API + FAISS vector DB
-- **Phase 3**: RAG search functionality for map recommendations
 
 ### CarMaker LLM Control System
 
@@ -758,47 +744,3 @@ npm run dev  # Vite dev server on http://localhost:1420
 - Use the built-in chat widget in the application
 - Configure character and prompt template in `/ai-settings/chat-settings`
 - Ensure Claude CLI is installed and accessible in PATH
-
----
-
-**Last Updated**: 2025-11-22
-**Project Status**: Autonomous Driving Research Application
-
-**Recent Updates**:
-- ✅ **SUMO Map Management System (Phase 1 Complete)**:
-  - Dual database architecture (`ai_chat.db` + `sumo_maps.db`)
-  - Wrapper types (`AiChatDb`, `MapDb`) for Tauri State management
-  - Full CRUD operations for SUMO traffic maps
-  - Map generator with XML input and SVG visualization
-  - Map library with search, filter, and edit functionality
-  - MapCanvas component (SVG-based visualization)
-  - MapCard component (edit/delete buttons)
-  - Nested sidebar structure (Map 설정 → Map 생성, Map 라이브러리, RAG 테스트)
-  - RAG test page placeholder for Phase 3
-
-- ✅ **Generic AI Chat System**:
-  - Full dynamic prompt system with conversations, characters, and command templates
-  - Database architecture: `ai_chat.db` for generic AI conversation system (reusable across projects)
-  - Modular design: AI chat system separated from domain data for portability
-  - Widget mode with window resizing and bottom-right positioning
-  - Custom titlebar with window controls
-  - Chat history with message counts
-  - Auto-refresh system (2s polling via Tauri commands)
-  - Action processing system (parser, executor, formatter)
-  - Dialog component for confirmations and alerts
-
-- ✅ **Code Architecture**:
-  - Created ARCHITECTURE.md with detailed technical documentation
-  - Complete project structure documentation (frontend/backend)
-  - Data flow diagrams and state management patterns
-  - Naming conventions and migration guidelines
-
-**Next Priority**:
-- **Phase 2**: Implement embedding system for SUMO maps
-  - OpenAI Embeddings API integration
-  - FAISS vector database for similarity search
-  - Embed button in map library
-  - Embedding progress UI
-- **Phase 3**: RAG search functionality for map recommendations
-  - Semantic search implementation
-  - Context-aware map recommendations
