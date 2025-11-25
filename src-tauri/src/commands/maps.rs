@@ -247,9 +247,9 @@ pub async fn get_map_count(
 
 /// Health check
 #[tauri::command]
-pub async fn maps_health() -> Result<serde_json::Value, String> {
-    Ok(serde_json::json!({
-        "status": "ok",
-        "service": "maps"
-    }))
+pub async fn maps_health() -> Result<super::common::HealthResponse, String> {
+    Ok(super::common::HealthResponse {
+        status: "ok".to_string(),
+        service: "maps".to_string(),
+    })
 }

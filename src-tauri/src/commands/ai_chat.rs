@@ -50,6 +50,33 @@ pub struct ChatResponse {
 
 // ==================== Helper Functions ====================
 
+/// Get workspace directory from settings or use default AppData path
+fn get_workspace_dir() -> Option<PathBuf> {
+    match load_settings() {
+        Ok(settings) if !settings.claude_workspace_dir.is_empty() => {
+            let path = PathBuf::from(&settings.claude_workspace_dir);
+            println!("✅ Using workspace directory: {}", path.display());
+            Some(path)
+        }
+        _ => {
+            let default_path = match crate::db::get_app_data_dir() {
+                Ok(path) => path,
+                Err(e) => {
+                    println!("⚠️ Failed to get app data dir, using current dir: {}", e);
+                    PathBuf::from(".")
+                }
+            };
+
+            if let Err(e) = std::fs::create_dir_all(&default_path) {
+                println!("⚠️ Failed to create workspace directory: {}", e);
+            }
+
+            println!("✅ Using default workspace directory: {}", default_path.display());
+            Some(default_path)
+        }
+    }
+}
+
 async fn get_or_create_conversation(
     request: &ChatRequest,
     db: &DatabaseConnection,
@@ -286,29 +313,7 @@ async fn handle_no_save_chat(
     );
 
     // Get workspace directory
-    let workspace_dir = match load_settings() {
-        Ok(settings) if !settings.claude_workspace_dir.is_empty() => {
-            let path = PathBuf::from(&settings.claude_workspace_dir);
-            println!("✅ Using workspace directory: {}", path.display());
-            Some(path)
-        }
-        _ => {
-            let default_path = match crate::db::get_app_data_dir() {
-                Ok(path) => path,
-                Err(e) => {
-                    println!("⚠️ Failed to get app data dir, using current dir: {}", e);
-                    PathBuf::from(".")
-                }
-            };
-
-            if let Err(e) = std::fs::create_dir_all(&default_path) {
-                println!("⚠️ Failed to create workspace directory: {}", e);
-            }
-
-            println!("✅ Using default workspace directory: {}", default_path.display());
-            Some(default_path)
-        }
-    };
+    let workspace_dir = get_workspace_dir();
 
     // Execute Claude request (no previous messages)
     let raw_response = execute_claude_request(
@@ -370,31 +375,7 @@ pub async fn chat(
     );
 
     // 2.5. Settings에서 workspace_dir 로드 (없으면 AppData/Roaming/AGI_VOICE 기본값)
-    let workspace_dir = match load_settings() {
-        Ok(settings) if !settings.claude_workspace_dir.is_empty() => {
-            let path = PathBuf::from(&settings.claude_workspace_dir);
-            println!("✅ Using workspace directory: {}", path.display());
-            Some(path)
-        }
-        _ => {
-            // 기본값: AppData/Roaming/AGI_VOICE
-            let default_path = match crate::db::get_app_data_dir() {
-                Ok(path) => path,
-                Err(e) => {
-                    println!("⚠️ Failed to get app data dir, using current dir: {}", e);
-                    PathBuf::from(".")
-                }
-            };
-
-            // 디렉토리 생성 (없으면)
-            if let Err(e) = std::fs::create_dir_all(&default_path) {
-                println!("⚠️ Failed to create workspace directory: {}", e);
-            }
-
-            println!("✅ Using default workspace directory: {}", default_path.display());
-            Some(default_path)
-        }
-    };
+    let workspace_dir = get_workspace_dir();
 
     // 3. Claude CLI 실행
     let raw_response = execute_claude_request(
@@ -473,9 +454,9 @@ pub async fn chat(
 }
 
 #[tauri::command]
-pub async fn chat_health() -> Result<serde_json::Value, String> {
-    Ok(serde_json::json!({
-        "status": "ok",
-        "service": "ai_chat"
-    }))
+pub async fn chat_health() -> Result<super::common::HealthResponse, String> {
+    Ok(super::common::HealthResponse {
+        status: "ok".to_string(),
+        service: "ai_chat".to_string(),
+    })
 }

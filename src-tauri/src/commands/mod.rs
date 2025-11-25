@@ -1,5 +1,4 @@
 pub mod common;
-pub mod utils;
 pub mod ai_chat;
 pub mod settings;
 pub mod prompt_templates;
