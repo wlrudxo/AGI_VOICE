@@ -247,9 +247,10 @@
                 <code>Car.v &gt; 27.78</code>
                 <p class="text-muted">차량 속도가 100km/h(27.78m/s) 초과</p>
 
-                <p style="margin-top: 1rem;"><strong>2. 전방 차량과의 거리</strong></p>
-                <code>Traffic.T01.sRoad - Traffic.T00.sRoad &lt; 100</code>
-                <p class="text-muted">전방 차량과의 거리가 100m 미만</p>
+                <p style="margin-top: 1rem;"><strong>2. 추월 조건 (전방 차량 접근)</strong></p>
+                <code>(Traffic.T00.sRoad - Vhcl.sRoad) &lt; 40 &amp;&amp; (Traffic.T00.sRoad - Vhcl.sRoad) &gt; 0</code>
+                <p class="text-muted">전방 차량이 <strong>앞에 있고</strong> 거리 40m 미만</p>
+                <p class="text-muted" style="color: var(--color-warning); font-size: 0.8rem;">⚠️ &gt; 0 조건 필수! 없으면 추월 후에도 재발동됨</p>
 
                 <p style="margin-top: 1rem;"><strong>3. 복합 조건 (AND)</strong></p>
                 <code>Car.v &gt; 27.78 &amp;&amp; abs(Vhcl.tRoad) &gt; 2.0</code>
@@ -476,6 +477,26 @@
         </li>
       </ul>
     </div>
+
+    <div class="example-card">
+      <h5>추월 트리거 (전방 차량 접근)</h5>
+      <ul class="help-list">
+        <li><strong>이름</strong>: 추월</li>
+        <li><strong>조건</strong>: (Traffic.T00.sRoad - Vhcl.sRoad) &lt; 40 && (Traffic.T00.sRoad - Vhcl.sRoad) > 0</li>
+        <li><strong>메시지</strong>: "전방 차량과의 거리가 가까워졌습니다. 추월하세요."</li>
+      </ul>
+      <p class="help-warning">⚠️ <strong>> 0 조건 필수!</strong> 없으면 추월 후에도 트리거가 재발동됩니다. (음수도 &lt; 40 만족)</p>
+    </div>
+  </section>
+
+  <section class="help-section">
+    <h4>⚠️ 조건 작성 시 주의사항</h4>
+    <ul class="help-list">
+      <li><strong>범위 조건</strong>: 단순 비교만으로는 부족한 경우가 있습니다. 예: 거리 &lt; 40 → 음수도 포함됨</li>
+      <li><strong>방향 고려</strong>: 전방/후방 판별이 필요하면 > 0 또는 &lt; 0 조건을 추가하세요</li>
+      <li><strong>쿨다운</strong>: 트리거 발동 후 5초간 재발동 방지. 조건이 계속 만족되면 5초 후 다시 발동</li>
+      <li><strong>괄호 사용</strong>: 복잡한 조건은 괄호로 우선순위를 명확히 하세요</li>
+    </ul>
   </section>
 
   <section class="help-section">
@@ -865,5 +886,16 @@
   .example-box p {
     margin: 0;
     font-size: 0.875rem;
+  }
+
+  /* Help warning message */
+  .help-warning {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--color-warning-bg-light, rgba(245, 158, 11, 0.1));
+    border-left: 3px solid var(--color-warning, #f59e0b);
+    border-radius: 0.25rem;
+    font-size: 0.85rem;
+    color: var(--color-warning, #f59e0b);
   }
 </style>

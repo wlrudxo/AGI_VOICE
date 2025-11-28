@@ -16,16 +16,30 @@ export interface ParsedSegment {
 	label?: string;
 }
 
+// Known action types that should be parsed as tags
+const KNOWN_ACTION_TYPES = new Set([
+	'map', 'update_map', 'delete_map', 'read_map', 'read_dashboard'
+]);
+
 /**
  * 응답에서 액션 태그 파싱
+ * - 줄바꿈이 포함된 태그는 무시
+ * - 알려진 액션 타입만 처리
  */
 export function parseActions(response: string): Action[] {
 	const actions: Action[] = [];
-	const tagPattern = /<([^|>]+)(?:\|([^>]+))?>/g;
+	// 줄바꿈이 없는 태그만 매칭 ([^\n|>] 로 줄바꿈 제외)
+	const tagPattern = /<([^\n|>]+)(?:\|([^\n>]+))?>/g;
 	let match;
 
 	while ((match = tagPattern.exec(response)) !== null) {
 		const actionType = match[1].trim();
+
+		// 알려진 액션 타입이 아니면 무시
+		if (!KNOWN_ACTION_TYPES.has(actionType)) {
+			continue;
+		}
+
 		const fieldsStr = match[2]?.trim();
 
 		const fields = parseFields(fieldsStr);
@@ -41,14 +55,24 @@ export function parseActions(response: string): Action[] {
 
 /**
  * 응답을 태그 위치 기준으로 분할하여 순서대로 반환
+ * - 줄바꿈이 포함된 태그는 무시
+ * - 알려진 액션 타입만 처리
  */
 export function parseWithSegments(response: string): ParsedSegment[] {
 	const segments: ParsedSegment[] = [];
-	const tagPattern = /<([^|>]+)(?:\|([^>]+))?>/g;
+	// 줄바꿈이 없는 태그만 매칭
+	const tagPattern = /<([^\n|>]+)(?:\|([^\n>]+))?>/g;
 	let lastEnd = 0;
 	let match;
 
 	while ((match = tagPattern.exec(response)) !== null) {
+		const actionType = match[1].trim();
+
+		// 알려진 액션 타입이 아니면 일반 텍스트로 처리 (skip하지 않고 계속)
+		if (!KNOWN_ACTION_TYPES.has(actionType)) {
+			continue;
+		}
+
 		// 태그 이전 텍스트 추가
 		if (match.index > lastEnd) {
 			const textBefore = response.substring(lastEnd, match.index).trim();
@@ -61,7 +85,6 @@ export function parseWithSegments(response: string): ParsedSegment[] {
 		}
 
 		// 태그 파싱
-		const actionType = match[1].trim();
 		const fieldsStr = match[2]?.trim();
 		const fields = parseFields(fieldsStr);
 		const action = processAction(actionType, fields);
@@ -238,9 +261,18 @@ export function getActionLabel(actionType: string): string {
 }
 
 /**
- * 응답에서 태그 제거하여 깨끗한 텍스트만 반환
+ * 응답에서 알려진 액션 태그만 제거하여 깨끗한 텍스트만 반환
+ * - 줄바꿈이 포함된 태그는 제거하지 않음
+ * - 알려진 액션 타입만 제거
  */
 export function removeActionTags(response: string): string {
-	const tagPattern = /<([^|>]+)(?:\|([^>]+))?>/g;
-	return response.replace(tagPattern, '').trim();
+	const tagPattern = /<([^\n|>]+)(?:\|([^\n>]+))?>/g;
+	return response.replace(tagPattern, (match, actionType) => {
+		// 알려진 액션 타입만 제거
+		if (KNOWN_ACTION_TYPES.has(actionType.trim())) {
+			return '';
+		}
+		// 알려지지 않은 태그는 그대로 유지
+		return match;
+	}).trim();
 }

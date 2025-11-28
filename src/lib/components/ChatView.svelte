@@ -76,6 +76,30 @@
 	let claudeModel = $state('sonnet');
 	let settingsLoaded = $state(false);
 
+	// 시스템 메시지의 Vehicle Data 접힘 상태 (messageIndex -> boolean)
+	let collapsedVehicleData = $state<Record<number, boolean>>({});
+
+	// Vehicle Data 토글 (기본값: 접힘 = undefined/true, 펼침 = false)
+	function toggleVehicleData(index: number) {
+		// undefined 또는 true -> false (펼침)
+		// false -> true (접힘)
+		collapsedVehicleData[index] = collapsedVehicleData[index] === false ? true : false;
+	}
+
+	// 시스템 메시지에서 Vehicle Data 파싱
+	function parseSystemMessage(content: string): { vehicleData: string | null; vehicleDataCount: number; otherContent: string } {
+		const vehicleDataMatch = content.match(/## Current Vehicle Data:\n([\s\S]*?)(?=\n##|$)/);
+
+		if (vehicleDataMatch) {
+			const vehicleData = vehicleDataMatch[1].trim();
+			const vehicleDataCount = vehicleData.split('\n').filter(line => line.trim()).length;
+			const otherContent = content.replace(/## Current Vehicle Data:\n[\s\S]*?(?=\n##|$)/, '').trim();
+			return { vehicleData, vehicleDataCount, otherContent };
+		}
+
+		return { vehicleData: null, vehicleDataCount: 0, otherContent: content };
+	}
+
 	// 채팅 설정 로드
 	async function loadChatSettings() {
 		try {
@@ -250,7 +274,11 @@
 				content: content,
 				timestamp
 			});
+			// Show loading indicator while waiting for LLM response
+			isLoading = true;
 		} else if (type === 'llm_response') {
+			// Hide loading indicator
+			isLoading = false;
 			// Parse LLM response and display only (execution handled by triggerMonitor)
 			const segments = parseWithSegments(content);
 			for (const segment of segments) {
@@ -271,6 +299,8 @@
 			// Note: Vehicle command execution is handled by triggerMonitor.executeTriggerActionSequence()
 			// This prevents duplicate execution
 		} else if (type === 'error') {
+			// Hide loading indicator
+			isLoading = false;
 			messages.push({
 				role: 'error',
 				content: content,
@@ -317,46 +347,19 @@
 		const timestamp = new Date();
 
 		// 1.5. Check for vehicle commands if parsing is enabled
-		let vehicleCommandsExecuted = false;
+		let commandSequence = null;
 		if (isVehicleCommandParsingEnabled()) {
 			try {
-				const commandSequence = parseVehicleCommands(rawResponse);
-				if (commandSequence.commands.length > 0) {
-					console.log('🚗 Vehicle commands detected:', commandSequence);
-
-					// Add vehicle command execution message
-					messages.push({
-						role: 'action',
-						label: '🚗 차량 제어 명령 실행',
-						timestamp
-					});
-					scrollToBottom();
-
-					// Execute vehicle commands
-					const result = await executeCommandSequence(commandSequence, (msg) => {
-						console.log(msg);
-					});
-
-					// Add execution result message
-					messages.push({
-						role: 'action',
-						label: `✓ 차량 제어 명령 실행 완료: ${result.successCount}/${result.totalCommands} (${result.executionTime}ms)`,
-						timestamp: new Date()
-					});
-					scrollToBottom();
-					vehicleCommandsExecuted = true;
+				commandSequence = parseVehicleCommands(rawResponse);
+				if (commandSequence.items.length === 0) {
+					commandSequence = null;
 				}
 			} catch (error) {
-				console.error('Vehicle command execution error:', error);
-				messages.push({
-					role: 'error',
-					content: `차량 제어 명령 실행 실패: ${error.message || String(error)}`,
-					timestamp: new Date()
-				});
+				console.error('Vehicle command parsing error:', error);
 			}
 		}
 
-		// 2. 응답 표시
+		// 2. 응답 표시 (먼저)
 		for (const segment of segments) {
 			if (segment.type === 'text') {
 				messages.push({
@@ -470,6 +473,30 @@
 				messages.push({
 					role: 'error',
 					content: `액션 실행 실패: ${cudError.message || String(cudError)}`,
+					timestamp: new Date()
+				});
+			}
+		}
+
+		// 5. 차량 제어 명령 실행 (응답 표시 후)
+		if (commandSequence) {
+			console.log('🚗 Vehicle commands detected:', commandSequence);
+			messages.push({
+				role: 'action',
+				label: '🚗 차량 제어 명령 실행',
+				timestamp: new Date()
+			});
+			scrollToBottom();
+
+			try {
+				await executeCommandSequence(commandSequence, (msg) => {
+					console.log(msg);
+				});
+			} catch (error) {
+				console.error('Vehicle command execution error:', error);
+				messages.push({
+					role: 'error',
+					content: `차량 제어 명령 실행 실패: ${error.message || String(error)}`,
 					timestamp: new Date()
 				});
 			}
@@ -625,13 +652,33 @@
 				{/if}
 
 				{#if message.role === 'system'}
+					{@const parsed = parseSystemMessage(message.content)}
 					<div class="message message-system">
 						<div class="message-content">
 							<div class="system-indicator">
 								<Icon icon="solar:info-circle-bold-duotone" width="16" />
 								<span>시스템</span>
 							</div>
-							<p>{message.content}</p>
+							{#if parsed.vehicleData}
+								<!-- Vehicle Data 접기/펼치기 (기본: 접힘) -->
+								<button
+									class="vehicle-data-toggle"
+									onclick={() => toggleVehicleData(index)}
+								>
+									<Icon
+										icon={collapsedVehicleData[index] === false ? "solar:alt-arrow-down-bold" : "solar:alt-arrow-right-bold"}
+										width="14"
+									/>
+									<span>Vehicle Data ({parsed.vehicleDataCount}개 항목)</span>
+								</button>
+								{#if collapsedVehicleData[index] === false}
+									<pre class="vehicle-data-content">{parsed.vehicleData}</pre>
+								{/if}
+								<!-- 나머지 내용 -->
+								<div class="markdown-content system-other-content">{@html marked(parsed.otherContent)}</div>
+							{:else}
+								<p>{message.content}</p>
+							{/if}
 						</div>
 					</div>
 				{/if}
@@ -797,6 +844,56 @@
 		font-size: 0.75rem;
 		margin-bottom: 0.25rem;
 		opacity: 0.8;
+	}
+
+	/* Vehicle Data 접기/펼치기 */
+	.vehicle-data-toggle {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		background: rgba(100, 116, 139, 0.15);
+		border: none;
+		border-radius: 4px;
+		padding: 0.25rem 0.5rem;
+		font-size: 0.75rem;
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		margin: 0.5rem 0;
+		transition: background 0.2s;
+	}
+
+	.vehicle-data-toggle:hover {
+		background: rgba(100, 116, 139, 0.25);
+	}
+
+	.vehicle-data-content {
+		background: rgba(0, 0, 0, 0.05);
+		border-radius: 4px;
+		padding: 0.5rem;
+		font-size: 0.7rem;
+		line-height: 1.4;
+		max-height: 200px;
+		overflow-y: auto;
+		margin: 0 0 0.5rem 0;
+		font-family: 'Consolas', 'Monaco', monospace;
+		white-space: pre-wrap;
+		word-break: break-all;
+	}
+
+	.system-other-content {
+		margin-top: 0.25rem;
+	}
+
+	.system-other-content :global(h1),
+	.system-other-content :global(h2),
+	.system-other-content :global(h3) {
+		font-size: 0.85rem;
+		font-weight: 600;
+		margin: 0.5rem 0 0.25rem 0;
+	}
+
+	.system-other-content :global(p) {
+		margin: 0.25rem 0;
 	}
 
 	.message-action {

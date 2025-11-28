@@ -29,11 +29,11 @@
 				// 수정
 				await invoke('update_character', {
 					id: editingCharacter.id,
-					character_data: formData
+					characterData: formData
 				});
 			} else {
 				// 생성
-				await invoke('create_character', { character_data: formData });
+				await invoke('create_character', { characterData: formData });
 			}
 			await loadCharacters();
 			resetForm();

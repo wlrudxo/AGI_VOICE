@@ -122,6 +122,8 @@
 
   async function stopSimulation() {
     try {
+      // Reset all controls first, then stop simulation
+      await carmakerStore.resetAllControls();
       await carmakerStore.executeCommand('StopSim');
       carmakerStore.addLog('✓ Simulation stopped');
     } catch (error: any) {
@@ -161,28 +163,7 @@
     }
 
     try {
-      carmakerStore.addLog('🔄 Resetting all vehicle control commands...');
-
-      // Reset all control commands with 1ms duration
-      const resetCommands = [
-        'DM.Gas 0 Abs 1',
-        'DM.Brake 0 Abs 1',
-        'DM.Steer.Ang 0 Abs 1',
-        'DM.v.Trgt 0 Abs 1',
-        'DM.LaneOffset 0 Abs 1'
-      ];
-
-      let successCount = 0;
-      for (const command of resetCommands) {
-        try {
-          await carmakerStore.sendCommand(command);
-          successCount++;
-        } catch (error: any) {
-          carmakerStore.addLog(`  ✗ Failed to reset ${command.split(' ')[0]}: ${error}`);
-        }
-      }
-
-      carmakerStore.addLog(`✓ Reset completed: ${successCount}/${resetCommands.length} commands`);
+      await carmakerStore.resetAllControls();
     } catch (error: any) {
       carmakerStore.addLog(`✗ Reset failed: ${error}`);
     }

@@ -185,7 +185,7 @@ class TriggerMonitor {
         if (trigger.debugAction) {
           this.addLog('  → Executing rule-based commands');
           const result = await executeRuleCommands(trigger.debugAction, (msg) => this.addLog(msg));
-          this.addLog(`  ✓ Executed ${result.successCount}/${result.totalCommands} commands (${result.executionTime}ms)`);
+          this.addLog(`  ✓ Executed ${result.successCount}/${result.totalItems} commands (${result.executionTime}ms)`);
         }
       } else {
         // LLM mode: Request LLM and wait for response
@@ -201,7 +201,7 @@ class TriggerMonitor {
           this.addLog('  → Parsing LLM response and executing commands');
           const sequence = parseVehicleCommands(llmResponse);
           const result = await executeCommandSequence(sequence, (msg) => this.addLog(msg));
-          this.addLog(`  ✓ Executed ${result.successCount}/${result.totalCommands} commands (${result.executionTime}ms)`);
+          this.addLog(`  ✓ Executed ${result.successCount}/${result.totalItems} commands (${result.executionTime}ms)`);
         }
       }
 
@@ -221,84 +221,13 @@ class TriggerMonitor {
         .map(([key, value]) => `${key}: ${value.toFixed(4)}`)
         .join('\n');
 
-      // Build system context with trigger message and vehicle data
-      const systemContext = `# Trigger Activated: ${trigger.name}
-
-## Current Vehicle Data:
+      // Build system context with vehicle data and trigger message only
+      // (Trigger name is shown in separate action bubble, instructions in AI System Message settings)
+      const systemContext = `## Current Vehicle Data:
 ${dataSnapshot}
 
 ## Trigger Message:
-${trigger.message}
-
-**Instructions**: Analyze the current vehicle state and respond with vehicle control commands.
-
-**Required Format** (use code block):
-\`\`\`
-DM.Gas = <value> | <duration_ms>
-DM.Brake = <value> | <duration_ms>
-DM.Steer.Ang = <value> | <duration_ms>
-DM.v.Trgt = <value> | <duration_ms>
-DM.LaneOffset = <value> | <duration_ms>
-wait <milliseconds>
-wait_until <condition>
-\`\`\`
-
-**Format Rules**:
-- Each command: \`variable = value | duration\`
-- **duration is REQUIRED** (milliseconds)
-  - Positive value: Command is active for specified duration
-  - **-1 (infinite)**: Command remains active until reset by \`wait_until\`
-- Use \`wait <ms>\` for explicit delays between commands
-- Use \`wait_until <condition>\` to wait for vehicle state (supports: >, <, >=, <=, ==, !=)
-  - When condition is met, all commands with \`duration=-1\` are **automatically reset**
-- All commands execute sequentially (top to bottom)
-
-**Duration -1 Pattern** (Recommended for Conditional Control):
-\`\`\`
-DM.Gas = 0.0 | -1       # Hold gas at 0 indefinitely
-DM.Brake = 0.5 | -1     # Hold brake at 0.5 indefinitely
-wait_until Car.v <= 3.0 # Wait until speed drops to 3 m/s
-                        # System auto-resets Gas and Brake when condition is met
-DM.Brake = 0.0 | 100    # Now apply new brake command
-\`\`\`
-
-**Important Notes**:
-- **CarMaker commands execute in parallel**, not sequentially
-- To ensure sequential execution: use \`wait <duration>\` equal to or greater than previous command duration
-- **Prefer duration=-1 + wait_until pattern** for condition-based control (simpler and more reliable)
-- Only use -1 for **DM.* (vehicle control)** commands, NOT for SC.* (simulation control)
-- **⚠️ LaneOffset WARNING**: When duration expires, vehicle **automatically returns to lane center (0.0)**
-  - If you want to maintain lane offset, use a long duration (e.g., 10000ms or more)
-  - Example: \`DM.LaneOffset = 3.0 | 10000\` keeps offset for 10 seconds, then auto-returns to center
-
-**Example 1 - Emergency Braking**:
-\`\`\`
-DM.Gas = 0.0 | -1       # Stop accelerating
-DM.Brake = 0.5 | -1     # Apply brake
-wait_until Car.v <= 3.0 # Wait until slow enough (auto-reset Gas/Brake)
-DM.Brake = 0.0 | 100    # Release brake
-\`\`\`
-
-**Example 2 - Lane Change**:
-\`\`\`
-DM.LaneOffset = 3.0 | 10000  # Move to left lane, hold 10s, then auto-return to center
-\`\`\`
-
-**Example 3 - Speed Control with Overtaking**:
-\`\`\`
-DM.v.Trgt = 38.89 | -1      # Accelerate to 140 kph
-wait_until Car.v >= 38.0    # Wait until speed reached (auto-reset)
-DM.v.Trgt = 27.78 | -1      # Decelerate to 100 kph
-wait_until Car.v <= 28.0    # Wait until decelerated
-\`\`\`
-
-**Value Ranges**:
-- Gas/Brake: 0.0 to 1.0
-- Steer.Ang: radians (typically -0.5 to 0.5)
-- v.Trgt: m/s (e.g., 27.78 for 100 km/h)
-- LaneOffset: meters (-6.5 to 6.5, 0 = lane center)
-
-Provide appropriate control values based on the situation.`;
+${trigger.message}`;
 
       // Dispatch event to ChatView (system message)
       window.dispatchEvent(new CustomEvent('triggerChatMessage', {

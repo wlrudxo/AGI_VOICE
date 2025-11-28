@@ -4,6 +4,7 @@
   import Sidebar from '$lib/components/Sidebar.svelte';
   import AIChatWidget from '$lib/components/AIChatWidget.svelte';
   import Dialog from '$lib/components/Dialog.svelte';
+  import ToastContainer from '$lib/components/ToastContainer.svelte';
   import { disableAutocomplete } from '$lib/actions/disableAutocomplete';
   import { uiStore } from '$lib/stores/uiStore';
   import { settingsStore } from '$lib/stores/settingsStore';
@@ -204,6 +205,9 @@
 
 <!-- Global Dialog Component -->
 <Dialog bind:this={dialogComponent} />
+
+<!-- Global Toast Container -->
+<ToastContainer />
 
 <style>
   :global(body) {

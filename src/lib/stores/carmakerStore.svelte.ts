@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { toastStore } from './toastStore.svelte';
 
 /**
  * CarMaker Telemetry Data (from Rust backend)
@@ -71,10 +72,12 @@ class CarMakerStore {
       await invoke('connect_carmaker', { host: this.host, port: parseInt(this.port) });
       this.isConnected = true;
       this.addLog('✓ Connected to CarMaker');
+      toastStore.success('CarMaker 연결됨');
       return true;
     } catch (error: any) {
       this.addLog(`✗ Connection failed: ${error}`);
       this.isConnected = false;
+      toastStore.error('서버 연결 실패');
       return false;
     }
   }
@@ -259,6 +262,36 @@ class CarMakerStore {
       this.addLog(`✗ Emergency deceleration failed: ${error}`);
       throw error;
     }
+  }
+
+  /**
+   * Reset all vehicle control commands
+   * Sends all DM.* commands with 1ms duration to reset state
+   * Used to cancel running wait_until or AI scripts
+   */
+  async resetAllControls(): Promise<{ successCount: number; totalCount: number }> {
+    this.addLog('🔄 Resetting all vehicle control commands...');
+
+    const resetCommands = [
+      { variable: 'DM.Gas', value: 0 },
+      { variable: 'DM.Brake', value: 0 },
+      { variable: 'DM.Steer.Ang', value: 0 },
+      { variable: 'DM.v.Trgt', value: 0 },
+      { variable: 'DM.LaneOffset', value: 0 }
+    ];
+
+    let successCount = 0;
+    for (const cmd of resetCommands) {
+      try {
+        await this.executeCommand(`DVAWrite ${cmd.variable} ${cmd.value} 1 Abs`);
+        successCount++;
+      } catch (error: any) {
+        this.addLog(`  ✗ Failed to reset ${cmd.variable}: ${error}`);
+      }
+    }
+
+    this.addLog(`✓ Reset completed: ${successCount}/${resetCommands.length} commands`);
+    return { successCount, totalCount: resetCommands.length };
   }
 
   /**
