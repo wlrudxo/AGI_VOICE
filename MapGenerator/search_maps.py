@@ -22,10 +22,15 @@ Output (stdout):
 """
 
 import sys
+import io
 import json
 import sqlite3
 from pathlib import Path
 from dotenv import load_dotenv
+
+# Windows에서 UTF-8 출력 강제 설정
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 

@@ -115,11 +115,26 @@
     }
   }
 
-  // Ctrl+W 단축키 핸들러
+  // 키보드 단축키 핸들러
   function handleKeyDown(event) {
+    // Ctrl+W: 창 닫기/트레이로 최소화
     if ((event.ctrlKey || event.metaKey) && event.key === 'w') {
       event.preventDefault();
       handleCtrlW();
+    }
+    // F11: 전체화면 토글
+    if (event.key === 'F11') {
+      event.preventDefault();
+      toggleFullscreen();
+    }
+  }
+
+  async function toggleFullscreen() {
+    try {
+      const isFullscreen = await appWindow.isFullscreen();
+      await appWindow.setFullscreen(!isFullscreen);
+    } catch (error) {
+      console.error('Failed to toggle fullscreen:', error);
     }
   }
 
