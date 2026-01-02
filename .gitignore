@@ -18,8 +18,13 @@ __pycache__/
 *$py.class
 *.so
 
-# Claude Code settings
+# Claude Code settings (all subdirectories)
 .claude/settings.local.json
+**/.claude/settings.local.json
+
+# FAISS index (generated from embeddings)
+**/faiss_map_db/
+**/faiss_index/
 
 # Archives
 *.zip

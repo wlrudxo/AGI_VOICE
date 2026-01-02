@@ -1,5 +1,7 @@
 # AGI Voice V2
 
+**이 README를 CLI에게 먼저 읽게 하고, 안내에 따라 설치를 진행하세요.**
+
 AI 기반 자율주행 맵 생성 및 주행 결정 연구를 위한 데스크톱 애플리케이션
 
 ## 프로젝트 개요
@@ -29,6 +31,8 @@ AGI Voice V2는 자율주행 연구를 위한 통합 플랫폼으로, 다음 기
 - **동적 프롬프트 시스템**: 캐릭터, 명령 템플릿 기반 AI 동작 제어
 
 ## 설치 및 실행
+
+> **Windows 전용 프로젝트입니다.** (Windows 10/11 권장)
 
 ### 사전 요구사항
 
@@ -65,6 +69,14 @@ AGI Voice V2는 자율주행 연구를 위한 통합 플랫폼으로, 다음 기
 
 5. **CarMaker** (선택사항 - 차량 제어 기능 사용 시 필요)
 
+6. **Python 3.10+** (선택사항 - RAG/임베딩 기능 사용 시 필요)
+   - `python`이 PATH에 있어야 합니다
+
+7. **Git Bash** (선택사항 - Claude CLI 사용 시 Windows 권장)
+   - 일반적으로 Git for Windows 설치 시 포함됩니다
+   - 경로를 못 찾는 경우 환경변수로 지정:
+     - `CLAUDE_CODE_GIT_BASH_PATH=C:\Program Files\Git\bin\bash.exe`
+
 ### 프로젝트 클론 및 설치
 
 ```bash
@@ -75,6 +87,24 @@ cd AGI_VOICE_V2
 # 의존성 설치
 npm install
 ```
+
+### (선택) RAG/임베딩 기능 준비
+
+RAG/임베딩 기능은 **OpenAI API 키**와 **Python 패키지 설치**가 필요합니다.
+
+1) `.env` 파일 생성  
+`.env.example`을 복사해 `.env`를 만들고 키를 입력합니다.
+```
+OPENAI_API_KEY=sk-proj-xxxxxxxxxx
+```
+
+2) Python 패키지 설치  
+```bash
+pip install -r MapGenerator/requirements.txt
+```
+
+3) 참고 문서  
+자세한 사용법은 `MapGenerator/README_RAG.md`를 확인하세요.
 
 ### 개발 모드 실행
 
@@ -242,6 +272,16 @@ npm run tauri build        # 프로덕션 빌드
 
 ## 문제 해결
 
+### Claude CLI 실행/인증 문제
+- Claude CLI는 설치 후 **로그인/인증이 필요**할 수 있습니다.
+- Windows에서 `bash.exe`를 못 찾는 경우:
+  - `CLAUDE_CODE_GIT_BASH_PATH` 환경변수를 설정하세요.
+
+### RAG/임베딩 기능 에러
+- `OPENAI_API_KEY` 미설정 시 오류가 발생합니다.
+- `.env` 파일이 프로젝트 루트에 있는지 확인하세요.
+- `python` 명령이 PATH에 있어야 합니다.
+
 ### Rust 빌드 오류 (Windows)
 
 **증상**: `error: linker 'link.exe' not found`
@@ -283,6 +323,10 @@ claude --version
 - `ai_chat.db` 및 `sumo_maps.db` 파일이 손상된 경우:
   1. 백업이 있다면 복원
   2. 없다면 파일 삭제 후 재시작 (자동 재생성)
+
+### 설정/DB 파일 위치
+- 기본 저장 위치: `%APPDATA%\AGI_VOICE\`
+  - `config.json`, `ai_chat.db`, `sumo_maps.db`, `faiss_index/` 등이 생성됩니다.
 
 ## 라이선스
 
