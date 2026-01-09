@@ -15,6 +15,7 @@
     conversationId?: number;
     useRuleControl: boolean;
     debugAction: string;
+    cooldown: number; // Cooldown time in milliseconds (default: 5000)
     createdAt: string;
     updatedAt: string;
   }
@@ -64,7 +65,8 @@
     name: '',
     expression: '',
     message: '',
-    debugAction: ''
+    debugAction: '',
+    cooldown: 5000 // Default 5 seconds
   });
 
   function startCreate() {
@@ -73,7 +75,8 @@
       name: '',
       expression: '',
       message: '',
-      debugAction: ''
+      debugAction: '',
+      cooldown: 5000
     };
     showForm = true;
   }
@@ -84,7 +87,8 @@
       name: trigger.name,
       expression: trigger.expression,
       message: trigger.message,
-      debugAction: trigger.debugAction
+      debugAction: trigger.debugAction,
+      cooldown: trigger.cooldown
     };
     showForm = true;
   }
@@ -111,15 +115,24 @@
         await invoke('update_trigger', {
           id: editingTrigger.id,
           request: {
-            ...formData,
-            useRuleControl: editingTrigger.useRuleControl
+            name: formData.name,
+            expression: formData.expression,
+            message: formData.message,
+            debugAction: formData.debugAction,
+            cooldown: formData.cooldown,
+            useRuleControl: editingTrigger.useRuleControl,
+            conversationId: null
           }
         });
       } else {
         // Create new (default useRuleControl to false)
         await invoke('create_trigger', {
           request: {
-            ...formData,
+            name: formData.name,
+            expression: formData.expression,
+            message: formData.message,
+            debugAction: formData.debugAction,
+            cooldown: formData.cooldown,
             conversationId: null,
             useRuleControl: false
           }
@@ -298,6 +311,25 @@
           </p>
         </div>
 
+        <!-- Cooldown -->
+        <div class="form-group">
+          <label for="cooldown" class="form-label">쿨다운 (ms)</label>
+          <div class="cooldown-input-group">
+            <input
+              type="number"
+              id="cooldown"
+              bind:value={formData.cooldown}
+              min="0"
+              step="100"
+              class="input-field cooldown-input"
+            />
+            <span class="cooldown-hint">{(formData.cooldown / 1000).toFixed(1)}초</span>
+          </div>
+          <p class="form-hint">
+            트리거 발동 후 다시 발동할 수 있을 때까지 대기 시간. 조건이 계속 충족되어도 쿨다운 중에는 재발동되지 않습니다.
+          </p>
+        </div>
+
         <!-- Form Actions -->
         <div class="form-actions">
           <button class="btn-secondary" onclick={cancelForm}>취소</button>
@@ -365,6 +397,9 @@
                 {#if trigger.useRuleControl}
                   <span class="trigger-status rule-control">규칙 제어</span>
                 {/if}
+                <span class="trigger-status cooldown">
+                  쿨다운: {(trigger.cooldown / 1000).toFixed(1)}s
+                </span>
               </div>
             </div>
 
@@ -414,6 +449,7 @@
       <li><strong>논리 연산자</strong>: AND (모두 충족) 또는 OR (하나 이상 충족)</li>
       <li><strong>LLM 메시지</strong>: 조건 충족 시 LLM에 전송할 메시지</li>
       <li><strong>Action 예시</strong>: 규칙 제어 모드에서 실행할 명령</li>
+      <li><strong>쿨다운</strong>: 발동 후 재발동까지 대기 시간 (기본 5000ms)</li>
     </ul>
   </section>
 
@@ -494,7 +530,7 @@
     <ul class="help-list">
       <li><strong>범위 조건</strong>: 단순 비교만으로는 부족한 경우가 있습니다. 예: 거리 &lt; 40 → 음수도 포함됨</li>
       <li><strong>방향 고려</strong>: 전방/후방 판별이 필요하면 > 0 또는 &lt; 0 조건을 추가하세요</li>
-      <li><strong>쿨다운</strong>: 트리거 발동 후 5초간 재발동 방지. 조건이 계속 만족되면 5초 후 다시 발동</li>
+      <li><strong>쿨다운</strong>: 트리거별로 설정 가능 (기본 5초). 트리거 발동 후 쿨다운 시간 동안 재발동 방지. 조건이 계속 만족되어도 쿨다운 중에는 무시됨</li>
       <li><strong>괄호 사용</strong>: 복잡한 조건은 괄호로 우선순위를 명확히 하세요</li>
     </ul>
   </section>
@@ -734,6 +770,12 @@
     color: var(--color-primary);
   }
 
+  .trigger-status.cooldown {
+    background: var(--color-background);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+  }
+
   .status-badges {
     display: flex;
     gap: 0.5rem;
@@ -897,5 +939,22 @@
     border-radius: 0.25rem;
     font-size: 0.85rem;
     color: var(--color-warning, #f59e0b);
+  }
+
+  /* Cooldown input group */
+  .cooldown-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .cooldown-input {
+    width: 150px;
+  }
+
+  .cooldown-hint {
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
   }
 </style>

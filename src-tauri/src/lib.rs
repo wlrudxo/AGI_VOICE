@@ -101,6 +101,11 @@ pub fn run() {
             commands::stop_simulation,
             commands::is_monitoring_active,
             commands::set_monitoring_state,
+            // Traffic Object Watching
+            commands::add_watched_traffic_object,
+            commands::remove_watched_traffic_object,
+            commands::get_watched_traffic_objects,
+            commands::clear_watched_traffic_objects,
             // Triggers
             commands::get_triggers,
             commands::get_trigger_by_id,

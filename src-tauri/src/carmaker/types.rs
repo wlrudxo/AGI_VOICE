@@ -29,6 +29,12 @@ pub struct TelemetryData {
     pub dm_v_trgt: Option<f64>,
     /// Lane offset
     pub dm_lane_offset: Option<f64>,
+    /// Ego vehicle position X in global frame (m)
+    pub car_tx: Option<f64>,
+    /// Ego vehicle position Y in global frame (m)
+    pub car_ty: Option<f64>,
+    /// AEB system active (braking)
+    pub aeb_is_active: Option<f64>,
     /// Number of traffic objects
     pub traffic_n_objs: Option<f64>,
     /// Raw data (all quantities)
@@ -50,6 +56,9 @@ impl Default for TelemetryData {
             vhcl_t_road: None,
             dm_v_trgt: None,
             dm_lane_offset: None,
+            car_tx: None,
+            car_ty: None,
+            aeb_is_active: None,
             traffic_n_objs: None,
             raw_data: HashMap::new(),
         }
@@ -80,4 +89,7 @@ pub const ESSENTIAL_QUANTITIES: &[&str] = &[
     "Vhcl.tRoad",
     "DM.v.Trgt",
     "DM.LaneOffset",
+    "Car.tx",
+    "Car.ty",
+    "LongCtrl.AEB.IsActive",
 ];

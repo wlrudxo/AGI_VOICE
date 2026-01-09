@@ -1,6 +1,7 @@
 use tauri::State;
 use tokio::sync::{Mutex, RwLock};
 use std::sync::Arc;
+use std::collections::HashSet;
 use crate::carmaker::{CarMakerClient, TelemetryData, ConnectionStatus};
 
 /// CarMaker connection state
@@ -9,6 +10,8 @@ pub struct CarMakerState {
     pub connection_status: Arc<RwLock<ConnectionStatus>>,
     pub latest_telemetry: Arc<RwLock<Option<TelemetryData>>>,
     pub monitoring_active: Arc<RwLock<bool>>,
+    /// Manually watched traffic object indices (e.g., 0 for T00, 1 for T01)
+    pub watched_traffic_objects: Arc<RwLock<HashSet<i32>>>,
 }
 
 impl CarMakerState {
@@ -23,6 +26,7 @@ impl CarMakerState {
             })),
             latest_telemetry: Arc::new(RwLock::new(None)),
             monitoring_active: Arc::new(RwLock::new(false)),
+            watched_traffic_objects: Arc::new(RwLock::new(HashSet::new())),
         }
     }
 }
@@ -105,9 +109,11 @@ pub async fn get_vehicle_status(
     state: State<'_, CarMakerState>,
 ) -> Result<TelemetryData, String> {
     let mut client_lock = state.client.lock().await;
+    let watched_objects = state.watched_traffic_objects.read().await;
+    let watched_vec: Vec<i32> = watched_objects.iter().cloned().collect();
 
     if let Some(client) = client_lock.as_mut() {
-        let telemetry = client.read_essential_quantities().await?;
+        let telemetry = client.read_essential_quantities(&watched_vec).await?;
 
         // Update cached telemetry
         let mut telemetry_lock = state.latest_telemetry.write().await;
@@ -244,4 +250,54 @@ pub async fn set_monitoring_state(
     let mut monitoring = state.monitoring_active.write().await;
     *monitoring = active;
     Ok(*monitoring)
+}
+
+/// Add a traffic object to watch list
+#[tauri::command]
+pub async fn add_watched_traffic_object(
+    index: i32,
+    state: State<'_, CarMakerState>,
+) -> Result<Vec<i32>, String> {
+    if index < 0 {
+        return Err("Traffic object index must be non-negative".to_string());
+    }
+    let mut watched = state.watched_traffic_objects.write().await;
+    watched.insert(index);
+    let mut result: Vec<i32> = watched.iter().cloned().collect();
+    result.sort();
+    Ok(result)
+}
+
+/// Remove a traffic object from watch list
+#[tauri::command]
+pub async fn remove_watched_traffic_object(
+    index: i32,
+    state: State<'_, CarMakerState>,
+) -> Result<Vec<i32>, String> {
+    let mut watched = state.watched_traffic_objects.write().await;
+    watched.remove(&index);
+    let mut result: Vec<i32> = watched.iter().cloned().collect();
+    result.sort();
+    Ok(result)
+}
+
+/// Get all watched traffic objects
+#[tauri::command]
+pub async fn get_watched_traffic_objects(
+    state: State<'_, CarMakerState>,
+) -> Result<Vec<i32>, String> {
+    let watched = state.watched_traffic_objects.read().await;
+    let mut result: Vec<i32> = watched.iter().cloned().collect();
+    result.sort();
+    Ok(result)
+}
+
+/// Clear all watched traffic objects
+#[tauri::command]
+pub async fn clear_watched_traffic_objects(
+    state: State<'_, CarMakerState>,
+) -> Result<Vec<i32>, String> {
+    let mut watched = state.watched_traffic_objects.write().await;
+    watched.clear();
+    Ok(vec![])
 }

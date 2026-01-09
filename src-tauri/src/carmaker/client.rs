@@ -184,10 +184,10 @@ impl CarMakerClient {
     }
 
     /// Read all essential quantities from CarMaker using batch DVARead
-    /// Strategy (same as Python implementation):
+    /// Strategy:
     /// 1. Batch read: Ego quantities + Traffic.nObjs (1 request)
-    /// 2. If traffic exists: Batch read all traffic data (1 request per batch)
-    pub async fn read_essential_quantities(&mut self) -> Result<TelemetryData, String> {
+    /// 2. If watched_objects is provided: Batch read only those traffic objects (1 request)
+    pub async fn read_essential_quantities(&mut self, watched_objects: &[i32]) -> Result<TelemetryData, String> {
         let mut data = TelemetryData::default();
         let mut raw_data = HashMap::new();
 
@@ -217,6 +217,9 @@ impl CarMakerClient {
                         "Vhcl.tRoad" => data.vhcl_t_road = Some(value),
                         "DM.v.Trgt" => data.dm_v_trgt = Some(value),
                         "DM.LaneOffset" => data.dm_lane_offset = Some(value),
+                        "Car.tx" => data.car_tx = Some(value),
+                        "Car.ty" => data.car_ty = Some(value),
+                        "LongCtrl.AEB.IsActive" => data.aeb_is_active = Some(value),
                         _ => {}
                     }
                 }
@@ -224,7 +227,7 @@ impl CarMakerClient {
         }
 
         // Process Traffic.nObjs
-        let n_objs = if let Some(&value_opt) = batch_results.get("Traffic.nObjs") {
+        let _n_objs = if let Some(&value_opt) = batch_results.get("Traffic.nObjs") {
             if let Some(value) = value_opt {
                 data.traffic_n_objs = Some(value);
                 raw_data.insert("Traffic.nObjs".to_string(), value);
@@ -236,16 +239,18 @@ impl CarMakerClient {
             0
         };
 
-        // Step 2: If traffic exists, batch read all traffic data
-        if n_objs > 0 {
-            // Traffic object quantities (same as Python)
+        // Step 2: Read manually watched traffic objects only
+        // Dynamic collection of all traffic objects is disabled for performance
+        // (Large scenarios with 100+ objects freeze the monitoring)
+        if !watched_objects.is_empty() {
+            // Traffic object quantities
             const TRAFFIC_OBJ_QUANTITIES: &[&str] = &[
                 "tx", "ty", "v_0.x", "v_0.y", "LongVel", "sRoad", "tRoad"
             ];
 
-            // Build all traffic variable names (T00 ~ T{nObjs-1})
+            // Build variable names for watched objects only
             let mut traffic_vars: Vec<String> = Vec::new();
-            for i in 0..n_objs {
+            for &i in watched_objects.iter() {
                 let obj_name = format!("T{:02}", i);
                 for &qty in TRAFFIC_OBJ_QUANTITIES.iter() {
                     let var = format!("Traffic.{}.{}", obj_name, qty);
@@ -256,7 +261,7 @@ impl CarMakerClient {
             // Convert to &str for batch read
             let traffic_vars_refs: Vec<&str> = traffic_vars.iter().map(|s| s.as_str()).collect();
 
-            // Batch read all traffic data in one request
+            // Batch read watched traffic data in one request
             if !traffic_vars_refs.is_empty() {
                 match self.read_values_batch(&traffic_vars_refs).await {
                     Ok(traffic_results) => {

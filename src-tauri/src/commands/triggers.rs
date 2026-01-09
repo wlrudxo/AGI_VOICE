@@ -30,6 +30,7 @@ pub async fn create_trigger(
         request.conversation_id,
         request.use_rule_control,
         request.debug_action,
+        request.cooldown,
     );
 
     state.add(trigger).await
@@ -55,6 +56,7 @@ pub async fn update_trigger(
         conversation_id: request.conversation_id,
         use_rule_control: request.use_rule_control,
         debug_action: request.debug_action,
+        cooldown: request.cooldown,
         created_at: existing.created_at,
         updated_at: chrono::Utc::now(),
     };

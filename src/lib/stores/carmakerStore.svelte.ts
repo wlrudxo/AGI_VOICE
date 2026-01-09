@@ -41,6 +41,9 @@ class CarMakerStore {
   monitorInterval: number | null = null;
   private isRequesting = false; // Prevent request overlap
 
+  // Watched traffic objects (manually added by user)
+  watchedTrafficObjects = $state<number[]>([]);
+
   // Log messages
   logMessages = $state<string[]>([]);
 
@@ -57,6 +60,10 @@ class CarMakerStore {
       if (this.isConnected) {
         this.addLog('✓ Connection restored from backend');
       }
+
+      // Load watched traffic objects
+      const watched = await invoke('get_watched_traffic_objects') as number[];
+      this.watchedTrafficObjects = watched;
     } catch (error: any) {
       this.isConnected = false;
       console.error('Failed to check connection status:', error);
@@ -292,6 +299,47 @@ class CarMakerStore {
 
     this.addLog(`✓ Reset completed: ${successCount}/${resetCommands.length} commands`);
     return { successCount, totalCount: resetCommands.length };
+  }
+
+  /**
+   * Add a traffic object to watch list
+   * @param index - Traffic object index (0 for T00, 1 for T01, etc.)
+   */
+  async addWatchedTrafficObject(index: number): Promise<void> {
+    try {
+      const result = await invoke('add_watched_traffic_object', { index }) as number[];
+      this.watchedTrafficObjects = result;
+      this.addLog(`✓ Added traffic object T${index.toString().padStart(2, '0')} to watch list`);
+    } catch (error: any) {
+      this.addLog(`✗ Failed to add traffic object: ${error}`);
+    }
+  }
+
+  /**
+   * Remove a traffic object from watch list
+   * @param index - Traffic object index
+   */
+  async removeWatchedTrafficObject(index: number): Promise<void> {
+    try {
+      const result = await invoke('remove_watched_traffic_object', { index }) as number[];
+      this.watchedTrafficObjects = result;
+      this.addLog(`✓ Removed traffic object T${index.toString().padStart(2, '0')} from watch list`);
+    } catch (error: any) {
+      this.addLog(`✗ Failed to remove traffic object: ${error}`);
+    }
+  }
+
+  /**
+   * Clear all watched traffic objects
+   */
+  async clearWatchedTrafficObjects(): Promise<void> {
+    try {
+      const result = await invoke('clear_watched_traffic_objects') as number[];
+      this.watchedTrafficObjects = result;
+      this.addLog('✓ Cleared all watched traffic objects');
+    } catch (error: any) {
+      this.addLog(`✗ Failed to clear traffic objects: ${error}`);
+    }
   }
 
   /**

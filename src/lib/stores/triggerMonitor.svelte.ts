@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { carmakerStore } from './carmakerStore.svelte';
 import { evaluateTrigger } from '$lib/utils/triggerEvaluator';
 import { parseVehicleCommands } from '$lib/actions/vehicleCommandParser';
-import { executeCommandSequence, executeRuleCommands } from '$lib/actions/vehicleCommandExecutor';
+import { executeCommandSequence } from '$lib/actions/vehicleCommandExecutor';
 
 interface Trigger {
   id: number;
@@ -13,6 +13,7 @@ interface Trigger {
   conversationId?: number;
   useRuleControl: boolean;
   debugAction: string;
+  cooldown: number; // Cooldown time in milliseconds (default: 5000)
   createdAt: string;
   updatedAt: string;
 }
@@ -126,8 +127,8 @@ class TriggerMonitor {
         this.executeTrigger(trigger, vehicleData);
         this.triggeredIds.add(trigger.id);
 
-        // Reset triggered state after 5 seconds
-        this.scheduleReset(trigger.id, 5000);
+        // Reset triggered state after cooldown period (per-trigger setting)
+        this.scheduleReset(trigger.id, trigger.cooldown);
       }
     }
   }
@@ -181,10 +182,11 @@ class TriggerMonitor {
         this.addLog('  → Resuming simulation (time scale = 1.0x)');
         await carmakerStore.resumeSimulation(wasMonitoring);
 
-        // Execute rule-based commands (parse debugAction)
+        // Execute rule-based commands (full parser supports wait, wait_until)
         if (trigger.debugAction) {
           this.addLog('  → Executing rule-based commands');
-          const result = await executeRuleCommands(trigger.debugAction, (msg) => this.addLog(msg));
+          const sequence = parseVehicleCommands(trigger.debugAction);
+          const result = await executeCommandSequence(sequence, (msg) => this.addLog(msg));
           this.addLog(`  ✓ Executed ${result.successCount}/${result.totalItems} commands (${result.executionTime}ms)`);
         }
       } else {

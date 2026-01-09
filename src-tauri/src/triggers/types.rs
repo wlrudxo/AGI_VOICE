@@ -15,8 +15,14 @@ pub struct Trigger {
     pub use_rule_control: bool, // Debug mode: skip LLM, execute action directly
     #[serde(default)] // Default to empty string if missing
     pub debug_action: String, // Action in LLM response format (always stored, activated by use_rule_control)
+    #[serde(default = "default_cooldown")] // Default to 5000ms if missing
+    pub cooldown: u32, // Cooldown time in milliseconds before trigger can fire again
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+fn default_cooldown() -> u32 {
+    5000 // 5 seconds default
 }
 
 impl Trigger {
@@ -29,6 +35,7 @@ impl Trigger {
         conversation_id: Option<i64>,
         use_rule_control: bool,
         debug_action: String,
+        cooldown: u32,
     ) -> Self {
         let now = Utc::now();
         Self {
@@ -40,6 +47,7 @@ impl Trigger {
             conversation_id,
             use_rule_control,
             debug_action,
+            cooldown,
             created_at: now,
             updated_at: now,
         }
@@ -73,6 +81,8 @@ pub struct CreateTriggerRequest {
     pub conversation_id: Option<i64>,
     pub use_rule_control: bool,
     pub debug_action: String,
+    #[serde(default = "default_cooldown")]
+    pub cooldown: u32,
 }
 
 /// Request to update a trigger
@@ -85,4 +95,6 @@ pub struct UpdateTriggerRequest {
     pub conversation_id: Option<i64>,
     pub use_rule_control: bool,
     pub debug_action: String,
+    #[serde(default = "default_cooldown")]
+    pub cooldown: u32,
 }

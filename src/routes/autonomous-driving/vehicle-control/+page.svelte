@@ -30,6 +30,9 @@
     ['Vhcl.tRoad', 'Lateral Position T (m)'],
     ['DM.v.Trgt', 'Target Speed (m/s)'],
     ['DM.LaneOffset', 'Lane Offset (m)'],
+    ['Car.tx', 'Ego Position X (m)'],
+    ['Car.ty', 'Ego Position Y (m)'],
+    ['LongCtrl.AEB.IsActive', 'AEB Active (Braking)'],
     ['Traffic.nObjs', 'Active Traffic Objects Count'],
   ];
 
@@ -94,6 +97,9 @@
 
   // Help modal
   let showHelpModal = $state(false);
+
+  // Traffic object input
+  let trafficObjectInput = $state('');
 
   // Log container auto-scroll
   let logContainer: HTMLDivElement;
@@ -167,6 +173,30 @@
     } catch (error: any) {
       carmakerStore.addLog(`✗ Reset failed: ${error}`);
     }
+  }
+
+  /**
+   * Add traffic object to watch list
+   */
+  async function addTrafficObject() {
+    const input = trafficObjectInput.trim();
+    if (!input) return;
+
+    // Parse input: accept "T00", "T01", "0", "1", etc.
+    let index: number;
+    if (input.toUpperCase().startsWith('T')) {
+      index = parseInt(input.substring(1), 10);
+    } else {
+      index = parseInt(input, 10);
+    }
+
+    if (isNaN(index) || index < 0) {
+      carmakerStore.addLog(`✗ Invalid traffic object: ${input}`);
+      return;
+    }
+
+    await carmakerStore.addWatchedTrafficObject(index);
+    trafficObjectInput = '';
   }
 </script>
 
@@ -284,9 +314,47 @@
 
   <!-- Vehicle Data Monitor -->
   <section class="card section">
-    <h2 class="section-title text-primary">
-      Vehicle Data Monitor
-    </h2>
+    <div class="section-header">
+      <h2 class="section-title text-primary">
+        Vehicle Data Monitor
+      </h2>
+    </div>
+
+    <!-- Traffic Object Watch List -->
+    <div class="traffic-watch-section">
+      <div class="traffic-input-row">
+        <input
+          type="text"
+          class="input-field traffic-input"
+          placeholder="T00 or 0"
+          bind:value={trafficObjectInput}
+          onkeydown={(e) => e.key === 'Enter' && addTrafficObject()}
+        />
+        <button class="btn-primary btn-compact" onclick={addTrafficObject}>
+          <Icon icon="solar:add-circle-bold" width="16" height="16" />
+          Add
+        </button>
+        {#if carmakerStore.watchedTrafficObjects.length > 0}
+          <button class="btn-secondary btn-compact" onclick={() => carmakerStore.clearWatchedTrafficObjects()}>
+            <Icon icon="solar:trash-bin-trash-bold" width="16" height="16" />
+            Clear All
+          </button>
+        {/if}
+      </div>
+      {#if carmakerStore.watchedTrafficObjects.length > 0}
+        <div class="traffic-chips">
+          {#each carmakerStore.watchedTrafficObjects as index}
+            <span class="traffic-chip">
+              T{index.toString().padStart(2, '0')}
+              <button class="chip-remove" onclick={() => carmakerStore.removeWatchedTrafficObject(index)}>
+                <Icon icon="solar:close-circle-bold" width="14" height="14" />
+              </button>
+            </span>
+          {/each}
+        </div>
+      {/if}
+    </div>
+
     <div class="table-wrapper" style="max-height: 600px; overflow-y: auto;">
       <table class="table monitor-table">
         <thead>
@@ -525,5 +593,62 @@
   .monitor-table th:nth-child(3),
   .monitor-table td:nth-child(3) {
     width: auto;
+  }
+
+  /* Traffic Watch Section */
+  .traffic-watch-section {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+  }
+
+  .traffic-input-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .traffic-input {
+    width: 100px;
+    padding: 0.375rem 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .traffic-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-top: 0.5rem;
+  }
+
+  .traffic-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background: var(--color-primary-bg-light);
+    color: var(--color-primary);
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .chip-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--color-primary);
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+  }
+
+  .chip-remove:hover {
+    opacity: 1;
   }
 </style>
