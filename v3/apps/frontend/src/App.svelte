@@ -1,4 +1,5 @@
 <script>
+  import SettingsView from './lib/views/SettingsView.svelte';
   import ManualControlView from './lib/views/ManualControlView.svelte';
   import VehicleControlView from './lib/views/VehicleControlView.svelte';
 
@@ -7,6 +8,7 @@
   const views = [
     { id: 'vehicle-control', label: '차량 제어' },
     { id: 'manual-control', label: '메뉴얼 제어' },
+    { id: 'settings', label: '자율주행 설정' },
   ];
 </script>
 
@@ -44,5 +46,7 @@
     <VehicleControlView />
   {:else if activeView === 'manual-control'}
     <ManualControlView />
+  {:else if activeView === 'settings'}
+    <SettingsView />
   {/if}
 </div>

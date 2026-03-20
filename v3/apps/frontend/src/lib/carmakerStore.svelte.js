@@ -1,6 +1,8 @@
 import { createCarMakerApi } from './carmakerApi';
 import { resolveBackendConfig } from './backend';
 
+const STORAGE_KEY = 'agi_voice_v3_carmaker_settings';
+
 function formatError(error) {
   return error instanceof Error ? error.message : String(error);
 }
@@ -39,6 +41,7 @@ class CarMakerStore {
     this.backendUrl = backendConfig.baseUrl;
     this.backendSource = backendConfig.source;
     this.api = createCarMakerApi(this.backendUrl);
+    this.loadPersistedSettings();
   }
 
   addLog(message) {
@@ -48,6 +51,48 @@ class CarMakerStore {
 
   clearLogs() {
     this.logMessages = [];
+  }
+
+  loadPersistedSettings() {
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
+
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        return;
+      }
+
+      const stored = JSON.parse(raw);
+      this.host = typeof stored.host === 'string' ? stored.host : this.host;
+      this.port = typeof stored.port === 'string' ? stored.port : this.port;
+      this.duration = typeof stored.duration === 'string' ? stored.duration : this.duration;
+      this.controlMode =
+        typeof stored.controlMode === 'string' ? stored.controlMode : this.controlMode;
+    } catch (error) {
+      console.warn('Failed to load persisted CarMaker settings', error);
+    }
+  }
+
+  persistSettings() {
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
+
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          host: this.host,
+          port: this.port,
+          duration: this.duration,
+          controlMode: this.controlMode,
+        })
+      );
+    } catch (error) {
+      console.warn('Failed to persist CarMaker settings', error);
+    }
   }
 
   async refreshHealth() {
@@ -151,6 +196,7 @@ class CarMakerStore {
       this.host = status?.host ?? this.host;
       this.port = String(status?.port ?? this.port);
       this.watchedTrafficObjects = await this.api.getWatchedObjects();
+      this.persistSettings();
       this.addLog('✓ Connected to CarMaker');
       await this.refreshTelemetry();
       return true;
