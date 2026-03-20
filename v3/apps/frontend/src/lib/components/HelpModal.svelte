@@ -51,6 +51,16 @@
     align-items: center;
     justify-content: center;
     background-color: var(--overlay-medium);
+    animation: fadeIn 0.15s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .modal-container {
@@ -62,6 +72,18 @@
     max-height: 85vh;
     display: flex;
     flex-direction: column;
+    animation: scaleIn 0.15s ease-out;
+  }
+
+  @keyframes scaleIn {
+    from {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
   }
 
   .modal-header {
@@ -124,6 +146,109 @@
 
   :global(.help-desc) {
     margin: 0 0 1rem 0;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+  }
+
+  :global(.command-example) {
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    padding: 0.875rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  :global(.command-example:last-child) {
+    margin-bottom: 0;
+  }
+
+  :global(.command-example.highlight) {
+    border-color: var(--color-primary);
+    background: var(--color-primary-bg-light);
+  }
+
+  :global(.command-example code) {
+    display: block;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    font-weight: 600;
+    margin-bottom: 0.375rem;
+  }
+
+  :global(.command-example p) {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+  }
+
+  :global(.param-table) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+
+  :global(.param-row) {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: var(--color-background);
+    border-radius: 0.375rem;
+    border: 1px solid var(--color-border);
+  }
+
+  :global(.param-name) {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: var(--color-primary);
+    font-size: 0.875rem;
+  }
+
+  :global(.param-desc) {
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+
+  :global(.param-desc strong) {
+    color: var(--color-text-primary);
+    font-weight: 600;
+  }
+
+  :global(.help-list) {
+    margin: 0.5rem 0 0 1.25rem;
+    padding: 0;
+    color: var(--color-text-secondary);
+    line-height: 1.8;
+  }
+
+  :global(.help-list li) {
+    margin-bottom: 0.375rem;
+  }
+
+  :global(.button-card),
+  :global(.mode-card),
+  :global(.example-card) {
+    background: var(--color-background);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  :global(.button-card h5),
+  :global(.mode-card h5),
+  :global(.example-card h5) {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-primary);
+  }
+
+  :global(.button-card p),
+  :global(.mode-card p),
+  :global(.example-card p) {
+    margin: 0;
     color: var(--color-text-secondary);
     line-height: 1.6;
   }
