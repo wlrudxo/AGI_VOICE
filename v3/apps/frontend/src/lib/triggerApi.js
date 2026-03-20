@@ -85,5 +85,22 @@ export function createTriggerApi(baseUrl = resolveBackendBaseUrl()) {
         method: 'POST',
       });
     },
+    async getMonitoring() {
+      return requestJson(request, '/api/triggers/monitoring');
+    },
+    async setMonitoring(active) {
+      return requestJson(request, '/api/triggers/monitoring', {
+        method: 'POST',
+        body: { active: Boolean(active) },
+      });
+    },
+    async getLogs() {
+      return requestJson(request, '/api/triggers/logs');
+    },
+    async clearLogs() {
+      return requestJson(request, '/api/triggers/logs', {
+        method: 'DELETE',
+      });
+    },
   };
 }

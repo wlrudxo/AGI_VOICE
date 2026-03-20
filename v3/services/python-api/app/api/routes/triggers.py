@@ -12,9 +12,42 @@ class TriggerHealthResponse(BaseModel):
     service: str = "triggers"
 
 
+class MonitoringStateRequest(BaseModel):
+    active: bool
+
+
 @router.get("/health", response_model=TriggerHealthResponse)
 async def triggers_health() -> TriggerHealthResponse:
     return TriggerHealthResponse()
+
+
+@router.get("/monitoring", response_model=bool)
+def is_monitoring_active(
+    service: TriggerService = Depends(get_trigger_service),
+) -> bool:
+    return service.is_monitoring_active()
+
+
+@router.post("/monitoring", response_model=bool)
+def set_monitoring_state(
+    request: MonitoringStateRequest,
+    service: TriggerService = Depends(get_trigger_service),
+) -> bool:
+    return service.set_monitoring_state(request.active)
+
+
+@router.get("/logs", response_model=list[str])
+def get_trigger_logs(
+    service: TriggerService = Depends(get_trigger_service),
+) -> list[str]:
+    return service.get_logs()
+
+
+@router.delete("/logs", response_model=list[str])
+def clear_trigger_logs(
+    service: TriggerService = Depends(get_trigger_service),
+) -> list[str]:
+    return service.clear_logs()
 
 
 @router.get("", response_model=list[Trigger])

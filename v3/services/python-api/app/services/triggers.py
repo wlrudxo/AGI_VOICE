@@ -1,10 +1,14 @@
 import json
+import math
+import re
 import threading
+import time
 from pathlib import Path
 
 from pydantic import ValidationError
 
 from app.core.config import get_settings
+from app.services.carmaker import CarMakerService, get_carmaker_service
 from app.schemas.triggers import (
     CreateTriggerRequest,
     Trigger,
@@ -15,10 +19,15 @@ from app.schemas.triggers import (
 
 
 class TriggerService:
-    def __init__(self, storage_path: Path) -> None:
+    def __init__(self, storage_path: Path, carmaker_service: CarMakerService) -> None:
         self._lock = threading.RLock()
         self._storage_path = storage_path
+        self._carmaker_service = carmaker_service
         self._triggers: list[Trigger] = []
+        self._log_messages: list[str] = []
+        self._monitoring_active = False
+        self._monitor_thread: threading.Thread | None = None
+        self._cooldowns: dict[int, float] = {}
         self._load()
 
     def list_triggers(self) -> list[Trigger]:
@@ -121,6 +130,33 @@ class TriggerService:
             self._save()
             return updated.model_copy(deep=True)
 
+    def is_monitoring_active(self) -> bool:
+        with self._lock:
+            return self._monitoring_active
+
+    def set_monitoring_state(self, active: bool) -> bool:
+        with self._lock:
+            if active == self._monitoring_active:
+                return self._monitoring_active
+
+            self._monitoring_active = active
+            if active:
+                self._cooldowns.clear()
+                self._add_log("✓ Started trigger monitoring (10Hz backend)")
+                self._ensure_monitor_thread()
+            else:
+                self._add_log("✓ Stopped trigger monitoring")
+            return self._monitoring_active
+
+    def get_logs(self) -> list[str]:
+        with self._lock:
+            return list(self._log_messages)
+
+    def clear_logs(self) -> list[str]:
+        with self._lock:
+            self._log_messages.clear()
+            return []
+
     def _find_trigger(self, trigger_id: int) -> Trigger | None:
         return next((trigger for trigger in self._triggers if trigger.id == trigger_id), None)
 
@@ -163,9 +199,107 @@ class TriggerService:
             encoding="utf-8",
         )
 
+    def _ensure_monitor_thread(self) -> None:
+        if self._monitor_thread is not None and self._monitor_thread.is_alive():
+            return
+
+        self._monitor_thread = threading.Thread(
+            target=self._monitor_loop,
+            name="agi-voice-v3-trigger-monitor",
+            daemon=True,
+        )
+        self._monitor_thread.start()
+
+    def _monitor_loop(self) -> None:
+        while True:
+            with self._lock:
+                active = self._monitoring_active
+
+            if not active:
+                break
+
+            try:
+                self._tick_monitoring()
+            except Exception as exc:
+                self._add_log(f"✗ Trigger runtime error: {exc}")
+
+            time.sleep(0.1)
+
+    def _tick_monitoring(self) -> None:
+        if not self._carmaker_service.is_monitoring_active():
+            return
+
+        telemetry = self._carmaker_service.get_telemetry()
+        vehicle_data = telemetry.raw_data
+        if not vehicle_data:
+            return
+
+        active_triggers = self.list_triggers()
+        now = time.time()
+
+        for trigger in active_triggers:
+            if not trigger.is_active:
+                continue
+
+            next_allowed = self._cooldowns.get(trigger.id, 0.0)
+            if now < next_allowed:
+                continue
+
+            if not self._evaluate_expression(trigger.expression, vehicle_data):
+                continue
+
+            self._cooldowns[trigger.id] = now + (trigger.cooldown / 1000.0)
+            self._add_log(f"⚡ Trigger activated: {trigger.name}")
+
+            snapshot = ", ".join(
+                f"{key}={value:.4f}"
+                for key, value in sorted(vehicle_data.items())
+            )
+            self._add_log(f"  Vehicle data: {snapshot}")
+            self._add_log("  → Trigger action pipeline pending backend migration")
+
+    def _evaluate_expression(self, expression: str, vehicle_data: dict[str, float]) -> bool:
+        if not expression.strip():
+            return False
+
+        normalized = expression.replace("&&", " and ").replace("||", " or ")
+        token_pattern = re.compile(r"\b[A-Za-z_][A-Za-z0-9_.]*\b")
+        reserved = {"and", "or", "not", "abs", "sqrt", "pow", "min", "max", "True", "False"}
+
+        def replace_token(match: re.Match[str]) -> str:
+            token = match.group(0)
+            if token in reserved:
+                return token
+            return f'_get("{token}")'
+
+        python_expr = token_pattern.sub(replace_token, normalized)
+        safe_globals = {
+            "__builtins__": {},
+            "abs": abs,
+            "sqrt": math.sqrt,
+            "pow": pow,
+            "min": min,
+            "max": max,
+        }
+        safe_locals = {
+            "_get": lambda key: vehicle_data.get(key, 0.0),
+        }
+
+        try:
+            result = eval(python_expr, safe_globals, safe_locals)
+        except Exception as exc:
+            self._add_log(f"✗ Trigger evaluation failed: {exc}")
+            return False
+
+        return bool(result)
+
+    def _add_log(self, message: str) -> None:
+        timestamp = time.strftime("%I:%M:%S %p")
+        self._log_messages = [*self._log_messages, f"[{timestamp}] {message}"][-100:]
+
 
 _settings = get_settings()
-_service = TriggerService(_settings.data_dir_path / "triggers.json")
+_service = TriggerService(_settings.data_dir_path / "triggers.json", get_carmaker_service())
 
 
 def get_trigger_service() -> TriggerService:

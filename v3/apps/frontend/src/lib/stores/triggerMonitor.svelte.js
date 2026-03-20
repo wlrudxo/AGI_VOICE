@@ -4,6 +4,7 @@ class TriggerMonitor {
   isMonitoring = $state(false);
   triggers = $state([]);
   logMessages = $state([]);
+  syncInterval = null;
 
   api = createTriggerApi();
 
@@ -14,6 +15,7 @@ class TriggerMonitor {
 
   async loadTriggers() {
     this.triggers = await this.api.getTriggers();
+    await this.syncRuntimeState();
     return this.triggers;
   }
 
@@ -58,17 +60,54 @@ class TriggerMonitor {
     }
 
     await this.loadTriggers();
-    this.isMonitoring = true;
-    this.addLog('✓ Started trigger monitoring (frontend runtime)');
+    this.isMonitoring = await this.api.setMonitoring(true);
+    await this.syncLogs();
+    this.startSyncLoop();
   }
 
-  stopMonitoring() {
-    this.isMonitoring = false;
-    this.addLog('✓ Stopped trigger monitoring');
+  async stopMonitoring() {
+    this.isMonitoring = await this.api.setMonitoring(false);
+    this.stopSyncLoop();
+    await this.syncLogs();
   }
 
-  clearLogs() {
-    this.logMessages = [];
+  async clearLogs() {
+    this.logMessages = await this.api.clearLogs();
+  }
+
+  async syncRuntimeState() {
+    this.isMonitoring = await this.api.getMonitoring();
+    await this.syncLogs();
+    if (this.isMonitoring) {
+      this.startSyncLoop();
+    } else {
+      this.stopSyncLoop();
+    }
+  }
+
+  async syncLogs() {
+    this.logMessages = await this.api.getLogs();
+  }
+
+  startSyncLoop() {
+    if (this.syncInterval !== null) {
+      return;
+    }
+
+    this.syncInterval = window.setInterval(async () => {
+      try {
+        await this.syncRuntimeState();
+      } catch (error) {
+        this.addLog(`✗ Trigger runtime sync failed: ${error}`);
+      }
+    }, 500);
+  }
+
+  stopSyncLoop() {
+    if (this.syncInterval !== null) {
+      clearInterval(this.syncInterval);
+      this.syncInterval = null;
+    }
   }
 }
 
