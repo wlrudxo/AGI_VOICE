@@ -1,12 +1,18 @@
-# V3 Frontend Placeholder
+# V3 Frontend Scaffold
 
-This directory is reserved for the V3 frontend workspace.
+Minimal Vite + Svelte workspace for the AGI Voice V3 frontend migration.
 
-Planned role:
+## Run
 
-- reuse the current Svelte UI with minimal behavioral change
-- replace direct Tauri dependencies with adapter layers
-- target the V3 Electron preload bridge and Python backend
+```bash
+cd v3/apps/frontend
+npm install
+npm run dev
+```
 
-Not scaffolded yet.
+## Notes
+
+- Dev server runs on `http://127.0.0.1:4173`
+- This is a placeholder only
+- It is intended to be replaced by the migrated UI later
 
