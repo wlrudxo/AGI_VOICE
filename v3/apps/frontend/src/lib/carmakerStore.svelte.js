@@ -277,6 +277,10 @@ class CarMakerStore {
     }
   }
 
+  async writeControl(variable, value, duration = Number(this.duration), mode = this.controlMode) {
+    return this.executeCommand(`DVAWrite ${variable} ${value} ${duration} ${mode}`);
+  }
+
   async setGas(value, duration = Number(this.duration)) {
     try {
       const result = await this.api.setGas(value, duration);
@@ -306,6 +310,28 @@ class CarMakerStore {
       return result;
     } catch (error) {
       this.addLog(`✗ Steer command failed: ${formatError(error)}`);
+      throw error;
+    }
+  }
+
+  async setLaneOffset(value, duration = Number(this.duration), mode = this.controlMode) {
+    try {
+      const result = await this.writeControl('DM.LaneOffset', value, duration, mode);
+      this.addLog(`✓ Lane offset set to ${value}`);
+      return result;
+    } catch (error) {
+      this.addLog(`✗ Lane offset command failed: ${formatError(error)}`);
+      throw error;
+    }
+  }
+
+  async setTargetVelocity(value, duration = Number(this.duration), mode = this.controlMode) {
+    try {
+      const result = await this.writeControl('DM.v.Trgt', value, duration, mode);
+      this.addLog(`✓ Target velocity set to ${value}`);
+      return result;
+    } catch (error) {
+      this.addLog(`✗ Target velocity command failed: ${formatError(error)}`);
       throw error;
     }
   }
