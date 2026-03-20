@@ -1,3 +1,4 @@
+import asyncio
 import json
 import math
 import re
@@ -9,7 +10,10 @@ from dataclasses import dataclass
 from pydantic import ValidationError
 
 from app.core.config import get_settings
+from app.schemas.chat import ChatRequest
 from app.services.carmaker import CarMakerService, get_carmaker_service
+from app.services.chat import ChatService, get_chat_service
+from app.services.settings import SettingsService, get_settings_service
 from app.schemas.triggers import (
     CreateTriggerRequest,
     Trigger,
@@ -39,10 +43,18 @@ class WaitUntilCommand:
 
 
 class TriggerService:
-    def __init__(self, storage_path: Path, carmaker_service: CarMakerService) -> None:
+    def __init__(
+        self,
+        storage_path: Path,
+        carmaker_service: CarMakerService,
+        chat_service: ChatService,
+        settings_service: SettingsService,
+    ) -> None:
         self._lock = threading.RLock()
         self._storage_path = storage_path
         self._carmaker_service = carmaker_service
+        self._chat_service = chat_service
+        self._settings_service = settings_service
         self._triggers: list[Trigger] = []
         self._log_messages: list[str] = []
         self._monitoring_active = False
@@ -296,9 +308,13 @@ class TriggerService:
                 self._add_log("  → Rule mode: executing backend rule action")
                 self._execute_command_sequence(trigger.debug_action)
             else:
-                self._add_log("  → LLM mode pending backend chat migration")
+                self._add_log("  → LLM mode: requesting AI response")
+                llm_response = asyncio.run(self._request_llm(trigger, vehicle_data))
                 self._add_log("  → Resuming simulation (time scale = 1.0x)")
                 self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 1000 Abs")
+                if llm_response:
+                    self._add_log("  → Parsing LLM response and executing commands")
+                    self._execute_command_sequence(llm_response)
             self._add_log("  ✓ Trigger action sequence completed")
         except Exception as exc:
             self._add_log(f"  ✗ Trigger action failed: {exc}")
@@ -343,6 +359,46 @@ class TriggerService:
             return False
 
         return bool(result)
+
+    async def _request_llm(self, trigger: Trigger, vehicle_data: dict[str, float]) -> str | None:
+        try:
+            trigger_ai = self._settings_service.get_trigger_ai_settings()
+            chat_settings = self._settings_service.get_chat_settings()
+            request = ChatRequest(
+                message="Trigger activated. Please provide vehicle control response.",
+                system_context=self._build_system_context(trigger, vehicle_data),
+                role="system",
+                exclude_history=trigger_ai.exclude_history,
+                no_save=trigger_ai.exclude_history,
+                model=trigger_ai.model or chat_settings.default_claude_model,
+                character_id=trigger_ai.character_id or chat_settings.default_character_id,
+                prompt_template_id=(
+                    trigger_ai.prompt_template_id or chat_settings.default_prompt_template_id
+                ),
+            )
+            response = await self._chat_service.chat(request)
+            if not response.responses:
+                self._add_log("  ⚠ LLM returned no response")
+                return None
+
+            llm_response = response.responses[0]
+            self._add_log(f"  ✓ LLM response received ({len(llm_response)} chars)")
+            return llm_response
+        except Exception as exc:
+            self._add_log(f"  ✗ LLM request failed: {exc}")
+            return None
+
+    def _build_system_context(self, trigger: Trigger, vehicle_data: dict[str, float]) -> str:
+        data_snapshot = "\n".join(
+            f"{key}: {value:.4f}"
+            for key, value in sorted(vehicle_data.items())
+        )
+        return (
+            "## Current Vehicle Data:\n"
+            f"{data_snapshot}\n\n"
+            "## Trigger Message:\n"
+            f"{trigger.message}"
+        )
 
     def _execute_command_sequence(self, debug_action: str) -> None:
         items = self._parse_command_sequence(debug_action)
@@ -511,7 +567,12 @@ class TriggerService:
 
 
 _settings = get_settings()
-_service = TriggerService(_settings.data_dir_path / "triggers.json", get_carmaker_service())
+_service = TriggerService(
+    _settings.data_dir_path / "triggers.json",
+    get_carmaker_service(),
+    get_chat_service(),
+    get_settings_service(),
+)
 
 
 def get_trigger_service() -> TriggerService:
