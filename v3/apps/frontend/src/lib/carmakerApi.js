@@ -103,6 +103,12 @@ export function createCarMakerApi(baseUrl = resolveBackendBaseUrl()) {
         body: { value: Number(value), duration },
       });
     },
+    async setTargetSpeed(value, duration = null) {
+      return requestJson(request, '/api/carmaker/control/target-speed', {
+        method: 'POST',
+        body: { value: Number(value), duration },
+      });
+    },
     async getWatchedObjects() {
       return requestJson(request, '/api/carmaker/watched-objects');
     },
