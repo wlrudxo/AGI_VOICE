@@ -4,6 +4,7 @@ import re
 import threading
 import time
 from pathlib import Path
+from dataclasses import dataclass
 
 from pydantic import ValidationError
 
@@ -18,6 +19,25 @@ from app.schemas.triggers import (
 )
 
 
+@dataclass
+class VehicleCommand:
+    variable: str
+    value: float
+    duration: int
+    mode: str
+
+
+@dataclass
+class WaitCommand:
+    milliseconds: int
+
+
+@dataclass
+class WaitUntilCommand:
+    condition: str
+    timeout: int = 30000
+
+
 class TriggerService:
     def __init__(self, storage_path: Path, carmaker_service: CarMakerService) -> None:
         self._lock = threading.RLock()
@@ -28,6 +48,7 @@ class TriggerService:
         self._monitoring_active = False
         self._monitor_thread: threading.Thread | None = None
         self._cooldowns: dict[int, float] = {}
+        self._is_executing = False
         self._load()
 
     def list_triggers(self) -> list[Trigger]:
@@ -229,6 +250,9 @@ class TriggerService:
         if not self._carmaker_service.is_monitoring_active():
             return
 
+        if self._is_executing:
+            return
+
         telemetry = self._carmaker_service.get_telemetry()
         vehicle_data = telemetry.raw_data
         if not vehicle_data:
@@ -256,7 +280,34 @@ class TriggerService:
                 for key, value in sorted(vehicle_data.items())
             )
             self._add_log(f"  Vehicle data: {snapshot}")
-            self._add_log("  → Trigger action pipeline pending backend migration")
+            self._execute_trigger(trigger, vehicle_data)
+
+    def _execute_trigger(self, trigger: Trigger, vehicle_data: dict[str, float]) -> None:
+        self._is_executing = True
+        try:
+            self._add_log("  → Pausing simulation (time scale = 0.001x)")
+            self._carmaker_service.execute_command("DVAWrite SC.TAccel 0.001 30000 Abs")
+
+            if trigger.use_rule_control and trigger.debug_action.strip():
+                self._add_log("  → Rule mode: waiting 1 second")
+                time.sleep(1.0)
+                self._add_log("  → Resuming simulation (time scale = 1.0x)")
+                self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 1000 Abs")
+                self._add_log("  → Rule mode: executing backend rule action")
+                self._execute_command_sequence(trigger.debug_action)
+            else:
+                self._add_log("  → LLM mode pending backend chat migration")
+                self._add_log("  → Resuming simulation (time scale = 1.0x)")
+                self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 1000 Abs")
+            self._add_log("  ✓ Trigger action sequence completed")
+        except Exception as exc:
+            self._add_log(f"  ✗ Trigger action failed: {exc}")
+            try:
+                self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 1000 Abs")
+            except Exception:
+                pass
+        finally:
+            self._is_executing = False
 
     def _evaluate_expression(self, expression: str, vehicle_data: dict[str, float]) -> bool:
         if not expression.strip():
@@ -292,6 +343,167 @@ class TriggerService:
             return False
 
         return bool(result)
+
+    def _execute_command_sequence(self, debug_action: str) -> None:
+        items = self._parse_command_sequence(debug_action)
+        pending_infinite: list[VehicleCommand] = []
+
+        for item in items:
+            if isinstance(item, WaitCommand):
+                self._add_log(f"    ⏱ wait {item.milliseconds}ms")
+                time.sleep(item.milliseconds / 1000.0)
+                continue
+
+            if isinstance(item, WaitUntilCommand):
+                self._add_log(f"    ⏳ wait_until {item.condition}")
+                self._execute_wait_until(item)
+                if pending_infinite:
+                    self._add_log(f"    ↻ Resetting {len(pending_infinite)} infinite-duration command(s)")
+                    for command in pending_infinite:
+                        reset = VehicleCommand(
+                            variable=command.variable,
+                            value=command.value,
+                            duration=1,
+                            mode=command.mode,
+                        )
+                        self._execute_vehicle_command(reset, log_prefix="    ✓ Reset")
+                    pending_infinite.clear()
+                continue
+
+            self._execute_vehicle_command(item)
+            if item.duration == -1:
+                pending_infinite.append(item)
+
+            time.sleep(0.05)
+
+    def _execute_vehicle_command(self, command: VehicleCommand, log_prefix: str = "    ✓") -> None:
+        actual_duration = 99999 if command.duration == -1 else command.duration
+        raw_command = (
+            f"DVAWrite {command.variable} {command.value} {actual_duration} {command.mode}"
+        )
+        self._carmaker_service.execute_command(raw_command)
+        duration_label = "99999ms (infinite)" if command.duration == -1 else f"{command.duration}ms"
+        self._add_log(
+            f"{log_prefix} {command.variable} = {command.value} | {duration_label} | {command.mode}"
+        )
+
+    def _execute_wait_until(self, wait_command: WaitUntilCommand) -> None:
+        parsed = self._parse_simple_condition(wait_command.condition)
+        if parsed is None:
+            raise RuntimeError(f"Invalid wait_until condition: {wait_command.condition}")
+
+        start_time = time.time()
+        iteration = 0
+        while True:
+            elapsed_ms = int((time.time() - start_time) * 1000)
+            if elapsed_ms > wait_command.timeout:
+                raise RuntimeError(f"Timeout after {wait_command.timeout}ms: {wait_command.condition}")
+
+            telemetry = self._carmaker_service.get_telemetry()
+            vehicle_data = telemetry.raw_data
+            current_value = vehicle_data.get(parsed["variable"])
+
+            if iteration % 10 == 0 and current_value is not None:
+                self._add_log(
+                    f"    → {parsed['variable']} = {current_value:.4f} (checking {parsed['operator']} {parsed['value']})"
+                )
+
+            if current_value is not None and self._evaluate_simple_condition(parsed, current_value):
+                self._add_log(f"    ✓ Condition met: {parsed['variable']} = {current_value:.4f}")
+                return
+
+            iteration += 1
+            time.sleep(0.1)
+
+    def _parse_command_sequence(
+        self, text: str
+    ) -> list[VehicleCommand | WaitCommand | WaitUntilCommand]:
+        items: list[VehicleCommand | WaitCommand | WaitUntilCommand] = []
+        code_block_match = re.search(r"```(?:[\w]*)\n([\s\S]*?)\n```", text)
+        command_text = code_block_match.group(1) if code_block_match else text
+
+        for raw_line in command_text.splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or line.startswith("//"):
+                continue
+
+            wait_match = re.match(r"^wait\s*\(?(\d+)\)?$", line, re.IGNORECASE)
+            if wait_match:
+                items.append(WaitCommand(milliseconds=int(wait_match.group(1))))
+                continue
+
+            wait_until_match = re.match(
+                r"^wait_until\s+(.+?)(?:\s+(\d+))?$", line, re.IGNORECASE
+            )
+            if wait_until_match:
+                items.append(
+                    WaitUntilCommand(
+                        condition=wait_until_match.group(1).strip(),
+                        timeout=int(wait_until_match.group(2) or 30000),
+                    )
+                )
+                continue
+
+            command_match = re.match(
+                r"^\s*([A-Za-z0-9._]+)\s*=\s*([0-9.-]+)\s*\|\s*(-?\d+)(?:\s*\|\s*(AbsRamp|FacRamp|Abs|Off|Fac))?$",
+                line,
+                re.IGNORECASE,
+            )
+            if command_match:
+                items.append(
+                    VehicleCommand(
+                        variable=command_match.group(1),
+                        value=float(command_match.group(2)),
+                        duration=int(command_match.group(3)),
+                        mode=command_match.group(4) or "Abs",
+                    )
+                )
+                continue
+
+            legacy_match = re.match(r"^\s*([A-Za-z0-9._]+)\s*=\s*([0-9.-]+)\s*$", line)
+            if legacy_match:
+                items.append(
+                    VehicleCommand(
+                        variable=legacy_match.group(1),
+                        value=float(legacy_match.group(2)),
+                        duration=2000,
+                        mode="Abs",
+                    )
+                )
+
+        return items
+
+    def _parse_simple_condition(self, condition: str) -> dict[str, str] | None:
+        match = re.match(
+            r"^\s*([A-Za-z0-9._]+)\s*(>=|<=|==|!=|>|<)\s*([0-9.-]+)\s*$",
+            condition,
+        )
+        if not match:
+            return None
+
+        return {
+            "variable": match.group(1),
+            "operator": match.group(2),
+            "value": match.group(3),
+        }
+
+    def _evaluate_simple_condition(self, condition: dict[str, str], actual_value: float) -> bool:
+        expected = float(condition["value"])
+        operator = condition["operator"]
+
+        if operator == ">":
+            return actual_value > expected
+        if operator == "<":
+            return actual_value < expected
+        if operator == ">=":
+            return actual_value >= expected
+        if operator == "<=":
+            return actual_value <= expected
+        if operator == "==":
+            return abs(actual_value - expected) < 1e-4
+        if operator == "!=":
+            return abs(actual_value - expected) >= 1e-4
+        return False
 
     def _add_log(self, message: str) -> None:
         timestamp = time.strftime("%I:%M:%S %p")
