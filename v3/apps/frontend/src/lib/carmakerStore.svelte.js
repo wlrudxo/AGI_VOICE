@@ -14,6 +14,9 @@ class CarMakerStore {
   isConnected = $state(false);
   connectionStatus = $state(null);
 
+  duration = $state('2000');
+  controlMode = $state('Abs');
+
   isMonitoring = $state(false);
   monitorData = $state({});
   telemetry = $state(null);
@@ -40,7 +43,7 @@ class CarMakerStore {
 
   addLog(message) {
     const timestamp = new Date().toLocaleTimeString();
-    this.logMessages = [`[${timestamp}] ${message}`, ...this.logMessages].slice(0, 12);
+    this.logMessages = [`[${timestamp}] ${message}`, ...this.logMessages].slice(0, 100);
   }
 
   clearLogs() {
@@ -73,7 +76,7 @@ class CarMakerStore {
       this.watchedTrafficObjects = await this.api.getWatchedObjects();
 
       if (this.isConnected && !wasConnected) {
-        this.addLog('Connection restored from backend');
+        this.addLog('✓ Connection restored from backend');
       }
 
       if (!this.isConnected) {
@@ -91,7 +94,7 @@ class CarMakerStore {
         port: Number(this.port),
         lastError: formatError(error),
       };
-      this.addLog(`Status check failed: ${formatError(error)}`);
+      this.addLog(`✗ Status check failed: ${formatError(error)}`);
     }
   }
 
@@ -100,7 +103,7 @@ class CarMakerStore {
       this.isMonitoring = await this.api.getMonitoring();
     } catch (error) {
       this.isMonitoring = false;
-      this.addLog(`Monitoring state error: ${formatError(error)}`);
+      this.addLog(`✗ Monitoring state error: ${formatError(error)}`);
     }
   }
 
@@ -113,7 +116,7 @@ class CarMakerStore {
       return telemetry;
     } catch (error) {
       this.telemetryError = formatError(error);
-      this.addLog(`Telemetry error: ${this.telemetryError}`);
+      this.addLog(`✗ Telemetry error: ${this.telemetryError}`);
       throw error;
     }
   }
@@ -141,13 +144,14 @@ class CarMakerStore {
   async connect() {
     this.busy = true;
     try {
+      this.addLog(`Connecting to ${this.host}:${this.port}...`);
       const status = await this.api.connect(this.host, this.port);
       this.connectionStatus = status;
       this.isConnected = Boolean(status?.connected);
       this.host = status?.host ?? this.host;
       this.port = String(status?.port ?? this.port);
       this.watchedTrafficObjects = await this.api.getWatchedObjects();
-      this.addLog(`Connected to ${this.host}:${this.port}`);
+      this.addLog('✓ Connected to CarMaker');
       await this.refreshTelemetry();
       return true;
     } catch (error) {
@@ -158,7 +162,7 @@ class CarMakerStore {
         port: Number(this.port),
         lastError: formatError(error),
       };
-      this.addLog(`Connection failed: ${formatError(error)}`);
+      this.addLog(`✗ Connection failed: ${formatError(error)}`);
       return false;
     } finally {
       this.busy = false;
@@ -168,7 +172,9 @@ class CarMakerStore {
   async disconnect() {
     this.busy = true;
     try {
-      this.stopPollingLoop();
+      if (this.isMonitoring) {
+        await this.stopMonitoring();
+      }
       const status = await this.api.disconnect();
       this.connectionStatus = status;
       this.isConnected = false;
@@ -177,10 +183,10 @@ class CarMakerStore {
       this.telemetry = null;
       this.telemetryError = '';
       this.watchedTrafficObjects = [];
-      this.addLog('Disconnected from CarMaker');
+      this.addLog('✓ Disconnected from CarMaker');
       return true;
     } catch (error) {
-      this.addLog(`Disconnect failed: ${formatError(error)}`);
+      this.addLog(`✗ Disconnect failed: ${formatError(error)}`);
       return false;
     } finally {
       this.busy = false;
@@ -220,10 +226,10 @@ class CarMakerStore {
       if (this.isMonitoring) {
         this.startPollingLoop();
         await this.refreshTelemetry();
-        this.addLog('Started monitoring');
+        this.addLog('✓ Started monitoring');
       }
     } catch (error) {
-      this.addLog(`Failed to start monitoring: ${formatError(error)}`);
+      this.addLog(`✗ Failed to start monitoring: ${formatError(error)}`);
     } finally {
       this.busy = false;
     }
@@ -235,9 +241,9 @@ class CarMakerStore {
       this.stopPollingLoop();
       this.isMonitoring = false;
       await this.api.setMonitoring(false);
-      this.addLog('Stopped monitoring');
+      this.addLog('✓ Stopped monitoring');
     } catch (error) {
-      this.addLog(`Failed to stop monitoring: ${formatError(error)}`);
+      this.addLog(`✗ Failed to stop monitoring: ${formatError(error)}`);
     } finally {
       this.busy = false;
     }
@@ -255,7 +261,7 @@ class CarMakerStore {
     try {
       const result = await this.api.executeCommand(command);
       this.lastCommandResult = String(result);
-      this.addLog(`Command executed: ${command}`);
+      this.addLog(`✓ Command executed: ${command}`);
       await this.checkConnectionStatus();
       try {
         await this.refreshTelemetry();
@@ -266,42 +272,111 @@ class CarMakerStore {
     } catch (error) {
       const message = formatError(error);
       this.lastCommandResult = message;
-      this.addLog(`Command failed: ${message}`);
+      this.addLog(`✗ Command failed: ${message}`);
       throw error;
     }
   }
 
-  async setGas(value, duration = null) {
+  async setGas(value, duration = Number(this.duration)) {
     try {
       const result = await this.api.setGas(value, duration);
-      this.addLog(`Gas set to ${value}`);
+      this.addLog(`✓ Gas set to ${value}`);
       return result;
     } catch (error) {
-      this.addLog(`Gas command failed: ${formatError(error)}`);
+      this.addLog(`✗ Gas command failed: ${formatError(error)}`);
       throw error;
     }
   }
 
-  async setBrake(value, duration = null) {
+  async setBrake(value, duration = Number(this.duration)) {
     try {
       const result = await this.api.setBrake(value, duration);
-      this.addLog(`Brake set to ${value}`);
+      this.addLog(`✓ Brake set to ${value}`);
       return result;
     } catch (error) {
-      this.addLog(`Brake command failed: ${formatError(error)}`);
+      this.addLog(`✗ Brake command failed: ${formatError(error)}`);
       throw error;
     }
   }
 
-  async setSteer(value, duration = null) {
+  async setSteer(value, duration = Number(this.duration)) {
     try {
       const result = await this.api.setSteer(value, duration);
-      this.addLog(`Steer set to ${value}`);
+      this.addLog(`✓ Steer set to ${value}`);
       return result;
     } catch (error) {
-      this.addLog(`Steer command failed: ${formatError(error)}`);
+      this.addLog(`✗ Steer command failed: ${formatError(error)}`);
       throw error;
     }
+  }
+
+  async pauseSimulation() {
+    const wasMonitoring = this.isMonitoring;
+
+    try {
+      if (wasMonitoring) {
+        await this.stopMonitoring();
+        this.addLog('→ Monitoring paused (prevent timeout in low-speed mode)');
+      }
+
+      await this.executeCommand('DVAWrite SC.TAccel 0.001 30000 Abs');
+      this.addLog('✓ Simulation paused (time scale = 0.001)');
+      return wasMonitoring;
+    } catch (error) {
+      this.addLog(`✗ Failed to pause simulation: ${formatError(error)}`);
+      throw error;
+    }
+  }
+
+  async resumeSimulation(restartMonitoring = false) {
+    try {
+      await this.executeCommand('DVAWrite SC.TAccel 1.0 30000 Abs');
+      this.addLog('✓ Simulation resumed (time scale = 1.0)');
+
+      if (restartMonitoring) {
+        await this.startMonitoring();
+        this.addLog('→ Monitoring resumed');
+      }
+    } catch (error) {
+      this.addLog(`✗ Failed to resume simulation: ${formatError(error)}`);
+      throw error;
+    }
+  }
+
+  async emergencyDecelerate(duration = 5000) {
+    try {
+      await this.setGas(0.0, duration);
+      await this.setBrake(1.0, duration);
+      this.addLog('⚠️ Emergency deceleration activated');
+    } catch (error) {
+      this.addLog(`✗ Emergency deceleration failed: ${formatError(error)}`);
+      throw error;
+    }
+  }
+
+  async resetAllControls() {
+    this.addLog('🔄 Resetting all vehicle control commands...');
+
+    const resetCommands = [
+      { variable: 'DM.Gas', value: 0 },
+      { variable: 'DM.Brake', value: 0 },
+      { variable: 'DM.Steer.Ang', value: 0 },
+      { variable: 'DM.v.Trgt', value: 0 },
+      { variable: 'DM.LaneOffset', value: 0 },
+    ];
+
+    let successCount = 0;
+    for (const cmd of resetCommands) {
+      try {
+        await this.executeCommand(`DVAWrite ${cmd.variable} ${cmd.value} 1 Abs`);
+        successCount += 1;
+      } catch (error) {
+        this.addLog(`  ✗ Failed to reset ${cmd.variable}: ${formatError(error)}`);
+      }
+    }
+
+    this.addLog(`✓ Reset completed: ${successCount}/${resetCommands.length} commands`);
+    return { successCount, totalCount: resetCommands.length };
   }
 
   async refreshWatchedTrafficObjects() {
@@ -309,7 +384,7 @@ class CarMakerStore {
       this.watchedTrafficObjects = await this.api.getWatchedObjects();
       return this.watchedTrafficObjects;
     } catch (error) {
-      this.addLog(`Watched object refresh failed: ${formatError(error)}`);
+      this.addLog(`✗ Watched object refresh failed: ${formatError(error)}`);
       throw error;
     }
   }
@@ -317,7 +392,7 @@ class CarMakerStore {
   async addWatchedTrafficObject(index) {
     try {
       this.watchedTrafficObjects = await this.api.addWatchedObject(index);
-      this.addLog(`Watched object added: ${index}`);
+      this.addLog(`✓ Added traffic object T${Number(index).toString().padStart(2, '0')} to watch list`);
       try {
         await this.refreshTelemetry();
       } catch {
@@ -325,7 +400,7 @@ class CarMakerStore {
       }
       return this.watchedTrafficObjects;
     } catch (error) {
-      this.addLog(`Add watched object failed: ${formatError(error)}`);
+      this.addLog(`✗ Add watched object failed: ${formatError(error)}`);
       throw error;
     }
   }
@@ -333,7 +408,7 @@ class CarMakerStore {
   async removeWatchedTrafficObject(index) {
     try {
       this.watchedTrafficObjects = await this.api.removeWatchedObject(index);
-      this.addLog(`Watched object removed: ${index}`);
+      this.addLog(`✓ Removed traffic object T${Number(index).toString().padStart(2, '0')} from watch list`);
       try {
         await this.refreshTelemetry();
       } catch {
@@ -341,7 +416,7 @@ class CarMakerStore {
       }
       return this.watchedTrafficObjects;
     } catch (error) {
-      this.addLog(`Remove watched object failed: ${formatError(error)}`);
+      this.addLog(`✗ Remove watched object failed: ${formatError(error)}`);
       throw error;
     }
   }
@@ -349,7 +424,7 @@ class CarMakerStore {
   async clearWatchedTrafficObjects() {
     try {
       this.watchedTrafficObjects = await this.api.clearWatchedObjects();
-      this.addLog('Watched objects cleared');
+      this.addLog('✓ Cleared all watched traffic objects');
       try {
         await this.refreshTelemetry();
       } catch {
@@ -357,13 +432,17 @@ class CarMakerStore {
       }
       return this.watchedTrafficObjects;
     } catch (error) {
-      this.addLog(`Clear watched objects failed: ${formatError(error)}`);
+      this.addLog(`✗ Clear watched objects failed: ${formatError(error)}`);
       throw error;
     }
   }
 
-  destroy() {
+  cleanup() {
     this.stopPollingLoop();
+  }
+
+  destroy() {
+    this.cleanup();
   }
 }
 
