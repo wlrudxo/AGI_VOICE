@@ -2,11 +2,12 @@
   import { onMount } from 'svelte';
   import Icon from '@iconify/svelte';
   import HelpModal from '../components/HelpModal.svelte';
+  import { createSettingsApi } from '../settingsApi.js';
   import { carmakerStore } from '../stores/carmakerStore.svelte.js';
 
-  const SETTINGS_STORAGE_KEY = 'agi_voice_v3_autonomous_settings';
   const controlModes = ['Abs', 'Off', 'Fac', 'AbsRamp', 'FacRamp'];
   const claudeModels = ['sonnet', 'haiku', 'opus'];
+  const settingsApi = createSettingsApi();
 
   let saving = $state(false);
   let message = $state(null);
@@ -23,34 +24,35 @@
   let selectedPromptTemplateId = $state('');
   let selectedModel = $state('sonnet');
 
-  function loadSettings() {
+  async function loadSettings() {
     carmakerStore.loadPersistedSettings();
 
-    if (typeof localStorage === 'undefined') {
-      return;
-    }
-
     try {
-      const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
-      if (!raw) {
-        return;
-      }
+      const [charactersData, promptTemplatesData, chatSettings, triggerAiSettings] = await Promise.all([
+        settingsApi.getCharacters(),
+        settingsApi.getPromptTemplates(),
+        settingsApi.getChatSettings(),
+        settingsApi.getTriggerAiSettings(),
+      ]);
 
-      const stored = JSON.parse(raw);
-      vehicleCommandParsingEnabled = Boolean(stored.vehicleCommandParsingEnabled);
-      excludeHistory = stored.excludeHistory !== false;
-      selectedCharacterId = stored.selectedCharacterId ?? '';
-      selectedPromptTemplateId = stored.selectedPromptTemplateId ?? '';
-      selectedModel =
-        typeof stored.selectedModel === 'string' ? stored.selectedModel : selectedModel;
+      characters = charactersData;
+      promptTemplates = promptTemplatesData;
+      selectedCharacterId = String(
+        triggerAiSettings.characterId ?? chatSettings.defaultCharacterId ?? ''
+      );
+      selectedPromptTemplateId = String(
+        triggerAiSettings.promptTemplateId ?? chatSettings.defaultPromptTemplateId ?? ''
+      );
+      selectedModel = triggerAiSettings.model ?? chatSettings.defaultClaudeModel ?? selectedModel;
+      excludeHistory = triggerAiSettings.excludeHistory !== false;
     } catch (error) {
-      console.warn('Failed to load autonomous settings', error);
+      console.warn('Failed to load autonomous settings from backend', error);
     }
   }
 
   onMount(async () => {
     await carmakerStore.checkConnectionStatus();
-    loadSettings();
+    await loadSettings();
   });
 
   async function connect() {
@@ -87,16 +89,19 @@
       message = null;
 
       carmakerStore.persistSettings();
-      localStorage.setItem(
-        SETTINGS_STORAGE_KEY,
-        JSON.stringify({
-          vehicleCommandParsingEnabled,
+      await Promise.all([
+        settingsApi.updateChatSettings({
+          defaultCharacterId: selectedCharacterId ? Number(selectedCharacterId) : null,
+          defaultPromptTemplateId: selectedPromptTemplateId ? Number(selectedPromptTemplateId) : null,
+          defaultClaudeModel: selectedModel,
+        }),
+        settingsApi.updateTriggerAiSettings({
           excludeHistory,
-          selectedCharacterId,
-          selectedPromptTemplateId,
-          selectedModel,
-        })
-      );
+          characterId: selectedCharacterId ? Number(selectedCharacterId) : null,
+          promptTemplateId: selectedPromptTemplateId ? Number(selectedPromptTemplateId) : null,
+          model: selectedModel,
+        }),
+      ]);
 
       message = { type: 'success', text: '설정이 저장되었습니다.' };
       setTimeout(() => {
@@ -277,10 +282,7 @@
           </div>
         </div>
 
-        <p class="helper-text">
-          캐릭터/템플릿 목록은 아직 Python API 연동 전입니다. 현재는 UX 보존을 위해 빈 목록 상태로
-          유지됩니다.
-        </p>
+        <p class="helper-text">트리거 AI 설정은 이제 Python backend에 저장됩니다.</p>
       </div>
     </div>
   </div>
