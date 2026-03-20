@@ -10,6 +10,7 @@
     "check": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
+    "@iconify/svelte": "^5.2.1",
     "svelte": "^5.0.0"
   },
   "devDependencies": {
