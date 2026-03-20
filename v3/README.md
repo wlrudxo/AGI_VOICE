@@ -34,6 +34,23 @@ v3/
 
 Run each part independently for now.
 
+### Windows One-Click Startup
+
+From Windows Explorer or a terminal, run:
+
+```bat
+v3\start_v3_dev.bat
+```
+
+This opens three separate consoles for:
+
+- frontend
+- Python API
+- Electron shell
+
+The batch file does not install dependencies automatically.
+If something is missing, each console prints the required setup step.
+
 ### Python API
 
 ```bash
