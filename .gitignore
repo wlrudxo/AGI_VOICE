@@ -28,3 +28,12 @@ __pycache__/
 
 # Archives
 *.zip
+
+# V3 workspace
+v3/**/node_modules/
+v3/**/.venv/
+v3/**/__pycache__/
+v3/**/*.py[cod]
+v3/**/.pytest_cache/
+v3/**/dist/
+v3/**/.vite/
