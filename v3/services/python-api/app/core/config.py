@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -10,7 +11,7 @@ class Settings(BaseSettings):
     api_host: str = "127.0.0.1"
     api_port: int = 8000
     cors_origins: list[str] = ["http://localhost:4173"]
-    data_dir: str = ".data"
+    data_dir: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -20,7 +21,14 @@ class Settings(BaseSettings):
 
     @property
     def data_dir_path(self) -> Path:
-        return Path(self.data_dir)
+        if self.data_dir:
+            return Path(self.data_dir)
+
+        appdata = os.getenv("APPDATA")
+        if appdata:
+            return Path(appdata) / "AGI_VOICE_V3"
+
+        return Path.home() / ".local" / "share" / "AGI_VOICE_V3"
 
 
 @lru_cache(maxsize=1)
