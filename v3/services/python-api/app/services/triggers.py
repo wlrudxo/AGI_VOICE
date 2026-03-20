@@ -2,6 +2,8 @@ import json
 import threading
 from pathlib import Path
 
+from pydantic import ValidationError
+
 from app.core.config import get_settings
 from app.schemas.triggers import (
     CreateTriggerRequest,
@@ -144,7 +146,13 @@ class TriggerService:
             self._save()
             return
 
-        collection = TriggerCollection.model_validate(payload)
+        try:
+            collection = TriggerCollection.model_validate(payload)
+        except ValidationError:
+            self._triggers = []
+            self._save()
+            return
+
         self._triggers = list(collection.triggers)
 
     def _save(self) -> None:

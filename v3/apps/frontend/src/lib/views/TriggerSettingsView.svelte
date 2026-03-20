@@ -17,6 +17,10 @@
     triggers = await triggerMonitor.loadTriggers();
   }
 
+  function syncTriggersFromStore() {
+    triggers = [...triggerMonitor.triggers];
+  }
+
   const availableVariables = [
     { key: 'Time', desc: 'Simulation Time (s)' },
     { key: 'DM.Gas', desc: 'Gas Pedal (0-1)' },
@@ -108,10 +112,7 @@
         });
       }
 
-      await loadTriggers();
-      if (triggerMonitor.isMonitoring) {
-        await triggerMonitor.loadTriggers();
-      }
+      syncTriggersFromStore();
       cancelForm();
     } catch (error) {
       dialogStore.alert(`트리거 저장 실패: ${error}`, '오류');
@@ -121,10 +122,7 @@
   async function toggleActive(id) {
     try {
       await triggerMonitor.toggleActive(id);
-      await loadTriggers();
-      if (triggerMonitor.isMonitoring) {
-        await triggerMonitor.loadTriggers();
-      }
+      syncTriggersFromStore();
     } catch (error) {
       dialogStore.alert(`트리거 토글 실패: ${error}`, '오류');
     }
@@ -133,10 +131,7 @@
   async function toggleRuleControl(id) {
     try {
       await triggerMonitor.toggleRuleControl(id);
-      await loadTriggers();
-      if (triggerMonitor.isMonitoring) {
-        await triggerMonitor.loadTriggers();
-      }
+      syncTriggersFromStore();
     } catch (error) {
       dialogStore.alert(`규칙 제어 토글 실패: ${error}`, '오류');
     }
@@ -150,10 +145,7 @@
 
     try {
       await triggerMonitor.deleteTrigger(id);
-      await loadTriggers();
-      if (triggerMonitor.isMonitoring) {
-        await triggerMonitor.loadTriggers();
-      }
+      syncTriggersFromStore();
     } catch (error) {
       dialogStore.alert(`트리거 삭제 실패: ${error}`, '오류');
     }
