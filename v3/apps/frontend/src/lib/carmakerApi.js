@@ -85,6 +85,24 @@ export function createCarMakerApi(baseUrl = resolveBackendBaseUrl()) {
         body: { command },
       });
     },
+    async setGas(value, duration = null) {
+      return requestJson(request, '/api/carmaker/control/gas', {
+        method: 'POST',
+        body: { value: Number(value), duration },
+      });
+    },
+    async setBrake(value, duration = null) {
+      return requestJson(request, '/api/carmaker/control/brake', {
+        method: 'POST',
+        body: { value: Number(value), duration },
+      });
+    },
+    async setSteer(value, duration = null) {
+      return requestJson(request, '/api/carmaker/control/steer', {
+        method: 'POST',
+        body: { value: Number(value), duration },
+      });
+    },
     async getWatchedObjects() {
       return requestJson(request, '/api/carmaker/watched-objects');
     },
