@@ -2,6 +2,7 @@
   import Icon from '@iconify/svelte';
   import Tooltip from './lib/components/Tooltip.svelte';
   import SettingsView from './lib/views/SettingsView.svelte';
+  import ChatView from './lib/views/ChatView.svelte';
   import ManualControlView from './lib/views/ManualControlView.svelte';
   import TriggerSettingsView from './lib/views/TriggerSettingsView.svelte';
   import VehicleControlView from './lib/views/VehicleControlView.svelte';
@@ -12,6 +13,7 @@
   const views = [
     { id: 'vehicle-control', icon: 'solar:widget-2-bold-duotone', label: '차량 제어' },
     { id: 'manual-control', icon: 'solar:gameboy-bold-duotone', label: '메뉴얼 제어' },
+    { id: 'chat', icon: 'solar:chat-round-bold-duotone', label: 'AI 채팅' },
     { id: 'triggers', icon: 'solar:atom-bold-duotone', label: '트리거 설정' },
     { id: 'settings', icon: 'solar:settings-bold-duotone', label: '설정' },
   ];
@@ -79,6 +81,8 @@
       <VehicleControlView />
     {:else if activeView === 'manual-control'}
       <ManualControlView />
+    {:else if activeView === 'chat'}
+      <ChatView />
     {:else if activeView === 'triggers'}
       <TriggerSettingsView />
     {:else if activeView === 'settings'}
