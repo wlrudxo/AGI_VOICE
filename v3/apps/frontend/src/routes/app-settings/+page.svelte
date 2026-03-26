@@ -9,7 +9,6 @@
     claudeWorkspaceDir: string;
     databaseFilePath: string;
     databaseBackupEnabled: boolean;
-    minimizeToTray: boolean;
     keepConversationPrompts: boolean;
     defaultClaudeModel: string;
   }
@@ -34,7 +33,6 @@
     claudeWorkspaceDir: '',
     databaseFilePath: '',
     databaseBackupEnabled: true,
-    minimizeToTray: false,
     keepConversationPrompts: true,
     defaultClaudeModel: 'sonnet'
   });
@@ -104,11 +102,18 @@
 
   async function exportDb() {
     try {
-      const destination = prompt('Export할 파일 경로를 입력하세요:', 'agi_voice.db');
-      if (!destination) return; // User cancelled
+      const result = await window.desktop?.dialog?.saveFile?.({
+        title: 'Export Database',
+        defaultPath: 'agi_voice.db',
+        filters: [{ name: 'SQLite Database', extensions: ['db'] }]
+      });
+      if (!result || result.canceled || !result.filePath) return;
 
-      await requestJson('/api/settings/db/export', { method: 'POST', body: { destination } });
-      dbMessage = { type: 'success', text: 'DB를 성공적으로 내보냈습니다.' };
+      const response = await requestJson<{ message: string }>('/api/settings/db/export', {
+        method: 'POST',
+        body: { destination: result.filePath }
+      });
+      dbMessage = { type: 'success', text: response.message || 'DB를 성공적으로 내보냈습니다.' };
       setTimeout(() => { dbMessage = null; }, 3000);
     } catch (err: any) {
       dbMessage = { type: 'error', text: err?.message || 'Export 실패' };
@@ -117,13 +122,22 @@
 
   async function importDb() {
     try {
-      const source = prompt('Import할 DB 파일 경로를 입력하세요:');
-      if (!source) return; // User cancelled
+      const result = await window.desktop?.dialog?.openFile?.({
+        title: 'Import Database',
+        multiple: false,
+        directory: false,
+        filters: [{ name: 'SQLite Database', extensions: ['db'] }]
+      });
+      const source = result?.filePaths?.[0];
+      if (!source) return;
 
       if (!confirm('현재 DB를 백업한 후 import합니다. 계속하시겠습니까?')) return;
 
-      await requestJson('/api/settings/db/import', { method: 'POST', body: { source } });
-      dbMessage = { type: 'success', text: 'DB를 성공적으로 가져왔습니다. 앱을 재시작하세요.' };
+      const response = await requestJson<{ message: string }>('/api/settings/db/import', {
+        method: 'POST',
+        body: { source }
+      });
+      dbMessage = { type: 'success', text: response.message || 'DB를 성공적으로 가져왔습니다. 앱을 재시작하세요.' };
       loadDbInfo();
     } catch (err: any) {
       dbMessage = { type: 'error', text: err?.message || 'Import 실패' };
@@ -132,8 +146,8 @@
 
   async function syncNow() {
     try {
-      const result = await requestJson<string>('/api/settings/db/sync', { method: 'POST' });
-      dbMessage = { type: 'success', text: result || '동기화 완료' };
+      const result = await requestJson<{ message: string }>('/api/settings/db/sync', { method: 'POST' });
+      dbMessage = { type: 'success', text: result.message || '동기화 완료' };
       setTimeout(() => { dbMessage = null; }, 3000);
     } catch (err: any) {
       dbMessage = { type: 'error', text: err?.message || '동기화 실패' };
@@ -144,25 +158,45 @@
     try {
       if (!confirm('이 백업으로 복원하시겠습니까? 현재 DB는 백업됩니다.')) return;
 
-      await requestJson('/api/settings/db/restore', { method: 'POST', body: { backup_path: backupPath } });
-      dbMessage = { type: 'success', text: '백업에서 복원했습니다. 앱을 재시작하세요.' };
+      const result = await requestJson<{ message: string }>('/api/settings/db/restore', {
+        method: 'POST',
+        body: { backup_path: backupPath }
+      });
+      dbMessage = { type: 'success', text: result.message || '백업에서 복원했습니다. 앱을 재시작하세요.' };
       loadDbInfo();
     } catch (err: any) {
       dbMessage = { type: 'error', text: err?.message || '복원 실패' };
     }
   }
 
-  function browseDatabasePath() {
-    const selected = prompt('데이터베이스 파일 경로를 입력하세요:', settings.databaseFilePath || 'agi_voice.db');
-    if (selected) {
-      settings.databaseFilePath = selected;
+  async function browseDatabasePath() {
+    try {
+      const result = await window.desktop?.dialog?.saveFile?.({
+        title: '데이터베이스 파일 경로 선택',
+        defaultPath: settings.databaseFilePath || 'agi_voice.db',
+        filters: [{ name: 'SQLite Database', extensions: ['db'] }]
+      });
+      if (result?.filePath) {
+        settings.databaseFilePath = result.filePath;
+      }
+    } catch (err) {
+      console.error('Failed to select database path:', err);
     }
   }
 
-  function browseClaudeWorkspace() {
-    const selected = prompt('Claude 실행 폴더 경로를 입력하세요:', settings.claudeWorkspaceDir || '');
-    if (selected) {
-      settings.claudeWorkspaceDir = selected;
+  async function browseClaudeWorkspace() {
+    try {
+      const result = await window.desktop?.dialog?.openFile?.({
+        title: 'Claude 실행 폴더 선택',
+        multiple: false,
+        directory: true
+      });
+      const selected = result?.filePaths?.[0];
+      if (selected) {
+        settings.claudeWorkspaceDir = selected;
+      }
+    } catch (err) {
+      console.error('Failed to select Claude workspace:', err);
     }
   }
 
@@ -173,7 +207,6 @@
 
     const unsubscribe = settingsStore.subscribe(state => {
       minimizeToTray = state.minimizeToTray;
-      settings.minimizeToTray = state.minimizeToTray;
     });
 
     return () => {
@@ -218,7 +251,6 @@
             type="checkbox"
             bind:checked={minimizeToTray}
             onchange={async () => {
-              settings.minimizeToTray = minimizeToTray;
               await settingsStore.setMinimizeToTray(minimizeToTray);
             }}
           />
@@ -267,7 +299,7 @@
               데이터베이스 백업 활성화
             </label>
             <p class="text-xs mt-1 text-muted">
-              서버 종료 시 자동으로 타임스탬프 백업을 생성합니다 (최근 10개 유지).<br>
+              서버 종료 시 자동으로 타임스탬프 백업을 생성합니다 (최근 5개 유지).<br>
               백업 위치: <code>AppData\Roaming\AGI_VOICE\backups\</code>
             </p>
           </div>
@@ -480,7 +512,7 @@
     <h4>💡 설정 안내</h4>
     <ul class="help-list">
       <li><strong>데이터베이스 경로</strong>: 원드라이브 등 클라우드 경로를 지정하면 여러 PC에서 동기화됩니다.</li>
-      <li><strong>백업</strong>: 앱 종료 시 자동 백업 (타임스탬프 파일명, 최근 10개 유지).</li>
+      <li><strong>백업</strong>: 앱 종료 시 자동 백업 (타임스탬프 파일명, 최근 5개 유지).</li>
       <li><strong>기본 DB/백업 위치</strong>: <code>AppData\Roaming\AGI_VOICE\ai_chat.db</code> / <code>AppData\Roaming\AGI_VOICE\backups\</code></li>
       <li><strong>Claude 실행 폴더</strong>: AI 채팅 시 Claude CLI가 실행될 작업 디렉토리입니다.</li>
       <li>비어있으면 기본값(<code>AppData\Roaming\AGI_VOICE</code>)을 사용합니다.</li>
@@ -500,7 +532,7 @@
   <section class="help-section">
     <h4>💾 백업 관리</h4>
     <p class="help-desc">
-      최근 10개의 백업 파일 목록을 확인하고 복원할 수 있습니다.
+      최근 5개의 백업 파일 목록을 확인하고 복원할 수 있습니다.
       각 백업은 타임스탬프 파일명으로 저장되며, 복원 버튼을 통해 이전 상태로 되돌릴 수 있습니다.
     </p>
   </section>

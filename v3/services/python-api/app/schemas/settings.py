@@ -14,7 +14,6 @@ class AppSettings(CamelModel):
     claude_workspace_dir: str = ""
     database_file_path: str = ""
     database_backup_enabled: bool = True
-    minimize_to_tray: bool = False
     default_character_id: int | None = None
     default_prompt_template_id: int | None = None
     keep_conversation_prompts: bool = True

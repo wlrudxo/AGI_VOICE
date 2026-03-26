@@ -390,7 +390,8 @@ class ChatService:
             target = Path(app_settings.claude_workspace_dir.strip())
         else:
             settings = get_settings()
-            target = settings.data_dir_path / "workspace"
+            # V2 defaults Claude CLI to the AppData root directory, not a workspace subfolder.
+            target = settings.data_dir_path
         target.mkdir(parents=True, exist_ok=True)
         return target
 
