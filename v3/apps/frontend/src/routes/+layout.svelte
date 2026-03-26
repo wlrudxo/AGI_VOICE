@@ -65,6 +65,14 @@
     }
   }
 
+  function setupTrayListeners() {
+    return window.desktop?.window?.onEvent?.((event) => {
+      if (event?.eventName === 'tray-restore') {
+        uiStore.restoreModeFromTray();
+      }
+    });
+  }
+
   async function handleCloseRequest(event) {
     if (isClosing) {
       return;
@@ -117,10 +125,12 @@
     window.addEventListener('keydown', handleKeyDown);
 
     const unlistenCloseRequested = window.desktop?.window?.onCloseRequested?.(handleCloseRequest);
+    const unlistenTray = setupTrayListeners();
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       unlistenCloseRequested?.();
+      unlistenTray?.();
     };
   });
 </script>

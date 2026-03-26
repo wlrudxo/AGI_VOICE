@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, dialog, globalShortcut, ipcMain, screen } from 'electron';
+import { app, BrowserWindow, Menu, Tray, dialog, globalShortcut, ipcMain, screen } from 'electron';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +13,8 @@ const FRONTEND_CHECK_TIMEOUT_MS = 1200;
 
 let mainWindow = null;
 let isRendererClosing = false;
+let isAppQuitting = false;
+let tray = null;
 
 function toSizePayload(size) {
   if (!Array.isArray(size) || size.length < 2) {
@@ -74,7 +76,7 @@ function createWindow() {
   mainWindow.on('resize', () => sendWindowEvent('resize', { size: toSizePayload(mainWindow?.getSize()) }));
   mainWindow.on('move', () => sendWindowEvent('move', { position: toPositionPayload(mainWindow?.getPosition()) }));
   mainWindow.on('close', (event) => {
-    if (!isRendererClosing) {
+    if (!isRendererClosing && !isAppQuitting) {
       event.preventDefault();
       sendWindowEvent('close-requested', {
         window: getWindowSnapshot(),
@@ -91,6 +93,47 @@ function createWindow() {
   });
 
   mainWindow.setMenuBarVisibility(false);
+}
+
+function restoreFromTray() {
+  if (!mainWindow) {
+    return;
+  }
+
+  mainWindow.show();
+  mainWindow.focus();
+  sendWindowEvent('tray-restore');
+}
+
+function createTray() {
+  if (tray) {
+    return;
+  }
+
+  const iconPath = path.resolve(__dirname, '../../../src-tauri/icons/32x32.png');
+  tray = new Tray(iconPath);
+  tray.setToolTip('AGI Voice V3');
+
+  const menu = Menu.buildFromTemplate([
+    {
+      id: 'open',
+      label: '열기',
+      click: () => restoreFromTray(),
+    },
+    {
+      id: 'quit',
+      label: '종료',
+      click: () => {
+        isAppQuitting = true;
+        app.quit();
+      },
+    },
+  ]);
+
+  tray.setContextMenu(menu);
+  tray.on('click', () => {
+    restoreFromTray();
+  });
 }
 
 function getWindowSnapshot() {
@@ -181,6 +224,7 @@ function registerDefaultShortcuts() {
 app.whenReady().then(async () => {
   Menu.setApplicationMenu(null);
   createWindow();
+  createTray();
   await loadInitialContent();
   registerDefaultShortcuts();
 
@@ -204,6 +248,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('will-quit', () => {
+  isAppQuitting = true;
   globalShortcut.unregisterAll();
 });
 
