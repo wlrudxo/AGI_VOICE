@@ -1,0 +1,74 @@
+\relax 
+\emailauthor{kyoungsh@hanyang.ac.kr}{Kyoungseok Han\corref {cor1}}
+\Newlabel{cor1}{1}
+\citation{pang2026large,ryu2025curricullm}
+\citation{mao2023gpt}
+\citation{lu2025omnitester}
+\citation{liang2024eurekaverse,pang2026large,ryu2025curricullm}
+\citation{wen2023dilu}
+\citation{fu2024drive}
+\citation{shinn2023reflexion}
+\citation{madaan2023self}
+\Newlabel{1}{a}
+\@writefile{toc}{\contentsline {section}{\numberline {1}서론}{1}{}\protected@file@percent }
+\newlabel{sec:introduction}{{1}{1}{}{section.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2}시스템 아키텍처}{2}{}\protected@file@percent }
+\newlabel{sec:architecture}{{2}{2}{}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}전체 시스템 개요}{2}{}\protected@file@percent }
+\newlabel{sec:system_overview}{{2.1}{2}{}{subsection.2.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}CarMaker TCP 실시간 통신}{2}{}\protected@file@percent }
+\newlabel{sec:carmaker_tcp}{{2.2}{2}{}{subsection.2.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}트리거 기반 제어 루프}{2}{}\protected@file@percent }
+\newlabel{sec:trigger_loop}{{2.3}{2}{}{subsection.2.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}통합 명령 포맷}{2}{}\protected@file@percent }
+\newlabel{sec:command_format}{{2.4}{2}{}{subsection.2.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}실험 환경 및 방법}{2}{}\protected@file@percent }
+\newlabel{sec:methodology}{{3}{2}{}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}시뮬레이션 환경}{2}{}\protected@file@percent }
+\newlabel{sec:simulation_env}{{3.1}{2}{}{subsection.3.1}{}}
+\citation{kim2020collision}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces LLM 에이전트 기반 자율주행 판단 시스템의 전체 아키텍처. 대화 인터페이스와 트리거 모니터가 CarMaker 시뮬레이션 및 LLM과 연동되어 시뮬레이션 연동형 판단과 제어를 수행한다.}}{3}{}\protected@file@percent }
+\newlabel{fig_system_architecture}{{1}{3}{}{figure.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces 트리거 조건 설정 예시. 속도 초과, 추돌 조건, 복합 조건(AND/OR), 수학 함수 활용 등 다양한 형태의 트리거를 사용자가 정의할 수 있다.}}{3}{}\protected@file@percent }
+\newlabel{fig_trigger_examples}{{2}{3}{}{figure.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}평가 시나리오 및 지표}{3}{}\protected@file@percent }
+\newlabel{sec:evaluation}{{3.2}{3}{}{subsection.3.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}실험 결과}{3}{}\protected@file@percent }
+\newlabel{sec:results}{{4}{3}{}{section.4}{}}
+\newlabel{fig_result_none}{{3(a)}{4}{}{subfigure.3.1}{}}
+\newlabel{sub@fig_result_none}{{(a)}{4}}
+\newlabel{fig_result_single}{{3(b)}{4}{}{subfigure.3.2}{}}
+\newlabel{sub@fig_result_single}{{(b)}{4}}
+\newlabel{fig_result_loop}{{3(c)}{4}{}{subfigure.3.3}{}}
+\newlabel{sub@fig_result_loop}{{(c)}{4}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces CarMaker AEB 테스트 시나리오에서의 제어 방식별 차량 거동 비교. (a) Rule-based: 제동만으로 보행자 충돌 불가피, (b) Single-shot: 좌측 회피를 시도하나 과조향으로 건물과 충돌, (c) Feedback Loop: 이전 판단을 보정하여 보행자 회피 및 차로 내 제어 유지.}}{4}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {subfigure}{\numberline{(a)}{\ignorespaces {Rule-based (AEB 제동만 적용)}}}{4}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {subfigure}{\numberline{(b)}{\ignorespaces {LLM Single-shot (1회 판단)}}}{4}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {subfigure}{\numberline{(c)}{\ignorespaces {LLM Feedback Loop (반복 판단)}}}{4}{}\protected@file@percent }
+\newlabel{fig_scenario_comparison}{{3}{4}{}{figure.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces 제어 방식별 차량 궤적 비교. Rule-based는 직진 후 보행자와 충돌, Single-shot은 좌측 회피를 시도하나 보도 영역에서 충돌, Feedback Loop는 보행자를 회피하며 차로 내 제어를 유지하였다.}}{4}{}\protected@file@percent }
+\newlabel{fig_trajectory}{{4}{4}{}{figure.4}{}}
+\bibstyle{elsarticle-num}
+\bibdata{ref}
+\bibcite{pang2026large}{{1}{}{{}}{{}}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces 제어 방식별 조향각 및 제동 입력 비교. (a) Rule-based는 조향이 거의 없으며, Single-shot과 Feedback Loop는 LLM이 생성한 조향 명령이 반영된다. (b) 세 방식 모두 AEB 제동이 작동하며, LLM 방식은 추가 제동 명령을 생성한다.}}{5}{}\protected@file@percent }
+\newlabel{fig_control}{{5}{5}{}{figure.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces 제어 방식별 차량 응답 비교. (a) 차량 속도 변화. (b) 요레이트 변화로, Single-shot에서 과도한 요레이트가 발생하여 차량 안정성이 저하됨을 확인할 수 있다.}}{5}{}\protected@file@percent }
+\newlabel{fig_response}{{6}{5}{}{figure.6}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Comparison of control methods.}}{5}{}\protected@file@percent }
+\newlabel{tab_comparison}{{1}{5}{}{table.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}논의}{5}{}\protected@file@percent }
+\newlabel{sec:discussion}{{4.1}{5}{}{subsection.4.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}결론}{5}{}\protected@file@percent }
+\newlabel{sec:conclusion}{{5}{5}{}{section.5}{}}
+\bibcite{ryu2025curricullm}{{2}{}{{}}{{}}}
+\bibcite{mao2023gpt}{{3}{}{{}}{{}}}
+\bibcite{lu2025omnitester}{{4}{}{{}}{{}}}
+\bibcite{liang2024eurekaverse}{{5}{}{{}}{{}}}
+\bibcite{wen2023dilu}{{6}{}{{}}{{}}}
+\bibcite{fu2024drive}{{7}{}{{}}{{}}}
+\bibcite{shinn2023reflexion}{{8}{}{{}}{{}}}
+\bibcite{madaan2023self}{{9}{}{{}}{{}}}
+\bibcite{kim2020collision}{{10}{}{{}}{{}}}
+\providecommand\NAT@force@numbers{}\NAT@force@numbers
+\gdef \@abspage@last{6}

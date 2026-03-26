@@ -1,0 +1,60 @@
+\relax 
+\emailauthor{kyoungsh@hanyang.ac.kr}{Kyoungseok Han\corref {cor1}}
+\Newlabel{cor1}{1}
+\citation{tong2025machine}
+\citation{kim2023comparison}
+\Newlabel{1}{a}
+\Newlabel{2}{b}
+\@writefile{toc}{\contentsline {section}{\numberline {1}서론}{1}{}\protected@file@percent }
+\newlabel{sec:introduction}{{1}{1}{}{section.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces 가상 타이어 마모 센싱에 활용되는 표준 차량 센서}}{1}{}\protected@file@percent }
+\newlabel{fig_vehicle_sensors}{{1}{1}{}{figure.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2}시스템 개요 및 문제 정의}{1}{}\protected@file@percent }
+\newlabel{sec:system_overview}{{2}{1}{}{section.2}{}}
+\citation{pacejka2005tire,kim2025study,zhang2023analysis}
+\citation{pacejka2005tire}
+\citation{zhang2023analysis}
+\citation{kan2020tire}
+\citation{lin2020connected}
+\citation{rajamani2006vehicle}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}타이어 트레드 깊이와 차량 동역학에 미치는 영향}{2}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces 세 가지 마모 단계에서의 타이어 폭 방향 트레드 깊이 분포. 외측(GV1 Out)부터 내측(GV6 In)까지 6개 홈 위치에서 측정된 결과는 신품에서 마모 상태로의 점진적 깊이 감소를 보여줌}}{2}{}\protected@file@percent }
+\newlabel{fig_tire_wear}{{2}{2}{}{figure.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}물리 기반 특징 설계}{2}{}\protected@file@percent }
+\newlabel{eq:lateral_gain}{{1}{2}{}{equation.1}{}}
+\newlabel{eq:yaw_gain}{{2}{2}{}{equation.2}{}}
+\citation{han2017adaptive}
+\citation{ejsmont2022temperature}
+\citation{kravchenko2012research,giechaskiel2025tire}
+\citation{breiman2001random}
+\citation{bentejac2021comparative}
+\citation{awad2015support}
+\citation{zhang2022review}
+\newlabel{eq:slip_ratio}{{3}{3}{}{equation.3}{}}
+\newlabel{eq:path_curvature}{{4}{3}{}{equation.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}실험 방법론}{3}{}\protected@file@percent }
+\newlabel{sec:methodology}{{3}{3}{}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}시스템 아키텍처}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}데이터셋 설명}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}머신러닝 모델 및 스태킹 앙상블}{3}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces 가상 타이어 트레드 깊이 추정을 위한 시스템 아키텍처. 시스템은 세 단계로 구성됨: (1) 플릿 주행 데이터와 실측 트레드 깊이 측정값을 결합하는 데이터 수집, (2) 앙상블 방법을 사용한 예측 모델 훈련을 위한 오프라인 학습, (3) 표준 차량 센서로부터 실시간 트레드 깊이 모니터링을 가능하게 하는 온라인 추정.}}{4}{}\protected@file@percent }
+\newlabel{fig_system_overview}{{3}{4}{}{figure.3}{}}
+\citation{berrar2019cross}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces 평균 트레드 깊이와 차량 감속 슬립 비율 간의 관계.}}{5}{}\protected@file@percent }
+\newlabel{fig_tread_slip}{{4}{5}{}{figure.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}실험 결과}{5}{}\protected@file@percent }
+\newlabel{sec:results}{{4}{5}{}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}실험 설정}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}모델 성능 비교}{5}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Individual model performance (Test RMSE).}}{5}{}\protected@file@percent }
+\newlabel{tab_individual_models}{{1}{5}{}{table.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}최종 앙상블 결과}{5}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Ensemble model performance on test set.}}{5}{}\protected@file@percent }
+\newlabel{tab_final_results}{{2}{5}{}{table.2}{}}
+\bibstyle{elsarticle-num}
+\bibdata{references}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces 테스트 세트에서 최종 앙상블 모델을 사용한 후륜 우측(RR) 타이어 위치의 실제 대 예측 평균 트레드 깊이(mm) 비교 산점도.}}{6}{}\protected@file@percent }
+\newlabel{fig_scatter_plot}{{5}{6}{}{figure.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}결론}{6}{}\protected@file@percent }
+\newlabel{sec:conclusion}{{5}{6}{}{section.5}{}}
+\gdef \@abspage@last{6}

@@ -1,0 +1,61 @@
+\begin{thebibliography}{10}
+\expandafter\ifx\csname url\endcsname\relax
+  \def\url#1{\texttt{#1}}\fi
+\expandafter\ifx\csname urlprefix\endcsname\relax\def\urlprefix{URL }\fi
+\expandafter\ifx\csname href\endcsname\relax
+  \def\href#1#2{#2} \def\path#1{#1}\fi
+
+\bibitem{pang2026large}
+H.~Pang, Z.~Wang, G.~Li, Large language model guided deep reinforcement
+  learning for safe autonomous vehicle decision making, Transportation Research
+  Part C: Emerging Technologies 184 (2026) 105511.
+
+\bibitem{ryu2025curricullm}
+K.~Ryu, Q.~Liao, Z.~Li, P.~Delgosha, K.~Sreenath, N.~Mehr, Curricullm:
+  Automatic task curricula design for learning complex robot skills using large
+  language models, in: 2025 IEEE International Conference on Robotics and
+  Automation (ICRA), IEEE, 2025, pp. 4470--4477.
+
+\bibitem{mao2023gpt}
+J.~Mao, Y.~Qian, J.~Ye, H.~Zhao, Y.~Wang, Gpt-driver: Learning to drive with
+  gpt, in: NeurIPS 2023 Foundation Models for Decision Making Workshop, 2023.
+
+\bibitem{lu2025omnitester}
+Q.~Lu, X.~Wang, Y.~Jiang, G.~Zhao, M.~Ma, S.~Feng, Omnitester: Multimodal large
+  language model driven scenario testing for autonomous vehicles, Automotive
+  Innovation 8~(4) (2025) 838--852.
+
+\bibitem{liang2024eurekaverse}
+W.~Liang, S.~Wang, H.-J. Wang, O.~Bastani, D.~Jayaraman, Y.~J. Ma, Eurekaverse:
+  Environment curriculum generation via large language models, arXiv preprint
+  arXiv:2411.01775 (2024).
+
+\bibitem{wen2023dilu}
+L.~Wen, D.~Fu, X.~Li, X.~Cai, T.~Ma, P.~Cai, M.~Dou, B.~Shi, L.~He, Y.~Qiao,
+  Dilu: A knowledge-driven approach to autonomous driving with large language
+  models, in: The Twelfth International Conference on Learning Representations,
+  2024.
+
+\bibitem{fu2024drive}
+D.~Fu, X.~Li, L.~Wen, M.~Dou, P.~Cai, B.~Shi, Y.~Qiao, Drive like a human:
+  Rethinking autonomous driving with large language models, in: 2024 IEEE/CVF
+  Winter Conference on Applications of Computer Vision Workshops (WACVW), IEEE,
+  2024, pp. 910--919.
+
+\bibitem{shinn2023reflexion}
+N.~Shinn, F.~Cassano, A.~Gopinath, K.~Narasimhan, S.~Yao, Reflexion: Language
+  agents with verbal reinforcement learning, Advances in neural information
+  processing systems 36 (2023) 8634--8652.
+
+\bibitem{madaan2023self}
+A.~Madaan, N.~Tandon, P.~Gupta, S.~Hallinan, L.~Gao, S.~Wiegreffe, U.~Alon,
+  N.~Dziri, S.~Prabhumoye, Y.~Yang, et~al., Self-refine: Iterative refinement
+  with self-feedback, Advances in neural information processing systems 36
+  (2023) 46534--46594.
+
+\bibitem{kim2020collision}
+김동균, 김승기, 이상호, 안창선, 충돌회피 조향시스템의
+  한계성능 분석 및 회피 조향제어기 설계,
+  한국자동차공학회 논문집 28~(3) (2020) 219--225.
+
+\end{thebibliography}
