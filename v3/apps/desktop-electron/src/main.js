@@ -1,5 +1,6 @@
 import { app, BrowserWindow, Menu, Tray, dialog, globalShortcut, ipcMain, screen } from 'electron';
 import fs from 'node:fs/promises';
+import fsSync from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -122,7 +123,13 @@ function createTray() {
     return;
   }
 
-  const iconPath = path.resolve(__dirname, '../../../src-tauri/icons/32x32.png');
+  const iconFile = process.platform === 'win32' ? 'icon.ico' : '32x32.png';
+  const iconPath = path.resolve(__dirname, '../../../../src-tauri/icons', iconFile);
+  if (!fsSync.existsSync(iconPath)) {
+    console.warn(`Tray icon not found: ${iconPath}`);
+    return;
+  }
+
   tray = new Tray(iconPath);
   tray.setToolTip('AGI Voice V3');
 
