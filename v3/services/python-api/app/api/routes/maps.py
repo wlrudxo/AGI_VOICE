@@ -66,6 +66,13 @@ def build_all_embeddings(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@router.get("/embeddings/health", response_model=str)
+def embeddings_health(
+    service: MapService = Depends(get_map_service),
+) -> str:
+    return service.embeddings_health()
+
+
 @router.get("/{map_id}", response_model=MapRecord)
 def get_map_by_id(
     map_id: int,

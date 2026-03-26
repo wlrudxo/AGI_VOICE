@@ -218,8 +218,15 @@ class MapService:
             embedded_count=embedded_count,
             skipped_count=skipped_count,
             embedding_model=self.EMBEDDING_MODEL,
-            index_path=str(self._db_path),
+            index_path=str(self._resolve_embedding_index_path()),
             error=None,
+        )
+
+    def embeddings_health(self) -> str:
+        return (
+            "Embeddings module OK\n"
+            f"Index path: {self._resolve_embedding_index_path()}\n"
+            f"DB path: {self._db_path}"
         )
 
     def search_maps(self, query: str, top_k: int = 5) -> list[MapSearchResult]:
@@ -375,6 +382,13 @@ class MapService:
             except sqlite3.OperationalError:
                 pass
             conn.commit()
+
+    def _resolve_embedding_index_path(self) -> Path:
+        # Compatibility path for V2-style diagnostics. The Python port uses SQLite FTS internally,
+        # but still exposes a dedicated index location in health/build responses.
+        index_path = get_settings().data_dir_path / "faiss_index"
+        index_path.mkdir(parents=True, exist_ok=True)
+        return index_path
 
 
 _settings = get_settings()
