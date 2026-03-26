@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { requestJson } from '$lib/backend';
 	import { uiStore } from '$lib/stores/uiStore';
+	import { autonomousDrivingSettingsStore } from '$lib/stores/autonomousDrivingSettingsStore';
 	import Icon from '@iconify/svelte';
 	import { marked } from 'marked';
 	import { parseActions, parseWithSegments, getActionLabel } from '$lib/actions/parser';
@@ -331,11 +332,7 @@
 
 	// Check if vehicle command parsing is enabled
 	function isVehicleCommandParsingEnabled() {
-		try {
-			return localStorage.getItem('carmaker_command_parsing_enabled') === 'true';
-		} catch (error) {
-			return false;
-		}
+		return autonomousDrivingSettingsStore.getCurrentState().vehicleCommandParsingEnabled;
 	}
 
 	// 응답 처리 (재귀 가능)

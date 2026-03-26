@@ -27,6 +27,14 @@ class TriggerAiSettings(CamelModel):
     model: str = "sonnet"
 
 
+class AutonomousDrivingSettings(CamelModel):
+    host: str = "localhost"
+    port: int = 16660
+    duration: int = 2000
+    control_mode: str = "Abs"
+    vehicle_command_parsing_enabled: bool = False
+
+
 class DbTimestamp(CamelModel):
     timestamp: str | None = None
     unix_timestamp: float | None = None
@@ -52,3 +60,4 @@ class SettingsData(CamelModel):
     app: AppSettings = Field(default_factory=AppSettings)
     chat: ChatSettings = Field(default_factory=ChatSettings)
     trigger_ai: TriggerAiSettings = Field(default_factory=TriggerAiSettings)
+    autonomous_driving: AutonomousDrivingSettings = Field(default_factory=AutonomousDrivingSettings)

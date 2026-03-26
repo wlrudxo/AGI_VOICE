@@ -3,6 +3,7 @@
 	import { triggerMonitor } from '$lib/stores/triggerMonitor.svelte';
 	import { carmakerStore } from '$lib/stores/carmakerStore.svelte';
 	import { dialogStore } from '$lib/stores/dialogStore.svelte';
+	import { autonomousDrivingSettingsStore } from '$lib/stores/autonomousDrivingSettingsStore';
 	import Icon from '@iconify/svelte';
 	import ChatView from './ChatView.svelte';
 	import ChatHistoryView from './ChatHistoryView.svelte';
@@ -63,7 +64,7 @@
 
 	async function toggleTriggerMonitoring() {
 		// Check if vehicle command parsing is enabled
-		const parsingEnabled = localStorage.getItem('carmaker_command_parsing_enabled') === 'true';
+		const parsingEnabled = autonomousDrivingSettingsStore.getCurrentState().vehicleCommandParsingEnabled;
 		if (!parsingEnabled) {
 			await dialogStore.alert('먼저 자율주행 설정에서 "AI CarMaker Control"을 활성화해주세요.', '알림');
 			return;

@@ -1,7 +1,14 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from app.schemas.settings import AppSettings, ChatSettings, DbInfo, DbTimestamp, TriggerAiSettings
+from app.schemas.settings import (
+    AppSettings,
+    AutonomousDrivingSettings,
+    ChatSettings,
+    DbInfo,
+    DbTimestamp,
+    TriggerAiSettings,
+)
 from app.services.settings import SettingsService, get_settings_service
 
 router = APIRouter()
@@ -45,6 +52,21 @@ def update_trigger_ai_settings(
     service: SettingsService = Depends(get_settings_service),
 ) -> TriggerAiSettings:
     return service.update_trigger_ai_settings(trigger_ai)
+
+
+@router.get("/autonomous-driving", response_model=AutonomousDrivingSettings)
+def get_autonomous_driving_settings(
+    service: SettingsService = Depends(get_settings_service),
+) -> AutonomousDrivingSettings:
+    return service.get_autonomous_driving_settings()
+
+
+@router.put("/autonomous-driving", response_model=AutonomousDrivingSettings)
+def update_autonomous_driving_settings(
+    autonomous_driving: AutonomousDrivingSettings,
+    service: SettingsService = Depends(get_settings_service),
+) -> AutonomousDrivingSettings:
+    return service.update_autonomous_driving_settings(autonomous_driving)
 
 
 @router.get("/app", response_model=AppSettings)

@@ -3,6 +3,7 @@
   import { requestJson } from '$lib/backend';
   import Icon from '@iconify/svelte';
   import { carmakerStore } from '$lib/stores/carmakerStore.svelte';
+  import { autonomousDrivingSettingsStore } from '$lib/stores/autonomousDrivingSettingsStore';
   import HelpModal from '$lib/components/HelpModal.svelte';
 
   interface Character {
@@ -61,32 +62,23 @@
     }
   }
 
-  // Load settings from localStorage
-  function loadSettings() {
+  async function loadSettings() {
     try {
-      const stored = localStorage.getItem('carmaker_command_parsing_enabled');
-      vehicleCommandParsingEnabled = stored === 'true';
+      // Decision record:
+      // V2는 renderer localStorage에만 저장했지만, V3는 동일한 UI 동작을 유지하면서
+      // ChatView/Widget/Settings 페이지가 모두 같은 값을 보도록 백엔드 단일 원본으로 이동했다.
+      const [autonomousSettings, triggerAiSettings] = await Promise.all([
+        autonomousDrivingSettingsStore.loadSettings(),
+        requestJson<any>('/api/settings/trigger-ai')
+      ]);
 
-      // Load trigger AI settings
-      const storedExcludeHistory = localStorage.getItem('trigger_exclude_history');
-      excludeHistory = storedExcludeHistory !== 'false'; // Default: true
-
-      const storedCharacterId = localStorage.getItem('trigger_character_id');
-      if (storedCharacterId) {
-        selectedCharacterId = parseInt(storedCharacterId);
-      }
-
-      const storedTemplateId = localStorage.getItem('trigger_prompt_template_id');
-      if (storedTemplateId) {
-        selectedPromptTemplateId = parseInt(storedTemplateId);
-      }
-
-      const storedModel = localStorage.getItem('trigger_model');
-      if (storedModel) {
-        selectedModel = storedModel;
-      }
+      vehicleCommandParsingEnabled = autonomousSettings.vehicleCommandParsingEnabled;
+      excludeHistory = triggerAiSettings.excludeHistory ?? true;
+      selectedCharacterId = triggerAiSettings.characterId ?? selectedCharacterId;
+      selectedPromptTemplateId = triggerAiSettings.promptTemplateId ?? selectedPromptTemplateId;
+      selectedModel = triggerAiSettings.model ?? selectedModel;
     } catch (error) {
-      console.error('Failed to load parsing settings:', error);
+      console.error('Failed to load autonomous driving settings:', error);
     }
   }
 
@@ -94,7 +86,7 @@
   onMount(async () => {
     await carmakerStore.checkConnectionStatus();
     await loadAIData();
-    loadSettings();
+    await loadSettings();
   });
 
   async function connect() {
@@ -121,18 +113,24 @@
       saving = true;
       message = null;
 
-      // Save vehicle command parsing setting to localStorage
-      localStorage.setItem('carmaker_command_parsing_enabled', vehicleCommandParsingEnabled.toString());
-
-      // Save trigger AI settings
-      localStorage.setItem('trigger_exclude_history', excludeHistory.toString());
-      if (selectedCharacterId) {
-        localStorage.setItem('trigger_character_id', selectedCharacterId.toString());
-      }
-      if (selectedPromptTemplateId) {
-        localStorage.setItem('trigger_prompt_template_id', selectedPromptTemplateId.toString());
-      }
-      localStorage.setItem('trigger_model', selectedModel);
+      await Promise.all([
+        autonomousDrivingSettingsStore.saveSettings({
+          host: carmakerStore.host,
+          port: parseInt(carmakerStore.port, 10),
+          duration: parseInt(carmakerStore.duration, 10),
+          controlMode: carmakerStore.controlMode,
+          vehicleCommandParsingEnabled,
+        }),
+        requestJson('/api/settings/trigger-ai', {
+          method: 'PUT',
+          body: {
+            excludeHistory,
+            characterId: selectedCharacterId,
+            promptTemplateId: selectedPromptTemplateId,
+            model: selectedModel,
+          }
+        }),
+      ]);
 
       console.log('Settings saved:', {
         host: carmakerStore.host,

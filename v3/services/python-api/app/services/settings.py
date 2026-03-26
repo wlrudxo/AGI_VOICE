@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from app.core.config import get_settings
 from app.schemas.settings import (
+    AutonomousDrivingSettings,
     AppSettings,
     BackupInfo,
     ChatSettings,
@@ -55,6 +56,19 @@ class SettingsService:
             self._data.trigger_ai = trigger_ai.model_copy(deep=True)
             self._save()
             return self._data.trigger_ai.model_copy(deep=True)
+
+    def get_autonomous_driving_settings(self) -> AutonomousDrivingSettings:
+        with self._lock:
+            return self._data.autonomous_driving.model_copy(deep=True)
+
+    def update_autonomous_driving_settings(
+        self,
+        autonomous_driving: AutonomousDrivingSettings,
+    ) -> AutonomousDrivingSettings:
+        with self._lock:
+            self._data.autonomous_driving = autonomous_driving.model_copy(deep=True)
+            self._save()
+            return self._data.autonomous_driving.model_copy(deep=True)
 
     def get_app_settings(self) -> AppSettings:
         with self._lock:
