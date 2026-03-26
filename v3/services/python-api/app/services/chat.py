@@ -11,6 +11,7 @@ from app.core.config import get_settings
 from app.schemas.ai_catalog import Character, PromptTemplate
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.schemas.conversations import (
+    ConversationCreate,
     ConversationResponse,
     ConversationUpdate,
     ConversationWithCount,
@@ -93,6 +94,28 @@ class ChatService:
                 )
                 for row in conversations
             ]
+
+    def create_conversation(self, conversation_data: ConversationCreate) -> ConversationResponse:
+        with self._lock, self._db.with_lock(), self._db.connect() as conn:
+            now = utc_now_iso()
+            cursor = conn.execute(
+                """
+                INSERT INTO conversations (
+                    character_id, prompt_template_id, user_info, title, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    conversation_data.character_id,
+                    conversation_data.prompt_template_id,
+                    conversation_data.user_info,
+                    conversation_data.title,
+                    now,
+                    now,
+                ),
+            )
+            conn.commit()
+            conversation_id = int(cursor.lastrowid)
+            return self.get_conversation_by_id(conversation_id)
 
     def get_conversation_by_id(self, conversation_id: int) -> ConversationResponse:
         with self._lock, self._db.with_lock(), self._db.connect() as conn:

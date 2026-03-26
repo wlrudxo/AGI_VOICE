@@ -28,5 +28,12 @@ class ConversationUpdate(CamelModel):
     user_info: str | None = None
 
 
+class ConversationCreate(CamelModel):
+    character_id: int
+    prompt_template_id: int
+    user_info: str | None = None
+    title: str | None = None
+
+
 class DeleteResult(CamelModel):
     message: str

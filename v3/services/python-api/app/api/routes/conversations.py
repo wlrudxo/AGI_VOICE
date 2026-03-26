@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from app.schemas.conversations import (
+    ConversationCreate,
     ConversationResponse,
     ConversationUpdate,
     ConversationWithCount,
@@ -28,6 +29,17 @@ def get_conversations(
     service: ChatService = Depends(get_chat_service),
 ) -> list[ConversationWithCount]:
     return service.get_conversations()
+
+
+@router.post("", response_model=ConversationResponse)
+def create_conversation(
+    conversation_data: ConversationCreate,
+    service: ChatService = Depends(get_chat_service),
+) -> ConversationResponse:
+    try:
+        return service.create_conversation(conversation_data)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("/{conversation_id}", response_model=ConversationResponse)
