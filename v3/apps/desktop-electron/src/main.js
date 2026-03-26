@@ -9,11 +9,13 @@ const __dirname = path.dirname(__filename);
 const FRONTEND_URL = process.env.V3_FRONTEND_URL || 'http://localhost:4173';
 const BACKEND_URL = process.env.V3_BACKEND_URL || 'http://127.0.0.1:8000';
 const BACKEND_HEALTH_URL = `${BACKEND_URL}/health`;
+const BACKEND_SHUTDOWN_SYNC_URL = `${BACKEND_URL}/api/settings/db/sync-shutdown`;
 const FRONTEND_CHECK_TIMEOUT_MS = 1200;
 
 let mainWindow = null;
 let isRendererClosing = false;
 let isAppQuitting = false;
+let hasShutdownSynced = false;
 let tray = null;
 
 function toSizePayload(size) {
@@ -123,7 +125,8 @@ function createTray() {
     {
       id: 'quit',
       label: '종료',
-      click: () => {
+      click: async () => {
+        await syncBackendOnQuit();
         isAppQuitting = true;
         app.quit();
       },
@@ -212,6 +215,27 @@ async function pingBackend() {
       url: BACKEND_HEALTH_URL,
       error: error instanceof Error ? error.message : String(error),
     };
+  }
+}
+
+async function syncBackendOnQuit() {
+  if (hasShutdownSynced) {
+    return;
+  }
+
+  try {
+    const response = await fetch(BACKEND_SHUTDOWN_SYNC_URL, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`sync failed with status ${response.status}`);
+    }
+    hasShutdownSynced = true;
+  } catch (error) {
+    console.warn(`Backend shutdown sync failed: ${BACKEND_SHUTDOWN_SYNC_URL}`, error);
   }
 }
 
