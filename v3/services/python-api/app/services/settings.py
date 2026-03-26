@@ -208,6 +208,23 @@ class SettingsService:
         self.import_db(backup_path)
         return f"Database restored from: {backup_path}"
 
+    def load_db_from_sync_folder_if_newer(self) -> str | None:
+        sync_path = self._resolve_sync_db_path()
+        if sync_path is None or not sync_path.exists() or not sync_path.is_file():
+            return None
+
+        db_path = self._resolve_ai_chat_db_path()
+        if not db_path.exists():
+            self.import_db(str(sync_path))
+            return f"Imported database from sync folder: {sync_path}"
+
+        local_mtime = db_path.stat().st_mtime
+        sync_mtime = sync_path.stat().st_mtime
+        if sync_mtime > local_mtime:
+            self.import_db(str(sync_path))
+            return f"Imported newer database from sync folder: {sync_path}"
+        return None
+
     def _load(self) -> None:
         self._storage_path.parent.mkdir(parents=True, exist_ok=True)
         if not self._storage_path.exists():
