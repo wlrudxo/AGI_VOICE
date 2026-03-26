@@ -1,8 +1,9 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { requestJson } from '$lib/backend';
 	import Icon from '@iconify/svelte';
 	import { dialogStore } from '$lib/stores/dialogStore.svelte';
+	import { dbWatcher } from '$lib/stores/dbWatcher.svelte';
 
 	let templates = $state([]);
 	let isLoading = $state(false);
@@ -110,8 +111,22 @@
 		}
 	}
 
+	let unsubscribe = null;
+
 	onMount(() => {
 		loadTemplates();
+
+		dbWatcher.startWatching();
+		unsubscribe = dbWatcher.onChange(() => {
+			console.log('🔄 Auto-refreshing command templates...');
+			loadTemplates();
+		});
+	});
+
+	onDestroy(() => {
+		if (unsubscribe) {
+			unsubscribe();
+		}
 	});
 </script>
 

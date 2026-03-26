@@ -1,9 +1,10 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { requestJson } from '$lib/backend';
 	import Icon from '@iconify/svelte';
 	import MapCard from '$lib/components/MapCard.svelte';
 	import Dialog from '$lib/components/Dialog.svelte';
+	import { dbWatcher } from '$lib/stores/dbWatcher.svelte';
 
 	// Dialog reference
 	let dialog;
@@ -397,8 +398,20 @@
 		return Array.from(cats).sort();
 	});
 
+	let unsubscribe = null;
+
 	onMount(() => {
 		loadMaps();
+
+		dbWatcher.startWatching();
+		unsubscribe = dbWatcher.onChange(() => {
+			console.log('🔄 DB changed, reloading maps...');
+			loadMaps();
+		});
+	});
+
+	onDestroy(() => {
+		if (unsubscribe) unsubscribe();
 	});
 </script>
 

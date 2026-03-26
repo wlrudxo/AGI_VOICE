@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { requestJson } from '$lib/backend';
+	import { dbWatcher } from '$lib/stores/dbWatcher.svelte';
 	import { uiStore } from '$lib/stores/uiStore';
 	import { autonomousDrivingSettingsStore } from '$lib/stores/autonomousDrivingSettingsStore';
 	import { promptContextStore } from '$lib/stores/promptContextStore';
@@ -560,7 +561,8 @@
 
 			// 3. DB 변경 알림
 			if (hasDbChange.value) {
-				console.log('✅ DB modification detected');
+				console.log('✅ DB modification detected, triggering refresh...');
+				dbWatcher.triggerRefresh(100);
 			}
 		} catch (error) {
 			console.error('Chat error:', error);
