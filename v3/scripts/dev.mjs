@@ -24,6 +24,10 @@ const pyLaunchers = isWindows
 
 const children = new Set();
 let shuttingDown = false;
+let holdOpenResolve = null;
+const holdOpen = new Promise((resolve) => {
+  holdOpenResolve = resolve;
+});
 
 function log(message) {
   console.log(`[INFO] ${message}`);
@@ -174,6 +178,9 @@ function shutdown() {
       // ignore shutdown errors
     }
   }
+  if (holdOpenResolve) {
+    holdOpenResolve();
+  }
   process.exit(0);
 }
 
@@ -221,6 +228,8 @@ async function main() {
     },
     name: 'electron',
   });
+
+  await holdOpen;
 }
 
 main().catch((error) => {
