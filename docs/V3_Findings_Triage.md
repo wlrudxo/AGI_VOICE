@@ -112,6 +112,11 @@ CLAUDE 주장:
 - 실제 trigger LLM mode runtime에서 재현 테스트
 - Claude subprocess와 thread-local event loop 조합 검증
 
+현재 확인:
+- 현 개발 환경에서 `threading.Thread` 내부 `asyncio.run()` + `asyncio.create_subprocess_exec()` 최소 재현은 성공했다.
+- 따라서 이 항목은 `확정 버그`가 아니라 `플랫폼별 검증 필요`로 유지한다.
+- 특히 Windows/Electron 배포 환경에서만 추가 확인이 필요하다.
+
 ### F-B2. Cooldown semantics on monitoring restart
 
 상태: `보류`
