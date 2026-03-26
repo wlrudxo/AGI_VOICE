@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, globalShortcut, ipcMain, screen } from 'electron';
+import { app, BrowserWindow, Menu, dialog, globalShortcut, ipcMain, screen } from 'electron';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -53,6 +53,9 @@ function createWindow() {
     height: 800,
     title: 'AGI Voice V3',
     show: false,
+    frame: false,
+    titleBarStyle: 'hidden',
+    autoHideMenuBar: true,
     backgroundColor: '#111111',
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
@@ -86,6 +89,8 @@ function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+
+  mainWindow.setMenuBarVisibility(false);
 }
 
 function getWindowSnapshot() {
@@ -174,6 +179,7 @@ function registerDefaultShortcuts() {
 }
 
 app.whenReady().then(async () => {
+  Menu.setApplicationMenu(null);
   createWindow();
   await loadInitialContent();
   registerDefaultShortcuts();
