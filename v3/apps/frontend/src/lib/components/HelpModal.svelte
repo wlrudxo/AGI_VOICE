@@ -1,15 +1,21 @@
-<script>
+<script lang="ts">
   import Icon from '@iconify/svelte';
 
-  let { visible = $bindable(), title = '도움말', onClose, children } = $props();
+  interface Props {
+    visible: boolean;
+    title?: string;
+    onClose: () => void;
+  }
 
-  function handleBackdropClick(e) {
+  let { visible = $bindable(), title = '도움말', onClose }: Props = $props();
+
+  function handleBackdropClick(e: MouseEvent) {
     if (e.target === e.currentTarget) {
       onClose();
     }
   }
 
-  function handleKeydown(e) {
+  function handleKeydown(e: KeyboardEvent) {
     if (visible && e.key === 'Escape') {
       onClose();
     }
@@ -32,7 +38,7 @@
       </div>
 
       <div class="modal-content">
-        {@render children?.()}
+        <slot />
       </div>
 
       <div class="modal-footer">
@@ -129,6 +135,7 @@
     flex-shrink: 0;
   }
 
+  /* Help content styles (available for slotted content) */
   :global(.help-section) {
     margin-bottom: 2rem;
   }
@@ -216,6 +223,7 @@
     font-weight: 600;
   }
 
+  /* Additional help content styles */
   :global(.help-list) {
     margin: 0.5rem 0 0 1.25rem;
     padding: 0;
@@ -250,6 +258,20 @@
   :global(.example-card p) {
     margin: 0;
     color: var(--color-text-secondary);
-    line-height: 1.6;
+    line-height: 1.8;
+  }
+
+  :global(.monitor-categories) {
+    margin-top: 0.75rem;
+    padding: 1rem;
+    background: var(--color-background);
+    border-radius: 0.5rem;
+  }
+
+  :global(.monitor-categories h5) {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
   }
 </style>

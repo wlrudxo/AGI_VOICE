@@ -1,14 +1,20 @@
-<script>
-  let { text = '', position = 'right', children } = $props();
+<script lang="ts">
+  import type { Snippet } from 'svelte';
+
+  interface Props {
+    text?: string;
+    position?: 'top' | 'bottom' | 'left' | 'right';
+    children?: Snippet;
+  }
+
+  let { text = '', position = 'right', children }: Props = $props();
 
   let showTooltip = $state(false);
-  let wrapperElement = $state();
+  let wrapperElement: HTMLElement;
   let tooltipStyle = $state('');
 
   function updateTooltipPosition() {
-    if (!wrapperElement || !showTooltip) {
-      return;
-    }
+    if (!wrapperElement || !showTooltip) return;
 
     const rect = wrapperElement.getBoundingClientRect();
 
@@ -36,7 +42,7 @@
     showTooltip = true;
     setTimeout(updateTooltipPosition, 0);
   }}
-  onmouseleave={() => (showTooltip = false)}
+  onmouseleave={() => showTooltip = false}
   role="tooltip"
 >
   {@render children?.()}
@@ -64,6 +70,6 @@
     pointer-events: none;
     background: #1e293b;
     color: white;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-tooltip);
   }
 </style>
