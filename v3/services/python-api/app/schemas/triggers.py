@@ -50,3 +50,11 @@ class UpdateTriggerRequest(CamelModel):
 class TriggerCollection(CamelModel):
     version: str = "1.0"
     triggers: list[Trigger] = Field(default_factory=list)
+
+
+class TriggerChatEvent(CamelModel):
+    id: int
+    type: str
+    trigger_name: str
+    content: str
+    created_at: datetime

@@ -20,12 +20,49 @@ const DEFAULT_SETTINGS: PromptContextSettings = {
   finalMessage: DEFAULT_FINAL_MESSAGE_TEMPLATE,
 };
 
+const STORAGE_KEY = 'agi_voice_v3_prompt_context';
+
+function loadInitialSettings(): PromptContextSettings {
+  if (typeof window === 'undefined') {
+    return DEFAULT_SETTINGS;
+  }
+
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) {
+      return DEFAULT_SETTINGS;
+    }
+
+    return {
+      ...DEFAULT_SETTINGS,
+      ...JSON.parse(stored),
+    };
+  } catch (error) {
+    console.error('Failed to load prompt context cache:', error);
+    return DEFAULT_SETTINGS;
+  }
+}
+
+function persistLocalCache(settings: PromptContextSettings) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.error('Failed to cache prompt context settings:', error);
+  }
+}
+
 function createPromptContextStore() {
-  const { subscribe, set } = writable<PromptContextSettings>(DEFAULT_SETTINGS);
-  let currentState = DEFAULT_SETTINGS;
+  const initialState = loadInitialSettings();
+  const { subscribe, set } = writable<PromptContextSettings>(initialState);
+  let currentState = initialState;
 
   function applyState(nextState: PromptContextSettings) {
     currentState = nextState;
+    persistLocalCache(nextState);
     set(nextState);
   }
 

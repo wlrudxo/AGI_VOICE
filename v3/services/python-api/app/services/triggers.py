@@ -17,6 +17,7 @@ from app.services.settings import SettingsService, get_settings_service
 from app.schemas.triggers import (
     CreateTriggerRequest,
     Trigger,
+    TriggerChatEvent,
     TriggerCollection,
     UpdateTriggerRequest,
     utc_now,
@@ -61,6 +62,8 @@ class TriggerService:
         self._monitor_thread: threading.Thread | None = None
         self._cooldowns: dict[int, float] = {}
         self._is_executing = False
+        self._events: list[TriggerChatEvent] = []
+        self._next_event_id = 1
         self._load()
 
     def list_triggers(self) -> list[Trigger]:
@@ -189,6 +192,14 @@ class TriggerService:
         with self._lock:
             self._log_messages.clear()
             return []
+
+    def get_events(self, since_id: int = 0) -> list[TriggerChatEvent]:
+        with self._lock:
+            return [
+                event.model_copy(deep=True)
+                for event in self._events
+                if event.id > since_id
+            ]
 
     def _find_trigger(self, trigger_id: int) -> Trigger | None:
         return next((trigger for trigger in self._triggers if trigger.id == trigger_id), None)
@@ -362,11 +373,13 @@ class TriggerService:
 
     async def _request_llm(self, trigger: Trigger, vehicle_data: dict[str, float]) -> str | None:
         try:
+            system_context = self._build_system_context(trigger, vehicle_data)
+            self._add_event("system", trigger.name, system_context)
             trigger_ai = self._settings_service.get_trigger_ai_settings()
             chat_settings = self._settings_service.get_chat_settings()
             request = ChatRequest(
                 message="Trigger activated. Please provide vehicle control response.",
-                system_context=self._build_system_context(trigger, vehicle_data),
+                system_context=system_context,
                 role="system",
                 exclude_history=trigger_ai.exclude_history,
                 no_save=trigger_ai.exclude_history,
@@ -383,9 +396,11 @@ class TriggerService:
 
             llm_response = response.responses[0]
             self._add_log(f"  ✓ LLM response received ({len(llm_response)} chars)")
+            self._add_event("llm_response", trigger.name, llm_response)
             return llm_response
         except Exception as exc:
             self._add_log(f"  ✗ LLM request failed: {exc}")
+            self._add_event("error", trigger.name, f"LLM 요청 실패: {exc}")
             return None
 
     def _build_system_context(self, trigger: Trigger, vehicle_data: dict[str, float]) -> str:
@@ -564,6 +579,18 @@ class TriggerService:
     def _add_log(self, message: str) -> None:
         timestamp = time.strftime("%I:%M:%S %p")
         self._log_messages = [*self._log_messages, f"[{timestamp}] {message}"][-100:]
+
+    def _add_event(self, event_type: str, trigger_name: str, content: str) -> None:
+        with self._lock:
+            event = TriggerChatEvent(
+                id=self._next_event_id,
+                type=event_type,
+                trigger_name=trigger_name,
+                content=content,
+                created_at=utc_now(),
+            )
+            self._next_event_id += 1
+            self._events = [*self._events, event][-200:]
 
 
 _settings = get_settings()

@@ -18,12 +18,18 @@ class TriggerMonitor {
   isMonitoring = $state(false);
   triggers = $state<Trigger[]>([]);
   logMessages = $state<string[]>([]);
+  private pollInterval: number | null = null;
+  private lastEventId = 0;
 
   async loadTriggers(): Promise<void> {
     try {
       this.triggers = await requestJson<Trigger[]>('/api/triggers');
       this.isMonitoring = await requestJson<boolean>('/api/triggers/monitoring');
       this.logMessages = await requestJson<string[]>('/api/triggers/logs');
+      await this.pollEvents();
+      if (this.isMonitoring) {
+        this.startPolling();
+      }
       this.addLog(`✓ Loaded ${this.triggers.length} triggers`);
     } catch (error) {
       this.addLog(`✗ Failed to load triggers: ${String(error)}`);
@@ -42,6 +48,7 @@ class TriggerMonitor {
         body: { active: true },
       });
       this.addLog('✓ Started trigger monitoring');
+      this.startPolling();
     } catch (error) {
       this.addLog(`✗ Failed to start trigger monitoring: ${String(error)}`);
     }
@@ -54,6 +61,7 @@ class TriggerMonitor {
         body: { active: false },
       });
       this.addLog('✓ Stopped trigger monitoring');
+      this.stopPolling();
     } catch (error) {
       this.addLog(`✗ Failed to stop trigger monitoring: ${String(error)}`);
     }
@@ -61,6 +69,64 @@ class TriggerMonitor {
 
   clearLogs(): void {
     this.logMessages = [];
+  }
+
+  private startPolling(): void {
+    if (this.pollInterval !== null) {
+      return;
+    }
+
+    this.pollInterval = window.setInterval(() => {
+      void this.pollRuntimeState();
+    }, 500);
+  }
+
+  private stopPolling(): void {
+    if (this.pollInterval !== null) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = null;
+    }
+  }
+
+  private async pollRuntimeState(): Promise<void> {
+    try {
+      const [monitoring, logs] = await Promise.all([
+        requestJson<boolean>('/api/triggers/monitoring'),
+        requestJson<string[]>('/api/triggers/logs'),
+      ]);
+
+      this.isMonitoring = monitoring;
+      this.logMessages = logs;
+      await this.pollEvents();
+
+      if (!monitoring) {
+        this.stopPolling();
+      }
+    } catch (error) {
+      this.addLog(`✗ Failed to poll trigger runtime: ${String(error)}`);
+    }
+  }
+
+  private async pollEvents(): Promise<void> {
+    const events = await requestJson<Array<{
+      id: number;
+      type: string;
+      triggerName: string;
+      content: string;
+    }>>(`/api/triggers/events?since_id=${this.lastEventId}`);
+
+    for (const event of events) {
+      this.lastEventId = Math.max(this.lastEventId, event.id);
+      window.dispatchEvent(
+        new CustomEvent('triggerChatMessage', {
+          detail: {
+            type: event.type,
+            triggerName: event.triggerName,
+            content: event.content,
+          },
+        }),
+      );
+    }
   }
 
   addLog(message: string): void {

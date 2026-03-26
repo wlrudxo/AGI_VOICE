@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.schemas.triggers import CreateTriggerRequest, Trigger, UpdateTriggerRequest
+from app.schemas.triggers import CreateTriggerRequest, Trigger, TriggerChatEvent, UpdateTriggerRequest
 from app.services.triggers import TriggerService, get_trigger_service
 
 router = APIRouter()
@@ -48,6 +48,14 @@ def clear_trigger_logs(
     service: TriggerService = Depends(get_trigger_service),
 ) -> list[str]:
     return service.clear_logs()
+
+
+@router.get("/events", response_model=list[TriggerChatEvent])
+def get_trigger_events(
+    since_id: int = 0,
+    service: TriggerService = Depends(get_trigger_service),
+) -> list[TriggerChatEvent]:
+    return service.get_events(since_id)
 
 
 @router.get("", response_model=list[Trigger])
