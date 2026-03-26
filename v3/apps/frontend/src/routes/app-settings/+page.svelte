@@ -9,6 +9,7 @@
     claudeWorkspaceDir: string;
     databaseFilePath: string;
     databaseBackupEnabled: boolean;
+    minimizeToTray: boolean;
     keepConversationPrompts: boolean;
     defaultClaudeModel: string;
   }
@@ -33,6 +34,7 @@
     claudeWorkspaceDir: '',
     databaseFilePath: '',
     databaseBackupEnabled: true,
+    minimizeToTray: false,
     keepConversationPrompts: true,
     defaultClaudeModel: 'sonnet'
   });
@@ -72,6 +74,7 @@
       message = null;
 
       await requestJson('/api/settings/app', { method: 'PUT', body: settings });
+      await settingsStore.loadSettings();
 
       message = { type: 'success', text: '설정이 저장되었습니다.' };
 
@@ -166,10 +169,11 @@
   onMount(() => {
     loadSettings();
     loadDbInfo();
+    settingsStore.loadSettings();
 
-    // 트레이 설정 로드
     const unsubscribe = settingsStore.subscribe(state => {
       minimizeToTray = state.minimizeToTray;
+      settings.minimizeToTray = state.minimizeToTray;
     });
 
     return () => {
@@ -213,7 +217,10 @@
           <input
             type="checkbox"
             bind:checked={minimizeToTray}
-            onchange={() => settingsStore.setMinimizeToTray(minimizeToTray)}
+            onchange={async () => {
+              settings.minimizeToTray = minimizeToTray;
+              await settingsStore.setMinimizeToTray(minimizeToTray);
+            }}
           />
           <div class="toggle-switch-track">
             <div class="toggle-switch-thumb"></div>

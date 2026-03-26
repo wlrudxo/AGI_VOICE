@@ -15,8 +15,6 @@
   let { children } = $props();
   let dialogComponent = $state();
 
-  let previousSize = null;
-  let previousPosition = null;
   let isClosing = false;
 
   // Svelte 5 runes syntax
@@ -40,26 +38,16 @@
 
     try {
       if (widgetMode) {
-        // 현재 창 크기와 위치 저장
-        const bounds = await win.getBounds?.();
-        if (bounds) {
-          previousSize = { width: bounds.width, height: bounds.height };
-          previousPosition = { x: bounds.x, y: bounds.y };
-        }
-
-        // 위젯 크기로 변경
+        // Decision record:
+        // V3에서는 위젯 모드 "복원" 기능을 의도적으로 제거했다.
+        // 기존 복원 로직은 preload 표면과 맞지 않았고, 사용자도 기능 제거를 승인했다.
+        // 따라서 위젯 진입은 단방향 크기 변경만 수행하고, 종료 시 이전 창 크기/위치를 복원하지 않는다.
         await win.setSize?.(450, 700);
 
-        // 화면 우하단으로 이동
-        const screen = window.screen;
-        if (screen) {
-          await win.setPosition?.(screen.availWidth - 470, screen.availHeight - 740);
-        }
-      } else {
-        // 원래 크기로 복원
-        if (previousSize && previousPosition) {
-          await win.setSize?.(previousSize.width, previousSize.height);
-          await win.setPosition?.(previousPosition.x, previousPosition.y);
+        const display = await win.currentMonitor?.();
+        const workArea = display?.workArea;
+        if (workArea) {
+          await win.setPosition?.(workArea.x + workArea.width - 470, workArea.y + workArea.height - 740);
         }
       }
     } catch (error) {
@@ -67,12 +55,43 @@
     }
   }
 
+  async function syncDbOnShutdown() {
+    try {
+      await requestJson('/api/settings/db/sync-shutdown', { method: 'POST' });
+    } catch (error) {
+      console.error('Failed to sync database on shutdown:', error);
+    }
+  }
+
+  async function handleCloseRequest(event) {
+    if (isClosing) {
+      return;
+    }
+
+    const minimizeToTray = $settingsStore.minimizeToTray;
+
+    if (minimizeToTray) {
+      event?.preventDefault?.();
+      uiStore.saveWidgetModeBeforeTray(isWidgetMode);
+      await window.desktop?.window?.hide?.();
+      return;
+    }
+
+    event?.preventDefault?.();
+    isClosing = true;
+
+    try {
+      await syncDbOnShutdown();
+    } finally {
+      await window.desktop?.window?.requestClose?.();
+    }
+  }
+
   // 키보드 단축키 핸들러
-  function handleKeyDown(event) {
-    // Ctrl+W: 창 닫기
+  async function handleKeyDown(event) {
     if ((event.ctrlKey || event.metaKey) && event.key === 'w') {
       event.preventDefault();
-      window.desktop?.window?.close?.();
+      await handleCloseRequest(event);
     }
   }
 
@@ -82,11 +101,16 @@
       dialogStore.setDialogComponent(dialogComponent);
     }
 
+    await settingsStore.loadSettings();
+
     // Ctrl+W 단축키 리스너 등록
     window.addEventListener('keydown', handleKeyDown);
 
+    const unlistenCloseRequested = window.desktop?.window?.onCloseRequested?.(handleCloseRequest);
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      unlistenCloseRequested?.();
     };
   });
 </script>
