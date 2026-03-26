@@ -1,14 +1,14 @@
 export function disableAutocomplete(node: HTMLElement) {
-  const apply = (element: Element) => {
-    if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
-      if (element.getAttribute('data-allow-autocomplete') === 'true') {
+  const apply = (el: Element) => {
+    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+      if (el.getAttribute('data-allow-autocomplete') === 'true') {
         return;
       }
 
-      element.setAttribute('autocomplete', 'off');
-      element.setAttribute('autocorrect', 'off');
-      element.setAttribute('autocapitalize', 'off');
-      element.spellcheck = false;
+      el.setAttribute('autocomplete', 'off');
+      el.setAttribute('autocorrect', 'off');
+      el.setAttribute('autocapitalize', 'off');
+      el.spellcheck = false;
     }
   };
 
@@ -35,6 +35,6 @@ export function disableAutocomplete(node: HTMLElement) {
   return {
     destroy() {
       observer.disconnect();
-    },
+    }
   };
 }
