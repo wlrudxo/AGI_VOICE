@@ -1,5 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+const backendBaseUrl = process.env.V3_BACKEND_URL || 'http://127.0.0.1:8000';
+
 const invoke = (channel, ...args) => ipcRenderer.invoke(channel, ...args);
 const on = (channel, handler) => {
   const listener = (_, payload) => handler(payload);
@@ -48,6 +50,7 @@ contextBridge.exposeInMainWorld('desktop', {
     unregister: (accelerator) => invoke('shortcuts:unregister', accelerator),
   },
   backend: {
+    baseUrl: backendBaseUrl,
     ping: () => invoke('backend:ping'),
   },
 });
