@@ -1,6 +1,9 @@
 import json
 import math
+import os
 import sqlite3
+import subprocess
+import sys
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,7 +25,7 @@ def utc_now_iso() -> str:
 
 
 class MapService:
-    EMBEDDING_MODEL = "sqlite-fts-v1"
+    EMBEDDING_MODEL = "text-embedding-3-small"
 
     def __init__(self, db_path: Path) -> None:
         self._db_path = db_path
@@ -150,80 +153,19 @@ class MapService:
             return int(row["count"])
 
     def embed_map(self, map_id: int) -> EmbedResult:
-        map_record = self.get_map_by_id(map_id)
-        embedded_at = utc_now_iso()
-        search_text = self._build_search_text(map_record)
-
-        with self._lock, self._connect() as conn:
-            conn.execute("DELETE FROM map_search_index WHERE map_id = ?", (map_id,))
-            conn.execute(
-                "INSERT INTO map_search_index (map_id, content) VALUES (?, ?)",
-                (map_id, search_text),
-            )
-            conn.execute(
-                """
-                UPDATE maps
-                SET is_embedded = 1, embedded_at = ?, embedding_model = ?, updated_at = ?
-                WHERE id = ?
-                """,
-                (embedded_at, self.EMBEDDING_MODEL, embedded_at, map_id),
-            )
-            conn.commit()
-        self._mark_embedding_index_ready()
-
-        return EmbedResult(
-            success=True,
-            map_id=map_record.id,
-            map_name=map_record.name,
-            embedded_at=embedded_at,
-            embedding_model=self.EMBEDDING_MODEL,
-            error=None,
+        self.get_map_by_id(map_id)
+        payload = self._run_mapgenerator_json(
+            "embed_map.py",
+            [str(map_id), str(self._resolve_embedding_index_path()), str(self._db_path)],
         )
+        return EmbedResult.model_validate(payload)
 
     def build_all_embeddings(self, rebuild: bool = False) -> BuildResult:
-        maps = self.get_maps()
-        embedded_count = 0
-
-        with self._lock, self._connect() as conn:
-            if rebuild:
-                conn.execute("DELETE FROM map_search_index")
-                conn.execute(
-                    "UPDATE maps SET is_embedded = 0, embedded_at = NULL, embedding_model = NULL"
-                )
-                target_maps = maps
-            else:
-                target_maps = [map_record for map_record in maps if map_record.is_embedded == 0]
-
-            for map_record in target_maps:
-                search_text = self._build_search_text(map_record)
-                embedded_at = utc_now_iso()
-                conn.execute("DELETE FROM map_search_index WHERE map_id = ?", (map_record.id,))
-                conn.execute(
-                    "INSERT INTO map_search_index (map_id, content) VALUES (?, ?)",
-                    (map_record.id, search_text),
-                )
-                conn.execute(
-                    """
-                    UPDATE maps
-                    SET is_embedded = 1, embedded_at = ?, embedding_model = ?, updated_at = ?
-                    WHERE id = ?
-                    """,
-                    (embedded_at, self.EMBEDDING_MODEL, embedded_at, map_record.id),
-                )
-                embedded_count += 1
-
-            conn.commit()
-        self._mark_embedding_index_ready()
-
-        return BuildResult(
-            success=True,
-            total_maps=len(target_maps),
-            embedded_count=embedded_count,
-            skipped_count=0,
-            embedding_model=self.EMBEDDING_MODEL,
-            index_path=str(self._resolve_embedding_index_path()),
-            error=None,
-        )
+        args = [str(self._resolve_embedding_index_path()), str(self._db_path)]
+        if rebuild:
+            args.append("--rebuild")
+        payload = self._run_mapgenerator_json("build_all_embeddings.py", args)
+        return BuildResult.model_validate(payload)
 
     def embeddings_health(self) -> str:
         return (
@@ -242,42 +184,13 @@ class MapService:
                 "Please build embeddings first."
             )
 
-        with self._lock, self._connect() as conn:
-            if not self._fts_available(conn):
-                rows = conn.execute(
-                    """
-                    SELECT m.*
-                    FROM maps m
-                    WHERE m.is_embedded = 1 AND (m.name LIKE ? OR m.description LIKE ?)
-                    ORDER BY datetime(m.created_at) DESC
-                    LIMIT ?
-                    """,
-                    (f"%{normalized_query}%", f"%{normalized_query}%", top_k),
-                ).fetchall()
-                return [self._search_result_from_map(self._row_to_map(row), 0.5, 0.5) for row in rows]
-
-            rows = conn.execute(
-                """
-                SELECT
-                    m.*,
-                    bm25(map_search_index) AS rank
-                FROM map_search_index
-                JOIN maps m ON m.id = map_search_index.map_id
-                WHERE map_search_index MATCH ? AND m.is_embedded = 1
-                ORDER BY rank ASC
-                LIMIT ?
-                """,
-                (self._fts_query(normalized_query), top_k),
-            ).fetchall()
-
-            results: list[MapSearchResult] = []
-            for row in rows:
-                map_record = self._row_to_map(row)
-                rank = float(row["rank"]) if row["rank"] is not None else 0.0
-                distance = max(0.0, -rank)
-                similarity = 1.0 / (1.0 + distance)
-                results.append(self._search_result_from_map(map_record, similarity, distance))
-            return results
+        payload = self._run_mapgenerator_json(
+            "search_maps.py",
+            [normalized_query, str(self._resolve_embedding_index_path()), str(self._db_path), str(top_k)],
+        )
+        if not isinstance(payload, list):
+            raise RuntimeError("Invalid search response from MapGenerator")
+        return [MapSearchResult.model_validate(item) for item in payload]
 
     def _search_result_from_map(
         self, map_record: MapRecord, similarity_score: float, distance: float
@@ -393,20 +306,13 @@ class MapService:
             conn.commit()
 
     def _resolve_embedding_index_path(self) -> Path:
-        # Compatibility path for V2-style diagnostics. The Python port uses SQLite FTS internally,
-        # but still exposes a dedicated index location in health/build responses.
+        # V2 parity: embeddings/search scripts store a FAISS index under the app data directory.
         index_path = get_settings().data_dir_path / "faiss_index"
         index_path.mkdir(parents=True, exist_ok=True)
         return index_path
 
-    def _embedding_index_marker_path(self) -> Path:
-        return self._resolve_embedding_index_path() / ".v3_index_ready"
-
     def _embedding_index_is_ready(self) -> bool:
-        return self._embedding_index_marker_path().exists()
-
-    def _mark_embedding_index_ready(self) -> None:
-        self._embedding_index_marker_path().write_text(utc_now_iso(), encoding="utf-8")
+        return (self._resolve_embedding_index_path() / "index.faiss").exists()
 
     def _migrate_legacy_schema(self, conn: sqlite3.Connection) -> None:
         create_sql_row = conn.execute(
@@ -453,6 +359,48 @@ class MapService:
             """
         )
         conn.execute("DROP TABLE maps_legacy_unique")
+
+    def _resolve_mapgenerator_script(self, script_name: str) -> Path:
+        candidates = [
+            Path(__file__).resolve().parents[5] / "MapGenerator" / script_name,
+            Path.cwd() / "MapGenerator" / script_name,
+        ]
+        for candidate in candidates:
+            if candidate.exists():
+                return candidate
+        raise RuntimeError(
+            "MapGenerator script not found: "
+            + ", ".join(str(candidate) for candidate in candidates)
+        )
+
+    def _python_command(self) -> list[str]:
+        if os.name == "nt":
+            return [sys.executable]
+        return [sys.executable]
+
+    def _run_mapgenerator_json(self, script_name: str, args: list[str]) -> dict | list:
+        script_path = self._resolve_mapgenerator_script(script_name)
+        completed = subprocess.run(
+            [*self._python_command(), str(script_path), *args],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            cwd=str(script_path.parent),
+        )
+
+        if completed.returncode != 0:
+            stderr = (completed.stderr or "").strip()
+            if "OPENAI_API_KEY" in stderr or "api_key" in stderr:
+                raise RuntimeError(
+                    "OPENAI_API_KEY is required for map embeddings/search. "
+                    "Please configure it before using RAG features."
+                )
+            raise RuntimeError(stderr or completed.stdout.strip() or "MapGenerator script failed")
+
+        stdout = (completed.stdout or "").strip()
+        if not stdout:
+            raise RuntimeError("MapGenerator returned empty response")
+        return json.loads(stdout)
 
 
 _settings = get_settings()
