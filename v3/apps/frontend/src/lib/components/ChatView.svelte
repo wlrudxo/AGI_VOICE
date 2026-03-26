@@ -568,7 +568,7 @@
 			console.error('Chat error:', error);
 			messages.push({
 				role: 'error',
-				content: '오류가 발생했습니다. 다시 시도해주세요.',
+				content: `오류가 발생했습니다. ${error instanceof Error ? error.message : String(error)}`,
 				timestamp: new Date()
 			});
 		} finally {
