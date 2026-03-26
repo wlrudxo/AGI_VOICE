@@ -90,12 +90,29 @@ function detectPythonExecutable() {
 function ensurePythonPackage(pythonExe) {
   const stampPath = path.join(pythonApiDir, '.editable-install.stamp');
   const pyprojectPath = path.join(pythonApiDir, 'pyproject.toml');
-  const needsInstall =
-    !existsSync(stampPath) ||
-    !existsSync(pyprojectPath) ||
+  const importProbe = spawnSync(
+    pythonExe,
+    ['-c', 'import fastapi, uvicorn, app.main; print("ok")'],
+    {
+      cwd: pythonApiDir,
+      stdio: 'ignore',
+      shell: false,
+    }
+  );
+  const importReady = importProbe.status === 0;
+
+  const stampMissing = !existsSync(stampPath);
+  const pyprojectNewer =
+    existsSync(stampPath) &&
+    existsSync(pyprojectPath) &&
     statSync(stampPath).mtimeMs < statSync(pyprojectPath).mtimeMs;
 
-  if (!needsInstall) {
+  if (importReady && (stampMissing || pyprojectNewer)) {
+    writeFileSync(stampPath, new Date().toISOString(), 'utf-8');
+    return;
+  }
+
+  if (importReady && !pyprojectNewer) {
     return;
   }
 
