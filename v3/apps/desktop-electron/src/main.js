@@ -107,6 +107,16 @@ function restoreFromTray() {
   sendWindowEvent('tray-restore');
 }
 
+function openWidgetFromTray() {
+  if (!mainWindow) {
+    return;
+  }
+
+  mainWindow.show();
+  mainWindow.focus();
+  sendWindowEvent('tray-widget');
+}
+
 function createTray() {
   if (tray) {
     return;
@@ -121,6 +131,11 @@ function createTray() {
       id: 'open',
       label: '열기',
       click: () => restoreFromTray(),
+    },
+    {
+      id: 'widget',
+      label: '위젯',
+      click: () => openWidgetFromTray(),
     },
     {
       id: 'quit',

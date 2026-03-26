@@ -70,6 +70,9 @@
       if (event?.eventName === 'tray-restore') {
         uiStore.restoreModeFromTray();
       }
+      if (event?.eventName === 'tray-widget') {
+        uiStore.setWidgetMode(true);
+      }
     });
   }
 
