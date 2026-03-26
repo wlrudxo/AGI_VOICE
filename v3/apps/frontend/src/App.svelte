@@ -7,6 +7,9 @@
   import { disableAutocomplete } from './lib/disableAutocomplete.js';
   import SettingsView from './lib/views/SettingsView.svelte';
   import ChatView from './lib/views/ChatView.svelte';
+  import ChatSettingsView from './lib/views/ChatSettingsView.svelte';
+  import UserInfoView from './lib/views/UserInfoView.svelte';
+  import FinalMessageView from './lib/views/FinalMessageView.svelte';
   import ManualControlView from './lib/views/ManualControlView.svelte';
   import TriggerSettingsView from './lib/views/TriggerSettingsView.svelte';
   import VehicleControlView from './lib/views/VehicleControlView.svelte';
@@ -99,7 +102,11 @@
       {:else if activeSection === 'autonomous-driving' && activeSubView === 'settings'}
         <SettingsView />
       {:else if activeSection === 'ai-settings' && activeSubView === 'chat-settings'}
-        <ChatView />
+        <ChatSettingsView />
+      {:else if activeSection === 'ai-settings' && activeSubView === 'user-info'}
+        <UserInfoView />
+      {:else if activeSection === 'ai-settings' && activeSubView === 'final-message'}
+        <FinalMessageView />
       {:else if activeSection === 'ai-settings' && activeSubView === 'characters'}
         <SettingsView />
       {:else if activeSection === 'dashboard'}
