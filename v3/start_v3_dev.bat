@@ -103,14 +103,18 @@ if "%V3_ROOT:~-1%"=="\" set "V3_ROOT=%V3_ROOT:~0,-1%"
 set "PORT_FILE=%V3_ROOT%\.backend_port"
 set "ELECTRON_DIR=%V3_ROOT%\apps\desktop-electron"
 cd /d "%ELECTRON_DIR%"
-if not exist node_modules (
-  echo [INFO] Electron dependencies are missing. Running npm install...
+if not exist node_modules goto :install_electron_deps
+if not exist node_modules\.bin\electronmon.cmd goto :install_electron_deps
+goto :electron_ready
+
+:install_electron_deps
+  echo [INFO] Electron dependencies are missing or outdated. Running npm install...
   call npm install
   if errorlevel 1 (
     echo [ERROR] Electron npm install failed.
     goto :eof
   )
-)
+:electron_ready
 set "BACKEND_PORT=8000"
 for /l %%I in (1,1,30) do (
   if exist "%PORT_FILE%" (
