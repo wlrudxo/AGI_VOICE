@@ -11,6 +11,12 @@ from pathlib import Path
 from app.core.config import get_settings
 from app.schemas.ai_catalog import Character, PromptTemplate
 from app.schemas.chat import ChatRequest, ChatResponse
+from app.schemas.conversations import (
+    ConversationResponse,
+    ConversationUpdate,
+    ConversationWithCount,
+    MessageResponse,
+)
 from app.services.ai_catalog import AiCatalogService, get_ai_catalog_service
 from app.services.settings import SettingsService, get_settings_service
 
@@ -29,6 +35,8 @@ class ConversationRecord:
     prompt_template_id: int
     title: str
     user_info: str | None
+    created_at: str
+    updated_at: str
     messages: list[ConversationMessage]
 
 
@@ -66,6 +74,85 @@ class ChatService:
             responses=[response_text],
             actions=[],
         )
+
+    def get_conversations(self) -> list[ConversationWithCount]:
+        with self._lock:
+            conversations = sorted(
+                self._conversations.values(),
+                key=lambda conversation: conversation.updated_at,
+                reverse=True,
+            )
+            return [
+                ConversationWithCount(
+                    id=conversation.id,
+                    character_id=conversation.character_id,
+                    prompt_template_id=conversation.prompt_template_id,
+                    user_info=conversation.user_info,
+                    title=conversation.title,
+                    created_at=conversation.created_at,
+                    updated_at=conversation.updated_at,
+                    message_count=len(conversation.messages),
+                )
+                for conversation in conversations
+            ]
+
+    def get_conversation_by_id(self, conversation_id: int) -> ConversationResponse:
+        with self._lock:
+            conversation = self._conversations.get(conversation_id)
+            if conversation is None:
+                raise RuntimeError("Conversation not found")
+            return ConversationResponse(
+                id=conversation.id,
+                character_id=conversation.character_id,
+                prompt_template_id=conversation.prompt_template_id,
+                user_info=conversation.user_info,
+                title=conversation.title,
+                created_at=conversation.created_at,
+                updated_at=conversation.updated_at,
+            )
+
+    def get_conversation_messages(self, conversation_id: int, limit: int = 50) -> list[MessageResponse]:
+        with self._lock:
+            conversation = self._conversations.get(conversation_id)
+            if conversation is None:
+                raise RuntimeError("Conversation not found")
+
+            messages = conversation.messages[-limit:]
+            return [
+                MessageResponse(
+                    id=index + 1,
+                    conversation_id=conversation.id,
+                    role=message.role,
+                    content=message.content,
+                    created_at=message.created_at,
+                )
+                for index, message in enumerate(messages)
+            ]
+
+    def update_conversation(
+        self,
+        conversation_id: int,
+        conversation_data: ConversationUpdate,
+    ) -> ConversationResponse:
+        with self._lock:
+            conversation = self._conversations.get(conversation_id)
+            if conversation is None:
+                raise RuntimeError("Conversation not found")
+
+            if conversation_data.title is not None:
+                conversation.title = conversation_data.title
+            if conversation_data.user_info is not None:
+                conversation.user_info = conversation_data.user_info
+            conversation.updated_at = datetime.now(timezone.utc).isoformat()
+            self._save()
+            return self.get_conversation_by_id(conversation_id)
+
+    def delete_conversation(self, conversation_id: int) -> None:
+        with self._lock:
+            if conversation_id not in self._conversations:
+                raise RuntimeError("Conversation not found")
+            del self._conversations[conversation_id]
+            self._save()
 
     def _resolve_context(self, request: ChatRequest) -> tuple[Character, PromptTemplate]:
         chat_settings = self._settings_service.get_chat_settings()
@@ -216,6 +303,8 @@ class ChatService:
                     prompt_template_id=prompt_template_id,
                     title=request.title or f"Chat {datetime.now().strftime('%Y-%m-%d %H:%M')}",
                     user_info=request.user_info,
+                    created_at=datetime.now(timezone.utc).isoformat(),
+                    updated_at=datetime.now(timezone.utc).isoformat(),
                     messages=[],
                 )
                 self._conversations[conversation_id] = conversation
@@ -228,6 +317,7 @@ class ChatService:
             conversation.messages.append(
                 ConversationMessage(role="assistant", content=response_text, created_at=timestamp)
             )
+            conversation.updated_at = timestamp
             self._save()
             return conversation.id
 
@@ -327,6 +417,8 @@ class ChatService:
                 prompt_template_id=raw["promptTemplateId"],
                 title=raw["title"],
                 user_info=raw.get("userInfo"),
+                created_at=raw.get("createdAt", datetime.now(timezone.utc).isoformat()),
+                updated_at=raw.get("updatedAt", datetime.now(timezone.utc).isoformat()),
                 messages=messages,
             )
             conversations[record.id] = record
@@ -341,6 +433,8 @@ class ChatService:
                     "promptTemplateId": record.prompt_template_id,
                     "title": record.title,
                     "userInfo": record.user_info,
+                    "createdAt": record.created_at,
+                    "updatedAt": record.updated_at,
                     "messages": [
                         {
                             "role": message.role,

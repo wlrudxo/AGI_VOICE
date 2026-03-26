@@ -49,5 +49,28 @@ export function createChatApi(baseUrl = resolveBackendBaseUrl()) {
         body: payload,
       });
     },
+    async getConversations() {
+      return requestJson(request, '/api/conversations');
+    },
+    async getConversation(conversationId) {
+      return requestJson(request, `/api/conversations/${conversationId}`);
+    },
+    async getConversationMessages(conversationId, limit = 50) {
+      return requestJson(
+        request,
+        `/api/conversations/${conversationId}/messages?limit=${limit}`
+      );
+    },
+    async updateConversation(conversationId, payload) {
+      return requestJson(request, `/api/conversations/${conversationId}`, {
+        method: 'PUT',
+        body: payload,
+      });
+    },
+    async deleteConversation(conversationId) {
+      return requestJson(request, `/api/conversations/${conversationId}`, {
+        method: 'DELETE',
+      });
+    },
   };
 }

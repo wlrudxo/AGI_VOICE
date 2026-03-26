@@ -1,4 +1,5 @@
 <script>
+  import { onMount } from 'svelte';
   import { marked } from 'marked';
   import { parseWithSegments } from '../actions/parser.js';
   import { createChatApi } from '../chatApi.js';
@@ -21,6 +22,11 @@
   let promptTemplateId = $state(null);
   let claudeModel = $state('sonnet');
   let settingsLoaded = $state(false);
+
+  function clearConversation() {
+    conversationId = null;
+    messages = [];
+  }
 
   function preprocessMarkdown(content) {
     const parts = [];
@@ -168,6 +174,67 @@
     }
   }
 
+  async function loadConversation(selectedId) {
+    try {
+      const conversation = await chatApi.getConversation(selectedId);
+      const messagesData = await chatApi.getConversationMessages(selectedId, 50);
+
+      conversationId = selectedId;
+      characterId = conversation.characterId;
+      promptTemplateId = conversation.promptTemplateId;
+
+      const parsedMessages = [];
+      for (const message of messagesData) {
+        const timestamp = message.createdAt ? new Date(message.createdAt) : new Date();
+        if (message.role === 'assistant') {
+          const segments = parseWithSegments(message.content);
+          for (const segment of segments) {
+            if (segment.type === 'text') {
+              parsedMessages.push({
+                role: 'assistant',
+                content: segment.content,
+                timestamp,
+              });
+            } else if (segment.type === 'action') {
+              parsedMessages.push({
+                role: 'action',
+                label: segment.label,
+                timestamp,
+              });
+            }
+          }
+        } else {
+          parsedMessages.push({
+            role: message.role,
+            content: message.content,
+            timestamp,
+          });
+        }
+      }
+
+      messages = parsedMessages;
+      scrollToBottom();
+    } catch (error) {
+      messages = [
+        ...messages,
+        {
+          role: 'error',
+          content: error instanceof Error ? error.message : '대화를 불러오는데 실패했습니다.',
+          timestamp: new Date(),
+        },
+      ];
+    }
+  }
+
+  function handleSelectConversation(event) {
+    const selectedId = event.detail?.conversationId ?? null;
+    if (selectedId === null) {
+      clearConversation();
+      return;
+    }
+    loadConversation(selectedId);
+  }
+
   async function sendMessage() {
     const userMessage = inputMessage.trim();
     if (!userMessage || isLoading) {
@@ -225,6 +292,11 @@
       const data = await chatApi.chat(requestBody);
       if (!conversationId && data.conversationId > 0) {
         conversationId = data.conversationId;
+        window.dispatchEvent(
+          new CustomEvent('conversationCreated', {
+            detail: { conversationId: data.conversationId },
+          })
+        );
       }
 
       const rawResponse = data.responses?.[0];
@@ -264,6 +336,13 @@
 
   $effect(() => {
     loadChatSettings();
+  });
+
+  onMount(() => {
+    window.addEventListener('selectConversation', handleSelectConversation);
+    return () => {
+      window.removeEventListener('selectConversation', handleSelectConversation);
+    };
   });
 </script>
 
