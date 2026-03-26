@@ -135,9 +135,9 @@ async function readMap(data: Record<string, any>): Promise<string> {
 
 async function readDashboard(data: Record<string, any>): Promise<string> {
 	try {
-		const maps: any[] = await requestJson('/api/maps');
+		const count: number = await requestJson('/api/maps/count');
 		return `📊 대시보드 현황:
-총 맵 개수: ${maps.length}개`;
+총 맵 개수: ${count}개`;
 	} catch (error) {
 		return `대시보드 조회 실패: ${error}`;
 	}
