@@ -4,7 +4,6 @@ import os
 import shutil
 import textwrap
 import threading
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -17,6 +16,7 @@ from app.schemas.conversations import (
     ConversationWithCount,
     MessageResponse,
 )
+from app.services.ai_chat_db import AiChatDb, get_ai_chat_db, utc_now_iso
 from app.services.ai_catalog import AiCatalogService, get_ai_catalog_service
 from app.services.command_templates import (
     CommandTemplateService,
@@ -25,40 +25,19 @@ from app.services.command_templates import (
 from app.services.settings import SettingsService, get_settings_service
 
 
-@dataclass
-class ConversationMessage:
-    role: str
-    content: str
-    created_at: str
-
-
-@dataclass
-class ConversationRecord:
-    id: int
-    character_id: int
-    prompt_template_id: int
-    title: str
-    user_info: str | None
-    created_at: str
-    updated_at: str
-    messages: list[ConversationMessage]
-
-
 class ChatService:
     def __init__(
         self,
-        storage_path: Path,
+        db: AiChatDb,
         settings_service: SettingsService,
         catalog_service: AiCatalogService,
         command_template_service: CommandTemplateService,
     ) -> None:
         self._lock = threading.RLock()
-        self._storage_path = storage_path
+        self._db = db
         self._settings_service = settings_service
         self._catalog_service = catalog_service
         self._command_template_service = command_template_service
-        self._conversations: dict[int, ConversationRecord] = {}
-        self._load()
 
     async def chat(self, request: ChatRequest) -> ChatResponse:
         character, prompt_template = self._resolve_context(request)
@@ -82,57 +61,77 @@ class ChatService:
         )
 
     def get_conversations(self) -> list[ConversationWithCount]:
-        with self._lock:
-            conversations = sorted(
-                self._conversations.values(),
-                key=lambda conversation: conversation.updated_at,
-                reverse=True,
-            )
+        with self._lock, self._db.with_lock(), self._db.connect() as conn:
+            conversations = conn.execute(
+                """
+                SELECT
+                    c.*,
+                    COUNT(m.id) AS message_count
+                FROM conversations c
+                LEFT JOIN messages m ON m.conversation_id = c.id
+                GROUP BY c.id
+                ORDER BY datetime(c.updated_at) DESC
+                """
+            ).fetchall()
             return [
                 ConversationWithCount(
-                    id=conversation.id,
-                    character_id=conversation.character_id,
-                    prompt_template_id=conversation.prompt_template_id,
-                    user_info=conversation.user_info,
-                    title=conversation.title,
-                    created_at=conversation.created_at,
-                    updated_at=conversation.updated_at,
-                    message_count=len(conversation.messages),
+                    id=row["id"],
+                    character_id=row["character_id"],
+                    prompt_template_id=row["prompt_template_id"],
+                    user_info=row["user_info"],
+                    title=row["title"],
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
+                    message_count=row["message_count"],
                 )
-                for conversation in conversations
+                for row in conversations
             ]
 
     def get_conversation_by_id(self, conversation_id: int) -> ConversationResponse:
-        with self._lock:
-            conversation = self._conversations.get(conversation_id)
-            if conversation is None:
+        with self._lock, self._db.with_lock(), self._db.connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM conversations WHERE id = ?",
+                (conversation_id,),
+            ).fetchone()
+            if row is None:
                 raise RuntimeError("Conversation not found")
             return ConversationResponse(
-                id=conversation.id,
-                character_id=conversation.character_id,
-                prompt_template_id=conversation.prompt_template_id,
-                user_info=conversation.user_info,
-                title=conversation.title,
-                created_at=conversation.created_at,
-                updated_at=conversation.updated_at,
+                id=row["id"],
+                character_id=row["character_id"],
+                prompt_template_id=row["prompt_template_id"],
+                user_info=row["user_info"],
+                title=row["title"],
+                created_at=row["created_at"],
+                updated_at=row["updated_at"],
             )
 
     def get_conversation_messages(self, conversation_id: int, limit: int = 50) -> list[MessageResponse]:
-        with self._lock:
-            conversation = self._conversations.get(conversation_id)
+        with self._lock, self._db.with_lock(), self._db.connect() as conn:
+            conversation = conn.execute(
+                "SELECT id FROM conversations WHERE id = ?",
+                (conversation_id,),
+            ).fetchone()
             if conversation is None:
                 raise RuntimeError("Conversation not found")
 
-            messages = conversation.messages[-limit:]
+            rows = conn.execute(
+                """
+                SELECT * FROM messages
+                WHERE conversation_id = ?
+                ORDER BY datetime(created_at) ASC
+                LIMIT ?
+                """,
+                (conversation_id, limit),
+            ).fetchall()
             return [
                 MessageResponse(
-                    id=index + 1,
-                    conversation_id=conversation.id,
-                    role=message.role,
-                    content=message.content,
-                    created_at=message.created_at,
+                    id=row["id"],
+                    conversation_id=row["conversation_id"],
+                    role=row["role"],
+                    content=row["content"],
+                    created_at=row["created_at"],
                 )
-                for index, message in enumerate(messages)
+                for row in rows
             ]
 
     def update_conversation(
@@ -140,25 +139,43 @@ class ChatService:
         conversation_id: int,
         conversation_data: ConversationUpdate,
     ) -> ConversationResponse:
-        with self._lock:
-            conversation = self._conversations.get(conversation_id)
-            if conversation is None:
+        with self._lock, self._db.with_lock(), self._db.connect() as conn:
+            existing = conn.execute(
+                "SELECT * FROM conversations WHERE id = ?",
+                (conversation_id,),
+            ).fetchone()
+            if existing is None:
                 raise RuntimeError("Conversation not found")
 
+            next_title = existing["title"]
+            next_user_info = existing["user_info"]
             if conversation_data.title is not None:
-                conversation.title = conversation_data.title
+                next_title = conversation_data.title
             if conversation_data.user_info is not None:
-                conversation.user_info = conversation_data.user_info
-            conversation.updated_at = datetime.now(timezone.utc).isoformat()
-            self._save()
+                next_user_info = conversation_data.user_info
+
+            conn.execute(
+                """
+                UPDATE conversations
+                SET title = ?, user_info = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (next_title, next_user_info, utc_now_iso(), conversation_id),
+            )
+            conn.commit()
             return self.get_conversation_by_id(conversation_id)
 
     def delete_conversation(self, conversation_id: int) -> None:
-        with self._lock:
-            if conversation_id not in self._conversations:
+        with self._lock, self._db.with_lock(), self._db.connect() as conn:
+            existing = conn.execute(
+                "SELECT id FROM conversations WHERE id = ?",
+                (conversation_id,),
+            ).fetchone()
+            if existing is None:
                 raise RuntimeError("Conversation not found")
-            del self._conversations[conversation_id]
-            self._save()
+            conn.execute("DELETE FROM messages WHERE conversation_id = ?", (conversation_id,))
+            conn.execute("DELETE FROM conversations WHERE id = ?", (conversation_id,))
+            conn.commit()
 
     def _resolve_context(self, request: ChatRequest) -> tuple[Character, PromptTemplate]:
         chat_settings = self._settings_service.get_chat_settings()
@@ -272,22 +289,31 @@ class ChatService:
         if request.conversation_id is None:
             return "[Start a new chat]"
 
-        with self._lock:
-            conversation = self._conversations.get(request.conversation_id)
-            if conversation is None or not conversation.messages:
+        with self._lock, self._db.with_lock(), self._db.connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT role, content, created_at
+                FROM messages
+                WHERE conversation_id = ?
+                ORDER BY datetime(created_at) ASC
+                LIMIT 20
+                """,
+                (request.conversation_id,),
+            ).fetchall()
+            if not rows:
                 return "[Start a new chat]"
 
             formatted: list[str] = []
-            for message in conversation.messages[-20:]:
-                if message.role == "system":
+            for row in rows:
+                if row["role"] == "system":
                     continue
-                role = "user" if message.role == "user" else "model"
+                role = "user" if row["role"] == "user" else "model"
                 formatted.append(
                     json.dumps(
                         {
                             "role": role,
-                            "timestamp": message.created_at,
-                            "parts": [{"text": message.content}],
+                            "timestamp": row["created_at"],
+                            "parts": [{"text": row["content"]}],
                         },
                         ensure_ascii=False,
                         indent=2,
@@ -302,38 +328,69 @@ class ChatService:
         character_id: int,
         prompt_template_id: int,
     ) -> int:
-        with self._lock:
-            if request.conversation_id and request.conversation_id in self._conversations:
-                conversation = self._conversations[request.conversation_id]
+        with self._lock, self._db.with_lock(), self._db.connect() as conn:
+            now = utc_now_iso()
+            if request.conversation_id:
+                existing = conn.execute(
+                    "SELECT * FROM conversations WHERE id = ?",
+                    (request.conversation_id,),
+                ).fetchone()
             else:
-                conversation_id = max(self._conversations.keys(), default=0) + 1
-                conversation = ConversationRecord(
-                    id=conversation_id,
-                    character_id=character_id,
-                    prompt_template_id=prompt_template_id,
-                    title=request.title or f"Chat {datetime.now().strftime('%Y-%m-%d %H:%M')}",
-                    user_info=request.user_info,
-                    created_at=datetime.now(timezone.utc).isoformat(),
-                    updated_at=datetime.now(timezone.utc).isoformat(),
-                    messages=[],
-                )
-                self._conversations[conversation_id] = conversation
+                existing = None
 
-            timestamp = datetime.now(timezone.utc).isoformat()
-            if request.role == "user":
-                conversation.messages.append(
-                    ConversationMessage(role="user", content=request.message, created_at=timestamp)
+            if existing is not None:
+                conversation_id = int(existing["id"])
+                conn.execute(
+                    """
+                    UPDATE conversations
+                    SET updated_at = ?, user_info = COALESCE(?, user_info)
+                    WHERE id = ?
+                    """,
+                    (now, request.user_info, conversation_id),
                 )
-            conversation.messages.append(
-                ConversationMessage(role="assistant", content=response_text, created_at=timestamp)
+            else:
+                cursor = conn.execute(
+                    """
+                    INSERT INTO conversations (
+                        character_id, prompt_template_id, user_info, title, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        character_id,
+                        prompt_template_id,
+                        request.user_info,
+                        request.title or f"Chat {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                        now,
+                        now,
+                    ),
+                )
+                conversation_id = int(cursor.lastrowid)
+
+            if request.role == "user":
+                conn.execute(
+                    """
+                    INSERT INTO messages (conversation_id, role, content, created_at)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    (conversation_id, "user", request.message, now),
+                )
+            conn.execute(
+                """
+                INSERT INTO messages (conversation_id, role, content, created_at)
+                VALUES (?, ?, ?, ?)
+                """,
+                (conversation_id, "assistant", response_text, now),
             )
-            conversation.updated_at = timestamp
-            self._save()
-            return conversation.id
+            conn.commit()
+            return conversation_id
 
     def _resolve_workspace_dir(self) -> Path:
-        settings = get_settings()
-        target = settings.data_dir_path / "workspace"
+        app_settings = self._settings_service.get_app_settings()
+        if app_settings.claude_workspace_dir.strip():
+            target = Path(app_settings.claude_workspace_dir.strip())
+        else:
+            settings = get_settings()
+            target = settings.data_dir_path / "workspace"
         target.mkdir(parents=True, exist_ok=True)
         return target
 
@@ -398,75 +455,9 @@ class ChatService:
     def _substitute(self, text: str, user_name: str, character_name: str) -> str:
         return text.replace("{{user}}", user_name).replace("{{char}}", character_name)
 
-    def _load(self) -> None:
-        self._storage_path.parent.mkdir(parents=True, exist_ok=True)
-        if not self._storage_path.exists():
-            self._save()
-            return
 
-        try:
-            payload = json.loads(self._storage_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            self._conversations = {}
-            self._save()
-            return
-
-        conversations: dict[int, ConversationRecord] = {}
-        for raw in payload.get("conversations", []):
-            messages = [
-                ConversationMessage(
-                    role=item["role"],
-                    content=item["content"],
-                    created_at=item["createdAt"],
-                )
-                for item in raw.get("messages", [])
-            ]
-            record = ConversationRecord(
-                id=raw["id"],
-                character_id=raw["characterId"],
-                prompt_template_id=raw["promptTemplateId"],
-                title=raw["title"],
-                user_info=raw.get("userInfo"),
-                created_at=raw.get("createdAt", datetime.now(timezone.utc).isoformat()),
-                updated_at=raw.get("updatedAt", datetime.now(timezone.utc).isoformat()),
-                messages=messages,
-            )
-            conversations[record.id] = record
-        self._conversations = conversations
-
-    def _save(self) -> None:
-        payload = {
-            "conversations": [
-                {
-                    "id": record.id,
-                    "characterId": record.character_id,
-                    "promptTemplateId": record.prompt_template_id,
-                    "title": record.title,
-                    "userInfo": record.user_info,
-                    "createdAt": record.created_at,
-                    "updatedAt": record.updated_at,
-                    "messages": [
-                        {
-                            "role": message.role,
-                            "content": message.content,
-                            "createdAt": message.created_at,
-                        }
-                        for message in record.messages
-                    ],
-                }
-                for record in self._conversations.values()
-            ]
-        }
-        self._storage_path.parent.mkdir(parents=True, exist_ok=True)
-        self._storage_path.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
-
-
-_settings = get_settings()
 _service = ChatService(
-    _settings.data_dir_path / "chat.json",
+    get_ai_chat_db(),
     get_settings_service(),
     get_ai_catalog_service(),
     get_command_template_service(),
