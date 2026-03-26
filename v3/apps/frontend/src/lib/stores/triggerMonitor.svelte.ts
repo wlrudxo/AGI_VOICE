@@ -26,7 +26,7 @@ class TriggerMonitor {
       this.triggers = await requestJson<Trigger[]>('/api/triggers');
       this.isMonitoring = await requestJson<boolean>('/api/triggers/monitoring');
       this.logMessages = await requestJson<string[]>('/api/triggers/logs');
-      await this.pollEvents();
+      await this.syncEventCursor();
       if (this.isMonitoring) {
         this.startPolling();
       }
@@ -67,8 +67,14 @@ class TriggerMonitor {
     }
   }
 
-  clearLogs(): void {
-    this.logMessages = [];
+  async clearLogs(): Promise<void> {
+    try {
+      this.logMessages = await requestJson<string[]>('/api/triggers/logs', {
+        method: 'DELETE',
+      });
+    } catch (error) {
+      this.addLog(`✗ Failed to clear trigger logs: ${String(error)}`);
+    }
   }
 
   private startPolling(): void {
@@ -126,6 +132,15 @@ class TriggerMonitor {
           },
         }),
       );
+    }
+  }
+
+  private async syncEventCursor(): Promise<void> {
+    // V2 trigger chat events were live-only browser events. On a fresh reload/remount we should
+    // not replay previously buffered backend events into the chat widget.
+    const events = await requestJson<Array<{ id: number }>>('/api/triggers/events?since_id=0');
+    for (const event of events) {
+      this.lastEventId = Math.max(this.lastEventId, event.id);
     }
   }
 
