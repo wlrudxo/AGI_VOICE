@@ -1,135 +1,96 @@
-import json
-import threading
-from pathlib import Path
-
-from pydantic import ValidationError
-
-from app.core.config import get_settings
-from app.schemas.ai_catalog import utc_now
 from app.schemas.command_templates import (
     CommandTemplate,
-    CommandTemplateCollection,
     CommandTemplateCreate,
     CommandTemplateUpdate,
 )
+from app.services.ai_chat_db import AiChatDb, get_ai_chat_db, utc_now_iso
 
 
 class CommandTemplateService:
-    def __init__(self, storage_path: Path) -> None:
-        self._lock = threading.RLock()
-        self._storage_path = storage_path
-        self._templates: list[CommandTemplate] = []
-        self._load()
+    def __init__(self, db: AiChatDb) -> None:
+        self._db = db
 
     def list_templates(self, is_active: int | None = None) -> list[CommandTemplate]:
-        with self._lock:
-            items = self._templates
-            if is_active is not None:
-                items = [item for item in items if item.is_active == is_active]
-            return [item.model_copy(deep=True) for item in items]
+        sql = "SELECT * FROM command_templates"
+        params: tuple[int, ...] | tuple[()] = ()
+        if is_active is not None:
+            sql += " WHERE is_active = ?"
+            params = (is_active,)
+        sql += " ORDER BY datetime(created_at) DESC"
+        with self._db.with_lock(), self._db.connect() as conn:
+            rows = conn.execute(sql, params).fetchall()
+            return [CommandTemplate.model_validate(dict(row)) for row in rows]
 
     def create_template(self, payload: CommandTemplateCreate) -> CommandTemplate:
-        with self._lock:
-            template = CommandTemplate(
-                id=self._next_id(),
-                name=payload.name,
-                content=payload.content,
-                is_active=payload.is_active,
-                created_at=utc_now(),
-                updated_at=utc_now(),
+        now = utc_now_iso()
+        with self._db.with_lock(), self._db.connect() as conn:
+            cursor = conn.execute(
+                """
+                INSERT INTO command_templates (name, content, is_active, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (payload.name, payload.content, payload.is_active, now, now),
             )
-            self._templates.append(template)
-            self._save()
-            return template.model_copy(deep=True)
+            conn.commit()
+            row = conn.execute(
+                "SELECT * FROM command_templates WHERE id = ?",
+                (int(cursor.lastrowid),),
+            ).fetchone()
+            return CommandTemplate.model_validate(dict(row))
 
     def update_template(self, template_id: int, payload: CommandTemplateUpdate) -> CommandTemplate:
-        with self._lock:
-            index, existing = self._require_template(template_id)
-            updated = CommandTemplate(
-                id=existing.id,
-                name=payload.name,
-                content=payload.content,
-                is_active=payload.is_active,
-                created_at=existing.created_at,
-                updated_at=utc_now(),
+        now = utc_now_iso()
+        with self._db.with_lock(), self._db.connect() as conn:
+            cursor = conn.execute(
+                """
+                UPDATE command_templates
+                SET name = ?, content = ?, is_active = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (payload.name, payload.content, payload.is_active, now, template_id),
             )
-            self._templates[index] = updated
-            self._save()
-            return updated.model_copy(deep=True)
+            conn.commit()
+            if cursor.rowcount == 0:
+                raise RuntimeError("Command template not found")
+            row = conn.execute(
+                "SELECT * FROM command_templates WHERE id = ?",
+                (template_id,),
+            ).fetchone()
+            return CommandTemplate.model_validate(dict(row))
 
     def toggle_template(self, template_id: int) -> CommandTemplate:
-        with self._lock:
-            index, existing = self._require_template(template_id)
-            updated = existing.model_copy(
-                update={
-                    "is_active": 0 if existing.is_active == 1 else 1,
-                    "updated_at": utc_now(),
-                }
+        with self._db.with_lock(), self._db.connect() as conn:
+            existing = conn.execute(
+                "SELECT * FROM command_templates WHERE id = ?",
+                (template_id,),
+            ).fetchone()
+            if existing is None:
+                raise RuntimeError("Command template not found")
+            next_active = 0 if int(existing["is_active"]) == 1 else 1
+            conn.execute(
+                """
+                UPDATE command_templates
+                SET is_active = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (next_active, utc_now_iso(), template_id),
             )
-            self._templates[index] = updated
-            self._save()
-            return updated.model_copy(deep=True)
+            conn.commit()
+            row = conn.execute(
+                "SELECT * FROM command_templates WHERE id = ?",
+                (template_id,),
+            ).fetchone()
+            return CommandTemplate.model_validate(dict(row))
 
     def delete_template(self, template_id: int) -> None:
-        with self._lock:
-            index, _ = self._require_template(template_id)
-            self._templates.pop(index)
-            self._save()
-
-    def _load(self) -> None:
-        default_items = [
-            CommandTemplate(
-                id=1,
-                name="Map Management Commands",
-                content="Use map management tags when the user asks to create, read, update, or delete maps.",
-                is_active=1,
-                created_at=utc_now(),
-                updated_at=utc_now(),
-            )
-        ]
-        default_value = CommandTemplateCollection(items=default_items)
-
-        self._storage_path.parent.mkdir(parents=True, exist_ok=True)
-        if not self._storage_path.exists():
-            self._storage_path.write_text(
-                default_value.model_dump_json(indent=2, by_alias=True),
-                encoding="utf-8",
-            )
-            self._templates = list(default_items)
-            return
-
-        try:
-            payload = json.loads(self._storage_path.read_text(encoding="utf-8"))
-            collection = CommandTemplateCollection.model_validate(payload)
-            self._templates = list(collection.items)
-        except (OSError, json.JSONDecodeError, ValidationError):
-            self._storage_path.write_text(
-                default_value.model_dump_json(indent=2, by_alias=True),
-                encoding="utf-8",
-            )
-            self._templates = list(default_items)
-
-    def _save(self) -> None:
-        self._storage_path.parent.mkdir(parents=True, exist_ok=True)
-        self._storage_path.write_text(
-            CommandTemplateCollection(items=self._templates).model_dump_json(
-                indent=2, by_alias=True
-            ),
-            encoding="utf-8",
-        )
-
-    def _next_id(self) -> int:
-        return max((item.id for item in self._templates), default=0) + 1
-
-    def _require_template(self, template_id: int) -> tuple[int, CommandTemplate]:
-        for index, item in enumerate(self._templates):
-            if item.id == template_id:
-                return index, item
-        raise RuntimeError("Command template not found")
+        with self._db.with_lock(), self._db.connect() as conn:
+            cursor = conn.execute("DELETE FROM command_templates WHERE id = ?", (template_id,))
+            conn.commit()
+            if cursor.rowcount == 0:
+                raise RuntimeError("Command template not found")
 
 
-_settings = get_settings()
-_service = CommandTemplateService(_settings.data_dir_path / "command_templates.json")
+_service = CommandTemplateService(get_ai_chat_db())
 
 
 def get_command_template_service() -> CommandTemplateService:
