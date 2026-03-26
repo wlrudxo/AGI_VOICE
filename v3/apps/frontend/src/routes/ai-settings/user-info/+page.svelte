@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import Icon from '@iconify/svelte';
 	import { dialogStore } from '$lib/stores/dialogStore.svelte';
+	import { promptContextStore } from '$lib/stores/promptContextStore';
 	import HelpModal from '$lib/components/HelpModal.svelte';
 
 	// State
@@ -11,21 +12,11 @@
 	let lastSaved = $state(null);
 	let showHelpModal = $state(false);
 
-	// LocalStorage 키
-	const USER_NAME_KEY = 'agi_voice_user_name';
-	const USER_INFO_KEY = 'agi_voice_user_info';
-
-	function loadUserInfo() {
-		const savedName = localStorage.getItem(USER_NAME_KEY);
-		const savedInfo = localStorage.getItem(USER_INFO_KEY);
-
-		if (savedName) {
-			userName = savedName;
-		}
-		if (savedInfo) {
-			userInfo = savedInfo;
-		}
-		if (savedName || savedInfo) {
+	async function loadUserInfo() {
+		const settings = await promptContextStore.loadSettings();
+		userName = settings.userName;
+		userInfo = settings.userInfo;
+		if (settings.userName || settings.userInfo) {
 			lastSaved = new Date();
 		}
 	}
@@ -33,8 +24,14 @@
 	async function saveUserInfo() {
 		isSaving = true;
 		try {
-			localStorage.setItem(USER_NAME_KEY, userName);
-			localStorage.setItem(USER_INFO_KEY, userInfo);
+			// Decision record:
+			// V2는 localStorage를 직접 사용했지만, V3는 ChatView와 설정 페이지가 같은 값을 보도록
+			// prompt context를 백엔드 단일 원본으로 이동했다.
+			await promptContextStore.saveSettings({
+				...promptContextStore.getCurrentState(),
+				userName,
+				userInfo,
+			});
 			lastSaved = new Date();
 			setTimeout(() => {
 				isSaving = false;
@@ -47,7 +44,7 @@
 	}
 
 	onMount(() => {
-		loadUserInfo();
+		void loadUserInfo();
 	});
 </script>
 

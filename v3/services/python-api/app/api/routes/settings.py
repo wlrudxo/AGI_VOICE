@@ -7,6 +7,7 @@ from app.schemas.settings import (
     ChatSettings,
     DbInfo,
     DbTimestamp,
+    PromptContextSettings,
     TriggerAiSettings,
 )
 from app.services.settings import SettingsService, get_settings_service
@@ -67,6 +68,21 @@ def update_autonomous_driving_settings(
     service: SettingsService = Depends(get_settings_service),
 ) -> AutonomousDrivingSettings:
     return service.update_autonomous_driving_settings(autonomous_driving)
+
+
+@router.get("/prompt-context", response_model=PromptContextSettings)
+def get_prompt_context_settings(
+    service: SettingsService = Depends(get_settings_service),
+) -> PromptContextSettings:
+    return service.get_prompt_context_settings()
+
+
+@router.put("/prompt-context", response_model=PromptContextSettings)
+def update_prompt_context_settings(
+    prompt_context: PromptContextSettings,
+    service: SettingsService = Depends(get_settings_service),
+) -> PromptContextSettings:
+    return service.update_prompt_context_settings(prompt_context)
 
 
 @router.get("/app", response_model=AppSettings)

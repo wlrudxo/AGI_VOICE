@@ -2,6 +2,13 @@ from pydantic import Field
 
 from app.schemas.common import CamelModel
 
+DEFAULT_FINAL_MESSAGE_TEMPLATE = """## Final Checkout
+
+- Check if all required tags are properly formatted
+- Ensure the response is clear and professional
+- Verify technical accuracy of autonomous driving concepts
+- Provide relevant references or examples when appropriate"""
+
 
 class AppSettings(CamelModel):
     claude_workspace_dir: str = ""
@@ -35,6 +42,12 @@ class AutonomousDrivingSettings(CamelModel):
     vehicle_command_parsing_enabled: bool = False
 
 
+class PromptContextSettings(CamelModel):
+    user_name: str = ""
+    user_info: str = ""
+    final_message: str = DEFAULT_FINAL_MESSAGE_TEMPLATE
+
+
 class DbTimestamp(CamelModel):
     timestamp: str | None = None
     unix_timestamp: float | None = None
@@ -61,3 +74,4 @@ class SettingsData(CamelModel):
     chat: ChatSettings = Field(default_factory=ChatSettings)
     trigger_ai: TriggerAiSettings = Field(default_factory=TriggerAiSettings)
     autonomous_driving: AutonomousDrivingSettings = Field(default_factory=AutonomousDrivingSettings)
+    prompt_context: PromptContextSettings = Field(default_factory=PromptContextSettings)

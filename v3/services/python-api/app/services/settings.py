@@ -15,6 +15,7 @@ from app.schemas.settings import (
     ChatSettings,
     DbInfo,
     DbTimestamp,
+    PromptContextSettings,
     SettingsData,
     TriggerAiSettings,
 )
@@ -76,6 +77,19 @@ class SettingsService:
             if not app_settings.database_file_path:
                 app_settings.database_file_path = str(self._resolve_data_dir())
             return app_settings
+
+    def get_prompt_context_settings(self) -> PromptContextSettings:
+        with self._lock:
+            return self._data.prompt_context.model_copy(deep=True)
+
+    def update_prompt_context_settings(
+        self,
+        prompt_context: PromptContextSettings,
+    ) -> PromptContextSettings:
+        with self._lock:
+            self._data.prompt_context = prompt_context.model_copy(deep=True)
+            self._save()
+            return self._data.prompt_context.model_copy(deep=True)
 
     def update_app_settings(self, app_settings: AppSettings) -> AppSettings:
         with self._lock:

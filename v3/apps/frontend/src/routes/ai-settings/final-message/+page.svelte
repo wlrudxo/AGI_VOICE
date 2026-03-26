@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import Icon from '@iconify/svelte';
 	import { dialogStore } from '$lib/stores/dialogStore.svelte';
+	import { DEFAULT_FINAL_MESSAGE_TEMPLATE, promptContextStore } from '$lib/stores/promptContextStore';
 	import HelpModal from '$lib/components/HelpModal.svelte';
 
 	// State
@@ -10,21 +11,12 @@
 	let lastSaved = $state(null);
 	let showHelpModal = $state(false);
 
-	// LocalStorage 키
-	const STORAGE_KEY = 'agi_voice_final_message';
+	const DEFAULT_TEMPLATE = DEFAULT_FINAL_MESSAGE_TEMPLATE;
 
-	// 기본 템플릿
-	const DEFAULT_TEMPLATE = `## Final Checkout
-
-- Check if all required tags are properly formatted
-- Ensure the response is clear and professional
-- Verify technical accuracy of autonomous driving concepts
-- Provide relevant references or examples when appropriate`;
-
-	function loadFinalMessage() {
-		const saved = localStorage.getItem(STORAGE_KEY);
-		if (saved) {
-			finalMessage = saved;
+	async function loadFinalMessage() {
+		const settings = await promptContextStore.loadSettings();
+		if (settings.finalMessage) {
+			finalMessage = settings.finalMessage;
 			lastSaved = new Date();
 		} else {
 			finalMessage = DEFAULT_TEMPLATE;
@@ -34,7 +26,10 @@
 	async function saveFinalMessage() {
 		isSaving = true;
 		try {
-			localStorage.setItem(STORAGE_KEY, finalMessage);
+			await promptContextStore.saveSettings({
+				...promptContextStore.getCurrentState(),
+				finalMessage,
+			});
 			lastSaved = new Date();
 			setTimeout(() => {
 				isSaving = false;
@@ -54,7 +49,7 @@
 	}
 
 	onMount(() => {
-		loadFinalMessage();
+		void loadFinalMessage();
 	});
 </script>
 

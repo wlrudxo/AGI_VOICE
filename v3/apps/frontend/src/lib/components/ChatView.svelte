@@ -3,6 +3,7 @@
 	import { requestJson } from '$lib/backend';
 	import { uiStore } from '$lib/stores/uiStore';
 	import { autonomousDrivingSettingsStore } from '$lib/stores/autonomousDrivingSettingsStore';
+	import { promptContextStore } from '$lib/stores/promptContextStore';
 	import Icon from '@iconify/svelte';
 	import { marked } from 'marked';
 	import { parseActions, parseWithSegments, getActionLabel } from '$lib/actions/parser';
@@ -130,32 +131,17 @@
 
 	// 유저 정보 가져오기
 	function getUserInfo() {
-		try {
-			return localStorage.getItem('agi_voice_user_info') || '';
-		} catch (error) {
-			console.error('Failed to get user info:', error);
-			return '';
-		}
+		return promptContextStore.getCurrentState().userInfo;
 	}
 
 	// 유저 이름 가져오기
 	function getUserName() {
-		try {
-			return localStorage.getItem('agi_voice_user_name') || '';
-		} catch (error) {
-			console.error('Failed to get user name:', error);
-			return '';
-		}
+		return promptContextStore.getCurrentState().userName;
 	}
 
 	// 최종 메시지 가져오기
 	function getFinalMessage() {
-		try {
-			return localStorage.getItem('agi_voice_final_message') || '';
-		} catch (error) {
-			console.error('Failed to get final message:', error);
-			return '';
-		}
+		return promptContextStore.getCurrentState().finalMessage;
 	}
 
 	// 대화 기록 선택 이벤트 리스너
