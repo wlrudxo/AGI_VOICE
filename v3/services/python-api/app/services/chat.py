@@ -4,7 +4,7 @@ import os
 import shutil
 import textwrap
 import threading
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from app.core.config import get_settings
@@ -347,11 +347,12 @@ class ChatService:
                 if row["role"] == "system":
                     continue
                 role = "user" if row["role"] == "user" else "model"
+                timestamp = self._format_prompt_timestamp(row["created_at"])
                 formatted.append(
                     json.dumps(
                         {
                             "role": role,
-                            "timestamp": row["created_at"],
+                            "timestamp": timestamp,
                             "parts": [{"text": row["content"]}],
                         },
                         ensure_ascii=False,
@@ -359,6 +360,25 @@ class ChatService:
                     )
                 )
             return ",\n".join(formatted) if formatted else "[Start a new chat]"
+
+    def _format_prompt_timestamp(self, raw_timestamp: str | None) -> str | None:
+        if not raw_timestamp:
+            return None
+
+        try:
+            parsed = raw_timestamp.strip()
+            if parsed.endswith("Z"):
+                dt = datetime.fromisoformat(parsed.replace("Z", "+00:00"))
+            elif "T" in parsed or "+" in parsed:
+                dt = datetime.fromisoformat(parsed)
+            else:
+                dt = datetime.strptime(parsed, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+        except ValueError:
+            return raw_timestamp
+
+        kst = dt.astimezone(timezone.utc) + timedelta(hours=9)
+        weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][kst.weekday()]
+        return f"{kst.year:04d}-{kst.month:02d}-{kst.day:02d} {weekday} {kst.hour:02d}:{kst.minute:02d}"
 
     def _persist_chat(
         self,

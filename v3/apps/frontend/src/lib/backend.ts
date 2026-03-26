@@ -1,4 +1,4 @@
-const FALLBACK_BACKEND_URL = 'http://127.0.0.1:8010';
+const FALLBACK_BACKEND_URL = 'http://127.0.0.1:8000';
 
 declare global {
   interface Window {

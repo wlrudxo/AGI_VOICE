@@ -65,7 +65,7 @@
 
 ### F-A4. Conversation history timestamps passed to Claude differ
 
-상태: `유효`, `중요도 중간`
+상태: `해결`
 
 내용:
 - V2는 prompt history에 KST 포맷 문자열 사용
@@ -80,7 +80,7 @@
 
 ### F-A5. Backend URL fallback defaults to `8010`
 
-상태: `유효`, `중요도 낮음`
+상태: `해결`
 
 내용:
 - Electron 경유 실행은 preload가 backend URL을 주입하므로 문제 없음
@@ -185,14 +185,12 @@ CLAUDE 주장:
 
 ### P0
 - Trigger resume duration mismatch 수정 반영 확인
-- Chat history timestamp KST parity 검토
 
 ### P1
 - Trigger LLM mode 실제 runtime 검증
 - Trigger event delay를 polling에서 줄일지, parity 허용 차이로 둘지 결정
 
 ### P2
-- backend URL fallback 정리
 - cooldown restart edge case 검증
 
 ---
