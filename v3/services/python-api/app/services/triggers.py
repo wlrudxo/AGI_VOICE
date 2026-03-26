@@ -320,7 +320,7 @@ class TriggerService:
                 self._add_log("  → Rule mode: waiting 1 second")
                 time.sleep(1.0)
                 self._add_log("  → Resuming simulation (time scale = 1.0x)")
-                self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 1000 Abs")
+                self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 30000 Abs")
                 if was_monitoring:
                     self._carmaker_service.set_monitoring_state(True)
                     self._add_log("  → Monitoring resumed")
@@ -330,7 +330,7 @@ class TriggerService:
                 self._add_log("  → LLM mode: requesting AI response")
                 llm_response = asyncio.run(self._request_llm(trigger, vehicle_data))
                 self._add_log("  → Resuming simulation (time scale = 1.0x)")
-                self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 1000 Abs")
+                self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 30000 Abs")
                 if was_monitoring:
                     self._carmaker_service.set_monitoring_state(True)
                     self._add_log("  → Monitoring resumed")
@@ -341,7 +341,7 @@ class TriggerService:
         except Exception as exc:
             self._add_log(f"  ✗ Trigger action failed: {exc}")
             try:
-                self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 1000 Abs")
+                self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 30000 Abs")
             except Exception:
                 pass
             if was_monitoring:
