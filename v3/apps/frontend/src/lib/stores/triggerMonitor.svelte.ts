@@ -1,4 +1,5 @@
 import { requestJson } from '$lib/backend';
+import { carmakerStore } from '$lib/stores/carmakerStore.svelte';
 
 interface Trigger {
   id: number;
@@ -96,13 +97,22 @@ class TriggerMonitor {
 
   private async pollRuntimeState(): Promise<void> {
     try {
-      const [monitoring, logs] = await Promise.all([
+      const [monitoring, logs, carmakerMonitoring] = await Promise.all([
         requestJson<boolean>('/api/triggers/monitoring'),
         requestJson<string[]>('/api/triggers/logs'),
+        requestJson<boolean>('/api/carmaker/monitoring'),
       ]);
 
       this.isMonitoring = monitoring;
       this.logMessages = logs;
+      if (carmakerStore.isMonitoring !== carmakerMonitoring) {
+        carmakerStore.syncMonitoringStateFromBackend(
+          carmakerMonitoring,
+          carmakerMonitoring
+            ? '→ Monitoring resumed'
+            : '→ Monitoring paused (prevent timeout in low-speed mode)',
+        );
+      }
       await this.pollEvents();
 
       if (!monitoring) {

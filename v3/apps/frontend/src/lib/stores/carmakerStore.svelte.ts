@@ -102,9 +102,46 @@ class CarMakerStore {
         method: 'POST',
         body: { active: true },
       });
-      this.isMonitoring = true;
-      this.addLog('✓ Started monitoring');
+      this.syncMonitoringStateFromBackend(true, '✓ Started monitoring');
+    } catch (error) {
+      this.addLog(`✗ Failed to start monitoring: ${String(error)}`);
+    }
+  }
 
+  async stopMonitoring(): Promise<void> {
+    try {
+      this.syncMonitoringStateFromBackend(false, '✓ Stopped monitoring');
+      void requestJson<boolean>('/api/carmaker/monitoring', {
+        method: 'POST',
+        body: { active: false },
+      }).catch(() => {});
+    } catch (error) {
+      this.addLog(`✗ Failed to stop monitoring: ${String(error)}`);
+    }
+  }
+
+  addLog(message: string): void {
+    const timestamp = new Date().toLocaleTimeString();
+    this.logMessages = [...this.logMessages, `[${timestamp}] ${message}`];
+    if (this.logMessages.length > 100) {
+      this.logMessages = this.logMessages.slice(-100);
+    }
+  }
+
+  syncMonitoringStateFromBackend(active: boolean, logMessage?: string): void {
+    if (!active && this.monitorInterval !== null) {
+      clearInterval(this.monitorInterval);
+      this.monitorInterval = null;
+    }
+
+    if (!active) {
+      this.isRequesting = false;
+    }
+
+    const changed = this.isMonitoring !== active;
+    this.isMonitoring = active;
+
+    if (active && this.monitorInterval === null) {
       this.monitorInterval = window.setInterval(async () => {
         if (this.isRequesting) {
           return;
@@ -120,36 +157,10 @@ class CarMakerStore {
           this.isRequesting = false;
         }
       }, 100);
-    } catch (error) {
-      this.addLog(`✗ Failed to start monitoring: ${String(error)}`);
     }
-  }
 
-  async stopMonitoring(): Promise<void> {
-    try {
-      if (this.monitorInterval !== null) {
-        clearInterval(this.monitorInterval);
-        this.monitorInterval = null;
-      }
-
-      this.isRequesting = false;
-      this.isMonitoring = false;
-      this.addLog('✓ Stopped monitoring');
-
-      void requestJson<boolean>('/api/carmaker/monitoring', {
-        method: 'POST',
-        body: { active: false },
-      }).catch(() => {});
-    } catch (error) {
-      this.addLog(`✗ Failed to stop monitoring: ${String(error)}`);
-    }
-  }
-
-  addLog(message: string): void {
-    const timestamp = new Date().toLocaleTimeString();
-    this.logMessages = [...this.logMessages, `[${timestamp}] ${message}`];
-    if (this.logMessages.length > 100) {
-      this.logMessages = this.logMessages.slice(-100);
+    if (logMessage && changed) {
+      this.addLog(logMessage);
     }
   }
 

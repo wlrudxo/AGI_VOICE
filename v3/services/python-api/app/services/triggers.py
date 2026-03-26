@@ -307,8 +307,13 @@ class TriggerService:
 
     def _execute_trigger(self, trigger: Trigger, vehicle_data: dict[str, float]) -> None:
         self._is_executing = True
+        was_monitoring = False
         try:
             self._add_log("  → Pausing simulation (time scale = 0.001x)")
+            was_monitoring = self._carmaker_service.is_monitoring_active()
+            if was_monitoring:
+                self._carmaker_service.set_monitoring_state(False)
+                self._add_log("  → Monitoring paused (prevent timeout in low-speed mode)")
             self._carmaker_service.execute_command("DVAWrite SC.TAccel 0.001 30000 Abs")
 
             if trigger.use_rule_control and trigger.debug_action.strip():
@@ -316,6 +321,9 @@ class TriggerService:
                 time.sleep(1.0)
                 self._add_log("  → Resuming simulation (time scale = 1.0x)")
                 self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 1000 Abs")
+                if was_monitoring:
+                    self._carmaker_service.set_monitoring_state(True)
+                    self._add_log("  → Monitoring resumed")
                 self._add_log("  → Rule mode: executing backend rule action")
                 self._execute_command_sequence(trigger.debug_action)
             else:
@@ -323,6 +331,9 @@ class TriggerService:
                 llm_response = asyncio.run(self._request_llm(trigger, vehicle_data))
                 self._add_log("  → Resuming simulation (time scale = 1.0x)")
                 self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 1000 Abs")
+                if was_monitoring:
+                    self._carmaker_service.set_monitoring_state(True)
+                    self._add_log("  → Monitoring resumed")
                 if llm_response:
                     self._add_log("  → Parsing LLM response and executing commands")
                     self._execute_command_sequence(llm_response)
@@ -333,6 +344,12 @@ class TriggerService:
                 self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 1000 Abs")
             except Exception:
                 pass
+            if was_monitoring:
+                try:
+                    self._carmaker_service.set_monitoring_state(True)
+                    self._add_log("  → Monitoring resumed")
+                except Exception:
+                    pass
         finally:
             self._is_executing = False
 
