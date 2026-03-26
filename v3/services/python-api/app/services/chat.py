@@ -18,6 +18,10 @@ from app.schemas.conversations import (
     MessageResponse,
 )
 from app.services.ai_catalog import AiCatalogService, get_ai_catalog_service
+from app.services.command_templates import (
+    CommandTemplateService,
+    get_command_template_service,
+)
 from app.services.settings import SettingsService, get_settings_service
 
 
@@ -46,11 +50,13 @@ class ChatService:
         storage_path: Path,
         settings_service: SettingsService,
         catalog_service: AiCatalogService,
+        command_template_service: CommandTemplateService,
     ) -> None:
         self._lock = threading.RLock()
         self._storage_path = storage_path
         self._settings_service = settings_service
         self._catalog_service = catalog_service
+        self._command_template_service = command_template_service
         self._conversations: dict[int, ConversationRecord] = {}
         self._load()
 
@@ -216,6 +222,9 @@ class ChatService:
             claude_md_parts.extend(["## User Information", "", user_info.strip(), ""])
         claude_md = "\n".join(claude_md_parts).strip() + "\n"
 
+        command_info_list = [
+            item.content for item in self._command_template_service.list_templates(is_active=1)
+        ]
         history_block = self._format_history(request)
         current_input = request.system_context.strip() if request.system_context else request.message.strip()
         final_message = request.final_message.strip() if request.final_message else (
@@ -230,6 +239,7 @@ class ChatService:
 
         full_message = textwrap.dedent(
             f"""
+            {'## 명령어 정보\n\n' + '\n\n'.join(command_info_list) + '\n\n' if command_info_list else ''}
             <--Previous Exchanges Start-->
 
             {history_block}
@@ -459,6 +469,7 @@ _service = ChatService(
     _settings.data_dir_path / "chat.json",
     get_settings_service(),
     get_ai_catalog_service(),
+    get_command_template_service(),
 )
 
 

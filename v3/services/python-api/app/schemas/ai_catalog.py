@@ -24,6 +24,26 @@ class PromptTemplate(CamelModel):
     updated_at: datetime
 
 
+class CharacterCreate(CamelModel):
+    name: str
+    prompt_content: str
+
+
+class CharacterUpdate(CamelModel):
+    name: str
+    prompt_content: str
+
+
+class PromptTemplateCreate(CamelModel):
+    name: str
+    content: str
+
+
+class PromptTemplateUpdate(CamelModel):
+    name: str
+    content: str
+
+
 class CharacterCollection(CamelModel):
     items: list[Character] = Field(default_factory=list)
 
