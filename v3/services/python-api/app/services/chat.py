@@ -40,9 +40,9 @@ class ChatService:
         self._command_template_service = command_template_service
 
     async def chat(self, request: ChatRequest) -> ChatResponse:
-        character, prompt_template = self._resolve_context(request)
+        conversation_id, character, prompt_template, user_info = self._resolve_chat_session(request)
         workspace_dir = self._resolve_workspace_dir()
-        claude_md, prompt = self._build_prompt(request, character, prompt_template)
+        claude_md, prompt = self._build_prompt(request, character, prompt_template, user_info)
         self._save_claude_md(claude_md, workspace_dir)
         response_text = await self._run_claude(prompt, request.model, workspace_dir)
 
@@ -53,7 +53,14 @@ class ChatService:
                 actions=[],
             )
 
-        conversation_id = self._persist_chat(request, response_text, character.id, prompt_template.id)
+        conversation_id = self._persist_chat(
+            request,
+            response_text,
+            conversation_id,
+            character.id,
+            prompt_template.id,
+            user_info,
+        )
         return ChatResponse(
             conversation_id=conversation_id,
             responses=[response_text],
@@ -177,32 +184,40 @@ class ChatService:
             conn.execute("DELETE FROM conversations WHERE id = ?", (conversation_id,))
             conn.commit()
 
-    def _resolve_context(self, request: ChatRequest) -> tuple[Character, PromptTemplate]:
-        chat_settings = self._settings_service.get_chat_settings()
-        character_id = request.character_id or chat_settings.default_character_id
-        prompt_template_id = request.prompt_template_id or chat_settings.default_prompt_template_id
+    def _resolve_chat_session(
+        self,
+        request: ChatRequest,
+    ) -> tuple[int | None, Character, PromptTemplate, str]:
+        # V2 parity:
+        # - existing conversation always uses the stored character/template/user_info
+        # - new conversation and no-save mode require explicit request ids
+        conversation_id: int | None = None
+        user_info = request.user_info or ""
 
-        if character_id is None:
-            characters = self._catalog_service.list_characters()
-            character_id = characters[0].id if characters else None
-
-        if prompt_template_id is None:
-            templates = self._catalog_service.list_prompt_templates()
-            prompt_template_id = templates[0].id if templates else None
-
-        if character_id is None or prompt_template_id is None:
-            raise RuntimeError("characterId and promptTemplateId are required")
+        if not request.no_save and request.conversation_id is not None:
+            with self._lock, self._db.with_lock(), self._db.connect() as conn:
+                row = conn.execute(
+                    "SELECT id, character_id, prompt_template_id, user_info FROM conversations WHERE id = ?",
+                    (request.conversation_id,),
+                ).fetchone()
+            if row is None:
+                raise RuntimeError("Conversation not found")
+            conversation_id = int(row["id"])
+            character_id = int(row["character_id"])
+            prompt_template_id = int(row["prompt_template_id"])
+            user_info = row["user_info"] or ""
+        else:
+            if request.character_id is None or request.prompt_template_id is None:
+                raise RuntimeError("characterId and promptTemplateId are required for new conversation")
+            character_id = request.character_id
+            prompt_template_id = request.prompt_template_id
 
         character = next(
             (item for item in self._catalog_service.list_characters() if item.id == character_id),
             None,
         )
         prompt_template = next(
-            (
-                item
-                for item in self._catalog_service.list_prompt_templates()
-                if item.id == prompt_template_id
-            ),
+            (item for item in self._catalog_service.list_prompt_templates() if item.id == prompt_template_id),
             None,
         )
 
@@ -211,19 +226,20 @@ class ChatService:
         if prompt_template is None:
             raise RuntimeError("Prompt template not found")
 
-        return character, prompt_template
+        return conversation_id, character, prompt_template, user_info
 
     def _build_prompt(
         self,
         request: ChatRequest,
         character: Character,
         prompt_template: PromptTemplate,
+        user_info: str,
     ) -> tuple[str, str]:
         user_name = request.user_name or ""
         character_name = character.name
         system_message = self._substitute(prompt_template.content, user_name, character_name)
         character_prompt = self._substitute(character.prompt_content, user_name, character_name)
-        user_info = self._substitute(request.user_info or "", user_name, character_name)
+        user_info = self._substitute(user_info, user_name, character_name)
 
         claude_md_parts = [
             "## System Message",
@@ -325,21 +341,14 @@ class ChatService:
         self,
         request: ChatRequest,
         response_text: str,
+        conversation_id: int | None,
         character_id: int,
         prompt_template_id: int,
+        user_info: str,
     ) -> int:
         with self._lock, self._db.with_lock(), self._db.connect() as conn:
             now = utc_now_iso()
-            if request.conversation_id:
-                existing = conn.execute(
-                    "SELECT * FROM conversations WHERE id = ?",
-                    (request.conversation_id,),
-                ).fetchone()
-            else:
-                existing = None
-
-            if existing is not None:
-                conversation_id = int(existing["id"])
+            if conversation_id is not None:
                 conn.execute(
                     """
                     UPDATE conversations
@@ -358,7 +367,7 @@ class ChatService:
                     (
                         character_id,
                         prompt_template_id,
-                        request.user_info,
+                        user_info,
                         request.title or f"Chat {datetime.now().strftime('%Y-%m-%d %H:%M')}",
                         now,
                         now,
