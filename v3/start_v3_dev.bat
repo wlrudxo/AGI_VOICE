@@ -17,6 +17,7 @@ set "PYTHON_API_DIR=%V3_ROOT%\services\python-api"
 echo ========================================
 echo AGI Voice V3 Dev Launcher
 echo Root: %V3_ROOT%
+echo Mode: single console
 echo ========================================
 echo.
 
@@ -36,12 +37,11 @@ if not exist "%PYTHON_API_DIR%\pyproject.toml" (
   exit /b 1
 )
 
-start "AGI Voice V3 Frontend" cmd /k call "%~f0" __frontend
-start "AGI Voice V3 Python API" cmd /k call "%~f0" __python_api
-start "AGI Voice V3 Electron" cmd /k call "%~f0" __electron
-
-echo [INFO] Launched V3 dev consoles.
-echo [INFO] Close each console individually when finished.
+echo [INFO] Starting frontend and Python API in background on this console...
+start "AGI Voice V3 Frontend" /b cmd /c call "%~f0" __frontend
+start "AGI Voice V3 Python API" /b cmd /c call "%~f0" __python_api
+echo [INFO] Starting Electron in foreground...
+call "%~f0" __electron
 
 endlocal
 exit /b 0
