@@ -6,6 +6,7 @@ import textwrap
 import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Iterable
 
 from app.core.config import get_settings
 from app.schemas.ai_catalog import Character, PromptTemplate
@@ -452,12 +453,11 @@ class ChatService:
         (workspace_dir / "CLAUDE.md").write_text(content, encoding="utf-8")
 
     async def _run_claude(self, prompt: str, model: str, workspace_dir: Path) -> str:
-        claude_bin = os.getenv("AGI_VOICE_CLAUDE_BIN") or shutil.which("claude")
+        claude_bin = self._resolve_claude_cli()
         if not claude_bin:
-            raise RuntimeError("Claude CLI not found in PATH")
+            raise RuntimeError("Claude CLI not found")
 
-        process = await asyncio.create_subprocess_exec(
-            claude_bin,
+        args = [
             "-p",
             "--output-format",
             "stream-json",
@@ -467,6 +467,11 @@ class ChatService:
             model,
             "--disallowedTools",
             "TodoWrite,Task,Bash,WebSearch,WebFetch",
+        ]
+        command = self._build_claude_command(claude_bin, args)
+
+        process = await asyncio.create_subprocess_exec(
+            *command,
             cwd=str(workspace_dir),
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
@@ -483,6 +488,63 @@ class ChatService:
         if not response_text.strip():
             raise RuntimeError("Claude CLI returned an empty response")
         return response_text
+
+    def _resolve_claude_cli(self) -> str | None:
+        env_path = os.getenv("AGI_VOICE_CLAUDE_BIN")
+        if env_path and Path(env_path).exists():
+            return env_path
+
+        direct = shutil.which("claude")
+        if direct:
+            return direct
+
+        if os.name != "nt":
+            return None
+
+        for candidate in self._iter_windows_claude_candidates():
+            if candidate.is_file():
+                return str(candidate)
+        return None
+
+    def _iter_windows_claude_candidates(self) -> Iterable[Path]:
+        user_profile = os.getenv("USERPROFILE")
+        if user_profile:
+            yield Path(user_profile) / ".local" / "bin" / "claude.exe"
+
+        appdata = os.getenv("APPDATA")
+        if appdata:
+            # npm global install location
+            yield Path(appdata) / "npm" / "claude.cmd"
+            yield Path(appdata) / "npm" / "claude.exe"
+
+            base_dir = Path(appdata) / "Claude" / "claude-code"
+            if base_dir.is_dir():
+                version_dirs: list[tuple[list[int], Path]] = []
+                for child in base_dir.iterdir():
+                    if not child.is_dir():
+                        continue
+                    version = self._parse_version(child.name)
+                    if version is None:
+                        continue
+                    version_dirs.append((version, child))
+
+                for _, version_dir in sorted(version_dirs, reverse=True):
+                    yield version_dir / "claude.exe"
+                    yield version_dir / "claude.cmd"
+
+    def _parse_version(self, value: str) -> list[int] | None:
+        parts: list[int] = []
+        for part in value.split("."):
+            if not part.isdigit():
+                return None
+            parts.append(int(part))
+        return parts or None
+
+    def _build_claude_command(self, claude_bin: str, args: list[str]) -> list[str]:
+        suffix = Path(claude_bin).suffix.lower()
+        if suffix in {".cmd", ".bat"}:
+            return ["cmd.exe", "/C", claude_bin, *args]
+        return [claude_bin, *args]
 
     def _extract_stream_json(self, stdout: str) -> str:
         full_response = ""
