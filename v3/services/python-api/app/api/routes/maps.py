@@ -52,7 +52,10 @@ def search_maps(
     top_k: int = Query(default=5, ge=1, le=50),
     service: MapService = Depends(get_map_service),
 ) -> list[MapSearchResult]:
-    return service.search_maps(query, top_k=top_k)
+    try:
+        return service.search_maps(query, top_k=top_k)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/embeddings/build-all", response_model=BuildResult)
@@ -101,10 +104,8 @@ def delete_map(
     map_id: int,
     service: MapService = Depends(get_map_service),
 ) -> dict[str, bool]:
-    try:
-        service.delete_map(map_id)
-    except RuntimeError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    # V2 delete treats missing IDs as a successful no-op.
+    service.delete_map(map_id)
     return {"ok": True}
 
 

@@ -96,13 +96,18 @@ class MapService:
             "description": payload.get("description", existing.description),
             "node_xml": payload.get("node_xml", existing.node_xml),
             "edge_xml": payload.get("edge_xml", existing.edge_xml),
-            "tags": self._to_json_string(payload["tags"]) if "tags" in payload else existing.tags,
-            # V3 frontend edit form sends null for category/difficulty when it intends to preserve
-            # existing values, matching V2 behavior.
+            # V2 treats explicit null the same as "field omitted" for optional updates.
+            "tags": (
+                self._to_json_string(payload["tags"])
+                if "tags" in payload and payload["tags"] is not None
+                else existing.tags
+            ),
             "category": payload.get("category") or existing.category,
             "difficulty": payload.get("difficulty") or existing.difficulty,
             "metadata": (
-                self._to_json_string(payload["metadata"]) if "metadata" in payload else existing.metadata
+                self._to_json_string(payload["metadata"])
+                if "metadata" in payload and payload["metadata"] is not None
+                else existing.metadata
             ),
             "updated_at": utc_now_iso(),
         }
@@ -136,10 +141,8 @@ class MapService:
     def delete_map(self, map_id: int) -> None:
         with self._lock, self._connect() as conn:
             conn.execute("DELETE FROM map_search_index WHERE map_id = ?", (map_id,))
-            cursor = conn.execute("DELETE FROM maps WHERE id = ?", (map_id,))
+            conn.execute("DELETE FROM maps WHERE id = ?", (map_id,))
             conn.commit()
-            if cursor.rowcount == 0:
-                raise RuntimeError(f"Map not found: {map_id}")
 
     def get_map_count(self) -> int:
         with self._lock, self._connect() as conn:
@@ -166,6 +169,7 @@ class MapService:
                 (embedded_at, self.EMBEDDING_MODEL, embedded_at, map_id),
             )
             conn.commit()
+        self._mark_embedding_index_ready()
 
         return EmbedResult(
             success=True,
@@ -179,7 +183,6 @@ class MapService:
     def build_all_embeddings(self, rebuild: bool = False) -> BuildResult:
         maps = self.get_maps()
         embedded_count = 0
-        skipped_count = 0
 
         with self._lock, self._connect() as conn:
             if rebuild:
@@ -187,12 +190,11 @@ class MapService:
                 conn.execute(
                     "UPDATE maps SET is_embedded = 0, embedded_at = NULL, embedding_model = NULL"
                 )
+                target_maps = maps
+            else:
+                target_maps = [map_record for map_record in maps if map_record.is_embedded == 0]
 
-            for map_record in maps:
-                if not rebuild and map_record.is_embedded == 1:
-                    skipped_count += 1
-                    continue
-
+            for map_record in target_maps:
                 search_text = self._build_search_text(map_record)
                 embedded_at = utc_now_iso()
                 conn.execute("DELETE FROM map_search_index WHERE map_id = ?", (map_record.id,))
@@ -211,12 +213,13 @@ class MapService:
                 embedded_count += 1
 
             conn.commit()
+        self._mark_embedding_index_ready()
 
         return BuildResult(
             success=True,
-            total_maps=len(maps),
+            total_maps=len(target_maps),
             embedded_count=embedded_count,
-            skipped_count=skipped_count,
+            skipped_count=0,
             embedding_model=self.EMBEDDING_MODEL,
             index_path=str(self._resolve_embedding_index_path()),
             error=None,
@@ -233,6 +236,11 @@ class MapService:
         normalized_query = query.strip()
         if not normalized_query:
             return []
+        if not self._embedding_index_is_ready():
+            raise RuntimeError(
+                f"FAISS index not found at {self._resolve_embedding_index_path()}. "
+                "Please build embeddings first."
+            )
 
         with self._lock, self._connect() as conn:
             if not self._fts_available(conn):
@@ -336,11 +344,12 @@ class MapService:
     def _init_db(self) -> None:
         self._db_path.parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as conn:
+            self._migrate_legacy_schema(conn)
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS maps (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL UNIQUE,
+                    name TEXT NOT NULL,
                     description TEXT NOT NULL,
                     node_xml TEXT NOT NULL,
                     edge_xml TEXT NOT NULL,
@@ -389,6 +398,61 @@ class MapService:
         index_path = get_settings().data_dir_path / "faiss_index"
         index_path.mkdir(parents=True, exist_ok=True)
         return index_path
+
+    def _embedding_index_marker_path(self) -> Path:
+        return self._resolve_embedding_index_path() / ".v3_index_ready"
+
+    def _embedding_index_is_ready(self) -> bool:
+        return self._embedding_index_marker_path().exists()
+
+    def _mark_embedding_index_ready(self) -> None:
+        self._embedding_index_marker_path().write_text(utc_now_iso(), encoding="utf-8")
+
+    def _migrate_legacy_schema(self, conn: sqlite3.Connection) -> None:
+        create_sql_row = conn.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='maps'"
+        ).fetchone()
+        if create_sql_row is None:
+            return
+
+        create_sql = str(create_sql_row["sql"] or "").upper()
+        if "NAME TEXT NOT NULL UNIQUE" not in create_sql:
+            return
+
+        conn.execute("ALTER TABLE maps RENAME TO maps_legacy_unique")
+        conn.execute(
+            """
+            CREATE TABLE maps (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                description TEXT NOT NULL,
+                node_xml TEXT NOT NULL,
+                edge_xml TEXT NOT NULL,
+                tags TEXT,
+                category TEXT NOT NULL DEFAULT 'general',
+                difficulty TEXT NOT NULL DEFAULT 'medium',
+                metadata TEXT,
+                is_embedded INTEGER NOT NULL DEFAULT 0,
+                embedded_at TEXT,
+                embedding_model TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO maps (
+                id, name, description, node_xml, edge_xml, tags, category, difficulty, metadata,
+                is_embedded, embedded_at, embedding_model, created_at, updated_at
+            )
+            SELECT
+                id, name, description, node_xml, edge_xml, tags, category, difficulty, metadata,
+                is_embedded, embedded_at, embedding_model, created_at, updated_at
+            FROM maps_legacy_unique
+            """
+        )
+        conn.execute("DROP TABLE maps_legacy_unique")
 
 
 _settings = get_settings()
