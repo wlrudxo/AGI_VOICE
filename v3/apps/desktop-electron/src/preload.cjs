@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('desktop', {
     focus: () => invoke('window:focus'),
     minimize: () => invoke('window:minimize'),
     maximize: () => invoke('window:maximize'),
+    toggleMaximize: () => invoke('window:toggleMaximize'),
     unmaximize: () => invoke('window:unmaximize'),
     isMaximized: () => invoke('window:isMaximized'),
     outerSize: () => invoke('window:outerSize'),

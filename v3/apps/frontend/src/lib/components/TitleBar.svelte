@@ -21,7 +21,13 @@
   }
 </script>
 
-<div class="titlebar">
+<div
+  class="titlebar"
+  ondblclick={maximizeWindow}
+  role="button"
+  tabindex="-1"
+  aria-label="Window title bar"
+>
   <div class="titlebar-left">
     <span class="app-title">AGI Voice</span>
   </div>
@@ -56,6 +62,7 @@
     z-index: 9999;
     border-bottom: 1px solid var(--border-light);
     background-color: var(--color-sidebar-bg);
+    -webkit-app-region: drag;
   }
 
   .titlebar-left {
@@ -89,6 +96,11 @@
     border-radius: 6px;
     transition: all 0.2s;
     color: var(--color-sidebar-text);
+    -webkit-app-region: no-drag;
+  }
+
+  .titlebar-right {
+    -webkit-app-region: no-drag;
   }
 
   .titlebar-button:hover {

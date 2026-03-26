@@ -236,6 +236,20 @@ ipcMain.handle('window:maximize', () => {
   return true;
 });
 
+ipcMain.handle('window:toggleMaximize', () => {
+  if (!mainWindow) {
+    return false;
+  }
+
+  if (mainWindow.isMaximized()) {
+    mainWindow.unmaximize();
+  } else {
+    mainWindow.maximize();
+  }
+
+  return true;
+});
+
 ipcMain.handle('window:unmaximize', () => {
   mainWindow?.unmaximize();
   return true;
