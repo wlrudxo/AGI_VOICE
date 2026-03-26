@@ -2,7 +2,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -88,8 +88,20 @@ function detectPythonExecutable() {
 }
 
 function ensurePythonPackage(pythonExe) {
+  const stampPath = path.join(pythonApiDir, '.editable-install.stamp');
+  const pyprojectPath = path.join(pythonApiDir, 'pyproject.toml');
+  const needsInstall =
+    !existsSync(stampPath) ||
+    !existsSync(pyprojectPath) ||
+    statSync(stampPath).mtimeMs < statSync(pyprojectPath).mtimeMs;
+
+  if (!needsInstall) {
+    return;
+  }
+
   log('Installing/updating Python API package...');
   runOrThrow(pythonExe, ['-m', 'pip', 'install', '-e', '.'], pythonApiDir);
+  writeFileSync(stampPath, new Date().toISOString(), 'utf-8');
 }
 
 function tryPort(port) {
