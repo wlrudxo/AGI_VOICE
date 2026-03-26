@@ -97,8 +97,10 @@ class MapService:
             "node_xml": payload.get("node_xml", existing.node_xml),
             "edge_xml": payload.get("edge_xml", existing.edge_xml),
             "tags": self._to_json_string(payload["tags"]) if "tags" in payload else existing.tags,
-            "category": payload.get("category", existing.category),
-            "difficulty": payload.get("difficulty", existing.difficulty),
+            # V3 frontend edit form sends null for category/difficulty when it intends to preserve
+            # existing values, matching V2 behavior.
+            "category": payload.get("category") or existing.category,
+            "difficulty": payload.get("difficulty") or existing.difficulty,
             "metadata": (
                 self._to_json_string(payload["metadata"]) if "metadata" in payload else existing.metadata
             ),
