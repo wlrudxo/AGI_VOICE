@@ -137,6 +137,7 @@ function spawnManaged(command, args, options) {
     env: options.env ?? process.env,
     stdio: ['ignore', 'pipe', 'pipe'],
     shell: false,
+    detached: isWindows,
   });
   children.add(child);
   forwardOutput(child, options.name);
