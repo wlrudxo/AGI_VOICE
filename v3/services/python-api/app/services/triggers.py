@@ -1,5 +1,5 @@
-import asyncio
 import json
+import math
 import re
 import threading
 import time
@@ -7,12 +7,8 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from app.core.config import get_settings
-from app.schemas.chat import ChatRequest
-from app.services.action_service import ActionService, get_action_service
 from app.services.carmaker import CarMakerService, get_carmaker_service
-from app.services.chat import ChatService, get_chat_service
-from app.services.settings import SettingsService, get_settings_service
+from app.services.trigger_executor import TriggerExecutor, get_trigger_executor
 from app.schemas.triggers import (
     CreateTriggerRequest,
     Trigger,
@@ -28,16 +24,12 @@ class TriggerService:
         self,
         storage_path: Path,
         carmaker_service: CarMakerService,
-        action_service: ActionService,
-        chat_service: ChatService,
-        settings_service: SettingsService,
+        trigger_executor: TriggerExecutor,
     ) -> None:
         self._lock = threading.RLock()
         self._storage_path = storage_path
         self._carmaker_service = carmaker_service
-        self._action_service = action_service
-        self._chat_service = chat_service
-        self._settings_service = settings_service
+        self._trigger_executor = trigger_executor
         self._triggers: list[Trigger] = []
         self._log_messages: list[str] = []
         self._monitoring_active = False
@@ -304,67 +296,21 @@ class TriggerService:
                 for key, value in sorted(vehicle_data.items())
             )
             self._add_log(f"  Vehicle data: {snapshot}")
-            self._execute_trigger(trigger, vehicle_data)
-            return
-
-    def _execute_trigger(self, trigger: Trigger, vehicle_data: dict[str, float]) -> None:
-        self._cancel_event.clear()
-        was_monitoring = False
-        try:
-            self._add_log("  → Pausing simulation (time scale = 0.001x)")
-            was_monitoring = self._carmaker_service.is_monitoring_active()
-            if was_monitoring:
-                self._set_monitoring_state(False, reset_cooldowns=False)
-                self._add_log("  → Monitoring paused (prevent timeout in low-speed mode)")
-            self._carmaker_service.execute_command("DVAWrite SC.TAccel 0.001 30000 Abs")
-
-            if trigger.use_rule_control and trigger.debug_action.strip():
-                self._add_log("  → Rule mode: waiting 1 second")
-                self._sleep_with_cancel(1.0)
-                self._add_log("  → Resuming simulation (time scale = 1.0x)")
-                self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 30000 Abs")
-                if was_monitoring:
-                    self._set_monitoring_state(True, reset_cooldowns=False)
-                    self._add_log("  → Monitoring resumed")
-                self._add_log("  → Rule mode: executing backend rule action")
-                self._action_service.execute_command_sequence(
-                    trigger.debug_action,
-                    cancel_event=self._cancel_event,
-                    logger=self._add_log,
-                )
-            else:
-                self._add_log("  → LLM mode: requesting AI response")
-                llm_response = asyncio.run(self._request_llm(trigger, vehicle_data))
-                self._add_log("  → Resuming simulation (time scale = 1.0x)")
-                self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 30000 Abs")
-                if was_monitoring:
-                    self._set_monitoring_state(True, reset_cooldowns=False)
-                    self._add_log("  → Monitoring resumed")
-                if self._cancel_event.is_set():
-                    self._add_log("  → Trigger execution cancelled after AI response wait")
-                elif llm_response:
-                    self._add_log("  → Parsing LLM response and executing commands")
-                    self._action_service.execute_command_sequence(
-                        llm_response,
-                        cancel_event=self._cancel_event,
-                        logger=self._add_log,
-                    )
-            self._add_log("  ✓ Trigger action sequence completed")
-        except Exception as exc:
-            self._add_log(f"  ✗ Trigger action failed: {exc}")
             try:
-                self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 30000 Abs")
-            except Exception:
-                pass
-            if was_monitoring:
-                try:
-                    self._set_monitoring_state(True, reset_cooldowns=False)
-                    self._add_log("  → Monitoring resumed")
-                except Exception:
-                    pass
-        finally:
-            self._is_executing = False
-            self._cancel_event.clear()
+                self._trigger_executor.execute(
+                    trigger=trigger,
+                    vehicle_data=vehicle_data,
+                    cancel_event=self._cancel_event,
+                    is_monitoring_active=self._carmaker_service.is_monitoring_active,
+                    set_monitoring_state=self._set_monitoring_state,
+                    add_log=self._add_log,
+                    add_event=self._add_event,
+                )
+            finally:
+                with self._lock:
+                    self._is_executing = False
+                    self._cancel_event.clear()
+            return
 
     def _evaluate_expression(self, expression: str, vehicle_data: dict[str, float]) -> bool:
         if not expression.strip():
@@ -401,130 +347,22 @@ class TriggerService:
 
         return bool(result)
 
-    async def _request_llm(self, trigger: Trigger, vehicle_data: dict[str, float]) -> str | None:
-        try:
-            system_context = self._build_system_context(trigger, vehicle_data)
-            self._add_multiline_log(
-                f"  === LLM INPUT BEGIN ({trigger.name}) ===",
-                system_context,
-                f"  === LLM INPUT END ({trigger.name}) ===",
-            )
-            self._print_debug_block(
-                "Trigger AI Input",
-                system_context,
-                metadata={
-                    "trigger_id": trigger.id,
-                    "trigger_name": trigger.name,
-                    "conversation_id": trigger.conversation_id,
-                },
-            )
-            self._add_event("system", trigger.name, system_context)
-            trigger_ai = self._settings_service.get_trigger_ai_settings()
-            chat_settings = self._settings_service.get_chat_settings()
-            request = ChatRequest(
-                message="Trigger activated. Please provide vehicle control response.",
-                system_context=system_context,
-                role="system",
-                exclude_history=trigger_ai.exclude_history,
-                no_save=trigger_ai.exclude_history,
-                model=trigger_ai.model or chat_settings.default_claude_model,
-                prompt_template_id=(
-                    trigger_ai.prompt_template_id or chat_settings.default_prompt_template_id
-                ),
-            )
-            response = await self._chat_service.chat(request, abort_event=self._cancel_event)
-            if not response.responses:
-                self._add_log("  ⚠ LLM returned no response")
-                return None
-
-            llm_response = response.responses[0]
-            self._add_log(f"  ✓ LLM response received ({len(llm_response)} chars)")
-            self._add_multiline_log(
-                f"  === LLM OUTPUT BEGIN ({trigger.name}) ===",
-                llm_response,
-                f"  === LLM OUTPUT END ({trigger.name}) ===",
-            )
-            self._print_debug_block(
-                "Trigger AI Output",
-                llm_response,
-                metadata={
-                    "trigger_id": trigger.id,
-                    "trigger_name": trigger.name,
-                },
-            )
-            self._add_event("llm_response", trigger.name, llm_response)
-            return llm_response
-        except Exception as exc:
-            self._add_log(f"  ✗ LLM request failed: {exc}")
-            self._add_event("error", trigger.name, f"LLM 요청 실패: {exc}")
-            return None
-
-    def _sleep_with_cancel(self, seconds: float) -> None:
-        deadline = time.time() + seconds
-        while time.time() < deadline:
-            if self._cancel_event.is_set():
-                raise RuntimeError("Trigger execution cancelled")
-            time.sleep(0.05)
-
-    def _build_system_context(self, trigger: Trigger, vehicle_data: dict[str, float]) -> str:
-        data_snapshot = "\n".join(
-            f"{key}: {value:.4f}"
-            for key, value in sorted(vehicle_data.items())
-        )
-        return (
-            "## Current Vehicle Data:\n"
-            f"{data_snapshot}\n\n"
-            "## Trigger Message:\n"
-            f"{trigger.message}"
-        )
-
     def _add_log(self, message: str) -> None:
         timestamp = time.strftime("%I:%M:%S %p")
         self._log_messages = [*self._log_messages, f"[{timestamp}] {message}"][-100:]
 
-    def _add_multiline_log(self, begin: str, content: str, end: str) -> None:
-        self._add_log(begin)
-        for line in content.splitlines():
-            self._add_log(f"    {line}")
-        self._add_log(end)
-
-    def _add_event(self, event_type: str, trigger_name: str, content: str) -> None:
+    def _add_event(self, event: TriggerChatEvent) -> None:
         with self._lock:
-            event = TriggerChatEvent(
-                id=self._next_event_id,
-                type=event_type,
-                trigger_name=trigger_name,
-                content=content,
-                created_at=utc_now(),
-            )
+            next_event = event.model_copy(update={"id": self._next_event_id})
             self._next_event_id += 1
-            self._events = [*self._events, event][-200:]
-
-    def _print_debug_block(
-        self,
-        title: str,
-        content: str,
-        metadata: dict[str, object] | None = None,
-    ) -> None:
-        config_settings = get_settings()
-        app_settings = self._settings_service.get_app_settings()
-        if not (config_settings.debug_chat_logs or app_settings.debug_chat_logs):
-            return
-
-        print(f"=== {title} ===")
-        if metadata:
-            print(json.dumps(metadata, ensure_ascii=False, indent=2))
-        print(content)
-        print(f"=== End {title} ===")
+            self._events = [*self._events, next_event][-200:]
 
 
 _settings = get_settings()
 _service = TriggerService(
     _settings.data_dir_path / "triggers.json",
     get_carmaker_service(),
-    get_action_service(),
-    get_chat_service(),
-    get_settings_service(),
+    get_trigger_executor(),
 )
 
 
