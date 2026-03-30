@@ -124,6 +124,19 @@ class AiChatDb:
                 """,
                 (
                     1,
+                    "빈 시스템 프롬프트",
+                    "",
+                    now,
+                    now,
+                ),
+            )
+            conn.execute(
+                """
+                INSERT INTO prompt_templates (id, name, content, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    2,
                     "기본 시스템 메시지 - 자율주행 제어",
                     "당신은 CarMaker 기반 자율주행 제어를 돕는 AI 어시스턴트입니다.\n\n"
                     "사용자의 주행 상황과 차량 상태를 바탕으로 안전하고 실행 가능한 제어 지시를 제안하세요.\n\n"
@@ -146,7 +159,7 @@ class AiChatDb:
                 VALUES (?, ?, ?, ?, ?)
                 """,
                 (
-                    2,
+                    3,
                     "기본 시스템 메시지 - 맵 생성",
                     "당신은 SUMO/자율주행 시뮬레이션 맵 생성을 돕는 AI 어시스턴트입니다.\n\n"
                     "사용자의 요구사항을 바탕으로 도로 구조, 교차로, 차선, 카테고리, 난이도 등을 설계하고 맵 관련 액션을 제안하세요.\n\n"
@@ -193,6 +206,10 @@ class AiChatDb:
     def _ensure_default_prompt_templates(self, conn: sqlite3.Connection) -> None:
         now = utc_now_iso()
         defaults = [
+            (
+                "빈 시스템 프롬프트",
+                "",
+            ),
             (
                 "기본 시스템 메시지 - 자율주행 제어",
                 "당신은 CarMaker 기반 자율주행 제어를 돕는 AI 어시스턴트입니다.\n\n"

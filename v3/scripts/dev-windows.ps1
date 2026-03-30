@@ -144,7 +144,7 @@ $backendUrl = "http://127.0.0.1:$backendPort"
 Write-Info 'Starting frontend window...'
 $frontend = Start-DevWindow 'AGI Voice V3 Frontend' $FrontendDir 'npm run dev'
 Write-Info "Starting backend window on $backendUrl ..."
-$backendCmd = "`"$pythonExe`" -m uvicorn app.main:app --reload --host 127.0.0.1 --port $backendPort"
+$backendCmd = "`"$pythonExe`" -m uvicorn app.main:app --reload --host 127.0.0.1 --port $backendPort --no-access-log"
 $backend = Start-DevWindow 'AGI Voice V3 Python API' $PythonApiDir $backendCmd
 Write-Info "Starting electron window with backend $backendUrl ..."
 $electronCmd = "set V3_FRONTEND_URL=http://127.0.0.1:4173 && set V3_BACKEND_URL=$backendUrl && npm run dev"

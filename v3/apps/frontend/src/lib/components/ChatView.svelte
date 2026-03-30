@@ -231,23 +231,24 @@
 		const timestamp = new Date();
 
 		if (type === 'system') {
-			// System message (trigger activation)
 			messages.push({
 				role: 'action',
-				label: `⚡ 트리거 발동: ${triggerName}`,
+				label: `🤖 LLM 입력 (${triggerName})`,
 				timestamp
 			});
 			messages.push({
-				role: 'system',
-				content: content,
+				role: 'user',
+				content: `[Trigger: ${triggerName}]\n\n${content}`,
 				timestamp
 			});
-			// Show loading indicator while waiting for LLM response
 			isLoading = true;
 		} else if (type === 'llm_response') {
-			// Hide loading indicator
 			isLoading = false;
-			// Parse LLM response and display only (execution handled by triggerMonitor)
+			messages.push({
+				role: 'action',
+				label: `🤖 LLM 출력 (${triggerName})`,
+				timestamp
+			});
 			const segments = parseWithSegments(content);
 			for (const segment of segments) {
 				if (segment.type === 'text') {
@@ -264,10 +265,7 @@
 					});
 				}
 			}
-			// Note: Vehicle command execution is handled by triggerMonitor.executeTriggerActionSequence()
-			// This prevents duplicate execution
 		} else if (type === 'error') {
-			// Hide loading indicator
 			isLoading = false;
 			messages.push({
 				role: 'error',

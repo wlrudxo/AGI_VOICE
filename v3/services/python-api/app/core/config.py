@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     api_host: str = "127.0.0.1"
     api_port: int = 8000
     debug_chat_logs: bool = False
+    claude_timeout_seconds: int = 90
     cors_origins: list[str] = [
         "http://localhost:4173",
         "http://127.0.0.1:4173",

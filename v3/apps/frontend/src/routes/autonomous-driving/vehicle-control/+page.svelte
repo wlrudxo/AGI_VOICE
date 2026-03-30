@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import Icon from '@iconify/svelte';
+  import { requestJson } from '$lib/backend';
   import { carmakerStore } from '$lib/stores/carmakerStore.svelte';
   import { triggerMonitor } from '$lib/stores/triggerMonitor.svelte';
   import { dialogStore } from '$lib/stores/dialogStore.svelte';
@@ -169,6 +170,7 @@
     }
 
     try {
+      await requestJson<boolean>('/api/triggers/cancel-active', { method: 'POST' });
       await carmakerStore.resetAllControls();
     } catch (error: any) {
       carmakerStore.addLog(`✗ Reset failed: ${error}`);

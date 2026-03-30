@@ -1,10 +1,12 @@
 import asyncio
+import codecs
 import json
 import os
 import shutil
 import subprocess
 import textwrap
 import threading
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterable
@@ -42,24 +44,42 @@ class ChatService:
         self._catalog_service = catalog_service
         self._command_template_service = command_template_service
 
-    async def chat(self, request: ChatRequest) -> ChatResponse:
+    async def chat(
+        self,
+        request: ChatRequest,
+        abort_event: threading.Event | None = None,
+    ) -> ChatResponse:
         conversation_id, prompt_template = self._resolve_chat_session(request)
         workspace_dir = self._resolve_workspace_dir()
-        claude_md, prompt = self._build_prompt(request, prompt_template)
-        self._save_claude_md(claude_md, workspace_dir)
+        self._remove_legacy_claude_md(workspace_dir)
+        request_input = request.system_context.strip() if request.system_context else request.message.strip()
+        prompt = self._build_prompt(request, prompt_template)
         self._log_debug_block(
-            "Chat Input",
+            "Request Input",
+            request_input,
+            metadata={
+                "conversation_id": conversation_id,
+                "prompt_template_id": prompt_template.id,
+                "model": request.model,
+                "role": request.role,
+                "no_save": request.no_save,
+                "exclude_history": request.exclude_history,
+            },
+        )
+        self._log_debug_block(
+            "LLM Input",
             prompt,
             metadata={
                 "conversation_id": conversation_id,
                 "prompt_template_id": prompt_template.id,
                 "model": request.model,
+                "role": request.role,
                 "no_save": request.no_save,
                 "exclude_history": request.exclude_history,
             },
         )
-        response_text = await self._run_claude(prompt, request.model, workspace_dir)
-        self._log_debug_block("Chat Output", response_text)
+        response_text = await self._run_claude(prompt, request.model, workspace_dir, abort_event)
+        self._log_debug_block("LLM Output", response_text)
 
         if request.no_save:
             return ChatResponse(
@@ -249,31 +269,20 @@ class ChatService:
         self,
         request: ChatRequest,
         prompt_template: PromptTemplate,
-    ) -> tuple[str, str]:
+    ) -> str:
         system_message = prompt_template.content
-
-        claude_md_parts = [
-            "## System Message",
-            "",
-            system_message.strip(),
-            "",
-        ]
-        claude_md = "\n".join(claude_md_parts).strip() + "\n"
 
         command_info_list = [
             item.content for item in self._command_template_service.list_templates(is_active=1)
         ]
         history_block = self._format_history(request)
         current_input = request.system_context.strip() if request.system_context else request.message.strip()
-        now = datetime.now()
-        weekday_names = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
-        current_time = (
-            f"## Current Time\n{now.year}년 {now.month}월 {now.day}일 "
-            f"{weekday_names[now.weekday()]} {now.hour}시 {now.minute}분"
-        )
-
         full_message = textwrap.dedent(
             f"""
+            ## System Message
+
+            {system_message.strip()}
+
             {'## 명령어 정보\n\n' + '\n\n'.join(command_info_list) + '\n\n' if command_info_list else ''}
             <--Previous Exchanges Start-->
 
@@ -291,12 +300,10 @@ class ChatService:
 
             ```
             <--## Current Input End-->
-
-            {current_time}
             """
         ).strip()
 
-        return claude_md, full_message
+        return full_message
 
     def _format_history(self, request: ChatRequest) -> str:
         if request.exclude_history:
@@ -418,11 +425,20 @@ class ChatService:
         target.mkdir(parents=True, exist_ok=True)
         return target
 
-    def _save_claude_md(self, content: str, workspace_dir: Path) -> None:
-        workspace_dir.mkdir(parents=True, exist_ok=True)
-        (workspace_dir / "CLAUDE.md").write_text(content, encoding="utf-8")
+    def _remove_legacy_claude_md(self, workspace_dir: Path) -> None:
+        legacy_path = workspace_dir / "CLAUDE.md"
+        if legacy_path.exists():
+            legacy_path.unlink()
 
-    async def _run_claude(self, prompt: str, model: str, workspace_dir: Path) -> str:
+    async def _run_claude(
+        self,
+        prompt: str,
+        model: str,
+        workspace_dir: Path,
+        abort_event: threading.Event | None = None,
+    ) -> str:
+        settings = get_settings()
+        timeout_seconds = max(1, settings.claude_timeout_seconds)
         claude_bin = self._resolve_claude_cli()
         if not claude_bin:
             raise RuntimeError("Claude CLI not found")
@@ -439,16 +455,18 @@ class ChatService:
             "TodoWrite,Task,Bash,WebSearch,WebFetch",
         ]
         command = self._build_claude_command(claude_bin, args)
+        self._print_runtime_status(
+            f"Claude request started (model={model}, timeout={timeout_seconds}s)"
+        )
         if os.name == "nt":
-            completed = await asyncio.to_thread(
-                self._run_claude_blocking,
+            returncode, stdout_text, stderr_text = await asyncio.to_thread(
+                self._run_claude_blocking_stream,
                 command,
                 prompt,
                 workspace_dir,
+                abort_event,
+                timeout_seconds,
             )
-            returncode = completed.returncode
-            stdout_text = completed.stdout.decode("utf-8", errors="replace")
-            stderr_text = completed.stderr.decode("utf-8", errors="replace")
         else:
             process = await asyncio.create_subprocess_exec(
                 *command,
@@ -458,34 +476,200 @@ class ChatService:
                 stderr=asyncio.subprocess.PIPE,
                 env={**os.environ, "FORCE_COLOR": "0", "NO_COLOR": "1"},
             )
-            stdout, stderr = await process.communicate((prompt + "\n").encode("utf-8"))
-            returncode = process.returncode
-            stdout_text = stdout.decode("utf-8", errors="replace")
-            stderr_text = stderr.decode("utf-8", errors="replace")
+            assert process.stdin is not None
+            process.stdin.write((prompt + "\n").encode("utf-8"))
+            await process.stdin.drain()
+            process.stdin.close()
+
+            started_at = time.monotonic()
+            next_status_at = started_at + 5.0
+            stdout_lines: list[str] = []
+            stderr_lines: list[str] = []
+            full_response = ""
+            stdout_decoder = codecs.getincrementaldecoder("utf-8")("replace")
+            stderr_decoder = codecs.getincrementaldecoder("utf-8")("replace")
+            stdout_buffer = ""
+
+            while True:
+                if abort_event is not None and abort_event.is_set():
+                    process.terminate()
+                    try:
+                        await asyncio.wait_for(process.wait(), timeout=2.0)
+                    except asyncio.TimeoutError:
+                        process.kill()
+                        await process.wait()
+                    raise RuntimeError("Trigger execution cancelled")
+
+                elapsed = time.monotonic() - started_at
+                if process.returncode is None and elapsed >= timeout_seconds:
+                    process.terminate()
+                    try:
+                        await asyncio.wait_for(process.wait(), timeout=2.0)
+                    except asyncio.TimeoutError:
+                        process.kill()
+                        await process.wait()
+                    raise RuntimeError(f"Claude CLI timed out after {timeout_seconds}s")
+
+                if elapsed >= next_status_at - started_at:
+                    self._print_runtime_status(
+                        f"Claude request still running ({int(elapsed)}s elapsed)"
+                    )
+                    next_status_at += 5.0
+
+                if process.stdout is not None:
+                    try:
+                        chunk = await asyncio.wait_for(process.stdout.read(4096), timeout=0.1)
+                    except asyncio.TimeoutError:
+                        chunk = b""
+                    if chunk:
+                        decoded = stdout_decoder.decode(chunk)
+                        stdout_text_piece, stdout_buffer, full_response = self._consume_stream_text(
+                            decoded,
+                            stdout_buffer,
+                            full_response,
+                        )
+                        if stdout_text_piece:
+                            stdout_lines.append(stdout_text_piece)
+                        continue
+
+                if process.returncode is not None:
+                    break
+
+            remaining_stdout = stdout_decoder.decode(b"", final=True)
+            stdout_text_piece, stdout_buffer, full_response = self._consume_stream_text(
+                remaining_stdout,
+                stdout_buffer,
+                full_response,
+            )
+            if stdout_text_piece:
+                stdout_lines.append(stdout_text_piece)
+            if stdout_buffer.strip():
+                stdout_lines.append(stdout_buffer)
+
+            if process.stderr is not None:
+                stderr_bytes = await process.stderr.read()
+                stderr_text = stderr_decoder.decode(stderr_bytes, final=True)
+                if stderr_text:
+                    stderr_lines.append(stderr_text)
+
+            returncode = process.returncode or 0
+            stdout_text = "".join(stdout_lines)
+            stderr_text = "".join(stderr_lines)
         if returncode != 0:
             error_text = stderr_text.strip()
             raise RuntimeError(error_text or f"Claude CLI exited with {returncode}")
 
-        response_text = self._extract_stream_json(stdout_text)
+        response_text = full_response if os.name != "nt" else self._extract_stream_json(stdout_text)
         if not response_text.strip():
             raise RuntimeError("Claude CLI returned an empty response")
+        self._print_runtime_status("Claude request completed")
         return response_text
 
-    def _run_claude_blocking(
+    def _run_claude_blocking_stream(
         self,
         command: list[str],
         prompt: str,
         workspace_dir: Path,
-    ) -> subprocess.CompletedProcess[bytes]:
-        return subprocess.run(
+        abort_event: threading.Event | None = None,
+        timeout_seconds: int = 90,
+    ) -> tuple[int, str, str]:
+        process = subprocess.Popen(
             command,
             cwd=str(workspace_dir),
-            input=(prompt + "\n").encode("utf-8"),
+            stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             env={**os.environ, "FORCE_COLOR": "0", "NO_COLOR": "1"},
-            check=False,
         )
+        assert process.stdin is not None
+        process.stdin.write((prompt + "\n").encode("utf-8"))
+        process.stdin.close()
+
+        started_at = time.monotonic()
+        next_status_at = started_at + 5.0
+        stdout_lines: list[str] = []
+        full_response = ""
+        assert process.stdout is not None
+        while True:
+            if abort_event is not None and abort_event.is_set():
+                process.terminate()
+                try:
+                    _, stderr = process.communicate(timeout=2.0)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    _, stderr = process.communicate()
+                stderr_text = stderr.decode("utf-8", errors="replace")
+                return 130, "".join(stdout_lines), stderr_text or "Trigger execution cancelled"
+
+            elapsed = time.monotonic() - started_at
+            if elapsed >= timeout_seconds:
+                process.terminate()
+                try:
+                    _, stderr = process.communicate(timeout=2.0)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    _, stderr = process.communicate()
+                stderr_text = stderr.decode("utf-8", errors="replace")
+                return 124, "".join(stdout_lines), stderr_text or f"Claude CLI timed out after {timeout_seconds}s"
+
+            if process.poll() is not None:
+                break
+
+            line = process.stdout.readline()
+            if line:
+                decoded = line.decode("utf-8", errors="replace")
+                stdout_lines.append(decoded)
+                continue
+
+            if elapsed >= next_status_at - started_at:
+                self._print_runtime_status(
+                    f"Claude request still running ({int(elapsed)}s elapsed)"
+                )
+                next_status_at += 5.0
+
+            time.sleep(0.1)
+
+        remaining_stdout, stderr = process.communicate()
+        if remaining_stdout:
+            stdout_lines.append(remaining_stdout.decode("utf-8", errors="replace"))
+        stderr_text = stderr.decode("utf-8", errors="replace")
+        return process.returncode or 0, "".join(stdout_lines), stderr_text
+
+    def _consume_stream_text(
+        self,
+        decoded_chunk: str,
+        buffer: str,
+        full_response: str,
+    ) -> tuple[str, str, str]:
+        if not decoded_chunk:
+            return "", buffer, full_response
+
+        combined = buffer + decoded_chunk
+        lines = combined.splitlines(keepends=True)
+        next_buffer = ""
+        if lines and not lines[-1].endswith("\n"):
+            next_buffer = lines.pop()
+
+        text_piece = "".join(lines)
+        for line in lines:
+            stripped = line.strip()
+            if not stripped:
+                continue
+            try:
+                payload = json.loads(stripped)
+            except json.JSONDecodeError:
+                continue
+
+            msg_type = payload.get("type")
+            if msg_type == "content_block_delta":
+                delta = payload.get("delta", {})
+                full_response += delta.get("text", "")
+            elif msg_type == "assistant" and not full_response:
+                content = payload.get("message", {}).get("content", [])
+                if content:
+                    full_response = content[0].get("text", "")
+
+        return text_piece, next_buffer, full_response
 
     def _resolve_claude_cli(self) -> str | None:
         env_path = os.getenv("AGI_VOICE_CLAUDE_BIN")
@@ -581,6 +765,13 @@ class ChatService:
             print(json.dumps(metadata, ensure_ascii=False, indent=2))
         print(content)
         print(f"=== End {title} ===")
+
+    def _print_runtime_status(self, message: str) -> None:
+        config_settings = get_settings()
+        app_settings = self._settings_service.get_app_settings()
+        if not (config_settings.debug_chat_logs or app_settings.debug_chat_logs):
+            return
+        print(f"[LLM] {message}")
 
 
 _service = ChatService(

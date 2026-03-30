@@ -62,6 +62,7 @@ class TriggerService:
         self._monitor_thread: threading.Thread | None = None
         self._cooldowns: dict[int, float] = {}
         self._is_executing = False
+        self._cancel_event = threading.Event()
         self._events: list[TriggerChatEvent] = []
         self._next_event_id = 1
         self._load()
@@ -197,6 +198,14 @@ class TriggerService:
             self._log_messages.clear()
             return []
 
+    def cancel_active_execution(self) -> bool:
+        with self._lock:
+            if not self._is_executing:
+                return False
+            self._cancel_event.set()
+            self._add_log("🛑 Reset Control requested: cancelling active trigger execution")
+            return True
+
     def get_events(self, since_id: int = 0) -> list[TriggerChatEvent]:
         with self._lock:
             return [
@@ -311,6 +320,7 @@ class TriggerService:
 
     def _execute_trigger(self, trigger: Trigger, vehicle_data: dict[str, float]) -> None:
         self._is_executing = True
+        self._cancel_event.clear()
         was_monitoring = False
         try:
             self._add_log("  → Pausing simulation (time scale = 0.001x)")
@@ -322,7 +332,7 @@ class TriggerService:
 
             if trigger.use_rule_control and trigger.debug_action.strip():
                 self._add_log("  → Rule mode: waiting 1 second")
-                time.sleep(1.0)
+                self._sleep_with_cancel(1.0)
                 self._add_log("  → Resuming simulation (time scale = 1.0x)")
                 self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 30000 Abs")
                 if was_monitoring:
@@ -338,7 +348,9 @@ class TriggerService:
                 if was_monitoring:
                     self._set_monitoring_state(True, reset_cooldowns=False)
                     self._add_log("  → Monitoring resumed")
-                if llm_response:
+                if self._cancel_event.is_set():
+                    self._add_log("  → Trigger execution cancelled after AI response wait")
+                elif llm_response:
                     self._add_log("  → Parsing LLM response and executing commands")
                     self._execute_command_sequence(llm_response)
             self._add_log("  ✓ Trigger action sequence completed")
@@ -356,6 +368,7 @@ class TriggerService:
                     pass
         finally:
             self._is_executing = False
+            self._cancel_event.clear()
 
     def _evaluate_expression(self, expression: str, vehicle_data: dict[str, float]) -> bool:
         if not expression.strip():
@@ -395,9 +408,11 @@ class TriggerService:
     async def _request_llm(self, trigger: Trigger, vehicle_data: dict[str, float]) -> str | None:
         try:
             system_context = self._build_system_context(trigger, vehicle_data)
-            self._add_log("  → AI Input:")
-            for line in system_context.splitlines():
-                self._add_log(f"    {line}")
+            self._add_multiline_log(
+                f"  === LLM INPUT BEGIN ({trigger.name}) ===",
+                system_context,
+                f"  === LLM INPUT END ({trigger.name}) ===",
+            )
             self._print_debug_block(
                 "Trigger AI Input",
                 system_context,
@@ -421,16 +436,18 @@ class TriggerService:
                     trigger_ai.prompt_template_id or chat_settings.default_prompt_template_id
                 ),
             )
-            response = await self._chat_service.chat(request)
+            response = await self._chat_service.chat(request, abort_event=self._cancel_event)
             if not response.responses:
                 self._add_log("  ⚠ LLM returned no response")
                 return None
 
             llm_response = response.responses[0]
             self._add_log(f"  ✓ LLM response received ({len(llm_response)} chars)")
-            self._add_log("  → AI Output:")
-            for line in llm_response.splitlines():
-                self._add_log(f"    {line}")
+            self._add_multiline_log(
+                f"  === LLM OUTPUT BEGIN ({trigger.name}) ===",
+                llm_response,
+                f"  === LLM OUTPUT END ({trigger.name}) ===",
+            )
             self._print_debug_block(
                 "Trigger AI Output",
                 llm_response,
@@ -445,6 +462,13 @@ class TriggerService:
             self._add_log(f"  ✗ LLM request failed: {exc}")
             self._add_event("error", trigger.name, f"LLM 요청 실패: {exc}")
             return None
+
+    def _sleep_with_cancel(self, seconds: float) -> None:
+        deadline = time.time() + seconds
+        while time.time() < deadline:
+            if self._cancel_event.is_set():
+                raise RuntimeError("Trigger execution cancelled")
+            time.sleep(0.05)
 
     def _build_system_context(self, trigger: Trigger, vehicle_data: dict[str, float]) -> str:
         data_snapshot = "\n".join(
@@ -463,9 +487,11 @@ class TriggerService:
         pending_infinite: list[VehicleCommand] = []
 
         for item in items:
+            if self._cancel_event.is_set():
+                raise RuntimeError("Trigger execution cancelled")
             if isinstance(item, WaitCommand):
                 self._add_log(f"    ⏱ wait {item.milliseconds}ms")
-                time.sleep(item.milliseconds / 1000.0)
+                self._sleep_with_cancel(item.milliseconds / 1000.0)
                 continue
 
             if isinstance(item, WaitUntilCommand):
@@ -488,7 +514,7 @@ class TriggerService:
             if item.duration == -1:
                 pending_infinite.append(item)
 
-            time.sleep(0.05)
+            self._sleep_with_cancel(0.05)
 
     def _execute_vehicle_command(self, command: VehicleCommand, log_prefix: str = "    ✓") -> None:
         actual_duration = 99999 if command.duration == -1 else command.duration
@@ -509,6 +535,8 @@ class TriggerService:
         start_time = time.time()
         iteration = 0
         while True:
+            if self._cancel_event.is_set():
+                raise RuntimeError("Trigger execution cancelled")
             elapsed_ms = int((time.time() - start_time) * 1000)
             if elapsed_ms > wait_command.timeout:
                 raise RuntimeError(f"Timeout after {wait_command.timeout}ms: {wait_command.condition}")
@@ -527,7 +555,7 @@ class TriggerService:
                 return
 
             iteration += 1
-            time.sleep(0.1)
+            self._sleep_with_cancel(0.1)
 
     def _parse_command_sequence(
         self, text: str
@@ -622,6 +650,12 @@ class TriggerService:
     def _add_log(self, message: str) -> None:
         timestamp = time.strftime("%I:%M:%S %p")
         self._log_messages = [*self._log_messages, f"[{timestamp}] {message}"][-100:]
+
+    def _add_multiline_log(self, begin: str, content: str, end: str) -> None:
+        self._add_log(begin)
+        for line in content.splitlines():
+            self._add_log(f"    {line}")
+        self._add_log(end)
 
     def _add_event(self, event_type: str, trigger_name: str, content: str) -> None:
         with self._lock:

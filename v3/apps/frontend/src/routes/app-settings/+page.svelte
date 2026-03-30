@@ -75,6 +75,7 @@
 
       await requestJson('/api/settings/app', { method: 'PUT', body: settings });
       await settingsStore.loadSettings();
+      window.dispatchEvent(new CustomEvent('chatSettingsUpdated'));
 
       message = { type: 'success', text: '설정이 저장되었습니다.' };
 

@@ -50,6 +50,13 @@ def clear_trigger_logs(
     return service.clear_logs()
 
 
+@router.post("/cancel-active", response_model=bool)
+def cancel_active_trigger_execution(
+    service: TriggerService = Depends(get_trigger_service),
+) -> bool:
+    return service.cancel_active_execution()
+
+
 @router.get("/events", response_model=list[TriggerChatEvent])
 def get_trigger_events(
     since_id: int = 0,
