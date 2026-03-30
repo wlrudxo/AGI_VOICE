@@ -3,13 +3,7 @@ import { parseActions, parseWithSegments } from '$lib/actions/parser';
 import { executeActions } from '$lib/actions/executor';
 import { parseVehicleCommands } from '$lib/actions/vehicleCommandParser';
 import { executeCommandSequence } from '$lib/actions/vehicleCommandExecutor';
-
-export interface ChatMessage {
-	role: 'user' | 'assistant' | 'action' | 'error' | 'system';
-	content?: string;
-	label?: string;
-	timestamp: Date;
-}
+import type { ChatMessage } from '$lib/chat/types';
 
 interface ProcessChatResponseOptions {
 	rawResponse: string;
