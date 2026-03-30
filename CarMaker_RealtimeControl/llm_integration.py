@@ -529,8 +529,8 @@ class LLMIntegrationLayer:
             self.server.log(f"  Speed calculated: {speed_ms:.2f} m/s ({speed_kmh:.1f} km/h)")
 
             # Pause simulation - 30 second timeout
-            self.server.log("Step 3: Pausing simulation (SC.TAccel = 0.001, 30s timeout)")
-            result = self.server.execute_command("DVAWrite SC.TAccel 0.001 30000 Abs")
+            self.server.log("Step 3: Pausing simulation (SC.TAccel = 0.0001, 30s timeout)")
+            result = self.server.execute_command("DVAWrite SC.TAccel 0.0001 30000 Abs")
             self.server.log(f"  Command result: {result}")
             self.server.log(f"  Simulation paused for LLM intervention")
 

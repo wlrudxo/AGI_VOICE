@@ -33,12 +33,12 @@ class TriggerExecutor:
         cancel_event.clear()
         was_monitoring = False
         try:
-            add_log("  → Pausing simulation (time scale = 0.001x)")
+            add_log("  → Pausing simulation (time scale = 0.0001x)")
             was_monitoring = is_monitoring_active()
             if was_monitoring:
                 set_monitoring_state(False, False)
                 add_log("  → Monitoring paused (prevent timeout in low-speed mode)")
-            self._carmaker_service.execute_command("DVAWrite SC.TAccel 0.001 30000 Abs")
+            self._carmaker_service.execute_command("DVAWrite SC.TAccel 0.0001 30000 Abs")
 
             if trigger.use_rule_control and trigger.debug_action.strip():
                 add_log("  → Rule mode: waiting 1 second")

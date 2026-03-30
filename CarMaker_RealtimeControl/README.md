@@ -143,7 +143,7 @@ StopSim                                     # Stop simulation
 DVARead <Name>                              # Read single value
 DVAWrite DM.Gas 0.5 2000 Abs               # Set gas pedal
 DVAWrite DM.v.Trgt 27.78 -1 Abs            # Set target speed (100 km/h)
-DVAWrite SC.TAccel 0.001 30000 Abs         # Pause simulation
+DVAWrite SC.TAccel 0.0001 30000 Abs        # Pause simulation
 GetSimStatus                                # Get simulation state
 ```
 
@@ -192,7 +192,7 @@ maintain_for('DVAWrite DM.v.Trgt 13.89 200 Abs', 3000)
 
 ### Safety Guarantees
 
-1. **Simulation Pause/Resume**: LLM intervention automatically pauses (SC.TAccel=0.001) and resumes (SC.TAccel=1.0) simulation
+1. **Simulation Pause/Resume**: LLM intervention automatically pauses (SC.TAccel=0.0001) and resumes (SC.TAccel=1.0) simulation
 2. **Finally Block**: try/finally ensures SC.TAccel is restored even on errors
 3. **Timeout Protection**: All scripts timeout after 30s
 4. **Heartbeat Pattern**: Failsafe functions send commands every 200ms; stops automatically if script fails
@@ -220,7 +220,7 @@ maintain_for('DVAWrite DM.v.Trgt 13.89 200 Abs', 3000)
 1. **Always use UAQ documentation**: Check `/docs/UAQ_Complete_Reference.md` before adding new quantities
 2. **Maintain failsafe principle**: Any autonomous control must have automatic termination
 3. **Use condition evaluation syntax**: Remember to use underscores (Car_v) not dots (Car.v)
-4. **Test in slow-motion mode**: Use `DVAWrite SC.TAccel 0.001` to verify timing robustness
+4. **Test in slow-motion mode**: Use `DVAWrite SC.TAccel 0.0001` to verify timing robustness
 5. **Log extensively**: Use server.log() for debugging; logs are written to llm_control.log
 
 ### Variable Naming Convention

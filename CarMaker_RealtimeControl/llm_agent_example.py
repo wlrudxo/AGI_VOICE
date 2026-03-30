@@ -114,7 +114,7 @@ User Request: {prompt}
         commands.append("StopSim")
 
     elif "pause" in prompt_lower:
-        commands.append("DVAWrite SC.TAccel 0.001")
+        commands.append("DVAWrite SC.TAccel 0.0001")
 
     elif "resume" in prompt_lower or "continue" in prompt_lower:
         commands.append("DVAWrite SC.TAccel 1.0")

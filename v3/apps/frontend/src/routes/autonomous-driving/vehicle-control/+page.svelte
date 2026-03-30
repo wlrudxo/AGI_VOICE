@@ -317,7 +317,7 @@
         disabled={!carmakerStore.isConnected}
       >
         <Icon icon="solar:pause-bold" width="16" height="16" />
-        Pause (0.001x)
+        Pause (0.0001x)
       </button>
       <button
         class="btn-secondary btn-compact"
@@ -504,10 +504,10 @@
     </div>
 
     <div class="button-card">
-      <h5>Pause (0.001x)</h5>
+      <h5>Pause (0.0001x)</h5>
       <p>
         시뮬레이션을 초감속합니다.<br/>
-        • 시간 스케일을 0.001x로 설정 (사실상 일시정지)<br/>
+        • 시간 스케일을 0.0001x로 설정 (사실상 일시정지)<br/>
         • 차량 모니터링이 활성화된 경우 자동으로 중지됩니다.
       </p>
     </div>

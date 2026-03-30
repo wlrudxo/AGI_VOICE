@@ -163,14 +163,14 @@ class TriggerMonitor {
   /**
    * Execute trigger action sequence
    * 1. Trigger detected
-   * 2. Pause simulation (time scale = 0.001x - ultra slow motion)
+   * 2. Pause simulation (time scale = 0.0001x - ultra slow motion)
    * 3. LLM mode: Request LLM and wait for response / Rule mode: Wait 1 second
    * 4. Resume simulation (time scale = 1.0x) + Execute commands
    */
   private async executeTriggerActionSequence(trigger: Trigger, vehicleData: Record<string, number>): Promise<void> {
     try {
       // Step 1: Pause simulation (ultra-slow motion)
-      this.addLog('  → Pausing simulation (time scale = 0.001x)');
+      this.addLog('  → Pausing simulation (time scale = 0.0001x)');
       const wasMonitoring = await carmakerStore.pauseSimulation();
 
       if (trigger.useRuleControl) {

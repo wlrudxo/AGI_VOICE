@@ -66,7 +66,7 @@ success, response = client.execute_command("DVAWrite DM.v.Trgt 27.78 -1 Abs")
 # 방법 3: 시뮬레이션 제어
 client.execute_command("StartSim")
 client.execute_command("StopSim")
-client.execute_command("DVAWrite SC.TAccel 0.001 30000 Abs")  # 일시정지
+client.execute_command("DVAWrite SC.TAccel 0.0001 30000 Abs")  # 일시정지
 ```
 
 ### 1.3 성능 최적화된 정보 취득
@@ -207,7 +207,7 @@ with client.lock:
 "DVAWrite DM.v.Trgt 27.78 -1 Abs"
 
 # 시뮬레이션 일시정지 (30초간)
-"DVAWrite SC.TAccel 0.001 30000 Abs"
+"DVAWrite SC.TAccel 0.0001 30000 Abs"
 
 # 시뮬레이션 재개
 "DVAWrite SC.TAccel 1.0 -1 Abs"
@@ -469,7 +469,7 @@ print(f"Active rules: {len(server.auto_control_rules)}")
 
 ```python
 # 일시정지 (시간 가속도 0.001로 설정, 30초간)
-client.execute_command("DVAWrite SC.TAccel 0.001 30000 Abs")
+client.execute_command("DVAWrite SC.TAccel 0.0001 30000 Abs")
 
 # 제어명령 실행
 client.execute_command("DVAWrite DM.Gas 0.5 2000 Abs")
@@ -543,7 +543,7 @@ def execute_intervention(script):
     """트리거 발생 시 자동으로 일시정지/재개"""
     try:
         # 1. 시뮬레이션 일시정지
-        client.execute_command("DVAWrite SC.TAccel 0.001 30000 Abs")
+        client.execute_command("DVAWrite SC.TAccel 0.0001 30000 Abs")
 
         # 2. 스크립트 실행 (타임아웃 30초)
         executor.execute_script(script)

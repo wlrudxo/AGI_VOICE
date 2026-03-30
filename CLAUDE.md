@@ -699,7 +699,7 @@ DM.Brake = 0.5 | 2000
 **Trigger System**:
 1. **Monitor**: 10Hz polling of vehicle telemetry data
 2. **Evaluate**: Check trigger conditions against current vehicle state
-3. **Pause**: Simulation pauses (time scale = 0.001x) when trigger activates
+3. **Pause**: Simulation pauses (time scale = 0.0001x) when trigger activates
 4. **LLM/Rule**: Request AI response OR execute predefined rule commands
 5. **Resume**: Simulation resumes (time scale = 1.0x) + execute commands
 6. **Cooldown**: 5-second reset period to prevent duplicate trigger activation

@@ -269,8 +269,8 @@
     </div>
 
     <div class="command-example">
-      <code>DVAWrite SC.TAccel 0.001 30000 Abs</code>
-      <p>시간 가속도를 0.001로 설정 (일시정지 효과)</p>
+      <code>DVAWrite SC.TAccel 0.0001 30000 Abs</code>
+      <p>시간 가속도를 0.0001로 설정 (일시정지 효과)</p>
     </div>
   </section>
 

@@ -209,7 +209,7 @@ class CarMakerStore {
   }
 
   /**
-   * Pause simulation (set time acceleration to 0.001x)
+   * Pause simulation (set time acceleration to 0.0001x)
    * Automatically stops monitoring to prevent timeouts
    */
   async pauseSimulation(): Promise<void> {
@@ -221,9 +221,9 @@ class CarMakerStore {
         this.addLog('→ Monitoring paused (prevent timeout in low-speed mode)');
       }
 
-      // Set time acceleration to 0.001 (nearly paused) for 30 seconds
-      await this.executeCommand('DVAWrite SC.TAccel 0.001 30000 Abs');
-      this.addLog('✓ Simulation paused (time scale = 0.001)');
+      // Set time acceleration to 0.0001 (nearly paused) for 30 seconds
+      await this.executeCommand('DVAWrite SC.TAccel 0.0001 30000 Abs');
+      this.addLog('✓ Simulation paused (time scale = 0.0001)');
 
       return wasMonitoring;
     } catch (error: any) {

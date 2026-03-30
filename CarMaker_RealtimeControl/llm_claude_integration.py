@@ -92,7 +92,7 @@ Available Commands:
    - value: lateral offset in meters
 
 6. DVAWrite SC.TAccel <value>
-   - value: time acceleration (0.001 = pause, 1.0 = normal)
+   - value: time acceleration (0.0001 = pause, 1.0 = normal)
 
 7. StartSim, StopSim, GetSimStatus
 
