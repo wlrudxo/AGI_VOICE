@@ -10,7 +10,10 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     api_host: str = "127.0.0.1"
     api_port: int = 8000
-    cors_origins: list[str] = ["http://localhost:4173"]
+    cors_origins: list[str] = [
+        "http://localhost:4173",
+        "http://127.0.0.1:4173",
+    ]
     data_dir: str = ""
 
     model_config = SettingsConfigDict(

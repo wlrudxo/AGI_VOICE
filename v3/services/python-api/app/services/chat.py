@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import shutil
+import subprocess
 import textwrap
 import threading
 from datetime import datetime, timedelta, timezone
@@ -469,25 +470,53 @@ class ChatService:
             "TodoWrite,Task,Bash,WebSearch,WebFetch",
         ]
         command = self._build_claude_command(claude_bin, args)
+        if os.name == "nt":
+            completed = await asyncio.to_thread(
+                self._run_claude_blocking,
+                command,
+                prompt,
+                workspace_dir,
+            )
+            returncode = completed.returncode
+            stdout_text = completed.stdout.decode("utf-8", errors="replace")
+            stderr_text = completed.stderr.decode("utf-8", errors="replace")
+        else:
+            process = await asyncio.create_subprocess_exec(
+                *command,
+                cwd=str(workspace_dir),
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                env={**os.environ, "FORCE_COLOR": "0", "NO_COLOR": "1"},
+            )
+            stdout, stderr = await process.communicate((prompt + "\n").encode("utf-8"))
+            returncode = process.returncode
+            stdout_text = stdout.decode("utf-8", errors="replace")
+            stderr_text = stderr.decode("utf-8", errors="replace")
+        if returncode != 0:
+            error_text = stderr_text.strip()
+            raise RuntimeError(error_text or f"Claude CLI exited with {returncode}")
 
-        process = await asyncio.create_subprocess_exec(
-            *command,
-            cwd=str(workspace_dir),
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            env={**os.environ, "FORCE_COLOR": "0", "NO_COLOR": "1"},
-        )
-
-        stdout, stderr = await process.communicate((prompt + "\n").encode("utf-8"))
-        if process.returncode != 0:
-            error_text = stderr.decode("utf-8", errors="replace").strip()
-            raise RuntimeError(error_text or f"Claude CLI exited with {process.returncode}")
-
-        response_text = self._extract_stream_json(stdout.decode("utf-8", errors="replace"))
+        response_text = self._extract_stream_json(stdout_text)
         if not response_text.strip():
             raise RuntimeError("Claude CLI returned an empty response")
         return response_text
+
+    def _run_claude_blocking(
+        self,
+        command: list[str],
+        prompt: str,
+        workspace_dir: Path,
+    ) -> subprocess.CompletedProcess[bytes]:
+        return subprocess.run(
+            command,
+            cwd=str(workspace_dir),
+            input=(prompt + "\n").encode("utf-8"),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env={**os.environ, "FORCE_COLOR": "0", "NO_COLOR": "1"},
+            check=False,
+        )
 
     def _resolve_claude_cli(self) -> str | None:
         env_path = os.getenv("AGI_VOICE_CLAUDE_BIN")
