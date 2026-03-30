@@ -1,15 +1,12 @@
 import asyncio
-import json
 import threading
 import time
 from collections.abc import Callable
 
-from app.core.config import get_settings
 from app.schemas.triggers import Trigger, TriggerChatEvent, utc_now
 from app.services.action_service import ActionService, get_action_service
 from app.services.carmaker import CarMakerService, get_carmaker_service
 from app.services.chat import ChatService, get_chat_service
-from app.services.settings import SettingsService, get_settings_service
 
 
 class TriggerExecutor:
@@ -18,12 +15,10 @@ class TriggerExecutor:
         carmaker_service: CarMakerService,
         action_service: ActionService,
         chat_service: ChatService,
-        settings_service: SettingsService,
     ) -> None:
         self._carmaker_service = carmaker_service
         self._action_service = action_service
         self._chat_service = chat_service
-        self._settings_service = settings_service
 
     def execute(
         self,
@@ -50,9 +45,6 @@ class TriggerExecutor:
                 self._sleep_with_cancel(1.0, cancel_event)
                 add_log("  → Resuming simulation (time scale = 1.0x)")
                 self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 30000 Abs")
-                if was_monitoring:
-                    set_monitoring_state(True, False)
-                    add_log("  → Monitoring resumed")
                 add_log("  → Rule mode: executing backend rule action")
                 self._action_service.execute_command_sequence(
                     trigger.debug_action,
@@ -66,9 +58,6 @@ class TriggerExecutor:
                 )
                 add_log("  → Resuming simulation (time scale = 1.0x)")
                 self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 30000 Abs")
-                if was_monitoring:
-                    set_monitoring_state(True, False)
-                    add_log("  → Monitoring resumed")
                 if cancel_event.is_set():
                     add_log("  → Trigger execution cancelled after AI response wait")
                 elif llm_response:
@@ -78,6 +67,9 @@ class TriggerExecutor:
                         cancel_event=cancel_event,
                         logger=add_log,
                     )
+            if was_monitoring:
+                set_monitoring_state(True, False)
+                add_log("  → Monitoring resumed")
             add_log("  ✓ Trigger action sequence completed")
         except Exception as exc:
             add_log(f"  ✗ Trigger action failed: {exc}")
@@ -110,15 +102,6 @@ class TriggerExecutor:
                 system_context,
                 f"  === LLM INPUT END ({trigger.name}) ===",
             )
-            self._print_debug_block(
-                "Trigger AI Input",
-                system_context,
-                metadata={
-                    "trigger_id": trigger.id,
-                    "trigger_name": trigger.name,
-                    "conversation_id": trigger.conversation_id,
-                },
-            )
             add_event(
                 TriggerChatEvent(
                     id=0,
@@ -138,14 +121,6 @@ class TriggerExecutor:
                 f"  === LLM OUTPUT BEGIN ({trigger.name}) ===",
                 llm_response,
                 f"  === LLM OUTPUT END ({trigger.name}) ===",
-            )
-            self._print_debug_block(
-                "Trigger AI Output",
-                llm_response,
-                metadata={
-                    "trigger_id": trigger.id,
-                    "trigger_name": trigger.name,
-                },
             )
             add_event(
                 TriggerChatEvent(
@@ -201,29 +176,11 @@ class TriggerExecutor:
             add_log(f"    {line}")
         add_log(end)
 
-    def _print_debug_block(
-        self,
-        title: str,
-        content: str,
-        metadata: dict[str, object] | None = None,
-    ) -> None:
-        config_settings = get_settings()
-        app_settings = self._settings_service.get_app_settings()
-        if not (config_settings.debug_chat_logs or app_settings.debug_chat_logs):
-            return
-
-        print(f"=== {title} ===")
-        if metadata:
-            print(json.dumps(metadata, ensure_ascii=False, indent=2))
-        print(content)
-        print(f"=== End {title} ===")
-
 
 _service = TriggerExecutor(
     get_carmaker_service(),
     get_action_service(),
     get_chat_service(),
-    get_settings_service(),
 )
 
 

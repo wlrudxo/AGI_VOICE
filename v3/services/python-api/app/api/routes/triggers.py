@@ -8,6 +8,7 @@ from app.schemas.triggers import (
     TriggerRuntimeStatus,
     UpdateTriggerRequest,
 )
+from app.services.carmaker import CarMakerService, get_carmaker_service
 from app.services.triggers import TriggerService, get_trigger_service
 
 router = APIRouter()
@@ -38,7 +39,12 @@ def is_monitoring_active(
 def set_monitoring_state(
     request: MonitoringStateRequest,
     service: TriggerService = Depends(get_trigger_service),
+    carmaker_service: CarMakerService = Depends(get_carmaker_service),
 ) -> bool:
+    if request.active and not carmaker_service.get_status().connected:
+        raise HTTPException(status_code=400, detail="Connect to CarMaker before starting trigger monitoring")
+    if request.active and not carmaker_service.is_monitoring_active():
+        raise HTTPException(status_code=400, detail="Start CarMaker monitoring before starting trigger monitoring")
     return service.set_monitoring_state(request.active)
 
 

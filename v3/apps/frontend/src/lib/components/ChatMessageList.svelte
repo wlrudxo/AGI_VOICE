@@ -90,103 +90,112 @@
 	}
 </script>
 
-{#if messages.length === 0}
-	<div class="empty-state"></div>
-{:else}
-	{#each messages as message, index}
-		{#if message.role === 'user'}
-			<div class="message-wrapper message-wrapper-user">
-				{#if shouldShowTime(index)}
-					<span class="message-time message-time-user">{formatTime(message.timestamp)}</span>
-				{/if}
-				<div class="message message-user">
-					<div class="message-content">
-						<p>{message.content}</p>
+<div class="message-list">
+	{#if messages.length === 0}
+		<div class="empty-state"></div>
+	{:else}
+		{#each messages as message, index}
+			{#if message.role === 'user'}
+				<div class="message-wrapper message-wrapper-user">
+					{#if shouldShowTime(index)}
+						<span class="message-time message-time-user">{formatTime(message.timestamp)}</span>
+					{/if}
+					<div class="message message-user">
+						<div class="message-content">
+							<p>{message.content}</p>
+						</div>
 					</div>
 				</div>
-			</div>
-		{/if}
+			{/if}
 
-		{#if message.role === 'system'}
-			{@const parsed = parseSystemMessage(message.content || '')}
-			<div class="message message-system">
-				<div class="message-content">
-					<div class="system-indicator">
-						<Icon icon="solar:info-circle-bold-duotone" width="16" />
-						<span>시스템</span>
-					</div>
-					{#if parsed.vehicleData}
-						<button class="vehicle-data-toggle" onclick={() => onToggleVehicleData(index)}>
-							<Icon
-								icon={collapsedVehicleData[index] === false
-									? 'solar:alt-arrow-down-bold'
-									: 'solar:alt-arrow-right-bold'}
-								width="14"
-							/>
-							<span>Vehicle Data ({parsed.vehicleDataCount}개 항목)</span>
-						</button>
-						{#if collapsedVehicleData[index] === false}
-							<pre class="vehicle-data-content">{parsed.vehicleData}</pre>
-						{/if}
-						<div class="markdown-content system-other-content">
-							{@html marked(parsed.otherContent)}
+			{#if message.role === 'system'}
+				{@const parsed = parseSystemMessage(message.content || '')}
+				<div class="message message-system">
+					<div class="message-content">
+						<div class="system-indicator">
+							<Icon icon="solar:info-circle-bold-duotone" width="16" />
+							<span>시스템</span>
 						</div>
-					{:else}
-						<p>{message.content}</p>
+						{#if parsed.vehicleData}
+							<button class="vehicle-data-toggle" onclick={() => onToggleVehicleData(index)}>
+								<Icon
+									icon={collapsedVehicleData[index] === false
+										? 'solar:alt-arrow-down-bold'
+										: 'solar:alt-arrow-right-bold'}
+									width="14"
+								/>
+								<span>Vehicle Data ({parsed.vehicleDataCount}개 항목)</span>
+							</button>
+							{#if collapsedVehicleData[index] === false}
+								<pre class="vehicle-data-content">{parsed.vehicleData}</pre>
+							{/if}
+							<div class="markdown-content system-other-content">
+								{@html marked(parsed.otherContent)}
+							</div>
+						{:else}
+							<p>{message.content}</p>
+						{/if}
+					</div>
+				</div>
+			{/if}
+
+			{#if message.role === 'action'}
+				<div class="message message-action">
+					<div class="message-content">
+						<div class="action-indicator">{message.label}</div>
+					</div>
+				</div>
+			{/if}
+
+			{#if message.role === 'assistant'}
+				<div class="message-wrapper message-wrapper-assistant">
+					<div class="message message-assistant">
+						<div class="message-content">
+							<div class="markdown-content">{@html marked(preprocessMarkdown(message.content || ''))}</div>
+						</div>
+					</div>
+					{#if shouldShowTime(index)}
+						<span class="message-time message-time-assistant">{formatTime(message.timestamp)}</span>
 					{/if}
 				</div>
-			</div>
-		{/if}
+			{/if}
 
-		{#if message.role === 'action'}
-			<div class="message message-action">
+			{#if message.role === 'error'}
+				<div class="message-wrapper message-wrapper-user">
+					{#if shouldShowTime(index)}
+						<span class="message-time message-time-user">{formatTime(message.timestamp)}</span>
+					{/if}
+					<div class="message message-error">
+						<div class="message-content">
+							<p>{message.content}</p>
+						</div>
+					</div>
+				</div>
+			{/if}
+		{/each}
+
+		{#if isLoading}
+			<div class="message message-assistant">
 				<div class="message-content">
-					<div class="action-indicator">{message.label}</div>
-				</div>
-			</div>
-		{/if}
-
-		{#if message.role === 'assistant'}
-			<div class="message-wrapper message-wrapper-assistant">
-				<div class="message message-assistant">
-					<div class="message-content">
-						<div class="markdown-content">{@html marked(preprocessMarkdown(message.content || ''))}</div>
-					</div>
-				</div>
-				{#if shouldShowTime(index)}
-					<span class="message-time message-time-assistant">{formatTime(message.timestamp)}</span>
-				{/if}
-			</div>
-		{/if}
-
-		{#if message.role === 'error'}
-			<div class="message-wrapper message-wrapper-user">
-				{#if shouldShowTime(index)}
-					<span class="message-time message-time-user">{formatTime(message.timestamp)}</span>
-				{/if}
-				<div class="message message-error">
-					<div class="message-content">
-						<p>{message.content}</p>
+					<div class="loading">
+						<span class="dot"></span>
+						<span class="dot"></span>
+						<span class="dot"></span>
 					</div>
 				</div>
 			</div>
 		{/if}
-	{/each}
-
-	{#if isLoading}
-		<div class="message message-assistant">
-			<div class="message-content">
-				<div class="loading">
-					<span class="dot"></span>
-					<span class="dot"></span>
-					<span class="dot"></span>
-				</div>
-			</div>
-		</div>
 	{/if}
-{/if}
+</div>
 
 <style>
+	.message-list {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		min-height: 100%;
+	}
+
 	.empty-state {
 		display: flex;
 		flex-direction: column;

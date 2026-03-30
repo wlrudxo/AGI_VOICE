@@ -195,6 +195,7 @@ class TriggerService:
             self._cooldowns.clear()
             self._pending_jobs.clear()
             self._queued_trigger_ids.clear()
+            self._is_executing = False
             self._active_trigger_id = None
             self._events.clear()
             self._next_event_id = 1
@@ -319,12 +320,13 @@ class TriggerService:
             with self._lock:
                 if not self._monitoring_active:
                     return
+                if self._is_executing:
+                    return
                 next_allowed = self._cooldowns.get(trigger.id, 0.0)
                 if now < next_allowed:
                     continue
                 if trigger.id == self._active_trigger_id or trigger.id in self._queued_trigger_ids:
                     continue
-                self._cooldowns[trigger.id] = now + (trigger.cooldown / 1000.0)
                 self._pending_jobs.append(
                     TriggerExecutionJob(
                         trigger=trigger.model_copy(deep=True),
@@ -359,7 +361,7 @@ class TriggerService:
                     trigger=job.trigger,
                     vehicle_data=job.vehicle_data,
                     cancel_event=self._cancel_event,
-                    is_monitoring_active=self._carmaker_service.is_monitoring_active,
+                    is_monitoring_active=self.is_monitoring_active,
                     set_monitoring_state=self._set_monitoring_state,
                     add_log=self._add_log,
                     add_event=self._add_event,
@@ -368,6 +370,7 @@ class TriggerService:
                 self._add_log(f"✗ Trigger worker error: {exc}")
             finally:
                 with self._lock:
+                    self._cooldowns[job.trigger.id] = time.time() + (job.trigger.cooldown / 1000.0)
                     self._is_executing = False
                     self._active_trigger_id = None
                     self._cancel_event.clear()

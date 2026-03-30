@@ -66,6 +66,8 @@ def set_monitoring_state(
     request: MonitoringStateRequest,
     service: CarMakerService = Depends(get_carmaker_service),
 ) -> bool:
+    if request.active and not service.get_status().connected:
+        raise HTTPException(status_code=400, detail="Connect to CarMaker before starting monitoring")
     return service.set_monitoring_state(request.active)
 
 
