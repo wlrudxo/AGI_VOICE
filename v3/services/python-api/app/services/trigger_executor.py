@@ -5,7 +5,6 @@ import time
 from collections.abc import Callable
 
 from app.core.config import get_settings
-from app.schemas.chat import ChatRequest
 from app.schemas.triggers import Trigger, TriggerChatEvent, utc_now
 from app.services.action_service import ActionService, get_action_service
 from app.services.carmaker import CarMakerService, get_carmaker_service
@@ -129,25 +128,10 @@ class TriggerExecutor:
                     created_at=utc_now(),
                 )
             )
-            trigger_ai = self._settings_service.get_trigger_ai_settings()
-            chat_settings = self._settings_service.get_chat_settings()
-            request = ChatRequest(
-                message="Trigger activated. Please provide vehicle control response.",
-                system_context=system_context,
-                role="system",
-                exclude_history=trigger_ai.exclude_history,
-                no_save=trigger_ai.exclude_history,
-                model=trigger_ai.model or chat_settings.default_claude_model,
-                prompt_template_id=(
-                    trigger_ai.prompt_template_id or chat_settings.default_prompt_template_id
-                ),
+            llm_response = await self._chat_service.generate_trigger_response(
+                system_context,
+                abort_event=cancel_event,
             )
-            response = await self._chat_service.chat(request, abort_event=cancel_event)
-            if not response.responses:
-                add_log("  ⚠ LLM returned no response")
-                return None
-
-            llm_response = response.responses[0]
             add_log(f"  ✓ LLM response received ({len(llm_response)} chars)")
             self._add_multiline_log(
                 add_log,

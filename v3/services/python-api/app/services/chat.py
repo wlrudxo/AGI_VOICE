@@ -100,6 +100,29 @@ class ChatService:
             actions=[],
         )
 
+    async def generate_trigger_response(
+        self,
+        system_context: str,
+        abort_event: threading.Event | None = None,
+    ) -> str:
+        trigger_ai = self._settings_service.get_trigger_ai_settings()
+        chat_settings = self._settings_service.get_chat_settings()
+        request = ChatRequest(
+            message="Trigger activated. Please provide vehicle control response.",
+            system_context=system_context,
+            role="system",
+            exclude_history=trigger_ai.exclude_history,
+            no_save=trigger_ai.exclude_history,
+            model=trigger_ai.model or chat_settings.default_claude_model,
+            prompt_template_id=(
+                trigger_ai.prompt_template_id or chat_settings.default_prompt_template_id
+            ),
+        )
+        response = await self.chat(request, abort_event=abort_event)
+        if not response.responses:
+            raise RuntimeError("LLM returned no response")
+        return response.responses[0]
+
     def get_conversations(self) -> list[ConversationWithCount]:
         with self._lock, self._db.with_lock(), self._db.connect() as conn:
             conversations = conn.execute(
