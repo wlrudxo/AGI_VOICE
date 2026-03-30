@@ -7,17 +7,20 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const FRONTEND_URL = process.env.V3_FRONTEND_URL || 'http://localhost:4173';
+const FRONTEND_URL = process.env.V3_FRONTEND_URL || 'http://127.0.0.1:4173';
 const BACKEND_URL = process.env.V3_BACKEND_URL || 'http://127.0.0.1:8000';
 const BACKEND_HEALTH_URL = `${BACKEND_URL}/health`;
 const BACKEND_SHUTDOWN_SYNC_URL = `${BACKEND_URL}/api/settings/db/sync-shutdown`;
 const FRONTEND_CHECK_TIMEOUT_MS = 1200;
+const FRONTEND_RETRY_INTERVAL_MS = 1500;
+const FRONTEND_MAX_WAIT_MS = 30000;
 
 let mainWindow = null;
 let isRendererClosing = false;
 let isAppQuitting = false;
 let hasShutdownSynced = false;
 let tray = null;
+let frontendRetryTimer = null;
 
 function toSizePayload(size) {
   if (!Array.isArray(size) || size.length < 2) {
@@ -87,11 +90,8 @@ function createWindow() {
     }
   });
 
-  mainWindow.once('ready-to-show', () => {
-    mainWindow?.show();
-  });
-
   mainWindow.on('closed', () => {
+    stopFrontendRetry();
     mainWindow = null;
   });
 
@@ -191,18 +191,55 @@ function getWindowSnapshot() {
 }
 
 async function canReachFrontend() {
+  let timeout = null;
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), FRONTEND_CHECK_TIMEOUT_MS);
+    timeout = setTimeout(() => controller.abort(), FRONTEND_CHECK_TIMEOUT_MS);
     const response = await fetch(FRONTEND_URL, {
       method: 'GET',
       signal: controller.signal,
     });
-    clearTimeout(timeout);
     return response.ok;
   } catch {
     return false;
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
   }
+}
+
+function stopFrontendRetry() {
+  if (frontendRetryTimer) {
+    clearInterval(frontendRetryTimer);
+    frontendRetryTimer = null;
+  }
+}
+
+function startFrontendRetry() {
+  if (frontendRetryTimer) {
+    return;
+  }
+
+  frontendRetryTimer = setInterval(async () => {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      stopFrontendRetry();
+      return;
+    }
+
+    const frontendReady = await canReachFrontend();
+    if (!frontendReady) {
+      return;
+    }
+
+    stopFrontendRetry();
+    try {
+      await mainWindow.loadURL(FRONTEND_URL);
+    } catch (error) {
+      console.warn(`Failed to load frontend URL: ${FRONTEND_URL}`, error);
+      startFrontendRetry();
+    }
+  }, FRONTEND_RETRY_INTERVAL_MS);
 }
 
 async function loadInitialContent() {
@@ -210,13 +247,21 @@ async function loadInitialContent() {
     return;
   }
 
-  const frontendReady = await canReachFrontend();
-  if (frontendReady) {
-    await mainWindow.loadURL(FRONTEND_URL);
-    return;
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < FRONTEND_MAX_WAIT_MS) {
+    const frontendReady = await canReachFrontend();
+    if (frontendReady) {
+      await mainWindow.loadURL(FRONTEND_URL);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.show();
+      }
+      return;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, FRONTEND_RETRY_INTERVAL_MS));
   }
 
-  await mainWindow.loadFile(path.join(__dirname, 'fallback.html'));
+  throw new Error(`Frontend did not become ready within ${FRONTEND_MAX_WAIT_MS}ms: ${FRONTEND_URL}`);
 }
 
 async function pingBackend() {

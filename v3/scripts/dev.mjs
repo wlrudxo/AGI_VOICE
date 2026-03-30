@@ -39,7 +39,8 @@ function logError(message) {
 }
 
 function runOrThrow(command, args, cwd) {
-  const result = spawnSync(command, args, {
+  const [resolvedCommand, resolvedArgs] = resolveCommand(command, args);
+  const result = spawnSync(resolvedCommand, resolvedArgs, {
     cwd,
     stdio: 'inherit',
     shell: false,
@@ -60,6 +61,13 @@ function ensureNodeDeps(dir, markerRelativePath) {
   }
   log(`Installing/updating dependencies in ${path.relative(rootDir, dir)}...`);
   runOrThrow(npmCmd, ['install'], dir);
+}
+
+function resolveCommand(command, args) {
+  if (isWindows && /\.(cmd|bat)$/i.test(command)) {
+    return ['cmd.exe', ['/d', '/s', '/c', command, ...args]];
+  }
+  return [command, args];
 }
 
 function detectPythonExecutable() {
@@ -162,7 +170,8 @@ function forwardOutput(child, prefix) {
 }
 
 function spawnManaged(command, args, options) {
-  const child = spawn(command, args, {
+  const [resolvedCommand, resolvedArgs] = resolveCommand(command, args);
+  const child = spawn(resolvedCommand, resolvedArgs, {
     cwd: options.cwd,
     env: options.env ?? process.env,
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -247,6 +256,7 @@ async function main() {
     cwd: electronDir,
     env: {
       ...process.env,
+      V3_FRONTEND_URL: 'http://127.0.0.1:4173',
       V3_BACKEND_URL: backendUrl,
     },
     name: 'electron',

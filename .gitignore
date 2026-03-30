@@ -40,3 +40,5 @@ v3/**/.vite/
 # V3 runtime/generated files
 v3/.backend_port
 v3/**/*.egg-info/
+v3/dev-launcher.log
+v3/services/python-api/.editable-install.stamp
