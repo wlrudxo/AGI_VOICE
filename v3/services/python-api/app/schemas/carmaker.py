@@ -60,6 +60,8 @@ class ResetControlResponse(CamelModel):
     cancelled_trigger_execution: bool = False
     trigger_monitoring_stopped: bool = False
     carmaker_monitoring_stopped: bool = False
+    trigger_active_id: int | None = None
+    trigger_queued_count: int = 0
     commands_attempted: int = 0
     commands_succeeded: int = 0
     connected: bool = False

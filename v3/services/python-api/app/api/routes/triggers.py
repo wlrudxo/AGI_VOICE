@@ -1,7 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.schemas.triggers import CreateTriggerRequest, Trigger, TriggerChatEvent, UpdateTriggerRequest
+from app.schemas.triggers import (
+    CreateTriggerRequest,
+    Trigger,
+    TriggerChatEvent,
+    TriggerRuntimeStatus,
+    UpdateTriggerRequest,
+)
 from app.services.triggers import TriggerService, get_trigger_service
 
 router = APIRouter()
@@ -55,6 +61,13 @@ def cancel_active_trigger_execution(
     service: TriggerService = Depends(get_trigger_service),
 ) -> bool:
     return service.cancel_active_execution()
+
+
+@router.get("/runtime-status", response_model=TriggerRuntimeStatus)
+def get_trigger_runtime_status(
+    service: TriggerService = Depends(get_trigger_service),
+) -> TriggerRuntimeStatus:
+    return service.get_runtime_status()
 
 
 @router.get("/events", response_model=list[TriggerChatEvent])

@@ -16,6 +16,8 @@ from app.schemas.triggers import (
     Trigger,
     TriggerChatEvent,
     TriggerCollection,
+    TriggerRuntimeResetResult,
+    TriggerRuntimeStatus,
     UpdateTriggerRequest,
     utc_now,
 )
@@ -172,9 +174,21 @@ class TriggerService:
             self._add_log("🛑 Reset Control requested: cancelling active trigger execution")
             return True
 
-    def reset_runtime_state(self) -> dict[str, bool]:
+    def get_runtime_status(self) -> TriggerRuntimeStatus:
+        with self._lock:
+            return TriggerRuntimeStatus(
+                monitoring_active=self._monitoring_active,
+                is_executing=self._is_executing,
+                active_trigger_id=self._active_trigger_id,
+                queued_count=len(self._pending_jobs),
+                queued_trigger_ids=list(self._queued_trigger_ids),
+            )
+
+    def reset_runtime_state(self) -> TriggerRuntimeResetResult:
         with self._lock:
             was_executing = self._is_executing
+            queued_count = len(self._pending_jobs)
+            active_trigger_id = self._active_trigger_id
             self._cancel_event.set()
             self._monitoring_active = False
             self._cooldowns.clear()
@@ -184,10 +198,12 @@ class TriggerService:
             self._events.clear()
             self._next_event_id = 1
             self._add_log("🛑 Reset Control: trigger monitoring stopped and runtime state cleared")
-            return {
-                "was_executing": was_executing,
-                "monitoring_active": self._monitoring_active,
-            }
+            return TriggerRuntimeResetResult(
+                was_executing=was_executing,
+                monitoring_active=self._monitoring_active,
+                active_trigger_id=active_trigger_id,
+                queued_count=queued_count,
+            )
 
     def get_events(self, since_id: int = 0) -> list[TriggerChatEvent]:
         with self._lock:

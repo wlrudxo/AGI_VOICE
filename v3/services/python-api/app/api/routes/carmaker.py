@@ -180,9 +180,11 @@ def reset_control(
         message = f"Reset Control partially completed: {last_error}"
 
     return ResetControlResponse(
-        cancelled_trigger_execution=trigger_state["was_executing"],
+        cancelled_trigger_execution=trigger_state.was_executing,
         trigger_monitoring_stopped=True,
         carmaker_monitoring_stopped=True,
+        trigger_active_id=trigger_state.active_trigger_id,
+        trigger_queued_count=trigger_state.queued_count,
         commands_attempted=commands_attempted,
         commands_succeeded=commands_succeeded,
         connected=connected,

@@ -58,3 +58,18 @@ class TriggerChatEvent(CamelModel):
     trigger_name: str
     content: str
     created_at: datetime
+
+
+class TriggerRuntimeStatus(CamelModel):
+    monitoring_active: bool
+    is_executing: bool
+    active_trigger_id: int | None = None
+    queued_count: int = 0
+    queued_trigger_ids: list[int] = Field(default_factory=list)
+
+
+class TriggerRuntimeResetResult(CamelModel):
+    was_executing: bool = False
+    monitoring_active: bool = False
+    active_trigger_id: int | None = None
+    queued_count: int = 0
