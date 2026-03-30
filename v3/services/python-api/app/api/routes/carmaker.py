@@ -12,6 +12,7 @@ from app.schemas.carmaker import (
     TelemetryData,
     WatchedObjectRequest,
 )
+from app.services.action_service import ActionService, get_action_service
 from app.services.carmaker import CarMakerService, get_carmaker_service
 from app.services.triggers import TriggerService, get_trigger_service
 
@@ -157,30 +158,20 @@ def stop_simulation(
 def reset_control(
     carmaker_service: CarMakerService = Depends(get_carmaker_service),
     trigger_service: TriggerService = Depends(get_trigger_service),
+    action_service: ActionService = Depends(get_action_service),
 ) -> ResetControlResponse:
     trigger_state = trigger_service.reset_runtime_state()
     carmaker_service.set_monitoring_state(False)
-
-    commands = [
-        "DVAWrite SC.TAccel 1.0 30000 Abs",
-        "DVAWrite DM.Gas 0 1 Abs",
-        "DVAWrite DM.Brake 0 1 Abs",
-        "DVAWrite DM.Steer.Ang 0 1 Abs",
-        "DVAWrite DM.v.Trgt 0 1 Abs",
-        "DVAWrite DM.LaneOffset 0 1 Abs",
-    ]
-    commands_succeeded = 0
     connected = carmaker_service.get_status().connected
     last_error: str | None = None
+    commands_attempted = 0
+    commands_succeeded = 0
 
     if connected:
-        for command in commands:
-            try:
-                carmaker_service.execute_command(command)
-                commands_succeeded += 1
-            except RuntimeError as exc:
-                last_error = str(exc)
-                break
+        try:
+            commands_attempted, commands_succeeded = action_service.reset_controls()
+        except RuntimeError as exc:
+            last_error = str(exc)
 
     message = "Reset Control completed"
     if not connected:
@@ -192,7 +183,7 @@ def reset_control(
         cancelled_trigger_execution=trigger_state["was_executing"],
         trigger_monitoring_stopped=True,
         carmaker_monitoring_stopped=True,
-        commands_attempted=len(commands) if connected else 0,
+        commands_attempted=commands_attempted,
         commands_succeeded=commands_succeeded,
         connected=connected,
         message=message,
