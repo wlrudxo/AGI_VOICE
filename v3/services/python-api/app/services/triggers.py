@@ -9,6 +9,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
+from app.core.config import get_settings
 from app.services.carmaker import CarMakerService, get_carmaker_service
 from app.services.trigger_executor import TriggerExecutor, get_trigger_executor
 from app.schemas.triggers import (

@@ -125,7 +125,11 @@ function ensurePythonPackage(pythonExe) {
   }
 
   log('Installing/updating Python API package...');
-  runOrThrow(pythonExe, ['-m', 'pip', 'install', '-e', '.'], pythonApiDir);
+  runOrThrow(
+    pythonExe,
+    ['-m', 'pip', 'install', '--disable-pip-version-check', '--quiet', '-e', '.'],
+    pythonApiDir
+  );
   writeFileSync(stampPath, new Date().toISOString(), 'utf-8');
 }
 

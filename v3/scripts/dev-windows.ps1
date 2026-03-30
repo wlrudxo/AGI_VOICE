@@ -83,7 +83,12 @@ function Ensure-PythonPackage($PythonExe) {
   }
 
   Write-Info 'Installing/updating Python API package...'
-  $proc = Start-Process -FilePath $PythonExe -ArgumentList @('-m', 'pip', 'install', '-e', '.') -WorkingDirectory $PythonApiDir -Wait -PassThru -NoNewWindow
+  $proc = Start-Process -FilePath $PythonExe -ArgumentList @(
+    '-m', 'pip', 'install',
+    '--disable-pip-version-check',
+    '--quiet',
+    '-e', '.'
+  ) -WorkingDirectory $PythonApiDir -Wait -PassThru -NoNewWindow
   if ($proc.ExitCode -ne 0) {
     throw 'pip install -e . failed'
   }
