@@ -8,7 +8,7 @@
 	import Icon from '@iconify/svelte';
 	import { marked } from 'marked';
 	import { parseWithSegments } from '$lib/actions/parser';
-	import { processChatResponse, type ChatMessage } from '$lib/chat/chatResponseOrchestrator';
+	import { processChatResponse } from '$lib/chat/chatResponseOrchestrator';
 
 	// Configure marked for safe rendering
 	marked.setOptions({
@@ -66,7 +66,7 @@
 	}
 
 	// State
-	let messages = $state<ChatMessage[]>([]);
+	let messages = $state([]);
 	let inputMessage = $state('');
 	let isLoading = $state(false);
 	let messagesContainer;
