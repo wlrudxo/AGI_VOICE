@@ -2,33 +2,24 @@ from pydantic import Field
 
 from app.schemas.common import CamelModel
 
-DEFAULT_FINAL_MESSAGE_TEMPLATE = """## Final Checkout
-
-- Check if all required tags are properly formatted
-- Ensure the response is clear and professional
-- Verify technical accuracy of autonomous driving concepts
-- Provide relevant references or examples when appropriate"""
-
 
 class AppSettings(CamelModel):
     claude_workspace_dir: str = ""
     database_file_path: str = ""
     database_backup_enabled: bool = True
-    default_character_id: int | None = None
     default_prompt_template_id: int | None = None
     keep_conversation_prompts: bool = True
     default_claude_model: str = "sonnet"
+    debug_chat_logs: bool = False
 
 
 class ChatSettings(CamelModel):
-    default_character_id: int | None = None
     default_prompt_template_id: int | None = None
     default_claude_model: str = "sonnet"
 
 
 class TriggerAiSettings(CamelModel):
     exclude_history: bool = True
-    character_id: int | None = None
     prompt_template_id: int | None = None
     model: str = "sonnet"
 
@@ -39,12 +30,6 @@ class AutonomousDrivingSettings(CamelModel):
     duration: int = 2000
     control_mode: str = "Abs"
     vehicle_command_parsing_enabled: bool = False
-
-
-class PromptContextSettings(CamelModel):
-    user_name: str = ""
-    user_info: str = ""
-    final_message: str = DEFAULT_FINAL_MESSAGE_TEMPLATE
 
 
 class DbTimestamp(CamelModel):
@@ -73,4 +58,3 @@ class SettingsData(CamelModel):
     chat: ChatSettings = Field(default_factory=ChatSettings)
     trigger_ai: TriggerAiSettings = Field(default_factory=TriggerAiSettings)
     autonomous_driving: AutonomousDrivingSettings = Field(default_factory=AutonomousDrivingSettings)
-    prompt_context: PromptContextSettings = Field(default_factory=PromptContextSettings)

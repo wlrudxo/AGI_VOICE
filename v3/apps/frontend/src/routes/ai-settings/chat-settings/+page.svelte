@@ -4,28 +4,27 @@
 	import Icon from '@iconify/svelte';
 	import HelpModal from '$lib/components/HelpModal.svelte';
 
-	interface Character {
-		id: number;
-		name: string;
-		prompt_content: string;
-	}
-
 	interface PromptTemplate {
 		id: number;
 		name: string;
 		content: string;
 	}
 
+	interface CommandTemplate {
+		id: number;
+		name: string;
+		content: string;
+		isActive: number;
+	}
+
 	interface ChatSettings {
-		defaultCharacterId: number | null;
 		defaultPromptTemplateId: number | null;
 		defaultClaudeModel: string;
 	}
 
-	let characters = $state<Character[]>([]);
 	let promptTemplates = $state<PromptTemplate[]>([]);
+	let commandTemplates = $state<CommandTemplate[]>([]);
 	let settings = $state<ChatSettings>({
-		defaultCharacterId: null,
 		defaultPromptTemplateId: null,
 		defaultClaudeModel: 'sonnet'
 	});
@@ -39,13 +38,12 @@
 		try {
 			loading = true;
 
-			// 캐릭터 목록 가져오기
-			const charactersData = await requestJson<Character[]>('/api/characters');
-			characters = charactersData;
-
-			// 프롬프트 템플릿 목록 가져오기
-			const templatesData = await requestJson<PromptTemplate[]>('/api/prompt-templates');
+			const [templatesData, commandTemplatesData] = await Promise.all([
+				requestJson<PromptTemplate[]>('/api/prompt-templates'),
+				requestJson<CommandTemplate[]>('/api/command-templates')
+			]);
 			promptTemplates = templatesData;
+			commandTemplates = commandTemplatesData;
 
 			// 현재 설정 가져오기
 			try {
@@ -53,9 +51,6 @@
 				settings = settingsData;
 			} catch (err) {
 				// 설정이 없으면 기본값 설정 (첫 번째 항목 선택)
-				if (characters.length > 0) {
-					settings.defaultCharacterId = characters[0].id;
-				}
 				if (promptTemplates.length > 0) {
 					settings.defaultPromptTemplateId = promptTemplates[0].id;
 				}
@@ -73,8 +68,8 @@
 			saving = true;
 			message = null;
 
-			if (!settings.defaultCharacterId || !settings.defaultPromptTemplateId) {
-				message = { type: 'error', text: '캐릭터와 템플릿을 모두 선택해주세요.' };
+			if (!settings.defaultPromptTemplateId) {
+				message = { type: 'error', text: '시스템 템플릿을 선택해주세요.' };
 				return;
 			}
 
@@ -99,6 +94,27 @@
 		}
 	}
 
+	async function toggleCommandTemplate(template: CommandTemplate) {
+		try {
+			await requestJson(`/api/command-templates/${template.id}/toggle`, { method: 'POST' });
+			commandTemplates = commandTemplates.map((item) =>
+				item.id === template.id
+					? { ...item, isActive: item.isActive === 1 ? 0 : 1 }
+					: item
+			);
+			message = {
+				type: 'success',
+				text: `"${template.name}" 템플릿이 ${template.isActive === 1 ? '비활성화' : '활성화'}되었습니다.`
+			};
+			setTimeout(() => {
+				message = null;
+			}, 2500);
+		} catch (err: any) {
+			console.error('❌ Failed to toggle command template:', err);
+			message = { type: 'error', text: err.message || '명령어 템플릿 상태 변경에 실패했습니다.' };
+		}
+	}
+
 	onMount(() => {
 		loadData();
 	});
@@ -113,7 +129,7 @@
 					<Icon icon="solar:question-circle-bold" width="20" height="20" />
 				</button>
 			</div>
-			<p class="page-description">AI 채팅에서 사용할 기본 캐릭터와 시스템 템플릿을 선택하세요.</p>
+			<p class="page-description">AI 채팅에서 사용할 시스템 템플릿과 명령어 템플릿을 제어합니다.</p>
 		</div>
 		<button class="btn-primary" onclick={saveSettings} disabled={saving || loading}>
 			<Icon icon="solar:diskette-bold" width="20" height="20" />
@@ -127,7 +143,7 @@
 			<p>설정 로딩 중...</p>
 		</div>
 	{:else}
-		<div class="settings-form">
+			<div class="settings-form">
 			<!-- 시스템 템플릿 선택 -->
 			<div class="form-group">
 				<label for="template" class="form-label">
@@ -149,25 +165,40 @@
 				</select>
 			</div>
 
-			<!-- 캐릭터 선택 -->
 			<div class="form-group">
-				<label for="character" class="form-label">
-					<Icon icon="solar:user-bold-duotone" width="20" height="20" />
-					<span>캐릭터</span>
-				</label>
-				<select
-					id="character"
-					bind:value={settings.defaultCharacterId}
-					required
-					class="select-field w-full"
-				>
-					<option value={null}>캐릭터를 선택하세요</option>
-					{#each characters as character}
-						<option value={character.id}>
-							{character.name}
-						</option>
-					{/each}
-				</select>
+				<div class="form-label">
+					<Icon icon="solar:code-bold-duotone" width="20" height="20" />
+					<span>명령어 템플릿</span>
+				</div>
+				<div class="command-template-list">
+					{#if commandTemplates.length === 0}
+						<div class="empty-command-templates">등록된 명령어 템플릿이 없습니다.</div>
+					{:else}
+						{#each commandTemplates as template}
+							<div class="command-template-row">
+								<div class="command-template-meta">
+									<div class="command-template-name">{template.name}</div>
+									<div class="command-template-summary">
+										{template.content.split('\n')[0]}
+									</div>
+								</div>
+								<label class="toggle-switch ml-4">
+									<input
+										type="checkbox"
+										checked={template.isActive === 1}
+										onchange={() => toggleCommandTemplate(template)}
+									/>
+									<div class="toggle-switch-track">
+										<div class="toggle-switch-thumb"></div>
+									</div>
+								</label>
+							</div>
+						{/each}
+					{/if}
+				</div>
+				<p class="text-xs mt-2 text-muted">
+					활성화된 명령어 템플릿만 AI 채팅 프롬프트에 포함됩니다. 내용 편집은 명령어 템플릿 페이지에서 합니다.
+				</p>
 			</div>
 
 			<!-- 메시지 -->
@@ -190,7 +221,8 @@
 	<section class="help-section">
 		<h4>⚙️ 채팅 설정이란?</h4>
 		<p class="help-desc">
-			AI 채팅 위젯에서 사용할 기본 캐릭터와 시스템 템플릿을 설정합니다.
+			AI 채팅 위젯에서 사용할 기본 시스템 템플릿을 설정하고,
+			실제로 프롬프트에 포함할 명령어 템플릿을 켜고 끕니다.
 			이 설정은 새로운 대화를 시작할 때 자동으로 적용됩니다.
 		</p>
 	</section>
@@ -207,18 +239,20 @@
 		</div>
 
 		<div class="command-example">
-			<code>캐릭터</code>
+			<code>명령어 템플릿</code>
 			<p>
-				AI의 말투, 성격, 톤을 정의합니다.
-				예: "Research Assistant" - 전문적이고 친절한 톤
+				AI가 참고할 실행 규칙과 액션 형식을 정의합니다.
+				예: "자율주행 제어", "자율주행 맵 관리"
 			</p>
 		</div>
+
 	</section>
 
 	<section class="help-section">
 		<h4>🔄 설정 적용 방법</h4>
 		<ol class="help-list">
-			<li><strong>시스템 템플릿</strong>과 <strong>캐릭터</strong>를 선택합니다.</li>
+			<li><strong>시스템 템플릿</strong>을 선택합니다.</li>
+			<li>사용할 <strong>명령어 템플릿</strong>을 활성화합니다.</li>
 			<li><strong>설정 저장</strong> 버튼을 클릭합니다.</li>
 			<li>채팅 위젯에서 새 대화를 시작하면 자동으로 적용됩니다.</li>
 			<li>기존 대화는 설정 변경의 영향을 받지 않습니다.</li>
@@ -228,8 +262,7 @@
 	<section class="help-section">
 		<h4>💡 Tip</h4>
 		<ul class="help-list">
-			<li>캐릭터와 템플릿은 <strong>AI 설정</strong> 메뉴에서 추가/수정/삭제할 수 있습니다.</li>
-			<li>시스템 템플릿에서는 변수 치환을 지원합니다 (예: <code>&#123;&#123;user&#125;&#125;</code>, <code>&#123;&#123;char&#125;&#125;</code>).</li>
+			<li>시스템 템플릿과 명령어 템플릿은 <strong>AI 설정</strong> 메뉴에서 관리할 수 있습니다.</li>
 			<li>설정 변경은 즉시 채팅 위젯에 반영됩니다.</li>
 		</ul>
 	</section>
@@ -260,6 +293,49 @@
 
 	.form-group:last-of-type {
 		margin-bottom: 0;
+	}
+
+	.command-template-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.command-template-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 0.875rem 1rem;
+		border: 1px solid var(--color-border);
+		border-radius: 0.75rem;
+		background: var(--color-surface-secondary, rgba(255,255,255,0.5));
+	}
+
+	.command-template-meta {
+		min-width: 0;
+		flex: 1;
+	}
+
+	.command-template-name {
+		font-weight: 600;
+		color: var(--color-text-primary);
+		margin-bottom: 0.25rem;
+	}
+
+	.command-template-summary {
+		font-size: 0.875rem;
+		color: var(--color-text-secondary);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.empty-command-templates {
+		padding: 1rem;
+		border: 1px dashed var(--color-border);
+		border-radius: 0.75rem;
+		color: var(--color-text-secondary);
 	}
 
 	.info-card {

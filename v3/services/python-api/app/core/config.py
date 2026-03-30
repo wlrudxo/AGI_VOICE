@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     api_host: str = "127.0.0.1"
     api_port: int = 8000
+    debug_chat_logs: bool = False
     cors_origins: list[str] = [
         "http://localhost:4173",
         "http://127.0.0.1:4173",

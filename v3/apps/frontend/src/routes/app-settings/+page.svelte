@@ -11,6 +11,7 @@
     databaseBackupEnabled: boolean;
     keepConversationPrompts: boolean;
     defaultClaudeModel: string;
+    debugChatLogs: boolean;
   }
 
   interface DbInfo {
@@ -34,7 +35,8 @@
     databaseFilePath: '',
     databaseBackupEnabled: true,
     keepConversationPrompts: true,
-    defaultClaudeModel: 'sonnet'
+    defaultClaudeModel: 'sonnet',
+    debugChatLogs: false
   });
   let loading = $state(true);
   let saving = $state(false);
@@ -472,6 +474,26 @@
             <input
               type="checkbox"
               bind:checked={settings.keepConversationPrompts}
+            />
+            <div class="toggle-switch-track">
+              <div class="toggle-switch-thumb"></div>
+            </div>
+          </label>
+        </div>
+
+        <div class="flex items-start justify-between">
+          <div class="flex-1">
+            <label class="block text-sm font-medium text-secondary">
+              백엔드 AI 입력/출력 로그
+            </label>
+            <p class="text-xs mt-1 text-muted">
+              켜면 Python API 터미널에 일반 채팅과 트리거의 AI Input / Output 원문을 출력합니다.
+            </p>
+          </div>
+          <label class="toggle-switch ml-4">
+            <input
+              type="checkbox"
+              bind:checked={settings.debugChatLogs}
             />
             <div class="toggle-switch-track">
               <div class="toggle-switch-thumb"></div>

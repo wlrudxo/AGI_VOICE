@@ -9,7 +9,6 @@
   import { uiStore } from '$lib/stores/uiStore';
   import { settingsStore } from '$lib/stores/settingsStore';
   import { autonomousDrivingSettingsStore } from '$lib/stores/autonomousDrivingSettingsStore';
-  import { promptContextStore } from '$lib/stores/promptContextStore';
   import { dialogStore } from '$lib/stores/dialogStore.svelte';
   import { requestJson } from '$lib/backend';
   import { onMount } from 'svelte';
@@ -117,9 +116,6 @@
     await Promise.all([
       settingsStore.loadSettings(),
       autonomousDrivingSettingsStore.loadSettings().catch((error) => {
-        console.error('Failed to load autonomous driving settings:', error);
-      }),
-      promptContextStore.loadSettings().catch((error) => {
         console.error('Failed to load prompt context settings:', error);
       })
     ]);

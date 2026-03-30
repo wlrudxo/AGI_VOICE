@@ -8,31 +8,26 @@ from app.services.chat import get_chat_service
 from app.services.settings import get_settings_service
 
 
-def resolve_defaults() -> tuple[int, int, str]:
+def resolve_defaults() -> tuple[int, str]:
     settings = get_settings_service().get_chat_settings()
     catalog = get_ai_catalog_service()
 
-    character_id = settings.default_character_id
     prompt_template_id = settings.default_prompt_template_id
     model = settings.default_claude_model or "sonnet"
-
-    if character_id is None:
-        characters = catalog.list_characters()
-        character_id = characters[0].id if characters else None
 
     if prompt_template_id is None:
         templates = catalog.list_prompt_templates()
         prompt_template_id = templates[0].id if templates else None
 
-    if character_id is None or prompt_template_id is None:
-        raise RuntimeError("Missing default character/prompt template")
+    if prompt_template_id is None:
+        raise RuntimeError("Missing default prompt template")
 
-    return character_id, prompt_template_id, model
+    return prompt_template_id, model
 
 
 async def run_smoke(real: bool, message: str) -> int:
     service = get_chat_service()
-    character_id, prompt_template_id, model = resolve_defaults()
+    prompt_template_id, model = resolve_defaults()
 
     if not real:
         async def fake_run_claude(prompt: str, model_name: str, workspace_dir):
@@ -44,17 +39,13 @@ async def run_smoke(real: bool, message: str) -> int:
         message=message,
         model=model,
         role="user",
-        character_id=character_id,
         prompt_template_id=prompt_template_id,
         user_name="Smoke Test",
-        user_info="backend smoke test",
-        final_message="간단히 응답하세요.",
         no_save=True,
     )
 
     print("== Chat Smoke ==")
     print(f"mode={'real' if real else 'mock'}")
-    print(f"character_id={character_id}")
     print(f"prompt_template_id={prompt_template_id}")
     print(f"model={model}")
 

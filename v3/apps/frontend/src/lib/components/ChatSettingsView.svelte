@@ -3,12 +3,6 @@
 	import Icon from '@iconify/svelte';
 	import { requestJson } from '$lib/backend';
 
-	interface Character {
-		id: number;
-		name: string;
-		promptContent: string;
-	}
-
 	interface PromptTemplate {
 		id: number;
 		name: string;
@@ -16,15 +10,12 @@
 	}
 
 	interface ChatSettings {
-		defaultCharacterId: number | null;
 		defaultPromptTemplateId: number | null;
 		defaultClaudeModel: string;
 	}
 
-	let characters = $state<Character[]>([]);
 	let promptTemplates = $state<PromptTemplate[]>([]);
 	let settings = $state<ChatSettings>({
-		defaultCharacterId: null,
 		defaultPromptTemplateId: null,
 		defaultClaudeModel: 'sonnet'
 	});
@@ -37,9 +28,6 @@
 		try {
 			loading = true;
 
-			// 캐릭터 목록 가져오기
-			characters = await requestJson<Character[]>('/api/characters');
-
 			// 프롬프트 템플릿 목록 가져오기
 			promptTemplates = await requestJson<PromptTemplate[]>('/api/prompt-templates');
 
@@ -49,9 +37,6 @@
 				settings = data;
 			} catch (err) {
 				// 설정이 없으면 기본값 설정 (첫 번째 항목 선택)
-				if (characters.length > 0) {
-					settings.defaultCharacterId = characters[0].id;
-				}
 				if (promptTemplates.length > 0) {
 					settings.defaultPromptTemplateId = promptTemplates[0].id;
 				}
@@ -69,8 +54,8 @@
 			saving = true;
 			message = null;
 
-			if (!settings.defaultCharacterId || !settings.defaultPromptTemplateId) {
-				message = { type: 'error', text: '캐릭터와 템플릿을 모두 선택해주세요.' };
+			if (!settings.defaultPromptTemplateId) {
+				message = { type: 'error', text: '시스템 템플릿을 선택해주세요.' };
 				return;
 			}
 
@@ -120,26 +105,6 @@
 					{#each promptTemplates as template}
 						<option value={template.id}>
 							{template.name}
-						</option>
-					{/each}
-				</select>
-			</div>
-
-			<!-- 캐릭터 선택 -->
-			<div class="form-group">
-				<label for="character">
-					<Icon icon="solar:user-bold-duotone" width="20" height="20" />
-					<span>캐릭터</span>
-				</label>
-				<select
-					id="character"
-					bind:value={settings.defaultCharacterId}
-					required
-				>
-					<option value={null}>캐릭터를 선택하세요</option>
-					{#each characters as character}
-						<option value={character.id}>
-							{character.name}
 						</option>
 					{/each}
 				</select>

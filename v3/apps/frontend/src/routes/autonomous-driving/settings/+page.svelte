@@ -6,11 +6,6 @@
   import { autonomousDrivingSettingsStore } from '$lib/stores/autonomousDrivingSettingsStore';
   import HelpModal from '$lib/components/HelpModal.svelte';
 
-  interface Character {
-    id: number;
-    name: string;
-  }
-
   interface PromptTemplate {
     id: number;
     name: string;
@@ -29,25 +24,19 @@
   let showChatSettingsHelpModal = $state(false);
 
   // Trigger AI settings
-  let characters = $state<Character[]>([]);
   let promptTemplates = $state<PromptTemplate[]>([]);
   let excludeHistory = $state(true); // 일회용 메시지 (기본값: true)
-  let selectedCharacterId = $state<number | null>(null);
   let selectedPromptTemplateId = $state<number | null>(null);
   let selectedModel = $state('sonnet');
 
-  // Load AI data (characters, templates)
+  // Load AI data (templates)
   async function loadAIData() {
     try {
-      characters = await requestJson<Character[]>('/api/characters');
       promptTemplates = await requestJson<PromptTemplate[]>('/api/prompt-templates');
 
       // Load default chat settings as fallback
       try {
         const chatSettings: any = await requestJson('/api/settings/chat');
-        if (!selectedCharacterId && chatSettings.defaultCharacterId) {
-          selectedCharacterId = chatSettings.defaultCharacterId;
-        }
         if (!selectedPromptTemplateId && chatSettings.defaultPromptTemplateId) {
           selectedPromptTemplateId = chatSettings.defaultPromptTemplateId;
         }
@@ -74,7 +63,6 @@
 
       vehicleCommandParsingEnabled = autonomousSettings.vehicleCommandParsingEnabled;
       excludeHistory = triggerAiSettings.excludeHistory ?? true;
-      selectedCharacterId = triggerAiSettings.characterId ?? selectedCharacterId;
       selectedPromptTemplateId = triggerAiSettings.promptTemplateId ?? selectedPromptTemplateId;
       selectedModel = triggerAiSettings.model ?? selectedModel;
     } catch (error) {
@@ -125,7 +113,6 @@
           method: 'PUT',
           body: {
             excludeHistory,
-            characterId: selectedCharacterId,
             promptTemplateId: selectedPromptTemplateId,
             model: selectedModel,
           }
@@ -140,7 +127,6 @@
         vehicleCommandParsingEnabled,
         triggerAI: {
           excludeHistory,
-          characterId: selectedCharacterId,
           promptTemplateId: selectedPromptTemplateId,
           model: selectedModel
         }
@@ -332,20 +318,6 @@
           </div>
 
           <div class="form-group">
-            <label for="trigger-character">캐릭터</label>
-            <select
-              id="trigger-character"
-              bind:value={selectedCharacterId}
-              class="select-field"
-            >
-              <option value={null}>선택하세요</option>
-              {#each characters as character}
-                <option value={character.id}>{character.name}</option>
-              {/each}
-            </select>
-          </div>
-
-          <div class="form-group">
             <label for="trigger-model">모델</label>
             <select
               id="trigger-model"
@@ -507,7 +479,7 @@
   <section class="help-section">
     <h4>⚙️ 대화 설정이란?</h4>
     <p class="help-desc">
-      트리거 발동 시 AI와 대화할 때 사용할 시스템 템플릿, 캐릭터, 모델을 설정합니다.
+      트리거 발동 시 AI와 대화할 때 사용할 시스템 템플릿과 모델을 설정합니다.
       여기서 설정한 값은 트리거 전용으로 사용되며, 일반 채팅 위젯과는 별도로 동작합니다.
     </p>
   </section>
@@ -520,14 +492,6 @@
       <p>
         AI의 역할과 행동 방식을 정의합니다.
         예: "자율주행 연구 전문가", "차량 제어 전문가"
-      </p>
-    </div>
-
-    <div class="command-example">
-      <code>캐릭터</code>
-      <p>
-        AI의 말투, 성격, 톤을 정의합니다.
-        예: "Research Assistant" - 전문적이고 친절한 톤
       </p>
     </div>
 
@@ -545,7 +509,7 @@
   <section class="help-section">
     <h4>🔄 기본값 사용</h4>
     <p class="help-desc">
-      시스템 템플릿 또는 캐릭터를 "선택하세요"로 두면,
+      시스템 템플릿을 "선택하세요"로 두면,
       <strong>AI 설정</strong> 메뉴의 <strong>채팅 설정</strong>에서 지정한 기본값을 사용합니다.
     </p>
     <ul class="help-list">
@@ -557,7 +521,7 @@
   <section class="help-section">
     <h4>💡 Tip</h4>
     <ul class="help-list">
-      <li>시스템 템플릿과 캐릭터는 <strong>AI 설정</strong> 메뉴에서 추가/수정할 수 있습니다.</li>
+      <li>시스템 템플릿은 <strong>AI 설정</strong> 메뉴에서 추가/수정할 수 있습니다.</li>
       <li>트리거 전용 시스템 템플릿을 만들어두면 자율주행에 특화된 응답을 받을 수 있습니다.</li>
       <li>모델은 빠른 응답이 필요하면 haiku, 정확도가 중요하면 sonnet을 권장합니다.</li>
     </ul>

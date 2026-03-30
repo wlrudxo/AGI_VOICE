@@ -6,10 +6,8 @@
 
 	// State
 	let templates = $state([]);
-	let characters = $state([]);
 	let isLoading = $state(true);
 	let settings = $state({
-		default_character_id: null,
 		default_prompt_template_id: null
 	});
 
@@ -17,14 +15,12 @@
 	async function loadData() {
 		isLoading = true;
 		try {
-			const [templatesData, charactersData, settingsData] = await Promise.all([
+			const [templatesData, settingsData] = await Promise.all([
 				requestJson('/api/prompt-templates'),
-				requestJson('/api/characters'),
 				requestJson('/api/settings/chat').catch(() => null)
 			]);
 
 			templates = templatesData;
-			characters = charactersData;
 
 			if (settingsData) {
 				settings = settingsData;
@@ -39,12 +35,6 @@
 	async function handleTemplateChange(event) {
 		const id = parseInt(event.target.value);
 		settings.default_prompt_template_id = id;
-		await saveSettings();
-	}
-
-	async function handleCharacterChange(event) {
-		const id = parseInt(event.target.value);
-		settings.default_character_id = id;
 		await saveSettings();
 	}
 
@@ -68,7 +58,7 @@
 <div class="settings-home">
 	<div class="page-header">
 		<h1>AI 설정</h1>
-		<p class="page-description">AI 채팅에 사용할 템플릿과 캐릭터를 선택하세요.</p>
+		<p class="page-description">AI 채팅에 사용할 시스템 메시지와 명령어 템플릿을 관리합니다.</p>
 	</div>
 
 	{#if isLoading}
@@ -104,29 +94,6 @@
 					</select>
 					<p class="form-hint">AI의 기본 역할과 행동 방식을 정의합니다.</p>
 				</div>
-
-				<!-- 캐릭터 선택 -->
-				<div class="selection-item">
-					<label for="character-select" class="form-label">
-						<Icon icon="solar:user-bold-duotone" width="20" height="20" />
-						캐릭터
-					</label>
-					<select
-						id="character-select"
-						value={settings.default_character_id}
-						onchange={handleCharacterChange}
-						class="select-field w-full"
-					>
-						{#if characters.length === 0}
-							<option value="">캐릭터가 없습니다</option>
-						{:else}
-							{#each characters as character}
-								<option value={character.id}>{character.name}</option>
-							{/each}
-						{/if}
-					</select>
-					<p class="form-hint">AI의 성격과 말투를 정의합니다.</p>
-				</div>
 			</div>
 		</div>
 
@@ -140,22 +107,10 @@
 					<p>{templates.length}개 템플릿</p>
 				</button>
 
-				<button class="action-card" onclick={() => navigateTo('/ai-settings/characters')}>
-					<Icon icon="solar:user-bold-duotone" width="32" height="32" />
-					<h3>캐릭터</h3>
-					<p>{characters.length}개 캐릭터</p>
-				</button>
-
-				<button class="action-card" onclick={() => navigateTo('/ai-settings/user-info')}>
-					<Icon icon="solar:users-group-rounded-bold-duotone" width="32" height="32" />
-					<h3>유저 정보</h3>
-					<p>개인화 설정</p>
-				</button>
-
-				<button class="action-card" onclick={() => navigateTo('/ai-settings/final-message')}>
-					<Icon icon="solar:check-read-bold-duotone" width="32" height="32" />
-					<h3>최종 메시지</h3>
-					<p>체크리스트</p>
+				<button class="action-card" onclick={() => navigateTo('/ai-settings/commands')}>
+					<Icon icon="solar:code-bold-duotone" width="32" height="32" />
+					<h3>명령어 템플릿</h3>
+					<p>제어/맵 액션 가이드</p>
 				</button>
 			</div>
 		</div>
@@ -166,8 +121,8 @@
 			<div>
 				<strong>💡 사용 방법</strong>
 				<p>
-					위에서 선택한 템플릿과 캐릭터가 AI 채팅에 적용됩니다.
-					유저 정보와 최종 메시지는 각 탭에서 직접 입력하세요.
+					위에서 선택한 시스템 메시지 템플릿이 AI 채팅에 적용됩니다.
+					실행 가이드는 명령어 템플릿에서 관리합니다.
 				</p>
 			</div>
 		</div>

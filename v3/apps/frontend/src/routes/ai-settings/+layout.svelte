@@ -10,10 +10,7 @@
 	const subMenus = [
 		{ path: '/ai-settings/chat-settings', icon: 'solar:chat-round-dots-bold-duotone', label: '채팅 설정' },
 		{ path: '/ai-settings/system-messages', icon: 'solar:document-text-bold-duotone', label: '시스템 메시지' },
-		{ path: '/ai-settings/characters', icon: 'solar:user-bold-duotone', label: '캐릭터' },
-		{ path: '/ai-settings/commands', icon: 'solar:code-bold-duotone', label: '명령어 템플릿' },
-		{ path: '/ai-settings/user-info', icon: 'solar:users-group-rounded-bold-duotone', label: '유저 정보' },
-		{ path: '/ai-settings/final-message', icon: 'solar:check-read-bold-duotone', label: '최종 메시지' }
+		{ path: '/ai-settings/commands', icon: 'solar:code-bold-duotone', label: '명령어 템플릿' }
 	];
 
 	const currentPath = $derived($page.url.pathname);

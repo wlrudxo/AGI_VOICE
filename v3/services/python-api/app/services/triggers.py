@@ -171,13 +171,17 @@ class TriggerService:
             return self._monitoring_active
 
     def set_monitoring_state(self, active: bool) -> bool:
+        return self._set_monitoring_state(active, reset_cooldowns=active)
+
+    def _set_monitoring_state(self, active: bool, reset_cooldowns: bool) -> bool:
         with self._lock:
             if active == self._monitoring_active:
                 return self._monitoring_active
 
             self._monitoring_active = active
             if active:
-                self._cooldowns.clear()
+                if reset_cooldowns:
+                    self._cooldowns.clear()
                 self._add_log("✓ Started trigger monitoring (10Hz backend)")
                 self._ensure_monitor_thread()
             else:
@@ -312,7 +316,7 @@ class TriggerService:
             self._add_log("  → Pausing simulation (time scale = 0.001x)")
             was_monitoring = self._carmaker_service.is_monitoring_active()
             if was_monitoring:
-                self._carmaker_service.set_monitoring_state(False)
+                self._set_monitoring_state(False, reset_cooldowns=False)
                 self._add_log("  → Monitoring paused (prevent timeout in low-speed mode)")
             self._carmaker_service.execute_command("DVAWrite SC.TAccel 0.001 30000 Abs")
 
@@ -322,7 +326,7 @@ class TriggerService:
                 self._add_log("  → Resuming simulation (time scale = 1.0x)")
                 self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 30000 Abs")
                 if was_monitoring:
-                    self._carmaker_service.set_monitoring_state(True)
+                    self._set_monitoring_state(True, reset_cooldowns=False)
                     self._add_log("  → Monitoring resumed")
                 self._add_log("  → Rule mode: executing backend rule action")
                 self._execute_command_sequence(trigger.debug_action)
@@ -332,7 +336,7 @@ class TriggerService:
                 self._add_log("  → Resuming simulation (time scale = 1.0x)")
                 self._carmaker_service.execute_command("DVAWrite SC.TAccel 1.0 30000 Abs")
                 if was_monitoring:
-                    self._carmaker_service.set_monitoring_state(True)
+                    self._set_monitoring_state(True, reset_cooldowns=False)
                     self._add_log("  → Monitoring resumed")
                 if llm_response:
                     self._add_log("  → Parsing LLM response and executing commands")
@@ -346,7 +350,7 @@ class TriggerService:
                 pass
             if was_monitoring:
                 try:
-                    self._carmaker_service.set_monitoring_state(True)
+                    self._set_monitoring_state(True, reset_cooldowns=False)
                     self._add_log("  → Monitoring resumed")
                 except Exception:
                     pass
@@ -391,6 +395,18 @@ class TriggerService:
     async def _request_llm(self, trigger: Trigger, vehicle_data: dict[str, float]) -> str | None:
         try:
             system_context = self._build_system_context(trigger, vehicle_data)
+            self._add_log("  → AI Input:")
+            for line in system_context.splitlines():
+                self._add_log(f"    {line}")
+            self._print_debug_block(
+                "Trigger AI Input",
+                system_context,
+                metadata={
+                    "trigger_id": trigger.id,
+                    "trigger_name": trigger.name,
+                    "conversation_id": trigger.conversation_id,
+                },
+            )
             self._add_event("system", trigger.name, system_context)
             trigger_ai = self._settings_service.get_trigger_ai_settings()
             chat_settings = self._settings_service.get_chat_settings()
@@ -401,7 +417,6 @@ class TriggerService:
                 exclude_history=trigger_ai.exclude_history,
                 no_save=trigger_ai.exclude_history,
                 model=trigger_ai.model or chat_settings.default_claude_model,
-                character_id=trigger_ai.character_id or chat_settings.default_character_id,
                 prompt_template_id=(
                     trigger_ai.prompt_template_id or chat_settings.default_prompt_template_id
                 ),
@@ -413,6 +428,17 @@ class TriggerService:
 
             llm_response = response.responses[0]
             self._add_log(f"  ✓ LLM response received ({len(llm_response)} chars)")
+            self._add_log("  → AI Output:")
+            for line in llm_response.splitlines():
+                self._add_log(f"    {line}")
+            self._print_debug_block(
+                "Trigger AI Output",
+                llm_response,
+                metadata={
+                    "trigger_id": trigger.id,
+                    "trigger_name": trigger.name,
+                },
+            )
             self._add_event("llm_response", trigger.name, llm_response)
             return llm_response
         except Exception as exc:
@@ -608,6 +634,23 @@ class TriggerService:
             )
             self._next_event_id += 1
             self._events = [*self._events, event][-200:]
+
+    def _print_debug_block(
+        self,
+        title: str,
+        content: str,
+        metadata: dict[str, object] | None = None,
+    ) -> None:
+        config_settings = get_settings()
+        app_settings = self._settings_service.get_app_settings()
+        if not (config_settings.debug_chat_logs or app_settings.debug_chat_logs):
+            return
+
+        print(f"=== {title} ===")
+        if metadata:
+            print(json.dumps(metadata, ensure_ascii=False, indent=2))
+        print(content)
+        print(f"=== End {title} ===")
 
 
 _settings = get_settings()

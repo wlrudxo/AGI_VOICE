@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Iterable
 
 from app.core.config import get_settings
-from app.schemas.ai_catalog import Character, PromptTemplate
+from app.schemas.ai_catalog import PromptTemplate
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.schemas.conversations import (
     ConversationCreate,
@@ -43,11 +43,23 @@ class ChatService:
         self._command_template_service = command_template_service
 
     async def chat(self, request: ChatRequest) -> ChatResponse:
-        conversation_id, character, prompt_template, user_info = self._resolve_chat_session(request)
+        conversation_id, prompt_template = self._resolve_chat_session(request)
         workspace_dir = self._resolve_workspace_dir()
-        claude_md, prompt = self._build_prompt(request, character, prompt_template, user_info)
+        claude_md, prompt = self._build_prompt(request, prompt_template)
         self._save_claude_md(claude_md, workspace_dir)
+        self._log_debug_block(
+            "Chat Input",
+            prompt,
+            metadata={
+                "conversation_id": conversation_id,
+                "prompt_template_id": prompt_template.id,
+                "model": request.model,
+                "no_save": request.no_save,
+                "exclude_history": request.exclude_history,
+            },
+        )
         response_text = await self._run_claude(prompt, request.model, workspace_dir)
+        self._log_debug_block("Chat Output", response_text)
 
         if request.no_save:
             return ChatResponse(
@@ -60,9 +72,7 @@ class ChatService:
             request,
             response_text,
             conversation_id,
-            character.id,
             prompt_template.id,
-            user_info,
         )
         return ChatResponse(
             conversation_id=conversation_id,
@@ -86,9 +96,7 @@ class ChatService:
             return [
                 ConversationWithCount(
                     id=row["id"],
-                    character_id=row["character_id"],
                     prompt_template_id=row["prompt_template_id"],
-                    user_info=row["user_info"],
                     title=row["title"],
                     created_at=row["created_at"],
                     updated_at=row["updated_at"],
@@ -103,13 +111,11 @@ class ChatService:
             cursor = conn.execute(
                 """
                 INSERT INTO conversations (
-                    character_id, prompt_template_id, user_info, title, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?)
+                    prompt_template_id, title, created_at, updated_at
+                ) VALUES (?, ?, ?, ?)
                 """,
                 (
-                    conversation_data.character_id,
                     conversation_data.prompt_template_id,
-                    conversation_data.user_info,
                     conversation_data.title,
                     now,
                     now,
@@ -129,9 +135,7 @@ class ChatService:
                 raise RuntimeError("Conversation not found")
             return ConversationResponse(
                 id=row["id"],
-                character_id=row["character_id"],
                 prompt_template_id=row["prompt_template_id"],
-                user_info=row["user_info"],
                 title=row["title"],
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
@@ -180,19 +184,16 @@ class ChatService:
                 raise RuntimeError("Conversation not found")
 
             next_title = existing["title"]
-            next_user_info = existing["user_info"]
             if conversation_data.title is not None:
                 next_title = conversation_data.title
-            if conversation_data.user_info is not None:
-                next_user_info = conversation_data.user_info
 
             conn.execute(
                 """
                 UPDATE conversations
-                SET title = ?, user_info = ?, updated_at = ?
+                SET title = ?, updated_at = ?
                 WHERE id = ?
                 """,
-                (next_title, next_user_info, utc_now_iso(), conversation_id),
+                (next_title, utc_now_iso(), conversation_id),
             )
             conn.commit()
             return self.get_conversation_by_id(conversation_id)
@@ -212,72 +213,51 @@ class ChatService:
     def _resolve_chat_session(
         self,
         request: ChatRequest,
-    ) -> tuple[int | None, Character, PromptTemplate, str]:
+    ) -> tuple[int | None, PromptTemplate]:
         # V2 parity:
-        # - existing conversation always uses the stored character/template/user_info
-        # - new conversation and no-save mode require explicit request ids
+        # - existing conversation always uses the stored prompt template
+        # - new conversation and no-save mode require explicit request template id
         conversation_id: int | None = None
-        user_info = request.user_info or ""
+        prompt_template_id: int | None = None
 
         if not request.no_save and request.conversation_id is not None:
             with self._lock, self._db.with_lock(), self._db.connect() as conn:
                 row = conn.execute(
-                    "SELECT id, character_id, prompt_template_id, user_info FROM conversations WHERE id = ?",
+                    "SELECT id, prompt_template_id FROM conversations WHERE id = ?",
                     (request.conversation_id,),
                 ).fetchone()
             if row is None:
                 raise RuntimeError("Conversation not found")
             conversation_id = int(row["id"])
-            character_id = int(row["character_id"])
             prompt_template_id = int(row["prompt_template_id"])
-            user_info = row["user_info"] or ""
         else:
-            if request.character_id is None or request.prompt_template_id is None:
-                raise RuntimeError("characterId and promptTemplateId are required for new conversation")
-            character_id = request.character_id
+            if request.prompt_template_id is None:
+                raise RuntimeError("promptTemplateId is required for new conversation")
             prompt_template_id = request.prompt_template_id
 
-        character = next(
-            (item for item in self._catalog_service.list_characters() if item.id == character_id),
-            None,
-        )
         prompt_template = next(
             (item for item in self._catalog_service.list_prompt_templates() if item.id == prompt_template_id),
             None,
         )
 
-        if character is None:
-            raise RuntimeError("Character not found")
         if prompt_template is None:
             raise RuntimeError("Prompt template not found")
 
-        return conversation_id, character, prompt_template, user_info
+        return conversation_id, prompt_template
 
     def _build_prompt(
         self,
         request: ChatRequest,
-        character: Character,
         prompt_template: PromptTemplate,
-        user_info: str,
     ) -> tuple[str, str]:
-        user_name = request.user_name or ""
-        character_name = character.name
-        system_message = self._substitute(prompt_template.content, user_name, character_name)
-        character_prompt = self._substitute(character.prompt_content, user_name, character_name)
-        user_info = self._substitute(user_info, user_name, character_name)
+        system_message = prompt_template.content
 
         claude_md_parts = [
             "## System Message",
             "",
             system_message.strip(),
             "",
-            "## Character",
-            "",
-            character_prompt.strip(),
-            "",
         ]
-        if user_info.strip():
-            claude_md_parts.extend(["## User Information", "", user_info.strip(), ""])
         claude_md = "\n".join(claude_md_parts).strip() + "\n"
 
         command_info_list = [
@@ -285,9 +265,6 @@ class ChatService:
         ]
         history_block = self._format_history(request)
         current_input = request.system_context.strip() if request.system_context else request.message.strip()
-        final_message = request.final_message.strip() if request.final_message else (
-            "## Final Checkout\n\n- Check if all required tags are properly formatted\n- Ensure the response is concise and actionable\n"
-        )
         now = datetime.now()
         weekday_names = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
         current_time = (
@@ -315,13 +292,11 @@ class ChatService:
             ```
             <--## Current Input End-->
 
-            {final_message}
-
             {current_time}
             """
         ).strip()
 
-        return claude_md, self._substitute(full_message, user_name, character_name)
+        return claude_md, full_message
 
     def _format_history(self, request: ChatRequest) -> str:
         if request.exclude_history:
@@ -387,32 +362,26 @@ class ChatService:
         request: ChatRequest,
         response_text: str,
         conversation_id: int | None,
-        character_id: int,
         prompt_template_id: int,
-        user_info: str,
     ) -> int:
         with self._lock, self._db.with_lock(), self._db.connect() as conn:
             now = utc_now_iso()
             if conversation_id is not None:
                 conn.execute(
                     """
-                    UPDATE conversations
-                    SET updated_at = ?, user_info = COALESCE(?, user_info)
-                    WHERE id = ?
+                    UPDATE conversations SET updated_at = ? WHERE id = ?
                     """,
-                    (now, request.user_info, conversation_id),
+                    (now, conversation_id),
                 )
             else:
                 cursor = conn.execute(
                     """
                     INSERT INTO conversations (
-                        character_id, prompt_template_id, user_info, title, created_at, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?)
+                        prompt_template_id, title, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?)
                     """,
                     (
-                        character_id,
                         prompt_template_id,
-                        user_info,
                         request.title or f"Chat {datetime.now().strftime('%Y-%m-%d %H:%M')}",
                         now,
                         now,
@@ -596,8 +565,22 @@ class ChatService:
                     full_response = content[0].get("text", "")
         return full_response
 
-    def _substitute(self, text: str, user_name: str, character_name: str) -> str:
-        return text.replace("{{user}}", user_name).replace("{{char}}", character_name)
+    def _log_debug_block(
+        self,
+        title: str,
+        content: str,
+        metadata: dict[str, object] | None = None,
+    ) -> None:
+        config_settings = get_settings()
+        app_settings = self._settings_service.get_app_settings()
+        if not (config_settings.debug_chat_logs or app_settings.debug_chat_logs):
+            return
+
+        print(f"=== {title} ===")
+        if metadata:
+            print(json.dumps(metadata, ensure_ascii=False, indent=2))
+        print(content)
+        print(f"=== End {title} ===")
 
 
 _service = ChatService(

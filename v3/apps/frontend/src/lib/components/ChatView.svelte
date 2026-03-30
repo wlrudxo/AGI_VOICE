@@ -4,7 +4,6 @@
 	import { dbWatcher } from '$lib/stores/dbWatcher.svelte';
 	import { uiStore } from '$lib/stores/uiStore';
 	import { autonomousDrivingSettingsStore } from '$lib/stores/autonomousDrivingSettingsStore';
-	import { promptContextStore } from '$lib/stores/promptContextStore';
 	import Icon from '@iconify/svelte';
 	import { marked } from 'marked';
 	import { parseActions, parseWithSegments, getActionLabel } from '$lib/actions/parser';
@@ -73,7 +72,6 @@
 	let isLoading = $state(false);
 	let messagesContainer;
 	let conversationId = $state(null);
-	let characterId = $state(null);
 	let promptTemplateId = $state(null);
 	let claudeModel = $state('sonnet');
 	let settingsLoaded = $state(false);
@@ -106,15 +104,14 @@
 	async function loadChatSettings() {
 		try {
 			const settings = await requestJson('/api/settings/chat');
-			characterId = settings.defaultCharacterId;
 			promptTemplateId = settings.defaultPromptTemplateId;
 			claudeModel = settings.defaultClaudeModel || 'sonnet';
 
-			if (!characterId || !promptTemplateId) {
+			if (!promptTemplateId) {
 				console.error('Chat settings not configured');
 				messages.push({
 					role: 'error',
-					content: '⚠️ 채팅 설정이 되어있지 않습니다. AI 설정 > 채팅 설정에서 캐릭터와 템플릿을 선택해주세요.',
+					content: '⚠️ 채팅 설정이 되어있지 않습니다. AI 설정 > 채팅 설정에서 시스템 메시지 템플릿을 선택해주세요.',
 					timestamp: new Date()
 				});
 			}
@@ -128,21 +125,6 @@
 			});
 			settingsLoaded = true;
 		}
-	}
-
-	// 유저 정보 가져오기
-	function getUserInfo() {
-		return promptContextStore.getCurrentState().userInfo;
-	}
-
-	// 유저 이름 가져오기
-	function getUserName() {
-		return promptContextStore.getCurrentState().userName;
-	}
-
-	// 최종 메시지 가져오기
-	function getFinalMessage() {
-		return promptContextStore.getCurrentState().finalMessage;
 	}
 
 	// 대화 기록 선택 이벤트 리스너
@@ -171,7 +153,6 @@
 			const messagesData = await requestJson(`/api/conversations/${selectedId}/messages?limit=50`);
 
 			conversationId = selectedId;
-			characterId = convData.characterId;
 			promptTemplateId = convData.promptTemplateId;
 
 			// Store에도 저장
@@ -397,7 +378,6 @@
 						conversationId: conversationId,
 						message: userMessage,
 						model: claudeModel,
-						userName: getUserName(),
 						systemContext: systemContext,
 						role: 'system' // DB 저장 안 함
 					};
@@ -491,7 +471,7 @@
 		const userMessage = inputMessage.trim();
 		if (!userMessage || isLoading) return;
 
-		if (!settingsLoaded || !characterId || !promptTemplateId) {
+		if (!settingsLoaded || !promptTemplateId) {
 			messages.push({
 				role: 'error',
 				content: '채팅 설정을 먼저 완료해주세요.',
@@ -513,7 +493,6 @@
 			const requestBody = {
 				message: userMessage,
 				model: claudeModel,
-				userName: getUserName(),
 				role: 'user'
 			};
 
@@ -529,10 +508,7 @@
 				const hours = String(now.getHours()).padStart(2, '0');
 				const minutes = String(now.getMinutes()).padStart(2, '0');
 				newConversationTitle = `${year}.${month}.${day}. ${hours}:${minutes}`;
-				requestBody.characterId = characterId;
 				requestBody.promptTemplateId = promptTemplateId;
-				requestBody.userInfo = getUserInfo();
-				requestBody.finalMessage = getFinalMessage();
 				requestBody.title = newConversationTitle;
 			}
 

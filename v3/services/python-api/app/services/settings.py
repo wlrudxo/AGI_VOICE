@@ -14,7 +14,6 @@ from app.schemas.settings import (
     ChatSettings,
     DbInfo,
     DbTimestamp,
-    PromptContextSettings,
     SettingsData,
     TriggerAiSettings,
 )
@@ -31,8 +30,6 @@ class SettingsService:
     def get_chat_settings(self) -> ChatSettings:
         with self._lock:
             chat = self._data.chat.model_copy(deep=True)
-            if chat.default_character_id is None:
-                chat.default_character_id = self._data.app.default_character_id
             if chat.default_prompt_template_id is None:
                 chat.default_prompt_template_id = self._data.app.default_prompt_template_id
             if not chat.default_claude_model:
@@ -40,7 +37,6 @@ class SettingsService:
             hydrated = self._hydrate_default_chat_settings(chat)
             if hydrated != chat:
                 self._data.chat = hydrated.model_copy(deep=True)
-                self._data.app.default_character_id = hydrated.default_character_id
                 self._data.app.default_prompt_template_id = hydrated.default_prompt_template_id
                 self._data.app.default_claude_model = hydrated.default_claude_model
                 self._save()
@@ -50,7 +46,6 @@ class SettingsService:
     def update_chat_settings(self, chat_settings: ChatSettings) -> ChatSettings:
         with self._lock:
             self._data.chat = chat_settings.model_copy(deep=True)
-            self._data.app.default_character_id = chat_settings.default_character_id
             self._data.app.default_prompt_template_id = chat_settings.default_prompt_template_id
             self._data.app.default_claude_model = chat_settings.default_claude_model
             self._save()
@@ -84,42 +79,21 @@ class SettingsService:
             app_settings = self._data.app.model_copy(deep=True)
             chat_defaults = self._hydrate_default_chat_settings(
                 ChatSettings(
-                    default_character_id=app_settings.default_character_id,
                     default_prompt_template_id=app_settings.default_prompt_template_id,
                     default_claude_model=app_settings.default_claude_model,
                 )
             )
-            if (
-                app_settings.default_character_id != chat_defaults.default_character_id
-                or app_settings.default_prompt_template_id != chat_defaults.default_prompt_template_id
-            ):
-                app_settings.default_character_id = chat_defaults.default_character_id
+            if app_settings.default_prompt_template_id != chat_defaults.default_prompt_template_id:
                 app_settings.default_prompt_template_id = chat_defaults.default_prompt_template_id
-                self._data.app.default_character_id = app_settings.default_character_id
                 self._data.app.default_prompt_template_id = app_settings.default_prompt_template_id
-                self._data.chat.default_character_id = app_settings.default_character_id
                 self._data.chat.default_prompt_template_id = app_settings.default_prompt_template_id
                 self._save()
             return app_settings
-
-    def get_prompt_context_settings(self) -> PromptContextSettings:
-        with self._lock:
-            return self._data.prompt_context.model_copy(deep=True)
-
-    def update_prompt_context_settings(
-        self,
-        prompt_context: PromptContextSettings,
-    ) -> PromptContextSettings:
-        with self._lock:
-            self._data.prompt_context = prompt_context.model_copy(deep=True)
-            self._save()
-            return self._data.prompt_context.model_copy(deep=True)
 
     def update_app_settings(self, app_settings: AppSettings) -> AppSettings:
         with self._lock:
             self._validate_app_settings(app_settings)
             self._data.app = app_settings.model_copy(deep=True)
-            self._data.chat.default_character_id = app_settings.default_character_id
             self._data.chat.default_prompt_template_id = app_settings.default_prompt_template_id
             self._data.chat.default_claude_model = app_settings.default_claude_model
             self._save()
@@ -278,13 +252,19 @@ class SettingsService:
     def _hydrate_default_chat_settings(self, chat: ChatSettings) -> ChatSettings:
         hydrated = chat.model_copy(deep=True)
         with get_ai_chat_db().with_lock(), get_ai_chat_db().connect() as conn:
-            if hydrated.default_character_id is None:
-                row = conn.execute("SELECT id FROM characters ORDER BY id ASC LIMIT 1").fetchone()
-                if row is not None:
-                    hydrated.default_character_id = int(row["id"])
             if hydrated.default_prompt_template_id is None:
                 row = conn.execute(
-                    "SELECT id FROM prompt_templates ORDER BY id ASC LIMIT 1"
+                    """
+                    SELECT id FROM prompt_templates
+                    ORDER BY
+                        CASE
+                            WHEN name = '기본 시스템 메시지 - 자율주행 제어' THEN 0
+                            WHEN name = '기본 시스템 메시지 - 맵 생성' THEN 1
+                            ELSE 2
+                        END,
+                        id ASC
+                    LIMIT 1
+                    """
                 ).fetchone()
                 if row is not None:
                     hydrated.default_prompt_template_id = int(row["id"])
