@@ -3,6 +3,8 @@ import math
 import re
 import threading
 import time
+from collections import deque
+from dataclasses import dataclass
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -17,6 +19,12 @@ from app.schemas.triggers import (
     UpdateTriggerRequest,
     utc_now,
 )
+
+
+@dataclass
+class TriggerExecutionJob:
+    trigger: Trigger
+    vehicle_data: dict[str, float]
 
 
 class TriggerService:
@@ -34,9 +42,12 @@ class TriggerService:
         self._log_messages: list[str] = []
         self._monitoring_active = False
         self._monitor_thread: threading.Thread | None = None
+        self._worker_thread: threading.Thread | None = None
         self._cooldowns: dict[int, float] = {}
-        self._blocked_until = 0.0
         self._is_executing = False
+        self._active_trigger_id: int | None = None
+        self._pending_jobs: deque[TriggerExecutionJob] = deque()
+        self._queued_trigger_ids: set[int] = set()
         self._cancel_event = threading.Event()
         self._events: list[TriggerChatEvent] = []
         self._next_event_id = 1
@@ -139,6 +150,7 @@ class TriggerService:
                     self._cooldowns.clear()
                 self._add_log("✓ Started trigger monitoring (10Hz backend)")
                 self._ensure_monitor_thread()
+                self._ensure_worker_thread()
             else:
                 self._add_log("✓ Stopped trigger monitoring")
             return self._monitoring_active
@@ -166,7 +178,9 @@ class TriggerService:
             self._cancel_event.set()
             self._monitoring_active = False
             self._cooldowns.clear()
-            self._blocked_until = 0.0
+            self._pending_jobs.clear()
+            self._queued_trigger_ids.clear()
+            self._active_trigger_id = None
             self._events.clear()
             self._next_event_id = 1
             self._add_log("🛑 Reset Control: trigger monitoring stopped and runtime state cleared")
@@ -236,6 +250,17 @@ class TriggerService:
         )
         self._monitor_thread.start()
 
+    def _ensure_worker_thread(self) -> None:
+        if self._worker_thread is not None and self._worker_thread.is_alive():
+            return
+
+        self._worker_thread = threading.Thread(
+            target=self._worker_loop,
+            name="agi-voice-v3-trigger-worker",
+            daemon=True,
+        )
+        self._worker_thread.start()
+
     def _monitor_loop(self) -> None:
         while True:
             with self._lock:
@@ -253,7 +278,7 @@ class TriggerService:
 
     def _tick_monitoring(self) -> None:
         with self._lock:
-            if not self._monitoring_active or self._is_executing:
+            if not self._monitoring_active:
                 return
 
         if not self._carmaker_service.is_monitoring_active():
@@ -267,50 +292,68 @@ class TriggerService:
         active_triggers = self.list_triggers()
         now = time.time()
 
-        with self._lock:
-            if now < self._blocked_until:
-                return
-
         for trigger in active_triggers:
             if not trigger.is_active:
-                continue
-
-            next_allowed = self._cooldowns.get(trigger.id, 0.0)
-            if now < next_allowed:
                 continue
 
             if not self._evaluate_expression(trigger.expression, vehicle_data):
                 continue
 
             with self._lock:
-                if not self._monitoring_active or self._is_executing:
+                if not self._monitoring_active:
                     return
-                self._is_executing = True
-                blocked_until = now + (trigger.cooldown / 1000.0)
-                self._cooldowns[trigger.id] = blocked_until
-                self._blocked_until = blocked_until
-            self._add_log(f"⚡ Trigger activated: {trigger.name}")
+                next_allowed = self._cooldowns.get(trigger.id, 0.0)
+                if now < next_allowed:
+                    continue
+                if trigger.id == self._active_trigger_id or trigger.id in self._queued_trigger_ids:
+                    continue
+                self._cooldowns[trigger.id] = now + (trigger.cooldown / 1000.0)
+                self._pending_jobs.append(
+                    TriggerExecutionJob(
+                        trigger=trigger.model_copy(deep=True),
+                        vehicle_data=dict(vehicle_data),
+                    )
+                )
+                self._queued_trigger_ids.add(trigger.id)
+            self._add_log(f"⚡ Trigger queued: {trigger.name}")
 
+    def _worker_loop(self) -> None:
+        while True:
+            with self._lock:
+                job = self._pending_jobs.popleft() if self._pending_jobs else None
+                if job is not None:
+                    self._queued_trigger_ids.discard(job.trigger.id)
+                    self._is_executing = True
+                    self._active_trigger_id = job.trigger.id
+
+            if job is None:
+                time.sleep(0.05)
+                continue
+
+            self._add_log(f"⚡ Trigger activated: {job.trigger.name}")
             snapshot = ", ".join(
                 f"{key}={value:.4f}"
-                for key, value in sorted(vehicle_data.items())
+                for key, value in sorted(job.vehicle_data.items())
             )
             self._add_log(f"  Vehicle data: {snapshot}")
+
             try:
                 self._trigger_executor.execute(
-                    trigger=trigger,
-                    vehicle_data=vehicle_data,
+                    trigger=job.trigger,
+                    vehicle_data=job.vehicle_data,
                     cancel_event=self._cancel_event,
                     is_monitoring_active=self._carmaker_service.is_monitoring_active,
                     set_monitoring_state=self._set_monitoring_state,
                     add_log=self._add_log,
                     add_event=self._add_event,
                 )
+            except Exception as exc:
+                self._add_log(f"✗ Trigger worker error: {exc}")
             finally:
                 with self._lock:
                     self._is_executing = False
+                    self._active_trigger_id = None
                     self._cancel_event.clear()
-            return
 
     def _evaluate_expression(self, expression: str, vehicle_data: dict[str, float]) -> bool:
         if not expression.strip():
