@@ -72,19 +72,10 @@ class TriggerService:
         with self._lock:
             return [trigger.model_copy(deep=True) for trigger in self._triggers]
 
-    def get_all(self) -> list[Trigger]:
-        return self.list_triggers()
-
     def get_trigger(self, trigger_id: int) -> Trigger | None:
         with self._lock:
             trigger = self._find_trigger(trigger_id)
             return trigger.model_copy(deep=True) if trigger else None
-
-    def get_by_id(self, trigger_id: int) -> Trigger:
-        trigger = self.get_trigger(trigger_id)
-        if trigger is None:
-            raise RuntimeError(f"Trigger with id {trigger_id} not found")
-        return trigger
 
     def create_trigger(self, request: CreateTriggerRequest) -> Trigger:
         with self._lock:
@@ -103,9 +94,6 @@ class TriggerService:
             self._triggers.append(trigger)
             self._save()
             return trigger.model_copy(deep=True)
-
-    def create(self, request: CreateTriggerRequest) -> Trigger:
-        return self.create_trigger(request)
 
     def update_trigger(self, trigger_id: int, request: UpdateTriggerRequest) -> Trigger:
         with self._lock:
@@ -127,17 +115,11 @@ class TriggerService:
             self._save()
             return updated.model_copy(deep=True)
 
-    def update(self, trigger_id: int, request: UpdateTriggerRequest) -> Trigger:
-        return self.update_trigger(trigger_id, request)
-
     def delete_trigger(self, trigger_id: int) -> None:
         with self._lock:
             index, _ = self._require_trigger(trigger_id)
             self._triggers.pop(index)
             self._save()
-
-    def delete(self, trigger_id: int) -> None:
-        self.delete_trigger(trigger_id)
 
     def toggle_trigger(self, trigger_id: int) -> Trigger:
         with self._lock:
@@ -151,9 +133,6 @@ class TriggerService:
             self._triggers[index] = updated
             self._save()
             return updated.model_copy(deep=True)
-
-    def toggle_active(self, trigger_id: int) -> Trigger:
-        return self.toggle_trigger(trigger_id)
 
     def toggle_rule_control(self, trigger_id: int) -> Trigger:
         with self._lock:

@@ -1,19 +1,6 @@
 import { requestJson } from '$lib/backend';
 import { carmakerStore } from '$lib/stores/carmakerStore.svelte';
-
-interface Trigger {
-  id: number;
-  name: string;
-  isActive: boolean;
-  expression: string;
-  message: string;
-  conversationId?: number | null;
-  useRuleControl: boolean;
-  debugAction: string;
-  cooldown: number;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { Trigger } from '$lib/types/trigger';
 
 class TriggerMonitor {
   isMonitoring = $state(false);

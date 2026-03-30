@@ -5,20 +5,7 @@
   import HelpModal from '$lib/components/HelpModal.svelte';
   import { disableAutocomplete } from '$lib/actions/disableAutocomplete';
   import { triggerMonitor } from '$lib/stores/triggerMonitor.svelte';
-
-  interface TriggerCondition {
-    id: number;
-    name: string;
-    isActive: boolean;
-    expression: string; // Expression string (e.g., "Traffic.T01.sRoad - Traffic.T00.sRoad < 100")
-    message: string;
-    conversationId?: number;
-    useRuleControl: boolean;
-    debugAction: string;
-    cooldown: number; // Cooldown time in milliseconds (default: 5000)
-    createdAt: string;
-    updatedAt: string;
-  }
+  import type { Trigger as TriggerCondition } from '$lib/types/trigger';
 
   // Triggers from backend
   let triggers: TriggerCondition[] = $state([]);
