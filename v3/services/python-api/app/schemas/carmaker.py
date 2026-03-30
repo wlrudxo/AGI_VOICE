@@ -56,6 +56,16 @@ class TelemetryData(CamelModel):
     raw_data: dict[str, float]
 
 
+class ResetControlResponse(CamelModel):
+    cancelled_trigger_execution: bool = False
+    trigger_monitoring_stopped: bool = False
+    carmaker_monitoring_stopped: bool = False
+    commands_attempted: int = 0
+    commands_succeeded: int = 0
+    connected: bool = False
+    message: str = ""
+
+
 def build_telemetry(raw_data: dict[str, float]) -> TelemetryData:
     return TelemetryData(
         time=raw_data.get("Time"),

@@ -61,6 +61,7 @@ class TriggerService:
         self._monitoring_active = False
         self._monitor_thread: threading.Thread | None = None
         self._cooldowns: dict[int, float] = {}
+        self._blocked_until = 0.0
         self._is_executing = False
         self._cancel_event = threading.Event()
         self._events: list[TriggerChatEvent] = []
@@ -206,6 +207,21 @@ class TriggerService:
             self._add_log("🛑 Reset Control requested: cancelling active trigger execution")
             return True
 
+    def reset_runtime_state(self) -> dict[str, bool]:
+        with self._lock:
+            was_executing = self._is_executing
+            self._cancel_event.set()
+            self._monitoring_active = False
+            self._cooldowns.clear()
+            self._blocked_until = 0.0
+            self._events.clear()
+            self._next_event_id = 1
+            self._add_log("🛑 Reset Control: trigger monitoring stopped and runtime state cleared")
+            return {
+                "was_executing": was_executing,
+                "monitoring_active": self._monitoring_active,
+            }
+
     def get_events(self, since_id: int = 0) -> list[TriggerChatEvent]:
         with self._lock:
             return [
@@ -283,10 +299,11 @@ class TriggerService:
             time.sleep(0.1)
 
     def _tick_monitoring(self) -> None:
-        if not self._carmaker_service.is_monitoring_active():
-            return
+        with self._lock:
+            if not self._monitoring_active or self._is_executing:
+                return
 
-        if self._is_executing:
+        if not self._carmaker_service.is_monitoring_active():
             return
 
         telemetry = self._carmaker_service.get_telemetry()
@@ -296,6 +313,10 @@ class TriggerService:
 
         active_triggers = self.list_triggers()
         now = time.time()
+
+        with self._lock:
+            if now < self._blocked_until:
+                return
 
         for trigger in active_triggers:
             if not trigger.is_active:
@@ -308,7 +329,13 @@ class TriggerService:
             if not self._evaluate_expression(trigger.expression, vehicle_data):
                 continue
 
-            self._cooldowns[trigger.id] = now + (trigger.cooldown / 1000.0)
+            with self._lock:
+                if not self._monitoring_active or self._is_executing:
+                    return
+                self._is_executing = True
+                blocked_until = now + (trigger.cooldown / 1000.0)
+                self._cooldowns[trigger.id] = blocked_until
+                self._blocked_until = blocked_until
             self._add_log(f"⚡ Trigger activated: {trigger.name}")
 
             snapshot = ", ".join(
@@ -317,9 +344,9 @@ class TriggerService:
             )
             self._add_log(f"  Vehicle data: {snapshot}")
             self._execute_trigger(trigger, vehicle_data)
+            return
 
     def _execute_trigger(self, trigger: Trigger, vehicle_data: dict[str, float]) -> None:
-        self._is_executing = True
         self._cancel_event.clear()
         was_monitoring = False
         try:

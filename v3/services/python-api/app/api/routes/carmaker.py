@@ -7,11 +7,13 @@ from app.schemas.carmaker import (
     ExecuteCommandRequest,
     MonitoringStateRequest,
     PedalControlRequest,
+    ResetControlResponse,
     TargetSpeedRequest,
     TelemetryData,
     WatchedObjectRequest,
 )
 from app.services.carmaker import CarMakerService, get_carmaker_service
+from app.services.triggers import TriggerService, get_trigger_service
 
 router = APIRouter()
 
@@ -149,6 +151,52 @@ def stop_simulation(
         return service.stop_simulation()
     except RuntimeError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/reset-control", response_model=ResetControlResponse)
+def reset_control(
+    carmaker_service: CarMakerService = Depends(get_carmaker_service),
+    trigger_service: TriggerService = Depends(get_trigger_service),
+) -> ResetControlResponse:
+    trigger_state = trigger_service.reset_runtime_state()
+    carmaker_service.set_monitoring_state(False)
+
+    commands = [
+        "DVAWrite SC.TAccel 1.0 30000 Abs",
+        "DVAWrite DM.Gas 0 1 Abs",
+        "DVAWrite DM.Brake 0 1 Abs",
+        "DVAWrite DM.Steer.Ang 0 1 Abs",
+        "DVAWrite DM.v.Trgt 0 1 Abs",
+        "DVAWrite DM.LaneOffset 0 1 Abs",
+    ]
+    commands_succeeded = 0
+    connected = carmaker_service.get_status().connected
+    last_error: str | None = None
+
+    if connected:
+        for command in commands:
+            try:
+                carmaker_service.execute_command(command)
+                commands_succeeded += 1
+            except RuntimeError as exc:
+                last_error = str(exc)
+                break
+
+    message = "Reset Control completed"
+    if not connected:
+        message = "Reset Control completed (CarMaker not connected, runtime state only)"
+    elif last_error:
+        message = f"Reset Control partially completed: {last_error}"
+
+    return ResetControlResponse(
+        cancelled_trigger_execution=trigger_state["was_executing"],
+        trigger_monitoring_stopped=True,
+        carmaker_monitoring_stopped=True,
+        commands_attempted=len(commands) if connected else 0,
+        commands_succeeded=commands_succeeded,
+        connected=connected,
+        message=message,
+    )
 
 
 @router.get("/watched-objects", response_model=list[int])

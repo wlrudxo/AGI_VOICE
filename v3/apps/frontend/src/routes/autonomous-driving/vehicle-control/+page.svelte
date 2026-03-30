@@ -170,8 +170,24 @@
     }
 
     try {
-      await requestJson<boolean>('/api/triggers/cancel-active', { method: 'POST' });
-      await carmakerStore.resetAllControls();
+      const result = await requestJson<{
+        cancelledTriggerExecution: boolean;
+        triggerMonitoringStopped: boolean;
+        carmakerMonitoringStopped: boolean;
+        commandsAttempted: number;
+        commandsSucceeded: number;
+        connected: boolean;
+        message: string;
+      }>('/api/carmaker/reset-control', { method: 'POST' });
+
+      triggerMonitor.isMonitoring = false;
+      carmakerStore.syncMonitoringStateFromBackend(false);
+      carmakerStore.addLog(`✓ ${result.message}`);
+      if (result.commandsAttempted > 0) {
+        carmakerStore.addLog(
+          `✓ Reset commands: ${result.commandsSucceeded}/${result.commandsAttempted} applied`
+        );
+      }
     } catch (error: any) {
       carmakerStore.addLog(`✗ Reset failed: ${error}`);
     }
