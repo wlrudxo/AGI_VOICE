@@ -3,6 +3,7 @@
 	import { requestJson } from '$lib/backend';
 	import Icon from '@iconify/svelte';
 	import HelpModal from '$lib/components/HelpModal.svelte';
+	import { chatBus } from '$lib/stores/chatBus';
 
 	interface PromptTemplate {
 		id: number;
@@ -79,8 +80,7 @@
 
 			message = { type: 'success', text: '설정이 저장되었습니다.' };
 
-			// 채팅 위젯에 설정 변경 알림
-			window.dispatchEvent(new CustomEvent('chatSettingsUpdated'));
+			chatBus.notifyChatSettingsUpdated();
 
 			// 3초 후 메시지 제거
 			setTimeout(() => {

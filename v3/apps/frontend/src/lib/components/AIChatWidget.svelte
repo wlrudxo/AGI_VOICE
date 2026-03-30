@@ -4,6 +4,7 @@
 	import { carmakerStore } from '$lib/stores/carmakerStore.svelte';
 	import { dialogStore } from '$lib/stores/dialogStore.svelte';
 	import { autonomousDrivingSettingsStore } from '$lib/stores/autonomousDrivingSettingsStore';
+	import { chatBus } from '$lib/stores/chatBus';
 	import Icon from '@iconify/svelte';
 	import ChatView from './ChatView.svelte';
 	import ChatHistoryView from './ChatHistoryView.svelte';
@@ -44,12 +45,7 @@
 	}
 
 	function startNewChat() {
-		// 새 대화 이벤트 발생
-		window.dispatchEvent(
-			new CustomEvent('selectConversation', {
-				detail: { conversationId: null }
-			})
-		);
+		chatBus.selectConversation(null);
 		uiStore.setChatViewMode('chat');
 	}
 

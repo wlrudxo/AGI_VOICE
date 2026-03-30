@@ -4,6 +4,7 @@
   import { requestJson } from '$lib/backend';
   import Icon from '@iconify/svelte';
   import HelpModal from '$lib/components/HelpModal.svelte';
+  import { chatBus } from '$lib/stores/chatBus';
 
   interface Settings {
     claudeWorkspaceDir: string;
@@ -75,7 +76,7 @@
 
       await requestJson('/api/settings/app', { method: 'PUT', body: settings });
       await settingsStore.loadSettings();
-      window.dispatchEvent(new CustomEvent('chatSettingsUpdated'));
+      chatBus.notifyChatSettingsUpdated();
 
       message = { type: 'success', text: '설정이 저장되었습니다.' };
 

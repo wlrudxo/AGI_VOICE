@@ -4,6 +4,7 @@
 	import { dbWatcher } from '$lib/stores/dbWatcher.svelte';
 	import { uiStore } from '$lib/stores/uiStore';
 	import { autonomousDrivingSettingsStore } from '$lib/stores/autonomousDrivingSettingsStore';
+	import { chatBus } from '$lib/stores/chatBus';
 	import Icon from '@iconify/svelte';
 	import { marked } from 'marked';
 	import { parseActions, parseWithSegments, getActionLabel } from '$lib/actions/parser';
@@ -75,6 +76,9 @@
 	let promptTemplateId = $state(null);
 	let claudeModel = $state('sonnet');
 	let settingsLoaded = $state(false);
+	let lastSelectionVersion = 0;
+	let lastSettingsVersion = 0;
+	let lastTriggerEventVersion = 0;
 
 	// 시스템 메시지의 Vehicle Data 접힘 상태 (messageIndex -> boolean)
 	let collapsedVehicleData = $state({});
@@ -127,10 +131,7 @@
 		}
 	}
 
-	// 대화 기록 선택 이벤트 리스너
-	function handleSelectConversation(event) {
-		const { conversationId: selectedId } = event.detail;
-
+	function handleSelectConversation(selectedId) {
 		// null이면 새 대화 시작 (초기화)
 		if (selectedId === null) {
 			conversationId = null;
@@ -220,14 +221,12 @@
 		}
 	}
 
-	// 채팅 설정 업데이트 이벤트 핸들러
 	function handleSettingsUpdated() {
 		loadChatSettings();
 	}
 
-	// 트리거 채팅 메시지 핸들러
-	function handleTriggerChatMessage(event) {
-		const { type, triggerName, content } = event.detail;
+	function handleTriggerChatMessage(detail) {
+		const { type, triggerName, content } = detail;
 		const timestamp = new Date();
 
 		if (type === 'system') {
@@ -286,13 +285,31 @@
 			loadConversation(storedConversationId);
 		}
 
-		window.addEventListener('selectConversation', handleSelectConversation);
-		window.addEventListener('chatSettingsUpdated', handleSettingsUpdated);
-		window.addEventListener('triggerChatMessage', handleTriggerChatMessage);
+		const unsubscribeSelection = chatBus.conversationSelection.subscribe((state) => {
+			if (state.version === 0 || state.version === lastSelectionVersion) {
+				return;
+			}
+			lastSelectionVersion = state.version;
+			handleSelectConversation(state.id);
+		});
+		const unsubscribeSettings = chatBus.chatSettingsVersion.subscribe((version) => {
+			if (version === 0 || version === lastSettingsVersion) {
+				return;
+			}
+			lastSettingsVersion = version;
+			handleSettingsUpdated();
+		});
+		const unsubscribeTrigger = chatBus.triggerChatEvent.subscribe((state) => {
+			if (!state.event || state.version === 0 || state.version === lastTriggerEventVersion) {
+				return;
+			}
+			lastTriggerEventVersion = state.version;
+			handleTriggerChatMessage(state.event);
+		});
 		return () => {
-			window.removeEventListener('selectConversation', handleSelectConversation);
-			window.removeEventListener('chatSettingsUpdated', handleSettingsUpdated);
-			window.removeEventListener('triggerChatMessage', handleTriggerChatMessage);
+			unsubscribeSelection();
+			unsubscribeSettings();
+			unsubscribeTrigger();
 		};
 	});
 
@@ -522,11 +539,7 @@
 				if (newConversationTitle) {
 					uiStore.setCurrentConversationTitle(newConversationTitle);
 				}
-				window.dispatchEvent(
-					new CustomEvent('conversationCreated', {
-						detail: { conversationId: newConvId }
-					})
-				);
+				chatBus.notifyConversationChanged();
 			}
 
 			// 2. 응답 처리 (재귀적으로)

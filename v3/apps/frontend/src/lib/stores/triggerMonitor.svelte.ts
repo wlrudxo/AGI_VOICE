@@ -1,5 +1,6 @@
 import { requestJson } from '$lib/backend';
 import { carmakerStore } from '$lib/stores/carmakerStore.svelte';
+import { chatBus } from '$lib/stores/chatBus';
 import type { Trigger } from '$lib/types/trigger';
 
 class TriggerMonitor {
@@ -120,15 +121,11 @@ class TriggerMonitor {
 
     for (const event of events) {
       this.lastEventId = Math.max(this.lastEventId, event.id);
-      window.dispatchEvent(
-        new CustomEvent('triggerChatMessage', {
-          detail: {
-            type: event.type,
-            triggerName: event.triggerName,
-            content: event.content,
-          },
-        }),
-      );
+      chatBus.pushTriggerEvent({
+        type: event.type as 'system' | 'llm_response' | 'error',
+        triggerName: event.triggerName,
+        content: event.content,
+      });
     }
   }
 

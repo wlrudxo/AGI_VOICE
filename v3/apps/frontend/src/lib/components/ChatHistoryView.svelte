@@ -3,6 +3,7 @@
 	import Icon from '@iconify/svelte';
 	import { dialogStore } from '$lib/stores/dialogStore.svelte';
 	import { requestJson } from '$lib/backend';
+	import { chatBus } from '$lib/stores/chatBus';
 
 	// Props
 	let { onSelectConversation = (id) => {} } = $props();
@@ -25,26 +26,21 @@
 		}
 	}
 
-	// 새 대화 생성 이벤트 리스너
-	function handleConversationCreated(event) {
-		loadConversations();
-	}
-
 	onMount(() => {
 		loadConversations();
-		window.addEventListener('conversationCreated', handleConversationCreated);
+		const unsubscribe = chatBus.conversationListVersion.subscribe((version) => {
+			if (version > 0) {
+				loadConversations();
+			}
+		});
 		return () => {
-			window.removeEventListener('conversationCreated', handleConversationCreated);
+			unsubscribe();
 		};
 	});
 
 	// 대화 선택
 	function selectConversation(conversationId) {
-		window.dispatchEvent(
-			new CustomEvent('selectConversation', {
-				detail: { conversationId }
-			})
-		);
+		chatBus.selectConversation(conversationId);
 		onSelectConversation(conversationId);
 	}
 
@@ -69,6 +65,7 @@
 			});
 
 			await loadConversations();
+			chatBus.notifyConversationChanged();
 			cancelEdit();
 		} catch (error) {
 			console.error('Failed to update conversation title:', error);
@@ -85,6 +82,7 @@
 		try {
 			await requestJson(`/api/conversations/${conversationId}`, { method: 'DELETE' });
 			await loadConversations();
+			chatBus.notifyConversationChanged();
 		} catch (error) {
 			console.error('Failed to delete conversation:', error);
 		}
