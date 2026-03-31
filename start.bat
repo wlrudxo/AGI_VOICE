@@ -1,14 +1,8 @@
 @echo off
-title AGI Voice V2 - Dev Mode
-echo ========================================
-echo   AGI Voice V2 - Development Mode
-echo ========================================
-echo.
-echo Starting Tauri development server...
-echo.
+setlocal EnableExtensions
 
-npm run tauri dev
+call "%~dp0v3\start_v3_dev.bat"
+set "EXIT_CODE=%errorlevel%"
 
-echo.
-echo Development server stopped.
-pause
+endlocal
+exit /b %EXIT_CODE%

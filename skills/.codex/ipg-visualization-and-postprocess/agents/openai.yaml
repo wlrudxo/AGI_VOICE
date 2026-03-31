@@ -1,0 +1,4 @@
+interface:
+  display_name: "IPG Visualization and Postprocess"
+  short_description: "Choose between IPGControl, Movie NX, Instruments, and Graph"
+  default_prompt: "Pick the right IPG visualization or postprocess tool and explain the workflow."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "IPG Suite Atlas"
+  short_description: "Route IPG product and manual questions"
+  default_prompt: "Figure out which IPG product, manual, and example set I should use for this task."

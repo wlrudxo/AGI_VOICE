@@ -1,0 +1,4 @@
+interface:
+  display_name: "CarMaker Python Runtime"
+  short_description: "Drive Runtime and SimControl from Python"
+  default_prompt: "Build or explain a CarMaker Python runtime or simcontrol flow for this task."

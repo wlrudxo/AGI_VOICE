@@ -1,13 +1,13 @@
 # AGI Voice V3 Workspace
 
-This directory is the isolated workspace for AGI Voice V3.
+This is the active AGI Voice application workspace.
 
-V3 goals:
+Goals:
 
 - keep the V2 frontend user experience unchanged
 - replace the Rust/Tauri backend with a Python-centered backend
 - use Electron only as a thin desktop shell
-- allow V2 and V3 to coexist during migration
+- retain legacy V2 code separately under `../v2_legacy`
 
 ## Layout
 
@@ -15,7 +15,7 @@ V3 goals:
 v3/
 ├── apps/
 │   ├── desktop-electron/   # Electron shell
-│   └── frontend/           # Future frontend migration target
+│   └── frontend/           # Active frontend
 ├── packages/
 │   └── shared-contracts/   # Shared API contracts and types
 ├── scripts/                # Workspace helper scripts
@@ -25,10 +25,10 @@ v3/
 
 ## Current Status
 
-- `apps/desktop-electron`: scaffolded
-- `services/python-api`: scaffolded
-- `apps/frontend`: placeholder only
-- `packages/shared-contracts`: placeholder only
+- `apps/frontend`: active main UI
+- `apps/desktop-electron`: active desktop shell
+- `services/python-api`: active backend
+- `packages/shared-contracts`: reserved for shared contracts
 
 ## Dev Startup
 
@@ -71,14 +71,12 @@ npm run dev
 
 Notes:
 
-- The Electron shell targets `http://localhost:4173` when a frontend is available.
+- The Electron shell targets `http://127.0.0.1:4173` when a frontend is available.
 - If the frontend is not up yet, Electron falls back to a local placeholder page.
 - The Python API default is `http://127.0.0.1:8000`.
-- A V3 frontend scaffold has not been created yet.
-
 ## Migration Principle
 
-V3 is not a redesign. It is a backend migration.
+V3 is not a redesign. It is the main app workspace after the backend migration.
 
 - preserve user-facing UI/UX
 - replace Tauri command dependencies with Python API and Electron preload bridges

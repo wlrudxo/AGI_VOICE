@@ -6,15 +6,17 @@ import json
 import sys
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 from urllib import error, request
 
 from carmaker_state import DirectCarMakerStateReader
 
 
-DEFAULT_BACKEND_URL = "http://127.0.0.1:18000"
+DEFAULT_BACKEND_URL = "http://127.0.0.1:8010"
 DEFAULT_CARMAKER_HOST = "localhost"
 DEFAULT_CARMAKER_PORT = 16660
+DEFAULT_CONFIG_PATH = Path(__file__).with_name("carmaker_monitor_config.json")
 
 
 @dataclass
@@ -54,6 +56,15 @@ class BackendClient:
             return body
 
 
+def load_config(config_path: Path) -> dict[str, Any]:
+    try:
+        return json.loads(config_path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise RuntimeError(f"Monitor config file not found: {config_path}") from exc
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"Invalid monitor config JSON: {config_path}") from exc
+
+
 def format_snapshot(raw_data: dict[str, float]) -> str:
     preferred_keys = [
         "Time",
@@ -64,16 +75,47 @@ def format_snapshot(raw_data: dict[str, float]) -> str:
         "DM.Gas",
         "DM.Brake",
         "DM.Steer.Ang",
-        "Vhcl.Steer.Ang",
-        "Vhcl.YawRate",
         "Vhcl.sRoad",
         "Vhcl.tRoad",
-        "Traffic.nObjs",
     ]
     keys = [key for key in preferred_keys if key in raw_data]
     remainder = sorted(key for key in raw_data if key not in keys)
     ordered = keys + remainder
     return ", ".join(f"{key}={raw_data[key]:.4f}" for key in ordered)
+
+
+def format_front_traffic(raw_data: dict[str, float], config: dict[str, Any]) -> str:
+    traffic_config = config.get("frontTraffic") or {}
+    object_indices = traffic_config.get("objectIndices") or []
+    fields = traffic_config.get("fields") or []
+    ego_s_road = raw_data.get("Vhcl.sRoad")
+    lines: list[str] = []
+
+    for index in object_indices:
+        prefix = f"Traffic.T{int(index):02d}."
+        values: list[str] = []
+        has_any = False
+        object_s_road = raw_data.get(prefix + "sRoad")
+        delta_s = None
+        if ego_s_road is not None and object_s_road is not None:
+            delta_s = object_s_road - ego_s_road
+
+        for field in fields:
+            key = prefix + field
+            value = raw_data.get(key)
+            if value is None:
+                continue
+            has_any = True
+            values.append(f"{field}={value:.4f}")
+
+        if delta_s is not None:
+            has_any = True
+            values.append(f"delta_s={delta_s:.4f}")
+
+        if has_any:
+            lines.append(f"T{int(index):02d}[" + ", ".join(values) + "]")
+
+    return " | ".join(lines) if lines else "front_traffic=unavailable"
 
 
 def format_state_summary(state_data: dict[str, float | str | None]) -> str:
@@ -128,6 +170,7 @@ def restore_monitoring(client: BackendClient, was_monitoring: bool) -> None:
 def monitor_loop(
     client: BackendClient,
     state_reader: DirectCarMakerStateReader,
+    config: dict[str, Any],
     duration_seconds: float,
     interval_seconds: float,
 ) -> int:
@@ -150,7 +193,9 @@ def monitor_loop(
         sample_index += 1
         print(
             f"[{sample_index:03d}] t={elapsed:6.2f}s | "
-            f"{format_snapshot(raw_data)} | {format_state_summary(state_data)}",
+            f"{format_snapshot(raw_data)} | "
+            f"{format_front_traffic(raw_data, config)} | "
+            f"{format_state_summary(state_data)}",
             flush=True,
         )
         time.sleep(interval_seconds)
@@ -195,6 +240,11 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_CARMAKER_PORT,
         help=f"CarMaker port used with --connect (default: {DEFAULT_CARMAKER_PORT})",
     )
+    parser.add_argument(
+        "--config",
+        default=str(DEFAULT_CONFIG_PATH),
+        help=f"Monitor config JSON path (default: {DEFAULT_CONFIG_PATH})",
+    )
     return parser.parse_args()
 
 
@@ -202,6 +252,7 @@ def main() -> int:
     args = parse_args()
     client = BackendClient(args.backend_url)
     state_reader = DirectCarMakerStateReader(args.host, args.port, backend_url=args.backend_url)
+    config = load_config(Path(args.config))
 
     try:
         status = ensure_connection(client, args.connect, args.host, args.port)
@@ -215,7 +266,7 @@ def main() -> int:
             f"sampling for {args.duration:.1f}s every {args.interval:.3f}s",
             flush=True,
         )
-        samples = monitor_loop(client, state_reader, args.duration, args.interval)
+        samples = monitor_loop(client, state_reader, config, args.duration, args.interval)
         print(f"Completed {samples} telemetry samples.", flush=True)
         restore_monitoring(client, was_monitoring)
         return 0

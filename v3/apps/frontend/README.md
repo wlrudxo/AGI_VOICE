@@ -1,6 +1,4 @@
-# V3 Frontend Scaffold
-
-Minimal Vite + Svelte workspace for the AGI Voice V3 frontend migration.
+# AGI Voice Frontend
 
 ## Run
 
@@ -13,6 +11,5 @@ npm run dev
 ## Notes
 
 - Dev server runs on `http://127.0.0.1:4173`
-- This is a placeholder only
-- It is intended to be replaced by the migrated UI later
-
+- This is the active main frontend
+- Static assets are kept locally under `v3/apps/frontend/static`

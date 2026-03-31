@@ -1,0 +1,4 @@
+interface:
+  display_name: "CarMaker Project and Vehicle"
+  short_description: "Explain project, TestRun, vehicle, and trailer structure"
+  default_prompt: "Help me understand or modify CarMaker project, TestRun, vehicle, and trailer structure."

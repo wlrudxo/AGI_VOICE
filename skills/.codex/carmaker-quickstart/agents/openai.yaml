@@ -1,0 +1,4 @@
+interface:
+  display_name: "CarMaker Quickstart"
+  short_description: "Guide first CarMaker workflows"
+  default_prompt: "Show me the shortest correct path to get started in CarMaker for my current workflow."

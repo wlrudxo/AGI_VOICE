@@ -10,7 +10,7 @@ This script performs a restart as:
 Examples:
   python carmaker_restart.py
   python carmaker_restart.py --delay 1.0
-  python carmaker_restart.py --backend-url http://127.0.0.1:18000 --delay 0.5
+  python carmaker_restart.py --backend-url http://127.0.0.1:8010 --delay 0.5
 """
 
 from __future__ import annotations
@@ -60,8 +60,8 @@ def main() -> int:
     )
     parser.add_argument(
         "--backend-url",
-        default="http://127.0.0.1:18000",
-        help="V3 backend base URL (default: http://127.0.0.1:18000)",
+        default="http://127.0.0.1:8010",
+        help="V3 backend base URL (default: http://127.0.0.1:8010)",
     )
     parser.add_argument(
         "--delay",

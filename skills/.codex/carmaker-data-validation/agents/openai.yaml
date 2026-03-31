@@ -1,0 +1,4 @@
+interface:
+  display_name: "CarMaker Data Validation"
+  short_description: "Structure data requests and validation checklists"
+  default_prompt: "Help me turn a CarMaker data request or validation problem into a concrete checklist."

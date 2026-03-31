@@ -1,0 +1,4 @@
+interface:
+  display_name: "CarMaker Advanced APIs"
+  short_description: "Explain deeper API and protocol details"
+  default_prompt: "Help me navigate the deeper CarMaker API and protocol surface for this task."

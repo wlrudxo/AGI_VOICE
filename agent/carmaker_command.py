@@ -41,7 +41,7 @@ from typing import Any
 from urllib import error, request
 
 
-DEFAULT_BACKEND_URL = "http://127.0.0.1:18000"
+DEFAULT_BACKEND_URL = "http://127.0.0.1:8010"
 DEFAULT_CARMAKER_HOST = "localhost"
 DEFAULT_CARMAKER_PORT = 16660
 DEFAULT_RESUME_TIME_VALUE = 1.0

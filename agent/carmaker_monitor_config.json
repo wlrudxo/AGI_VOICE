@@ -1,0 +1,14 @@
+{
+  "frontTraffic": {
+    "objectIndices": [0, 1],
+    "fields": [
+      "sRoad",
+      "tRoad",
+      "LongVel",
+      "tx",
+      "ty",
+      "v_0.x",
+      "v_0.y"
+    ]
+  }
+}

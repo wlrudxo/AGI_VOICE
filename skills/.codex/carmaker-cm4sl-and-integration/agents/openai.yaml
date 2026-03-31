@@ -1,0 +1,4 @@
+interface:
+  display_name: "CarMaker CM4SL and Integration"
+  short_description: "Handle CM4SL, APO, and external integration"
+  default_prompt: "Help me connect CarMaker to Simulink, APO clients, or other runtime tools."

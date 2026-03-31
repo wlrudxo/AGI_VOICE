@@ -124,7 +124,7 @@ function createTray() {
   }
 
   const iconFile = process.platform === 'win32' ? 'icon.ico' : '32x32.png';
-  const iconPath = path.resolve(__dirname, '../../../../src-tauri/icons', iconFile);
+  const iconPath = path.resolve(__dirname, '../assets', iconFile);
   if (!fsSync.existsSync(iconPath)) {
     console.warn(`Tray icon not found: ${iconPath}`);
     return;

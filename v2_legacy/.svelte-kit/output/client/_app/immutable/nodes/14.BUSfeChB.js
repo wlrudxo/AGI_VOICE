@@ -1,0 +1,1 @@
+import"../chunks/Bzak7iHL.js";import"../chunks/Dns8sIju.js";import{f as r,a as t}from"../chunks/BL0wSOjl.js";var p=r('<div class="redirect-page svelte-zeepln"><p>Redirecting to vehicle control...</p></div>');function c(e){var o=p();t(e,o)}export{c as component};

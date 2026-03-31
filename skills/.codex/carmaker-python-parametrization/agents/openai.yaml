@@ -1,0 +1,4 @@
+interface:
+  display_name: "CarMaker Python Parametrization"
+  short_description: "Modify TestRun and dataset parametrization from Python"
+  default_prompt: "Help me load and modify CarMaker parametrization objects and create variations from Python."

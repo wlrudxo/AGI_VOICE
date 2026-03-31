@@ -1,0 +1,4 @@
+interface:
+  display_name: "CarMaker Road and Scenario"
+  short_description: "Route scenario, OpenSCENARIO, and IPGRoad work"
+  default_prompt: "Separate this road or scenario task into Scenario Editor, OpenSCENARIO, and IPGRoad API work."

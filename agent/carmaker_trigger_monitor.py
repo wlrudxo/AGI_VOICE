@@ -40,7 +40,7 @@ from urllib import error, request
 from carmaker_state import DirectCarMakerStateReader
 
 
-DEFAULT_BACKEND_URL = "http://127.0.0.1:18000"
+DEFAULT_BACKEND_URL = "http://127.0.0.1:8010"
 DEFAULT_CARMAKER_HOST = "localhost"
 DEFAULT_CARMAKER_PORT = 16660
 DEFAULT_TRIGGER_TIME_SCALE = 0.0001
@@ -129,11 +129,8 @@ def format_snapshot(raw_data: dict[str, float]) -> str:
         "DM.Gas",
         "DM.Brake",
         "DM.Steer.Ang",
-        "Vhcl.Steer.Ang",
-        "Vhcl.YawRate",
         "Vhcl.sRoad",
         "Vhcl.tRoad",
-        "Traffic.nObjs",
     ]
     keys = [key for key in preferred_keys if key in raw_data]
     remainder = sorted(key for key in raw_data if key not in keys)
