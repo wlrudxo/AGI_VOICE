@@ -18,6 +18,10 @@ __pycache__/
 *$py.class
 *.so
 
+# Agent-local workspace metadata
+.codex
+.codex/
+
 # Claude Code settings (all subdirectories)
 .claude/settings.local.json
 **/.claude/settings.local.json
@@ -28,6 +32,19 @@ __pycache__/
 
 # Archives
 *.zip
+
+# LaTeX build outputs
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.spl
+*.synctex*
+*-eps-converted-to.pdf
+Paper_AGI_KSAE202601/KSAE*.pdf
 
 # V3 workspace
 v3/**/node_modules/
@@ -42,3 +59,19 @@ v3/.backend_port
 v3/**/*.egg-info/
 v3/dev-launcher.log
 v3/services/python-api/.editable-install.stamp
+
+# CarMaker LLM scenario skill runtime/generated artifacts
+workspace/carmaker_llm_scenario_skill/conversion_scratch/
+workspace/carmaker_llm_scenario_skill/examples/raw/
+workspace/carmaker_llm_scenario_skill/examples/index/
+workspace/carmaker_llm_scenario_skill/generated/
+workspace/carmaker_llm_scenario_skill/packages/
+workspace/carmaker_llm_scenario_skill/postprocessed/
+workspace/carmaker_llm_scenario_skill/reports/**/*.json
+workspace/carmaker_llm_scenario_skill/reports/**/*.txt
+workspace/carmaker_llm_scenario_skill/reports/**/candidate_summary.md
+workspace/carmaker_llm_scenario_skill/reports/**/comparison.md
+workspace/carmaker_llm_scenario_skill/reports/**/core_check.md
+workspace/carmaker_llm_scenario_skill/reports/**/lane_change_sample_*.md
+workspace/carmaker_llm_scenario_skill/reports/**/osc2cm_log_summary.md
+workspace/carmaker_llm_scenario_skill/reports/**/reference_*.md

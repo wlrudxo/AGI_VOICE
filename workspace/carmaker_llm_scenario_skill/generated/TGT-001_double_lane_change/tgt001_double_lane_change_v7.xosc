@@ -1,0 +1,540 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSCENARIO xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="OpenScenario.xsd">
+  <FileHeader description="TGT-001 double lane change v7" author="AGI_VOICE_LLM" revMajor="1" revMinor="2" date="2026-05-12T00:00:00"/>
+  <CatalogLocations/>
+  <RoadNetwork>
+    <LogicFile filepath="tgt001_double_lane_change_v7.xodr"/>
+  </RoadNetwork>
+  <Entities>
+    <ScenarioObject name="Ego">
+      <Vehicle name="ego_car" vehicleCategory="car">
+        <BoundingBox>
+          <Center x="2.0" y="0.0" z="0.9"/>
+          <Dimensions width="2.0" length="5.0" height="1.8"/>
+        </BoundingBox>
+        <Performance maxSpeed="80.0" maxDeceleration="10.0" maxAcceleration="10.0"/>
+        <Axles>
+          <FrontAxle maxSteering="0.5" wheelDiameter="0.8" trackWidth="1.7" positionX="2.98" positionZ="0.4"/>
+          <RearAxle maxSteering="0.5" wheelDiameter="0.8" trackWidth="1.7" positionX="0.0" positionZ="0.4"/>
+        </Axles>
+        <Properties/>
+      </Vehicle>
+    </ScenarioObject>
+    <ScenarioObject name="Bus">
+      <Vehicle name="reference_bus" vehicleCategory="car">
+        <BoundingBox>
+          <Center x="6.0" y="0.0" z="1.6"/>
+          <Dimensions width="2.5" length="12.0" height="3.2"/>
+        </BoundingBox>
+        <Performance maxSpeed="50.0" maxDeceleration="8.0" maxAcceleration="4.0"/>
+        <Axles>
+          <FrontAxle maxSteering="0.45" wheelDiameter="0.9" trackWidth="2.0" positionX="4.5" positionZ="0.45"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.9" trackWidth="2.0" positionX="0.0" positionZ="0.45"/>
+        </Axles>
+        <Properties/>
+      </Vehicle>
+    </ScenarioObject>
+    <ScenarioObject name="Pedestrian">
+      <Pedestrian name="pedestrian_adult" model="adult" mass="80.0" pedestrianCategory="pedestrian">
+        <BoundingBox>
+          <Center x="0.0" y="0.0" z="0.9"/>
+          <Dimensions width="0.6" length="0.6" height="1.8"/>
+        </BoundingBox>
+        <Properties/>
+      </Pedestrian>
+    </ScenarioObject>
+    <ScenarioObject name="car">
+      <Vehicle name="lane_change_car" vehicleCategory="car">
+        <BoundingBox>
+          <Center x="2.0" y="0.0" z="0.9"/>
+          <Dimensions width="1.9" length="4.7" height="1.6"/>
+        </BoundingBox>
+        <Performance maxSpeed="80.0" maxDeceleration="10.0" maxAcceleration="10.0"/>
+        <Axles>
+          <FrontAxle maxSteering="0.5" wheelDiameter="0.8" trackWidth="1.6" positionX="2.9" positionZ="0.4"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.8" trackWidth="1.6" positionX="0.0" positionZ="0.4"/>
+        </Axles>
+        <Properties/>
+      </Vehicle>
+    </ScenarioObject>
+    <ScenarioObject name="car2">
+      <Vehicle name="lane_change_car2" vehicleCategory="car">
+        <BoundingBox>
+          <Center x="2.0" y="0.0" z="0.9"/>
+          <Dimensions width="1.9" length="4.7" height="1.6"/>
+        </BoundingBox>
+        <Performance maxSpeed="80.0" maxDeceleration="10.0" maxAcceleration="10.0"/>
+        <Axles>
+          <FrontAxle maxSteering="0.5" wheelDiameter="0.8" trackWidth="1.6" positionX="2.9" positionZ="0.4"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.8" trackWidth="1.6" positionX="0.0" positionZ="0.4"/>
+        </Axles>
+        <Properties/>
+      </Vehicle>
+    </ScenarioObject>
+    <ScenarioObject name="car3">
+      <Vehicle name="speed_change_car3" vehicleCategory="car">
+        <BoundingBox>
+          <Center x="2.0" y="0.0" z="0.9"/>
+          <Dimensions width="1.9" length="4.7" height="1.6"/>
+        </BoundingBox>
+        <Performance maxSpeed="80.0" maxDeceleration="10.0" maxAcceleration="10.0"/>
+        <Axles>
+          <FrontAxle maxSteering="0.5" wheelDiameter="0.8" trackWidth="1.6" positionX="2.9" positionZ="0.4"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.8" trackWidth="1.6" positionX="0.0" positionZ="0.4"/>
+        </Axles>
+        <Properties/>
+      </Vehicle>
+    </ScenarioObject>
+    <ScenarioObject name="park_car1">
+      <Vehicle name="parked_car1" vehicleCategory="car">
+        <BoundingBox>
+          <Center x="2.0" y="0.0" z="0.9"/>
+          <Dimensions width="1.9" length="4.7" height="1.6"/>
+        </BoundingBox>
+        <Performance maxSpeed="60.0" maxDeceleration="8.0" maxAcceleration="8.0"/>
+        <Axles>
+          <FrontAxle maxSteering="0.5" wheelDiameter="0.8" trackWidth="1.6" positionX="2.9" positionZ="0.4"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.8" trackWidth="1.6" positionX="0.0" positionZ="0.4"/>
+        </Axles>
+        <Properties/>
+      </Vehicle>
+    </ScenarioObject>
+    <ScenarioObject name="park_car2">
+      <Vehicle name="parked_car2" vehicleCategory="car">
+        <BoundingBox>
+          <Center x="2.0" y="0.0" z="0.9"/>
+          <Dimensions width="1.9" length="4.7" height="1.6"/>
+        </BoundingBox>
+        <Performance maxSpeed="60.0" maxDeceleration="8.0" maxAcceleration="8.0"/>
+        <Axles>
+          <FrontAxle maxSteering="0.5" wheelDiameter="0.8" trackWidth="1.6" positionX="2.9" positionZ="0.4"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.8" trackWidth="1.6" positionX="0.0" positionZ="0.4"/>
+        </Axles>
+        <Properties/>
+      </Vehicle>
+    </ScenarioObject>
+    <ScenarioObject name="park_car3">
+      <Vehicle name="parked_car3" vehicleCategory="car">
+        <BoundingBox>
+          <Center x="2.0" y="0.0" z="0.9"/>
+          <Dimensions width="1.9" length="4.7" height="1.6"/>
+        </BoundingBox>
+        <Performance maxSpeed="60.0" maxDeceleration="8.0" maxAcceleration="8.0"/>
+        <Axles>
+          <FrontAxle maxSteering="0.5" wheelDiameter="0.8" trackWidth="1.6" positionX="2.9" positionZ="0.4"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.8" trackWidth="1.6" positionX="0.0" positionZ="0.4"/>
+        </Axles>
+        <Properties/>
+      </Vehicle>
+    </ScenarioObject>
+  </Entities>
+  <Storyboard>
+    <Init>
+      <Actions>
+        <Private entityRef="Ego">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="27.778"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="1.0" y="-4.5" z="0.0" h="0.0"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="Bus">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="22.223"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <RelativeWorldPosition entityRef="Ego" dx="80.0" dy="0.0" dz="0.0"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="Pedestrian">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="1.389"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <RelativeObjectPosition entityRef="Bus" dx="-30.0" dy="-3.0" dz="0.0"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="car">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="27.778"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <RoadPosition roadId="0" s="100.0" t="-11.5"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="car2">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="27.778"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <LanePosition roadId="0" laneId="-2" s="70.0" offset="0.0"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="car3">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="27.778"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <RelativeRoadPosition entityRef="car2" ds="60.0" dt="-3.5"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="park_car1">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="0.0"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <LanePosition roadId="0" laneId="-1" s="150.0" offset="0.0"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="park_car2">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="0.0"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <RelativeLanePosition entityRef="park_car1" dLane="0" ds="5.0" offset="0.0"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="park_car3">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="0.0"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <RelativeObjectPosition entityRef="park_car2" dx="0.0" dy="-5.0" dz="0.0"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+      </Actions>
+    </Init>
+    <Story name="main_story">
+      <Act name="main_act">
+        <ManeuverGroup name="ego_path_group" maximumExecutionCount="1">
+          <Actors selectTriggeringEntities="false">
+            <EntityRef entityRef="Ego"/>
+          </Actors>
+          <Maneuver name="ego_path_maneuver">
+            <Event name="ego_path_event" priority="overwrite" maximumExecutionCount="1">
+              <Action name="ego_follow_path">
+                <PrivateAction>
+                  <RoutingAction>
+                    <FollowTrajectoryAction>
+                      <TrajectoryRef>
+                        <Trajectory name="ego_double_lane_change_path" closed="false">
+                          <Shape>
+                            <Polyline>
+                              <Vertex time="0.0"><Position><LanePosition roadId="0" laneId="-1" s="1.0" offset="0.0"/></Position></Vertex>
+                              <Vertex time="7.0"><Position><LanePosition roadId="0" laneId="-1" s="193.0" offset="0.0"/></Position></Vertex>
+                              <Vertex time="12.0"><Position><LanePosition roadId="0" laneId="-2" s="332.0" offset="0.0"/></Position></Vertex>
+                              <Vertex time="16.0"><Position><LanePosition roadId="0" laneId="-2" s="443.0" offset="0.0"/></Position></Vertex>
+                              <Vertex time="20.1"><Position><LanePosition roadId="0" laneId="-1" s="555.0" offset="0.0"/></Position></Vertex>
+                              <Vertex time="21.25"><Position><LanePosition roadId="0" laneId="-2" s="582.0" offset="0.0"/></Position></Vertex>
+                            </Polyline>
+                          </Shape>
+                        </Trajectory>
+                      </TrajectoryRef>
+                      <TimeReference>
+                        <Timing domainAbsoluteRelative="absolute" scale="1.0" offset="0.0"/>
+                      </TimeReference>
+                      <TrajectoryFollowingMode followingMode="follow"/>
+                    </FollowTrajectoryAction>
+                  </RoutingAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger>
+                <ConditionGroup>
+                  <Condition name="ego_path_start" delay="0.0" conditionEdge="rising">
+                    <ByValueCondition>
+                      <SimulationTimeCondition value="0.0" rule="greaterThan"/>
+                    </ByValueCondition>
+                  </Condition>
+                </ConditionGroup>
+              </StartTrigger>
+            </Event>
+          </Maneuver>
+        </ManeuverGroup>
+        <ManeuverGroup name="car_lane_change_group" maximumExecutionCount="1">
+          <Actors selectTriggeringEntities="false">
+            <EntityRef entityRef="car"/>
+          </Actors>
+          <Maneuver name="car_lane_change_maneuver">
+            <Event name="car_lane_change_1" priority="overwrite" maximumExecutionCount="1">
+              <Action name="car_lane_change_left">
+                <PrivateAction>
+                  <LateralAction>
+                    <LaneChangeAction>
+                      <LaneChangeActionDynamics dynamicsShape="cubic" value="8.0" dynamicsDimension="time"/>
+                      <LaneChangeTarget>
+                        <RelativeTargetLane entityRef="car" value="1"/>
+                      </LaneChangeTarget>
+                    </LaneChangeAction>
+                  </LateralAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger>
+                <ConditionGroup>
+                  <Condition name="car_lc_1_start" delay="0.0" conditionEdge="rising">
+                    <ByValueCondition>
+                      <SimulationTimeCondition value="20.0" rule="greaterThan"/>
+                    </ByValueCondition>
+                  </Condition>
+                </ConditionGroup>
+              </StartTrigger>
+            </Event>
+            <Event name="car_lane_change_2" priority="overwrite" maximumExecutionCount="1">
+              <Action name="car_lane_change_back">
+                <PrivateAction>
+                  <LateralAction>
+                    <LaneChangeAction>
+                      <LaneChangeActionDynamics dynamicsShape="cubic" value="3.0" dynamicsDimension="time"/>
+                      <LaneChangeTarget>
+                        <RelativeTargetLane entityRef="car" value="-1"/>
+                      </LaneChangeTarget>
+                    </LaneChangeAction>
+                  </LateralAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger>
+                <ConditionGroup>
+                  <Condition name="car_lc_2_start" delay="0.0" conditionEdge="rising">
+                    <ByValueCondition>
+                      <SimulationTimeCondition value="25.0" rule="greaterThan"/>
+                    </ByValueCondition>
+                  </Condition>
+                </ConditionGroup>
+              </StartTrigger>
+            </Event>
+          </Maneuver>
+        </ManeuverGroup>
+        <ManeuverGroup name="car2_lane_change_group" maximumExecutionCount="1">
+          <Actors selectTriggeringEntities="false">
+            <EntityRef entityRef="car2"/>
+          </Actors>
+          <Maneuver name="car2_lane_change_maneuver">
+            <Event name="car2_lane_change_1" priority="overwrite" maximumExecutionCount="1">
+              <Action name="car2_lane_change_left">
+                <PrivateAction>
+                  <LateralAction>
+                    <LaneChangeAction>
+                      <LaneChangeActionDynamics dynamicsShape="cubic" value="8.0" dynamicsDimension="time"/>
+                      <LaneChangeTarget>
+                        <RelativeTargetLane entityRef="car2" value="1"/>
+                      </LaneChangeTarget>
+                    </LaneChangeAction>
+                  </LateralAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger>
+                <ConditionGroup>
+                  <Condition name="car2_lc_1_start" delay="0.0" conditionEdge="rising">
+                    <ByValueCondition>
+                      <SimulationTimeCondition value="20.0" rule="greaterThan"/>
+                    </ByValueCondition>
+                  </Condition>
+                </ConditionGroup>
+              </StartTrigger>
+            </Event>
+            <Event name="car2_lane_change_2" priority="overwrite" maximumExecutionCount="1">
+              <Action name="car2_lane_change_more">
+                <PrivateAction>
+                  <LateralAction>
+                    <LaneChangeAction>
+                      <LaneChangeActionDynamics dynamicsShape="cubic" value="8.0" dynamicsDimension="time"/>
+                      <LaneChangeTarget>
+                        <RelativeTargetLane entityRef="car2" value="1"/>
+                      </LaneChangeTarget>
+                    </LaneChangeAction>
+                  </LateralAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger>
+                <ConditionGroup>
+                  <Condition name="car2_lc_2_start" delay="0.0" conditionEdge="rising">
+                    <ByValueCondition>
+                      <SimulationTimeCondition value="25.0" rule="greaterThan"/>
+                    </ByValueCondition>
+                  </Condition>
+                </ConditionGroup>
+              </StartTrigger>
+            </Event>
+          </Maneuver>
+        </ManeuverGroup>
+        <ManeuverGroup name="car3_speed_group" maximumExecutionCount="1">
+          <Actors selectTriggeringEntities="false">
+            <EntityRef entityRef="car3"/>
+          </Actors>
+          <Maneuver name="car3_speed_maneuver">
+            <Event name="car3_speed_1" priority="overwrite" maximumExecutionCount="1">
+              <Action name="car3_slow_1">
+                <PrivateAction>
+                  <LongitudinalAction>
+                    <SpeedAction>
+                      <SpeedActionDynamics dynamicsShape="linear" value="5.0" dynamicsDimension="time"/>
+                      <SpeedActionTarget><AbsoluteTargetSpeed value="22.220"/></SpeedActionTarget>
+                    </SpeedAction>
+                  </LongitudinalAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger><ConditionGroup><Condition name="car3_speed_1_start" delay="0.0" conditionEdge="rising"><ByValueCondition><SimulationTimeCondition value="30.0" rule="greaterThan"/></ByValueCondition></Condition></ConditionGroup></StartTrigger>
+            </Event>
+            <Event name="car3_speed_2" priority="overwrite" maximumExecutionCount="1">
+              <Action name="car3_fast_1">
+                <PrivateAction>
+                  <LongitudinalAction>
+                    <SpeedAction>
+                      <SpeedActionDynamics dynamicsShape="linear" value="15.0" dynamicsDimension="time"/>
+                      <SpeedActionTarget><AbsoluteTargetSpeed value="35.000"/></SpeedActionTarget>
+                    </SpeedAction>
+                  </LongitudinalAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger><ConditionGroup><Condition name="car3_speed_2_start" delay="0.0" conditionEdge="rising"><ByValueCondition><SimulationTimeCondition value="40.0" rule="greaterThan"/></ByValueCondition></Condition></ConditionGroup></StartTrigger>
+            </Event>
+            <Event name="car3_speed_3" priority="overwrite" maximumExecutionCount="1">
+              <Action name="car3_slow_2">
+                <PrivateAction>
+                  <LongitudinalAction>
+                    <SpeedAction>
+                      <SpeedActionDynamics dynamicsShape="linear" value="5.0" dynamicsDimension="time"/>
+                      <SpeedActionTarget><AbsoluteTargetSpeed value="22.220"/></SpeedActionTarget>
+                    </SpeedAction>
+                  </LongitudinalAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger><ConditionGroup><Condition name="car3_speed_3_start" delay="0.0" conditionEdge="rising"><ByValueCondition><SimulationTimeCondition value="55.0" rule="greaterThan"/></ByValueCondition></Condition></ConditionGroup></StartTrigger>
+            </Event>
+            <Event name="car3_speed_4" priority="overwrite" maximumExecutionCount="1">
+              <Action name="car3_fast_2">
+                <PrivateAction>
+                  <LongitudinalAction>
+                    <SpeedAction>
+                      <SpeedActionDynamics dynamicsShape="linear" value="10.0" dynamicsDimension="time"/>
+                      <SpeedActionTarget><AbsoluteTargetSpeed value="35.000"/></SpeedActionTarget>
+                    </SpeedAction>
+                  </LongitudinalAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger><ConditionGroup><Condition name="car3_speed_4_start" delay="0.0" conditionEdge="rising"><ByValueCondition><SimulationTimeCondition value="70.0" rule="greaterThan"/></ByValueCondition></Condition></ConditionGroup></StartTrigger>
+            </Event>
+          </Maneuver>
+        </ManeuverGroup>
+        <StartTrigger>
+          <ConditionGroup>
+            <Condition name="act_start" delay="0.0" conditionEdge="rising">
+              <ByValueCondition>
+                <SimulationTimeCondition value="0.0" rule="greaterThan"/>
+              </ByValueCondition>
+            </Condition>
+          </ConditionGroup>
+        </StartTrigger>
+        <StopTrigger/>
+      </Act>
+    </Story>
+    <StopTrigger>
+      <ConditionGroup>
+        <Condition name="storyboard_stop" delay="0.0" conditionEdge="rising">
+          <ByValueCondition>
+            <SimulationTimeCondition value="75.0" rule="greaterThan"/>
+          </ByValueCondition>
+        </Condition>
+      </ConditionGroup>
+    </StopTrigger>
+  </Storyboard>
+</OpenSCENARIO>

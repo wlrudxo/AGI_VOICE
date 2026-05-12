@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSCENARIO xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="OpenScenario.xsd">
+  <FileHeader description="TGT-002 AEB bus stop pedestrian crossing core v5" author="AGI_VOICE_LLM" revMajor="1" revMinor="2" date="2026-05-12T00:00:00"/>
+  <CatalogLocations/>
+  <RoadNetwork>
+    <LogicFile filepath="tgt002_aeb_bus_stop_core_v5.xodr"/>
+  </RoadNetwork>
+  <Entities>
+    <ScenarioObject name="Ego">
+      <Vehicle name="ego_car" vehicleCategory="car">
+        <BoundingBox>
+          <Center x="2.0" y="0.0" z="0.9"/>
+          <Dimensions width="2.0" length="5.0" height="1.8"/>
+        </BoundingBox>
+        <Performance maxSpeed="70.0" maxDeceleration="10.0" maxAcceleration="10.0"/>
+        <Axles>
+          <FrontAxle maxSteering="0.5" wheelDiameter="0.8" trackWidth="1.7" positionX="2.98" positionZ="0.4"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.8" trackWidth="1.7" positionX="0.0" positionZ="0.4"/>
+        </Axles>
+        <Properties/>
+      </Vehicle>
+    </ScenarioObject>
+    <ScenarioObject name="Bus">
+      <Vehicle name="stopped_bus" vehicleCategory="car">
+        <BoundingBox>
+          <Center x="6.0" y="0.0" z="1.6"/>
+          <Dimensions width="2.5" length="12.0" height="3.2"/>
+        </BoundingBox>
+        <Performance maxSpeed="40.0" maxDeceleration="8.0" maxAcceleration="4.0"/>
+        <Axles>
+          <FrontAxle maxSteering="0.45" wheelDiameter="0.9" trackWidth="2.0" positionX="4.5" positionZ="0.45"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.9" trackWidth="2.0" positionX="0.0" positionZ="0.45"/>
+        </Axles>
+        <Properties/>
+      </Vehicle>
+    </ScenarioObject>
+    <ScenarioObject name="cross_ob">
+      <Pedestrian name="crossing_pedestrian" model="adult" mass="80.0" pedestrianCategory="pedestrian">
+        <BoundingBox>
+          <Center x="0.0" y="0.0" z="0.9"/>
+          <Dimensions width="0.6" length="0.6" height="1.8"/>
+        </BoundingBox>
+        <Properties/>
+      </Pedestrian>
+    </ScenarioObject>
+  </Entities>
+  <Storyboard>
+    <Init>
+      <Actions>
+        <Private entityRef="Ego">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="13.89"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <LanePosition roadId="0" laneId="-1" s="10.0" offset="0.0"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="Bus">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="0.0"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <LanePosition roadId="0" laneId="-2" s="78.0" offset="0.0"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="cross_ob">
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="0.0"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="84.0" y="-7.0" z="0.0" h="1.57079632679"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+      </Actions>
+    </Init>
+    <Story name="aeb_bus_stop_core_story">
+      <Act name="aeb_bus_stop_core_act">
+        <ManeuverGroup name="ego_path_group" maximumExecutionCount="1">
+          <Actors selectTriggeringEntities="false">
+            <EntityRef entityRef="Ego"/>
+          </Actors>
+          <Maneuver name="ego_path_maneuver">
+            <Event name="ego_path_event" priority="overwrite" maximumExecutionCount="1">
+              <Action name="ego_follow_path">
+                <PrivateAction>
+                  <RoutingAction>
+                    <FollowTrajectoryAction>
+                      <TrajectoryRef>
+                        <Trajectory name="ego_straight_path" closed="false">
+                          <Shape>
+                            <Polyline>
+                              <Vertex time="0.0"><Position><LanePosition roadId="0" laneId="-1" s="10.0" offset="0.0"/></Position></Vertex>
+                              <Vertex time="3.0"><Position><LanePosition roadId="0" laneId="-1" s="52.0" offset="0.0"/></Position></Vertex>
+                              <Vertex time="6.0"><Position><LanePosition roadId="0" laneId="-1" s="94.0" offset="0.0"/></Position></Vertex>
+                              <Vertex time="9.0"><Position><LanePosition roadId="0" laneId="-1" s="136.0" offset="0.0"/></Position></Vertex>
+                            </Polyline>
+                          </Shape>
+                        </Trajectory>
+                      </TrajectoryRef>
+                      <TimeReference>
+                        <Timing domainAbsoluteRelative="absolute" scale="1.0" offset="0.0"/>
+                      </TimeReference>
+                      <TrajectoryFollowingMode followingMode="follow"/>
+                    </FollowTrajectoryAction>
+                  </RoutingAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger>
+                <ConditionGroup>
+                  <Condition name="ego_path_start" delay="0.0" conditionEdge="rising">
+                    <ByValueCondition>
+                      <SimulationTimeCondition value="0.0" rule="greaterThan"/>
+                    </ByValueCondition>
+                  </Condition>
+                </ConditionGroup>
+              </StartTrigger>
+            </Event>
+          </Maneuver>
+        </ManeuverGroup>
+        <ManeuverGroup name="pedestrian_crossing_group" maximumExecutionCount="1">
+          <Actors selectTriggeringEntities="false">
+            <EntityRef entityRef="cross_ob"/>
+          </Actors>
+          <Maneuver name="pedestrian_crossing_maneuver">
+            <Event name="pedestrian_crossing_event" priority="overwrite" maximumExecutionCount="1">
+              <Action name="pedestrian_follow_crossing_path">
+                <PrivateAction>
+                  <RoutingAction>
+                    <FollowTrajectoryAction>
+                      <TrajectoryRef>
+                        <Trajectory name="pedestrian_crossing_path" closed="false">
+                          <Shape>
+                            <Polyline>
+                              <Vertex time="0.0"><Position><WorldPosition x="84.0" y="-7.0" z="0.0" h="1.57079632679"/></Position></Vertex>
+                              <Vertex time="2.0"><Position><WorldPosition x="84.0" y="-4.0" z="0.0" h="1.57079632679"/></Position></Vertex>
+                              <Vertex time="4.0"><Position><WorldPosition x="84.0" y="-1.0" z="0.0" h="1.57079632679"/></Position></Vertex>
+                              <Vertex time="6.0"><Position><WorldPosition x="84.0" y="3.0" z="0.0" h="1.57079632679"/></Position></Vertex>
+                              <Vertex time="12.0"><Position><WorldPosition x="84.0" y="3.0" z="0.0" h="1.57079632679"/></Position></Vertex>
+                            </Polyline>
+                          </Shape>
+                        </Trajectory>
+                      </TrajectoryRef>
+                      <TimeReference>
+                        <Timing domainAbsoluteRelative="relative" scale="1.0" offset="0.0"/>
+                      </TimeReference>
+                      <TrajectoryFollowingMode followingMode="follow"/>
+                    </FollowTrajectoryAction>
+                  </RoutingAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger>
+                <ConditionGroup>
+                  <Condition name="ego_near_pedestrian" delay="0.0" conditionEdge="rising">
+                    <ByValueCondition>
+                      <SimulationTimeCondition value="2.0" rule="greaterThan"/>
+                    </ByValueCondition>
+                  </Condition>
+                </ConditionGroup>
+              </StartTrigger>
+            </Event>
+          </Maneuver>
+        </ManeuverGroup>
+        <StartTrigger>
+          <ConditionGroup>
+            <Condition name="act_start" delay="0.0" conditionEdge="rising">
+              <ByValueCondition>
+                <SimulationTimeCondition value="0.0" rule="greaterThan"/>
+              </ByValueCondition>
+            </Condition>
+          </ConditionGroup>
+        </StartTrigger>
+        <StopTrigger/>
+      </Act>
+    </Story>
+    <StopTrigger>
+      <ConditionGroup>
+        <Condition name="storyboard_stop" delay="0.0" conditionEdge="rising">
+          <ByValueCondition>
+            <SimulationTimeCondition value="12.0" rule="greaterThan"/>
+          </ByValueCondition>
+        </Condition>
+      </ConditionGroup>
+    </StopTrigger>
+  </Storyboard>
+</OpenSCENARIO>
