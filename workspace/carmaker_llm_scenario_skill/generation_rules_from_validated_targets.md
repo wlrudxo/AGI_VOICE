@@ -16,7 +16,7 @@ The broader workflow remains in `generation_manual.md`.
 Generate for:
 
 ```text
-CarMaker 14.0.1
+CarMaker 15.0.1
 OpenSCENARIO XML 1.2-compatible input
 OpenDRIVE road input
 osc2cm conversion with --interpolate
@@ -24,6 +24,51 @@ postprocess_testrun.py for known converter gaps
 ```
 
 Do not emit OpenSCENARIO 1.3/1.4-only features for the current backend.
+
+## Segment-Assembly Direction
+
+For CarMaker-native scenarios, especially intersections, do not treat the LLM
+output as one monolithic `.xodr`/`.xosc` invention. Treat it as assembly over a
+library of verified native segments.
+
+Recommended generation flow:
+
+```text
+scenario intent
+  -> select road/map segment
+  -> select route/path/control segments
+  -> select actor placement segments
+  -> bind speeds, start positions, TTC, triggers, and visibility/occlusion
+  -> emit native CarMaker TestRun or a converter-backed source plus postprocess
+  -> record selected segments in a sidecar report
+```
+
+Segment types to maintain:
+
+| Segment type | Contents | Example source |
+| --- | --- | --- |
+| map segment | `.rd5` or `.xodr` road, junctions, crosswalks, traffic lights | `UrbanRoad_RuralRoad_Expressway.rd5` |
+| route segment | known route/path IDs and valid `s` ranges | ego route `4235`, crossing route `4236` |
+| maneuver segment | proven CarMaker maneuver block | `Driver`, `auto`, `VelTransition`, bounded `FollowTraj` |
+| actor segment | template, dimensions, static/dynamic behavior defaults | bus occluder, crossing pedestrian, crossing vehicle |
+| timing segment | route-distance and speed-based conflict timing | `Intersection.tcl` time-to-intersection formula |
+| signal/control segment | traffic-light group IDs and phase assumptions | `Control.TrfLight.*` in native road |
+
+The LLM should choose and bind these segments instead of inventing raw geometry
+unless the target explicitly requires a new road. Generated OpenDRIVE remains
+valid for simple straight/lane-change scenarios, but native route-template
+assembly is the preferred mode for intersections.
+
+For each assembled scenario, save a sidecar manifest:
+
+```text
+road: <rd5/xodr>
+ego_route: <id or path>
+target_routes: <ids or paths>
+actors: <template + start position + maneuver segment>
+computed_timing: <TTC, conflict s, start s>
+known limitations: <manual visual checks required>
+```
 
 ## Final Accepted Examples
 
@@ -394,6 +439,44 @@ python3 workspace/carmaker_llm_scenario_skill/scripts/package_for_project.py \
 
 Manual copying is no longer the reference workflow.
 
+### 11. For the first signalized-intersection slice, preserve road signals before controlling phases
+
+TGT-003 v1 shows that OpenDRIVE signalized intersections can survive CarMaker
+road conversion:
+
+```text
+nJunctions = 1
+Control.TrfLight.0 = ...
+Control.TrfLight.1 = ...
+Control.TrfLight.2 = ...
+Control.TrfLight.3 = ...
+```
+
+Current strict backend rule:
+
+- reuse or generate OpenDRIVE roads with `<junction>` and `<signals>` first
+- keep actor starts as valid `LanePosition`
+- avoid Init `AssignRouteAction`; it failed CarMaker supported-feature validation
+- avoid traffic speed `linear/rate`; use `linear/time` for traffic speed transitions
+- treat traffic-light phase compliance as a separate target after road/signal conversion passes
+- do not accept signalized scenarios from `Control.TrfLight.*` presence alone; verify `TrfLight.*.State` or add a Road5 phase postprocessor
+- make the StopTrigger long enough to include red-start waiting, release, conflict, and clearing time
+- for junction exits, choose LanePosition `s` direction from the outgoing road geometry and contact point; if entering a road at `contactPoint=end`, moving away from the junction may require decreasing `s`
+- before installing, inspect converted Global FollowTraj coordinates and reject paths that jump forward then move backward or hold unexpectedly
+- do not use `AssignRouteAction` as a CarMaker 15 strict backend route mechanism; local `osc2cm` validation accepts only `FollowTrajectoryAction` inside the ego/traffic maneuver `RoutingAction` subset
+- path-only `FollowTrajectoryAction` with `TimeReference/None` can convert to `TimeChan = 0` Path/FollowTraj plus separate speed maneuvers; `Limit = t {}` is acceptable for `TimeChan = 0` based on native CarMaker examples
+
+Good TGT-003 pattern:
+
+```xml
+<SpeedAction>
+  <SpeedActionDynamics dynamicsShape="linear" value="2.0" dynamicsDimension="time"/>
+  <SpeedActionTarget>
+    <AbsoluteTargetSpeed value="22.0"/>
+  </SpeedActionTarget>
+</SpeedAction>
+```
+
 ## Golden IR Patterns
 
 ### Double Lane Change Pattern
@@ -506,4 +589,3 @@ Before installing into `E:\CarMakerProject\AGI`, verify:
 - generated template files exist
 - no runtime-blocking converter warnings are unclassified
 - package helper rewrites `Road.FName` and generated templates into `LLM_Generated/`
-

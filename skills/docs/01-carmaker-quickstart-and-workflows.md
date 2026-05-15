@@ -2,7 +2,7 @@
 
 ## 근거 문서
 
-- `C:\IPG\carmaker\win64-14.0.1\doc\QuickStartGuide`
+- `C:\IPG\carmaker\win64-15.0.1\doc\QuickStartGuide`
 - Quick Start Guide 섹션:
   - `A-Introduction-Topics`
   - `B0-Create-first-TestRun`

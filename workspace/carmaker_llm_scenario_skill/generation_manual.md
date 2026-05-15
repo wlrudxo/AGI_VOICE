@@ -16,7 +16,7 @@ Natural language request
   -> manual/runtime check in CarMaker
 ```
 
-Do not target OpenSCENARIO XML 1.3 or 1.4 for the first CarMaker backend. CarMaker 14.0.1's local `osc2cm` validation assets currently stop at OpenSCENARIO 1.2.
+Do not target OpenSCENARIO XML 1.3 or 1.4 for the first CarMaker backend. CarMaker 15.0.1's local `osc2cm` validation assets currently stop at OpenSCENARIO 1.2.
 
 Do not route through SUMO for the first slice.
 
@@ -274,7 +274,7 @@ Avoid in the first CarMaker backend:
 - pedestrian traffic speed changes with `dynamicsShape="step"`
 - traffic `LaneChangeActionDynamics` with `dynamicsShape="sinusoidal"`
 
-These are not necessarily bad standard features. They are excluded because current CarMaker 14.0.1 `osc2cm` logs showed validation or conversion subset issues.
+These are not necessarily bad standard features. They are excluded because current CarMaker 15.0.1 `osc2cm` logs showed validation or conversion subset issues.
 
 ## Reference DB Usage
 
@@ -307,7 +307,7 @@ conversion_scratch/AGI_LLM_TestProject/Data/OpenSCENARIO/
 Run strict validation first:
 
 ```bat
-C:\IPG\carmaker\win64-14.0.1\bin\osc2cm.exe ^
+C:\IPG\carmaker\win64-15.0.1\bin\osc2cm.exe ^
   --cmprojpath E:\GitProject\AGI_VOICE\workspace\carmaker_llm_scenario_skill\conversion_scratch\AGI_LLM_TestProject ^
   --oscfname Data\OpenSCENARIO\<scenario_id>.xosc ^
   --egoname Ego ^
@@ -327,7 +327,7 @@ If strict validation fails, fix the IR/XML. Do not proceed as if the scenario is
 After strict issues are resolved, run exploratory conversion without `--validate` only to inspect generated CarMaker outputs and converter warnings:
 
 ```bat
-C:\IPG\carmaker\win64-14.0.1\bin\osc2cm.exe ^
+C:\IPG\carmaker\win64-15.0.1\bin\osc2cm.exe ^
   --cmprojpath E:\GitProject\AGI_VOICE\workspace\carmaker_llm_scenario_skill\conversion_scratch\AGI_LLM_TestProject ^
   --oscfname Data\OpenSCENARIO\<scenario_id>.xosc ^
   --egoname Ego ^

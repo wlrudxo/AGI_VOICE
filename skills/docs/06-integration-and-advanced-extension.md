@@ -2,10 +2,10 @@
 
 ## 근거 위치
 
-- `C:\IPG\carmaker\win64-14.0.1\doc\APO`
-- `C:\IPG\carmaker\win64-14.0.1\doc\CMAPI`
-- `C:\IPG\carmaker\win64-14.0.1\doc\QuickStartGuide\Content\Content_Quickstart-Guide\D-CarMaker-for-Simulink`
-- `C:\IPG\carmaker\win64-14.0.1\Examples\GPUCodingInterface`
+- `C:\IPG\carmaker\win64-15.0.1\doc\APO`
+- `C:\IPG\carmaker\win64-15.0.1\doc\CMAPI`
+- `C:\IPG\carmaker\win64-15.0.1\doc\QuickStartGuide\Content\Content_Quickstart-Guide\D-CarMaker-for-Simulink`
+- `C:\IPG\carmaker\win64-15.0.1\Examples\GPUCodingInterface`
 
 ## APO
 

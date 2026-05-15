@@ -3,11 +3,11 @@
 ## 근거 위치
 
 - Quick Start Guide Scenario Editor:
-  - `C:\IPG\carmaker\win64-14.0.1\doc\QuickStartGuide\Content\Content_Quickstart-Guide\B4-Scenario-Editor`
+  - `C:\IPG\carmaker\win64-15.0.1\doc\QuickStartGuide\Content\Content_Quickstart-Guide\B4-Scenario-Editor`
 - OpenSCENARIO schema assets:
-  - `C:\IPG\carmaker\win64-14.0.1\doc\OpenSCENARIO`
+  - `C:\IPG\carmaker\win64-15.0.1\doc\OpenSCENARIO`
 - IPGRoad API docs:
-  - `C:\IPG\carmaker\win64-14.0.1\doc\IPGRoadAPI`
+  - `C:\IPG\carmaker\win64-15.0.1\doc\IPGRoadAPI`
 
 ## Scenario Editor 축
 

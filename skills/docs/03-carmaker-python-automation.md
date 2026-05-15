@@ -3,10 +3,10 @@
 ## 근거 위치
 
 - Python packages:
-  - `C:\IPG\carmaker\win64-14.0.1\Python\python3.11\cmapi`
+  - `C:\IPG\carmaker\win64-15.0.1\Python\python3.11\cmapi`
   - 동일 구조가 `python3.8`~`python3.12`에 반복 존재
 - Examples:
-  - `C:\IPG\carmaker\win64-14.0.1\Examples\Python`
+  - `C:\IPG\carmaker\win64-15.0.1\Examples\Python`
 
 ## 확인된 API 축
 

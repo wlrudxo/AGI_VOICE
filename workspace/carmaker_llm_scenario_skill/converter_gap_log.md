@@ -51,6 +51,11 @@ Scenario IR
 | GAP-021 | confirmed | `input_xml` | Bus is placed in ego lane in `TGT002_aeb_bus_stop_core_v3p1` | Source used OpenDRIVE `laneId=-1` for both ego and bus; converter output confirms both have `StartPos.ObjId = 31` | For current straight RHT road, keep ego in lane `-1` and place bus/curb occluder in lane `-2` or a bus-bay lane |
 | GAP-022 | confirmed | `input_xml` | Pedestrian crosses much too early in `TGT002_aeb_bus_stop_core_v4p1` | Source trigger used `SimulationTime > 0.5`, independent of ego approach timing | For time-triggered movement tests, compute trigger time from ego arrival at conflict point; for this road ego reaches s=84 around 5.3 s, so v5 uses a 2.0 s trigger with a 4 s crossing-to-conflict profile |
 | GAP-023 | hypothesis | `input_xml` / `postprocess_needed` | Pedestrian disappears after crossing instead of remaining visible | Converted traffic `FollowTraj` ends at the last trajectory timestamp; if the maneuver completes during the visible simulation window, CarMaker may remove/deactivate or otherwise stop displaying the actor despite `TreatAtEnd = FreezeVel` | Add a hold vertex at the final pedestrian position and postprocess `Limit` to that hold time so the trajectory does not end before scenario stop |
+| GAP-024 | confirmed | `converter_subset` / `input_xml` | `RoutingAction` in `Init` fails strict supported-feature validation for `TGT003_signalized_intersection_sudden_accel_v0` | CarMaker 15 supported-feature validation reports `RoutingAction` not declared / not allowed under `PrivateAction` | Do not use Init `AssignRouteAction` in the first strict backend; use lane starts and explicit maneuvers first, then test route/path support separately |
+| GAP-025 | confirmed | `input_xml` | Raw `sudden_acceleration.xosc` converts the sudden car as static traffic with `Traffic.0.nMan = 0` | Traffic `SpeedActionDynamics dynamicsShape="linear" dynamicsDimension="rate"` did not survive as a traffic maneuver in the no-validate raw conversion | Use traffic speed transitions with `dynamicsShape="linear"` and `dynamicsDimension="time"`; v1 converted to `Traffic.0.Man.0.LongStep.0.Dyn = VelTransition 22.000 linear` |
+| GAP-027 | confirmed | `input_xml` | TGT-003 v4p1 waits, starts crossing, then stops or behaves as if stuck mid-crossing | Outgoing roads 2 and 3 run opposite to the desired actor travel direction; using increasing OpenDRIVE `s` after the connector made osc2cm emit a global FollowTraj that jumps forward then moves backward/holds | For outgoing roads entered at `contactPoint=end`, decrease `s` as the actor moves away from the junction; verify converted Global FollowTraj coordinates are monotonic before installing |
+| GAP-028 | confirmed | `converter_subset` | `AssignRouteAction` in a maneuver is standard OpenSCENARIO but unsupported by CarMaker 15 strict osc2cm validation | Local `RoutingAction_osc2cm_ego_maneuver` and `RoutingAction_osc2cm_traffic_maneuver` allow only `FollowTrajectoryAction`; converter drops `AssignRouteAction` and falls back to `Routing.Type = Lane` | Do not depend on `AssignRouteAction`; use runtime-tested speed-only Lane routing, path-only FollowTrajectoryAction, or native postprocess Route/Path |
+| GAP-029 | clarified | `postprocess_needed` | Path-only `FollowTrajectoryAction` with `TimeReference/None` converts to `TimeChan = 0` Path/FollowTraj, and traffic `Limit = t {}` remains | Native CarMaker examples also use `TimeChan = 0` FollowTraj with `Limit = t {}`; the common postprocessor must not treat the last data column as time | Permit empty `Limit` when the same step has `TimeChan = 0`; continue to reject empty limit for timed `TimeChan = 1` FollowTraj |
 
 ## GAP-001 Detail: Missing Ego Maneuver
 
@@ -510,3 +515,73 @@ Whenever a new CarMaker error appears:
 3. Classify as `input_xml`, `converter_subset`, `postprocess_needed`, or `unknown`.
 4. Add a deterministic postprocessor or exporter rule.
 5. Re-run the same TestRun.
+
+## GAP-026 Detail: Signalized Intersection Runtime Is More Than Road Signal Import
+
+Observed in TGT-003:
+
+```text
+The converted Road5 contains Control.TrfLight.0..3.
+The 3D animation did not visibly change during the user's runtime check.
+The ego did not complete the intended intersection passage before the earlier 12 s stop trigger.
+```
+
+Classification:
+
+```text
+unknown / postprocess_needed
+```
+
+Current distinction:
+
+```text
+OpenDRIVE signal import -> Road5 Control.TrfLight.* exists
+Runtime signal logic -> TrfLight.*.State changes during simulation
+3D animation -> rendered traffic-light mesh visibly changes
+```
+
+These are not the same validation layer. A generated signalized-intersection
+scenario must not be accepted solely because `Control.TrfLight.*` exists.
+
+Rules:
+
+```text
+For signalized scenarios, set a StopTrigger long enough for wait, release, conflict, and clear phases.
+Record runtime signal-state output such as TrfLight.*.State when available.
+If state stays static or does not match the intended red-start/release phase, add a Road5 traffic-light phase postprocessor.
+If state changes but the mesh does not animate, classify it as visualization linkage rather than scenario logic.
+```
+
+## GAP-027 Detail: OpenDRIVE `s` Direction Can Reverse Converted Junction Paths
+
+Observed in TGT-003 v4p1:
+
+```text
+Ego converted FollowTraj x:
+60 -> 82 -> 99 -> 112 -> 199 -> 169 -> 169
+
+Traffic converted FollowTraj y:
+57 -> 32 -> 13 -> 0 -> -87 -> -57 -> -57
+```
+
+Classification:
+
+```text
+input_xml
+```
+
+Cause:
+
+```text
+Road 2 and road 3 are geometrically opposite to the desired travel direction after the junction.
+Using increasing LanePosition s on those outgoing roads makes the converted global path move back toward the intersection.
+```
+
+Rule:
+
+```text
+For every junction path, inspect the outgoing road geometry and contact point.
+If the actor enters an outgoing road at contactPoint=end, use decreasing OpenDRIVE s to move away from the junction.
+After conversion, check the generated Global FollowTraj coordinates for monotonic progress in the intended world direction.
+Do not install a candidate only because osc2cm validation passes.
+```

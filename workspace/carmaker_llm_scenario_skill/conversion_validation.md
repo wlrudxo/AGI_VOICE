@@ -86,13 +86,13 @@ The scratch project was seeded with:
 Converter:
 
 ```text
-C:\IPG\carmaker\win64-14.0.1\bin\osc2cm.exe
+C:\IPG\carmaker\win64-15.0.1\bin\osc2cm.exe
 ```
 
 No-validate batch command pattern:
 
 ```bat
-C:\IPG\carmaker\win64-14.0.1\bin\osc2cm.exe ^
+C:\IPG\carmaker\win64-15.0.1\bin\osc2cm.exe ^
   --cmprojpath E:\GitProject\AGI_VOICE\workspace\carmaker_llm_scenario_skill\conversion_scratch\AGI_LLM_TestProject ^
   --oscfname Data\OpenSCENARIO\<scenario>.xosc ^
   --egoname Ego ^
@@ -147,7 +147,7 @@ Data/Road/signal_intersection.rd5
 
 ## What The Failures Mean
 
-The copied `.xosc` examples are useful as semantic examples, but they are not strict CarMaker 14 validation examples yet.
+The copied `.xosc` examples are useful as semantic examples, but they are not strict CarMaker 15 validation examples yet.
 
 Common validation failure:
 
@@ -162,7 +162,7 @@ Local examples currently use:
 <FileHeader ... revMajor="1" revMinor="3" .../>
 ```
 
-CarMaker 14.0.1 installed converter assets stop at OpenSCENARIO v1.2:
+CarMaker 15.0.1 installed converter assets stop at OpenSCENARIO v1.2:
 
 ```text
 OpenSCENARIO_v100_osc2cm_*.xsd
@@ -249,7 +249,7 @@ Good uses:
 Bad uses:
 
 - raw text cloning
-- assuming OpenSCENARIO 1.3 validates in CarMaker 14
+- assuming OpenSCENARIO 1.3 validates in CarMaker 15
 - assuming no-validate conversion warnings are harmless
 - treating generated TestRun existence as proof of behavioral correctness
 

@@ -13,6 +13,7 @@ FOLLOWTRAJ_DYN_RE = re.compile(
 )
 LIMIT_RE = re.compile(r"^(Traffic\.\d+\.Man\.\d+\.(?:LatStep|LongStep)\.\d+)\.Limit = t \{\}$")
 LATSTEP_DATA_RE = re.compile(r"^(Traffic\.\d+\.Man\.\d+\.LatStep\.\d+)\.Data:$")
+TIMECHAN_RE = re.compile(r"^(Traffic\.\d+\.Man\.\d+\.LatStep\.\d+)\.TimeChan = (.+)$")
 
 
 def parse_last_time_from_data(lines: list[str]) -> dict[str, str]:
@@ -36,12 +37,21 @@ def parse_last_time_from_data(lines: list[str]) -> dict[str, str]:
     return last_times
 
 
+def parse_time_channels(lines: list[str]) -> dict[str, str]:
+    return {
+        match.group(1): match.group(2).strip()
+        for line in lines
+        if (match := TIMECHAN_RE.match(line))
+    }
+
+
 def sibling_lat_prefix(prefix: str) -> str:
     return re.sub(r"\.LongStep\.", ".LatStep.", prefix)
 
 
 def fix_empty_followtraj_limits(lines: list[str]) -> tuple[list[str], list[str]]:
     last_times = parse_last_time_from_data(lines)
+    time_channels = parse_time_channels(lines)
     followtraj_prefixes = {
         match.group(1)
         for line in lines
@@ -57,6 +67,11 @@ def fix_empty_followtraj_limits(lines: list[str]) -> tuple[list[str], list[str]]
         prefix = match.group(1)
         if prefix not in followtraj_prefixes:
             out.append(line)
+            continue
+        lat_prefix = prefix if ".LatStep." in prefix else sibling_lat_prefix(prefix)
+        if time_channels.get(lat_prefix) == "0":
+            out.append(line)
+            changes.append(f"{prefix}.Limit: unchanged because {lat_prefix}.TimeChan = 0")
             continue
         time_value = last_times.get(prefix) or last_times.get(sibling_lat_prefix(prefix))
         if not time_value:

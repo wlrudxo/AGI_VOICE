@@ -23,7 +23,7 @@
 
 주 버전:
 
-- `C:\IPG\carmaker\win64-14.0.1`
+- `C:\IPG\carmaker\win64-15.0.1`
 
 핵심 하위 폴더:
 
@@ -73,7 +73,7 @@
 
 위치:
 
-- `C:\IPG\carmaker\win64-14.0.1\Examples\Python`
+- `C:\IPG\carmaker\win64-15.0.1\Examples\Python`
 
 확인된 핵심 예제:
 
@@ -95,7 +95,7 @@
 
 위치:
 
-- `C:\IPG\carmaker\win64-14.0.1\Examples\GPUCodingInterface`
+- `C:\IPG\carmaker\win64-15.0.1\Examples\GPUCodingInterface`
 
 특징:
 

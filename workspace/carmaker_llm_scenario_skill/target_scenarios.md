@@ -168,7 +168,69 @@ Pass criteria:
 - if generated road is used, `FollowTrajectoryAction` must be standalone so `osc2cm` creates `Path`/`Global` `FollowTraj`
 - if native road is reused, route object ids must be known and valid
 
-### TGT-003: Overtaking
+### TGT-003: Signalized Intersection Sudden Acceleration
+
+Reference inputs:
+
+```text
+workspace/carmaker_llm_scenario_skill/examples/raw/xosc/sudden_acceleration.xosc
+workspace/carmaker_llm_scenario_skill/examples/raw/xodr/signal_intersection.xodr
+```
+
+Why this is third:
+
+- first intersection and traffic-light road target
+- validates whether OpenDRIVE junctions survive `.rd5` conversion
+- validates whether OpenDRIVE signals become CarMaker `Control.TrfLight.*`
+- exposes route/support limitations before attempting full signal compliance
+
+Core reference traits:
+
+```text
+RoadNetwork LogicFile = signal_intersection.xodr
+OpenDRIVE has junction id 100
+OpenDRIVE has signal ids 100..103
+Ego starts on road 0 lane -1 near the intersection
+SuddenCar starts on road 1 lane -1 near the intersection
+Both actors accelerate after time triggers
+```
+
+Latest generated candidate:
+
+```text
+workspace/carmaker_llm_scenario_skill/generated/TGT-003_signalized_intersection_sudden_accel/native_route_template/TGT003_native_route_template_v1
+workspace/carmaker_llm_scenario_skill/reports/TGT-003_signalized_intersection_sudden_accel/native_route_template_v1_summary.md
+workspace/carmaker_llm_scenario_skill/reports/TGT-003_signalized_intersection_sudden_accel/native_intersection_reference_analysis.md
+workspace/carmaker_llm_scenario_skill/reports/TGT-003_signalized_intersection_sudden_accel/iteration_log.md
+```
+
+Current TGT-003 status:
+
+```text
+STRATEGY RESET TO NATIVE ROUTE TEMPLATE
+Direct OpenDRIVE/OpenSCENARIO generation exposed route, trajectory, speed-control, and signal-control fragility.
+New primary path is native CarMaker segment assembly using verified .rd5 route/control assets.
+First native smoke test installed into original project as LLM_Generated/TGT003_native_route_template_v1.
+It is based on IPG AEB_CrossingCarIntersection:
+  Road.FName = Examples/Synthetic/Scenario/UrbanRoad_RuralRoad_Expressway.rd5
+  Vehicle.Routing.ObjId = 4235
+  Traffic.0.Routing.ObjId = 4236
+  Traffic.N = 48
+Runtime CarMaker start and visual behavior are pending user/manual check.
+```
+
+Pass criteria:
+
+- native road loads
+- ego follows route 4235 deterministically
+- crossing target follows route 4236 deterministically
+- ego and target speeds match native CarMaker driver/VelTransition behavior
+- signal/crosswalk/traffic-light assets from the native road are visible and usable where applicable
+- generated scenario can later vary ego speed, target speed, actor type, and TTC without changing the native route-template structure
+- CarMaker simulation starts
+- no route/path reference is missing or invalid
+
+### TGT-004: Overtaking
 
 Reference:
 
@@ -176,7 +238,7 @@ Reference:
 E:\CarMakerProject\AGI\Data\TestRun\Overtaking
 ```
 
-Why this is third:
+Why this is fourth:
 
 - simpler traffic count than AEB bus stop
 - route-based ego and traffic setup
@@ -248,7 +310,8 @@ Compare structured features:
 
 1. TGT-001 Double Lane Change
 2. TGT-002 AEB Bus Stop Pedestrian Crossing
-3. TGT-003 Overtaking
+3. TGT-003 Signalized Intersection Sudden Acceleration
+4. TGT-004 Overtaking
 
 TGT-001 should be used to build the first structured comparison script because it is compact and already converter-shaped.
 

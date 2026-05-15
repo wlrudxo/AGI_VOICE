@@ -38,7 +38,7 @@ LLM structured scenario spec
   -> modify Road.FName, Vehicle.*, DrivMan.*, Traffic.*
 ```
 
-The first production skill should support both, but use OpenSCENARIO/OpenDRIVE as the primary interchange format because it directly represents full scenarios and CarMaker 14 includes a converter.
+The first production skill should support both, but use OpenSCENARIO/OpenDRIVE as the primary interchange format because it directly represents full scenarios and CarMaker 15 includes a converter.
 
 ## Local Project Facts
 
@@ -182,7 +182,7 @@ Interpretation:
 
 ```text
 FileIdent = CarMaker-TrafficTemplate 14
-FileCreator = OpenSCENARIO Converter 14.0.1
+FileCreator = OpenSCENARIO Converter 15.0.1
 ObjectClass = People
 ObjectKind = Movable
 RCSClass = RCS_Pedestrian
@@ -203,27 +203,27 @@ Basics.Dimension = 4.500 1.800 1.600
 Motion.Kind = 4Wheel
 ```
 
-These were created by `OpenSCENARIO Converter 14.0.1`, which confirms the converter path already matches this project.
+These were created by `OpenSCENARIO Converter 15.0.1`, which confirms the converter path already matches this project.
 
 ## Installed CarMaker Tooling
 
-CarMaker 14.0.1 install path:
+CarMaker 15.0.1 install path:
 
 ```text
-C:\IPG\carmaker\win64-14.0.1
+C:\IPG\carmaker\win64-15.0.1
 ```
 
 Relevant tools:
 
 ```text
-C:\IPG\carmaker\win64-14.0.1\bin\CarMaker.win64.exe
-C:\IPG\carmaker\win64-14.0.1\bin\osc2cm.exe
-C:\IPG\carmaker\win64-14.0.1\bin\roadutil.exe
+C:\IPG\carmaker\win64-15.0.1\bin\CarMaker.win64.exe
+C:\IPG\carmaker\win64-15.0.1\bin\osc2cm.exe
+C:\IPG\carmaker\win64-15.0.1\bin\roadutil.exe
 ```
 
 `osc2cm.exe --help` confirms:
 
-- converts OpenSCENARIO v1.x to CarMaker TestRun for CarMaker 14.0.x
+- converts OpenSCENARIO v1.x to CarMaker TestRun for CarMaker 15.0.x
 - requires `--cmprojpath` and `--oscfname`
 - can validate OpenSCENARIO with `--validate`
 - supports OpenSCENARIO validation versions `100`, `110`, `120`
@@ -236,7 +236,7 @@ C:\IPG\carmaker\win64-14.0.1\bin\roadutil.exe
 Minimal command pattern:
 
 ```powershell
-& "C:\IPG\carmaker\win64-14.0.1\bin\osc2cm.exe" `
+& "C:\IPG\carmaker\win64-15.0.1\bin\osc2cm.exe" `
   --cmprojpath "E:\CarMakerProject\AGI" `
   --oscfname "Data\OpenSCENARIO\pedestrian_crossing.xosc" `
   --egoname "Ego" `
@@ -266,8 +266,8 @@ Repo docs:
 Installed local docs:
 
 ```text
-C:\IPG\carmaker\win64-14.0.1\doc\OpenSCENARIO\
-C:\IPG\carmaker\win64-14.0.1\doc\IPGRoadAPI\
+C:\IPG\carmaker\win64-15.0.1\doc\OpenSCENARIO\
+C:\IPG\carmaker\win64-15.0.1\doc\IPGRoadAPI\
 ```
 
 OpenSCENARIO docs are mostly converter XSD assets:
@@ -290,7 +290,7 @@ ASAM OpenDRIVE:
 - OpenDRIVE describes static road networks for driving simulation.
 - It covers roads, lanes, junctions, signals, objects, road geometry, and lane structure.
 - It explicitly does not define dynamic content such as traffic participants and moving objects.
-- Current ASAM page lists OpenDRIVE 1.8.1, but CarMaker converter compatibility should be checked against CarMaker 14's supported subset.
+- Current ASAM page lists OpenDRIVE 1.8.1, but CarMaker converter compatibility should be checked against CarMaker 15's supported subset.
 
 ASAM OpenSCENARIO XML:
 
@@ -506,7 +506,7 @@ logs/osc2cm_convert.log
 Manual conversion command:
 
 ```powershell
-& "C:\IPG\carmaker\win64-14.0.1\bin\osc2cm.exe" `
+& "C:\IPG\carmaker\win64-15.0.1\bin\osc2cm.exe" `
   --cmprojpath "E:\CarMakerProject\AGI" `
   --oscfname "Data\OpenSCENARIO\LLM_PedestrianCrossing_001.xosc" `
   --egoname "Ego" `
@@ -561,9 +561,9 @@ The skill should never write directly into `Data/TestRun` without:
 
 ## Open Questions
 
-1. Does CarMaker 14's `osc2cm` accept OpenSCENARIO `revMinor="3"` files if validation is forced to `120`? Local sample `pedestrian_crossing.xosc` has `revMinor="3"`, but installed XSD names stop at `v120`.
+1. Does CarMaker 15's `osc2cm` accept OpenSCENARIO `revMinor="3"` files if validation is forced to `120`? Local sample `pedestrian_crossing.xosc` has `revMinor="3"`, but installed XSD names stop at `v120`.
 2. Does `--trfname "folder/name"` create nested TestRun paths or reject slash-separated names?
-3. Which generated OpenDRIVE features survive conversion best in CarMaker 14: junctions, lane markings, sidewalks, pedestrian lanes, traffic lights?
+3. Which generated OpenDRIVE features survive conversion best in CarMaker 15: junctions, lane markings, sidewalks, pedestrian lanes, traffic lights?
 4. How much of `FollowTrajectoryAction` for pedestrians is preserved under `--interpolate`?
 5. Should the first skill emit only OpenSCENARIO 1.2-compatible XML to match installed converter XSDs?
 

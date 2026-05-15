@@ -23,19 +23,19 @@
 주요 근거는 모두 `C:\IPG` 내부에 이미 설치된 자료다.
 
 - CarMaker
-  - `C:\IPG\carmaker\win64-14.0.1\doc\QuickStartGuide`
-  - `C:\IPG\carmaker\win64-14.0.1\doc\InstallationGuide`
-  - `C:\IPG\carmaker\win64-14.0.1\doc\APO`
-  - `C:\IPG\carmaker\win64-14.0.1\doc\CMAPI`
-  - `C:\IPG\carmaker\win64-14.0.1\doc\IPGRoadAPI`
-  - `C:\IPG\carmaker\win64-14.0.1\doc\OpenSCENARIO`
-  - `C:\IPG\carmaker\win64-14.0.1\doc\RequestForm`
-  - `C:\IPG\carmaker\win64-14.0.1\doc\UsersGuide.pdf`
-  - `C:\IPG\carmaker\win64-14.0.1\doc\ProgrammersGuide.pdf`
-  - `C:\IPG\carmaker\win64-14.0.1\doc\ReferenceManual.pdf`
+  - `C:\IPG\carmaker\win64-15.0.1\doc\QuickStartGuide`
+  - `C:\IPG\carmaker\win64-15.0.1\doc\InstallationGuide`
+  - `C:\IPG\carmaker\win64-15.0.1\doc\APO`
+  - `C:\IPG\carmaker\win64-15.0.1\doc\CMAPI`
+  - `C:\IPG\carmaker\win64-15.0.1\doc\IPGRoadAPI`
+  - `C:\IPG\carmaker\win64-15.0.1\doc\OpenSCENARIO`
+  - `C:\IPG\carmaker\win64-15.0.1\doc\RequestForm`
+  - `C:\IPG\carmaker\win64-15.0.1\doc\UsersGuide.pdf`
+  - `C:\IPG\carmaker\win64-15.0.1\doc\ProgrammersGuide.pdf`
+  - `C:\IPG\carmaker\win64-15.0.1\doc\ReferenceManual.pdf`
 - CarMaker examples
-  - `C:\IPG\carmaker\win64-14.0.1\Examples\Python`
-  - `C:\IPG\carmaker\win64-14.0.1\Examples\GPUCodingInterface`
+  - `C:\IPG\carmaker\win64-15.0.1\Examples\Python`
+  - `C:\IPG\carmaker\win64-15.0.1\Examples\GPUCodingInterface`
 - Companion tools
   - `C:\IPG\control\win64-3.0.15\doc`
   - `C:\IPG\movienx\win64-14.0.1\doc`

@@ -4,8 +4,32 @@
 from __future__ import annotations
 
 import argparse
+import re
 import shutil
 from pathlib import Path
+
+
+EMPTY_LIMIT_RE = re.compile(r"^(.+)\.Limit = t \{\}$")
+TIMECHAN_RE = re.compile(r"^(.+)\.TimeChan = (.+)$")
+
+
+def unexpected_empty_limits(text: str) -> list[str]:
+    lines = text.splitlines()
+    time_channels = {
+        match.group(1): match.group(2).strip()
+        for line in lines
+        if (match := TIMECHAN_RE.match(line))
+    }
+    unexpected: list[str] = []
+    for line in lines:
+        match = EMPTY_LIMIT_RE.match(line)
+        if not match:
+            continue
+        prefix = match.group(1)
+        if time_channels.get(prefix) == "0":
+            continue
+        unexpected.append(line)
+    return unexpected
 
 
 def rewrite_testrun_paths(
@@ -63,8 +87,12 @@ def verify_package(package_root: Path, scenario: str, road_name: str, template_n
             expected = f"Template.FName = {subdir}/{template_name}"
             if expected not in text:
                 errors.append(f"TestRun template path was not rewritten: {template_name}")
-        if "Limit = t {}" in text:
-            errors.append("TestRun still contains empty FollowTraj limit: Limit = t {}")
+        empty_limits = unexpected_empty_limits(text)
+        if empty_limits:
+            errors.append(
+                "TestRun still contains unexpected empty FollowTraj limits: "
+                + ", ".join(empty_limits[:3])
+            )
     return errors
 
 
