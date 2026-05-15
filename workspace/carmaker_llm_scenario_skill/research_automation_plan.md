@@ -119,11 +119,15 @@ TestRun is outside the curated set unless `--allow-uncurated` is passed.
 - 2026-05-15: Implemented `agent/carmaker_research_runner.py`.
   - `catalog` scans official CarMaker 15.0.1 TestRun InfoFiles and writes
     `reports/research_automation/official_testrun_catalog.md`.
+  - `select` lets an LLM narrow candidates by curated status, tags, and text
+    search before choosing a TestRun path.
   - `run --dry-run` prints the exact `LoadTestRun`, `StartSim`, quantity, trigger,
     action, and `StopSim` plan without touching CarMaker.
   - `run` is prepared to call the V3 backend, sample arbitrary `DVARead`
     quantities, fire one trigger, execute one command sequence, and write
     `samples.jsonl` plus `summary.md`.
+  - `self-test` validates parser, trigger expression, curated guard, and summary
+    generation without requiring CarMaker.
   - Curated TestRuns are enforced by default. Use `--allow-uncurated` only after
     inspecting a candidate.
 
@@ -133,6 +137,13 @@ Catalog official scenarios:
 
 ```bash
 python3 agent/carmaker_research_runner.py catalog --curated-only
+```
+
+Select official scenarios by tags or text:
+
+```bash
+python3 agent/carmaker_research_runner.py select --curated-only --tags traffic,junction
+python3 agent/carmaker_research_runner.py select --curated-only --search pedestrian
 ```
 
 Dry-run an experiment plan:
@@ -169,12 +180,23 @@ workspace/carmaker_llm_scenario_skill/reports/research_automation/runs/<run_id>/
 workspace/carmaker_llm_scenario_skill/reports/research_automation/runs/<run_id>/summary.md
 ```
 
+Offline runner self-test:
+
+```bash
+python3 agent/carmaker_research_runner.py self-test
+```
+
 ## Verification Log
 
 - `python3 -m py_compile agent/carmaker_research_runner.py agent/carmaker_command.py agent/carmaker_state.py`
   passed.
 - `python3 agent/carmaker_research_runner.py catalog --curated-only` produced 7
   curated official TestRun entries.
+- `python3 agent/carmaker_research_runner.py select --curated-only --tags traffic,junction`
+  selected `Examples/BasicFunctions/Traffic/Man_AutonomousJunctions`.
+- `python3 agent/carmaker_research_runner.py select --curated-only --search pedestrian`
+  selected `Examples/BasicFunctions/Traffic/Man_FollowTraj_PedestrianCrossing`.
+- `python3 agent/carmaker_research_runner.py self-test` passed.
 - `run --dry-run` produced the intended Load/Start/Monitor/Trigger/Action/Stop
   plan.
 - Missing trigger action fails closed with
@@ -182,3 +204,22 @@ workspace/carmaker_llm_scenario_skill/reports/research_automation/runs/<run_id>/
 - Uncurated TestRun selection fails closed unless `--allow-uncurated` is passed.
 - Live backend smoke is pending because `http://127.0.0.1:8010` was not running
   in this session, and the repo-local Python API venv is Windows-only from WSL.
+- Follow-up check confirmed the Windows venv can run `uvicorn --version`, but a
+  Windows-launched backend was not reachable from this WSL/sandbox session. Live
+  CarMaker execution remains an environment-dependent smoke, not a code-path
+  blocker.
+
+## Completion Audit
+
+| Requirement | Artifact / evidence | Status |
+| --- | --- | --- |
+| Use existing IPG official maps, not map generation | Catalog reads `C:\IPG\carmaker\win64-15.0.1\Data\TestRun\Examples`; curated catalog lists official roads such as `UrbanRoad_RuralRoad_Expressway.rd5`, `Expressway_3Lanes.rd5`, and `RuralRoad_Junctions.rd5` | Implemented |
+| Scenario/map selection | `catalog` and `select` commands; `official_testrun_catalog.md` | Implemented |
+| Desired data selection for monitoring | `run --quantities Time,Car.v,...`; raw `DVARead` quantity list | Implemented |
+| Simulation start/result checks | `run` issues `LoadTestRun`, `StartSim`, samples, optional `StopSim`, and writes `summary.md`; live execution requires running V3 backend and CarMaker APO listener | Implemented, live smoke pending |
+| Trigger setup | `run --trigger "<expr>"` with safe expression evaluation | Implemented |
+| Trigger-time control command | `--action` / `--action-file`, `SC.TAccel` near-pause, resume, then `DVAWrite` command sequence | Implemented |
+| Result confirmation | `samples.jsonl` and `summary.md` per run; `self-test` verifies summary generation | Implemented |
+| Iterative review loop | Run summaries are stable input for the next LLM iteration; rerun with revised TestRun, quantities, trigger, or action | Implemented |
+| Development docs | This plan, usage contract, verification log, and catalog Markdown | Implemented |
+| Fail-closed behavior | Missing action, uncurated TestRun, missing backend, invalid DVARead, and command/read failures stop with errors | Implemented |

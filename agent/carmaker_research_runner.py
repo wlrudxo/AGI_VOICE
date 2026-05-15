@@ -236,6 +236,35 @@ def scan_catalog(carmaker_root: Path, limit: int | None = None) -> list[TestRunI
     return items
 
 
+def filter_catalog(
+    items: list[TestRunInfo],
+    tags: list[str] | None = None,
+    search: str | None = None,
+    curated_only: bool = False,
+) -> list[TestRunInfo]:
+    filtered = items
+    if curated_only:
+        filtered = [item for item in filtered if item.relative_path in CURATED_TESTRUNS]
+    if tags:
+        wanted = {tag.lower() for tag in tags}
+        filtered = [
+            item
+            for item in filtered
+            if wanted.issubset({tag.lower() for tag in item.tags})
+        ]
+    if search:
+        needle = search.lower()
+        filtered = [
+            item
+            for item in filtered
+            if needle in item.relative_path.lower()
+            or needle in (item.road or "").lower()
+            or needle in (item.vehicle or "").lower()
+            or needle in item.description.lower()
+        ]
+    return filtered
+
+
 def write_catalog(items: list[TestRunInfo], output_dir: Path) -> tuple[Path, Path]:
     output_dir.mkdir(parents=True, exist_ok=True)
     json_path = output_dir / "official_testrun_catalog.json"
@@ -549,12 +578,92 @@ def write_run_summary(
 
 def catalog_command(args: argparse.Namespace) -> int:
     items = scan_catalog(Path(args.carmaker_root), args.limit)
-    if args.curated_only:
-        items = [item for item in items if item.relative_path in CURATED_TESTRUNS]
+    items = filter_catalog(items, curated_only=args.curated_only)
     json_path, md_path = write_catalog(items, Path(args.output_dir))
     print(f"Catalog entries: {len(items)}", flush=True)
     print(f"JSON: {json_path}", flush=True)
     print(f"Markdown: {md_path}", flush=True)
+    return 0
+
+
+def select_command(args: argparse.Namespace) -> int:
+    tags = [tag.strip() for tag in (args.tags or "").split(",") if tag.strip()]
+    items = scan_catalog(Path(args.carmaker_root), None)
+    matches = filter_catalog(
+        items,
+        tags=tags,
+        search=args.search,
+        curated_only=args.curated_only,
+    )
+    if not matches:
+        raise RuntimeError("No TestRun matched the selection filters")
+
+    print(f"Matched TestRuns: {len(matches)}", flush=True)
+    for item in matches[: args.limit]:
+        tag_text = ", ".join(item.tags)
+        print(
+            f"- {item.relative_path} | road={item.road or ''} | "
+            f"traffic={item.traffic_count} | tags={tag_text}",
+            flush=True,
+        )
+    if len(matches) > args.limit:
+        print(f"... {len(matches) - args.limit} more omitted; raise --limit to inspect.", flush=True)
+    return 0
+
+
+def self_test_command(args: argparse.Namespace) -> int:
+    parsed = parse_dvaread_response("O 1.0 13.5 42.0", ["Time", "Car.v", "Vhcl.sRoad"])
+    if parsed["Car.v"] != 13.5:
+        raise RuntimeError("DVARead parser self-test failed")
+    if not evaluate_expression("Car.v >= 10 and Vhcl.sRoad > 40", parsed):
+        raise RuntimeError("Expression evaluator self-test failed")
+    commands = parse_commands("DM.Brake = 0.3 | 1000 | Abs\nDM.Gas = 0.0")
+    if len(commands) != 2:
+        raise RuntimeError("Action parser should keep only executable vehicle commands")
+    try:
+        validate_testrun_choice("Examples/BasicFunctions/Driver/HandlingCourse", False)
+    except RuntimeError:
+        pass
+    else:
+        raise RuntimeError("Curated TestRun guard self-test failed")
+
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    summary_path = output_dir / "summary.md"
+    samples_path = output_dir / "samples.jsonl"
+    samples_path.write_text(
+        json.dumps({"sample": 1, "values": parsed}, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    fake_args = argparse.Namespace(
+        testrun="Examples/BasicFunctions/Traffic/Man_AutonomousJunctions",
+        duration=1.0,
+        interval=0.5,
+    )
+    trigger = TriggerSpec(
+        expression="Car.v >= 10",
+        action_text="DM.Brake = 0.3 | 1000 | Abs",
+        fired=True,
+        fired_sample=1,
+        fired_time=1.0,
+        action_results=["O"],
+    )
+    write_run_summary(
+        summary_path=summary_path,
+        args=fake_args,
+        quantities=["Time", "Car.v", "Vhcl.sRoad"],
+        trigger=trigger,
+        sample_count=1,
+        samples_path=samples_path,
+        load_result="O",
+        start_result="O",
+        stop_result="O",
+        failure=None,
+    )
+    if "Status: `completed`" not in summary_path.read_text(encoding="utf-8"):
+        raise RuntimeError("Summary writer self-test failed")
+    print("Self-test passed.", flush=True)
+    print(f"Scratch output: {output_dir}", flush=True)
     return 0
 
 
@@ -569,6 +678,13 @@ def parse_args() -> argparse.Namespace:
     catalog.add_argument("--output-dir", default=str(DEFAULT_REPORT_DIR))
     catalog.add_argument("--limit", type=int)
     catalog.add_argument("--curated-only", action="store_true")
+
+    select = subparsers.add_parser("select", help="Select official TestRuns by tag/search filters.")
+    select.add_argument("--carmaker-root", default=str(DEFAULT_CARMAKER_ROOT))
+    select.add_argument("--tags", help="Comma-separated tags such as traffic,junction.")
+    select.add_argument("--search", help="Case-insensitive text search over path, road, vehicle, description.")
+    select.add_argument("--curated-only", action="store_true")
+    select.add_argument("--limit", type=int, default=20)
 
     run = subparsers.add_parser("run", help="Load, run, monitor, and summarize one TestRun.")
     run.add_argument("--testrun", required=True, help='Example: "Examples/BasicFunctions/Traffic/Man_AutonomousJunctions"')
@@ -590,6 +706,9 @@ def parse_args() -> argparse.Namespace:
     run.add_argument("--dry-run", action="store_true")
     run.add_argument("--run-id")
     run.add_argument("--output-dir", default=str(DEFAULT_REPORT_DIR / "runs"))
+
+    self_test = subparsers.add_parser("self-test", help="Run offline parser and summary self-tests.")
+    self_test.add_argument("--output-dir", default="/tmp/carmaker_research_runner_selftest")
     return parser.parse_args()
 
 
@@ -598,8 +717,12 @@ def main() -> int:
     try:
         if args.command == "catalog":
             return catalog_command(args)
+        if args.command == "select":
+            return select_command(args)
         if args.command == "run":
             return run_experiment(args)
+        if args.command == "self-test":
+            return self_test_command(args)
         raise RuntimeError(f"Unknown command: {args.command}")
     except KeyboardInterrupt:
         print("\nInterrupted.", flush=True)
