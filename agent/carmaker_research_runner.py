@@ -18,6 +18,7 @@ import argparse
 import json
 import math
 import re
+import socket
 import sys
 import time
 from dataclasses import asdict, dataclass, field
@@ -104,6 +105,35 @@ class BackendClient:
             return json.loads(body)
         except json.JSONDecodeError:
             return body
+
+
+@dataclass
+class DirectCarMakerCommandClient:
+    host: str
+    port: int
+    timeout_seconds: float = 5.0
+
+    def command(self, command: str) -> str:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            sock.settimeout(self.timeout_seconds)
+            sock.connect((self.host, self.port))
+            sock.sendall(f"{command}\n".encode("utf-8"))
+            payload = sock.recv(65536)
+        except OSError as exc:
+            raise RuntimeError(f"Direct CarMaker command failed: {exc}") from exc
+        finally:
+            try:
+                sock.close()
+            except OSError:
+                pass
+
+        if not payload:
+            raise RuntimeError("Direct CarMaker command returned no response")
+        response = payload.decode("utf-8", errors="replace").strip()
+        if response.startswith("E"):
+            raise RuntimeError(f"CarMaker error: {response}")
+        return response or "OK (no response)"
 
 
 @dataclass
@@ -318,7 +348,7 @@ def parse_dvaread_response(response: str, quantities: list[str]) -> dict[str, fl
     return parsed
 
 
-def read_quantities(client: BackendClient, quantities: list[str]) -> dict[str, float]:
+def read_quantities(client: BackendClient | DirectCarMakerCommandClient, quantities: list[str]) -> dict[str, float]:
     response = client.command(f"DVARead {' '.join(quantities)}")
     return parse_dvaread_response(response, quantities)
 
@@ -362,13 +392,19 @@ def ensure_connection(
     return client.post_json("/api/carmaker/connect", {"host": host, "port": port})
 
 
-def execute_vehicle_command(client: BackendClient, command: VehicleCommand) -> str:
+def execute_vehicle_command(
+    client: BackendClient | DirectCarMakerCommandClient,
+    command: VehicleCommand,
+) -> str:
     duration = 99999 if command.duration == -1 else command.duration
     raw = f"DVAWrite {command.variable} {command.value} {duration} {command.mode}"
     return client.command(raw)
 
 
-def execute_trigger_action(client: BackendClient, trigger: TriggerSpec) -> list[str]:
+def execute_trigger_action(
+    client: BackendClient | DirectCarMakerCommandClient,
+    trigger: TriggerSpec,
+) -> list[str]:
     results: list[str] = []
     commands = parse_commands(trigger.action_text)
     if trigger.resume_before_action:
@@ -378,6 +414,18 @@ def execute_trigger_action(client: BackendClient, trigger: TriggerSpec) -> list[
         time.sleep(0.05)
     trigger.action_results.extend(results)
     return results
+
+
+def read_state_snapshot(state_reader: DirectCarMakerStateReader) -> dict[str, float | str | None]:
+    try:
+        return state_reader.read()
+    except RuntimeError as exc:
+        return {
+            "SC.State": math.nan,
+            "SC.TAccel": math.nan,
+            "SC.State.Label": f"unavailable: {exc}",
+            "SC.TimeMode": "unknown",
+        }
 
 
 def load_action_text(args: argparse.Namespace) -> str:
@@ -437,23 +485,27 @@ def run_experiment(args: argparse.Namespace) -> int:
     samples_path = output_dir / "samples.jsonl"
     summary_path = output_dir / "summary.md"
 
-    client = BackendClient(args.backend_url)
-    state_reader = DirectCarMakerStateReader(args.host, args.port, backend_url=args.backend_url)
-    status = ensure_connection(client, args.connect, args.host, args.port)
-    print(f"Connected to CarMaker via backend: {status['host']}:{status['port']}", flush=True)
+    if args.direct_carmaker:
+        client = DirectCarMakerCommandClient(args.host, args.port)
+        state_reader = DirectCarMakerStateReader(args.host, args.port)
+        print(f"Connected directly to CarMaker: {args.host}:{args.port}", flush=True)
+    else:
+        client = BackendClient(args.backend_url)
+        state_reader = DirectCarMakerStateReader(args.host, args.port, backend_url=args.backend_url)
+        status = ensure_connection(client, args.connect, args.host, args.port)
+        print(f"Connected to CarMaker via backend: {status['host']}:{status['port']}", flush=True)
 
     sample_count = 0
     failure: str | None = None
     load_result = ""
     start_result = ""
     stop_result = ""
-    started_monotonic = time.monotonic()
-
     try:
         load_result = client.command(f'LoadTestRun "{args.testrun}"')
         print(f"LoadTestRun -> {load_result}", flush=True)
         start_result = client.command("StartSim")
         print(f"StartSim -> {start_result}", flush=True)
+        started_monotonic = time.monotonic()
 
         with samples_path.open("w", encoding="utf-8") as samples_file:
             while True:
@@ -462,7 +514,7 @@ def run_experiment(args: argparse.Namespace) -> int:
                     break
 
                 values = read_quantities(client, quantities)
-                state = state_reader.read()
+                state = read_state_snapshot(state_reader)
                 values.update(
                     {
                         "SC.State": float(state["SC.State"]),
@@ -689,6 +741,7 @@ def parse_args() -> argparse.Namespace:
     run = subparsers.add_parser("run", help="Load, run, monitor, and summarize one TestRun.")
     run.add_argument("--testrun", required=True, help='Example: "Examples/BasicFunctions/Traffic/Man_AutonomousJunctions"')
     run.add_argument("--backend-url", default=DEFAULT_BACKEND_URL)
+    run.add_argument("--direct-carmaker", action="store_true", help="Bypass the V3 backend and send commands directly to CarMaker TcpCmdPort.")
     run.add_argument("--connect", action="store_true")
     run.add_argument("--host", default=DEFAULT_CARMAKER_HOST)
     run.add_argument("--port", type=int, default=DEFAULT_CARMAKER_PORT)

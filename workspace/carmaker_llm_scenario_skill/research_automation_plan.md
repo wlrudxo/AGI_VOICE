@@ -173,6 +173,22 @@ python3 agent/carmaker_research_runner.py run \
   --action "DM.Brake = 0.3 | 1000 | Abs"
 ```
 
+Run directly against the CarMaker 15 TcpCmdPort when the V3 backend is not
+running:
+
+```bash
+python3 agent/carmaker_research_runner.py run \
+  --direct-carmaker \
+  --host localhost \
+  --port 16660 \
+  --testrun Examples/BasicFunctions/Traffic/Man_AutonomousJunctions \
+  --quantities Time,Car.v,Vhcl.sRoad,Vhcl.tRoad,DM.Brake,Traffic.nObjs \
+  --duration 15 \
+  --interval 0.5 \
+  --trigger "Car.v >= 10 and Vhcl.sRoad > 50" \
+  --action "DM.Brake = 0.3 | 1000 | Abs"
+```
+
 Expected output files:
 
 ```text
@@ -208,6 +224,20 @@ python3 agent/carmaker_research_runner.py self-test
   Windows-launched backend was not reachable from this WSL/sandbox session. Live
   CarMaker execution remains an environment-dependent smoke, not a code-path
   blocker.
+- Added `--direct-carmaker` so the same runner can execute against CarMaker 15's
+  TcpCmdPort directly when the V3 backend is unavailable.
+- Live direct smoke passed with CarMaker 15 listening on `localhost:16660`.
+  - Run id: `live_direct_smoke_trigger_action`
+  - TestRun: `Examples/BasicFunctions/Traffic/Man_AutonomousJunctions`
+  - Samples: 9
+  - Trigger: `Vhcl.sRoad>=11`
+  - Fired sample: 4
+  - Action: `DM.Brake = 0.3 | 1000 | Abs`
+  - Evidence: `reports/research_automation/runs/live_direct_smoke_trigger_action/summary.md`
+    and `samples.jsonl`
+  - Observed effect: `DM.Brake` became `0.3` at samples 5-6 and `Car.v`
+    dropped from about `13.81 m/s` at trigger sample 4 to about `9.45 m/s`
+    by sample 7.
 
 ## Completion Audit
 
@@ -216,10 +246,10 @@ python3 agent/carmaker_research_runner.py self-test
 | Use existing IPG official maps, not map generation | Catalog reads `C:\IPG\carmaker\win64-15.0.1\Data\TestRun\Examples`; curated catalog lists official roads such as `UrbanRoad_RuralRoad_Expressway.rd5`, `Expressway_3Lanes.rd5`, and `RuralRoad_Junctions.rd5` | Implemented |
 | Scenario/map selection | `catalog` and `select` commands; `official_testrun_catalog.md` | Implemented |
 | Desired data selection for monitoring | `run --quantities Time,Car.v,...`; raw `DVARead` quantity list | Implemented |
-| Simulation start/result checks | `run` issues `LoadTestRun`, `StartSim`, samples, optional `StopSim`, and writes `summary.md`; live execution requires running V3 backend and CarMaker APO listener | Implemented, live smoke pending |
+| Simulation start/result checks | `run` issues `LoadTestRun`, `StartSim`, samples, optional `StopSim`, and writes `summary.md`; live direct smoke `live_direct_smoke_trigger_action` completed | Verified live |
 | Trigger setup | `run --trigger "<expr>"` with safe expression evaluation | Implemented |
-| Trigger-time control command | `--action` / `--action-file`, `SC.TAccel` near-pause, resume, then `DVAWrite` command sequence | Implemented |
-| Result confirmation | `samples.jsonl` and `summary.md` per run; `self-test` verifies summary generation | Implemented |
+| Trigger-time control command | `--action` / `--action-file`, `SC.TAccel` near-pause, resume, then `DVAWrite` command sequence; live smoke applied `DM.Brake = 0.3` | Verified live |
+| Result confirmation | `samples.jsonl` and `summary.md` per run; `self-test` verifies summary generation; live smoke summary and samples are saved | Verified live |
 | Iterative review loop | Run summaries are stable input for the next LLM iteration; rerun with revised TestRun, quantities, trigger, or action | Implemented |
 | Development docs | This plan, usage contract, verification log, and catalog Markdown | Implemented |
 | Fail-closed behavior | Missing action, uncurated TestRun, missing backend, invalid DVARead, and command/read failures stop with errors | Implemented |
