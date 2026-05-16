@@ -1,0 +1,9 @@
+{
+  "project": "C:\\CM_Projects\\MapGen_TEST",
+  "export": "",
+  "xodr": "",
+  "rd5": "C:\\CM_Projects\\MapGen_TEST\\Data\\Road\\figure8_extended.rd5",
+  "scenario": "route_traffic_1",
+  "environment": "City",
+  "auto_follow_latest": true
+}

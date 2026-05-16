@@ -1,0 +1,121 @@
+{
+  "projectName": "nine_road",
+  "graph": {
+    "nodes": [
+      {
+        "id": "N1",
+        "x": -70,
+        "y": 0,
+        "type": "priority"
+      },
+      {
+        "id": "N2",
+        "x": -35,
+        "y": 60,
+        "type": "priority"
+      },
+      {
+        "id": "N3",
+        "x": 35,
+        "y": 60,
+        "type": "priority"
+      },
+      {
+        "id": "N4",
+        "x": 70,
+        "y": 0,
+        "type": "priority"
+      },
+      {
+        "id": "N5",
+        "x": 35,
+        "y": -60,
+        "type": "priority"
+      },
+      {
+        "id": "N6",
+        "x": -35,
+        "y": -60,
+        "type": "priority"
+      },
+      {
+        "id": "T1",
+        "x": 115,
+        "y": -45,
+        "type": "priority"
+      },
+      {
+        "id": "T2",
+        "x": 155,
+        "y": -95,
+        "type": "priority"
+      }
+    ],
+    "edges": [
+      {
+        "id": "E1",
+        "from": "N1",
+        "to": "N2",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E2",
+        "from": "N2",
+        "to": "N3",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E3",
+        "from": "N3",
+        "to": "N4",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E4",
+        "from": "N4",
+        "to": "N5",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E5",
+        "from": "N5",
+        "to": "N6",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E6",
+        "from": "N6",
+        "to": "N1",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E7",
+        "from": "N4",
+        "to": "T1",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E8",
+        "from": "T1",
+        "to": "T2",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      }
+    ]
+  }
+}

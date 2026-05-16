@@ -1,0 +1,407 @@
+:root {
+  color-scheme: light;
+  --bg: #f5f7fa;
+  --panel: #ffffff;
+  --line: #d6dde6;
+  --text: #17202a;
+  --muted: #64748b;
+  --accent: #1264a3;
+  --accent-strong: #0b4f83;
+  --green: #14804a;
+  --orange: #b45309;
+  --red: #b42318;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: #9fb0c3;
+  background: #f8fafc;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 650;
+}
+
+button.primary:hover {
+  background: var(--accent-strong);
+}
+
+input,
+select {
+  width: 100%;
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: #fff;
+  color: var(--text);
+}
+
+.app {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.topbar {
+  height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+}
+
+.brand {
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brand span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.name-field {
+  width: min(360px, 34vw);
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.workspace {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 236px minmax(420px, 1fr) 260px;
+}
+
+.panel {
+  min-height: 0;
+  padding: 14px;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  overflow: auto;
+}
+
+.panel.right {
+  border-right: 0;
+  border-left: 1px solid var(--line);
+}
+
+.panel h2 {
+  margin: 14px 0 8px;
+  font-size: 13px;
+  letter-spacing: 0;
+  color: #334155;
+}
+
+.panel h2:first-child {
+  margin-top: 0;
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.segmented button {
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+}
+
+.segmented button:last-child {
+  border-right: 0;
+}
+
+.segmented button.active {
+  background: #e6f0f8;
+  color: var(--accent-strong);
+  font-weight: 650;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.panel label {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.panel label.check {
+  grid-template-columns: 18px 1fr;
+  align-items: center;
+  color: var(--text);
+}
+
+.panel label.check input {
+  width: 16px;
+  min-height: 16px;
+}
+
+.canvas-wrap {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #edf2f7;
+}
+
+#graphSvg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: #f8fafc;
+}
+
+.grid-line {
+  stroke: #e2e8f0;
+  stroke-width: 1;
+}
+
+.axis-line {
+  stroke: #cbd5e1;
+  stroke-width: 1.5;
+}
+
+.edge-path {
+  stroke: #41556d;
+  stroke-width: 4;
+  fill: none;
+  stroke-linecap: round;
+}
+
+.edge-path.selected {
+  stroke: var(--orange);
+  stroke-width: 6;
+}
+
+.edge-label {
+  fill: #334155;
+  font-size: 12px;
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: #f8fafc;
+  stroke-width: 4px;
+}
+
+.node {
+  cursor: pointer;
+}
+
+.node circle {
+  fill: #fff;
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.node.traffic_light circle,
+.node.traffic_light_crosswalk circle {
+  fill: #dcfce7;
+  stroke: #dc2626;
+}
+
+.node.crosswalk circle {
+  fill: #f8fafc;
+  stroke: #64748b;
+}
+
+.node.selected circle {
+  fill: #fff7ed;
+  stroke: var(--orange);
+  stroke-width: 4;
+}
+
+.node-crosswalk-stripe {
+  stroke: #0f172a;
+  stroke-width: 1.4;
+  pointer-events: none;
+}
+
+.node text {
+  fill: #17202a;
+  font-size: 12px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+}
+
+.edge-hit {
+  stroke: transparent;
+  stroke-width: 18;
+  fill: none;
+  cursor: pointer;
+}
+
+.hint-line {
+  stroke: var(--orange);
+  stroke-width: 2;
+  stroke-dasharray: 5 5;
+  fill: none;
+}
+
+.canvas-help {
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  padding: 6px 9px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #475569;
+  font-size: 12px;
+}
+
+.empty {
+  min-height: 56px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.stats span,
+.result-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: #fff;
+  color: #334155;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.output {
+  min-height: 148px;
+  max-height: 240px;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 8px;
+  padding: 10px 14px 14px;
+  border-top: 1px solid var(--line);
+  background: #fff;
+}
+
+.result-links {
+  min-height: 30px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+#logBox {
+  margin: 0;
+  min-height: 90px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px;
+  background: #0f172a;
+  color: #dbeafe;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.ok {
+  color: var(--green);
+}
+
+.warn {
+  color: var(--orange);
+}
+
+.error {
+  color: var(--red);
+}
+
+@media (max-width: 980px) {
+  .topbar {
+    height: auto;
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    min-width: 190px;
+  }
+
+  .name-field {
+    width: 100%;
+  }
+
+  .actions {
+    margin-left: 0;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 520px auto;
+  }
+
+  .panel,
+  .panel.right {
+    border: 0;
+    border-bottom: 1px solid var(--line);
+  }
+}

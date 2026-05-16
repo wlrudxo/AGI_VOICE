@@ -43,6 +43,16 @@ npm install
 npm run dev
 ```
 
+## CarMaker Map/Traffic Pipeline
+
+CarMaker 도로 맵 생성, OpenDRIVE to RD5 변환, route/vehicle TestRun 생성을 묶은 실험용 앱은 아래 위치에 있습니다.
+
+```bat
+MapGenerator\CarMakerPipeline\carmaker_pipeline_app\run_app.bat
+```
+
+자세한 설명은 [`MapGenerator/CarMakerPipeline/README.md`](MapGenerator/CarMakerPipeline/README.md)와 [`docs/CARMAKER_MAP_TRAFFIC_PIPELINE.md`](docs/CARMAKER_MAP_TRAFFIC_PIPELINE.md)를 참고하세요.
+
 ## 구조
 
 ```text
@@ -59,6 +69,7 @@ AGI_VOICE/
 ├── agent/
 ├── docs/
 ├── MapGenerator/
+│   └── CarMakerPipeline/   # CarMaker road/traffic generation pipeline
 └── CarMaker_RealtimeControl/
 ```
 

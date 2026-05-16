@@ -1,0 +1,209 @@
+{
+  "projectName": "figure80_road",
+  "graph": {
+    "nodes": [
+      {
+        "id": "L0",
+        "x": -100,
+        "y": 0,
+        "type": "priority"
+      },
+      {
+        "id": "L1",
+        "x": -65,
+        "y": 55,
+        "type": "priority"
+      },
+      {
+        "id": "C",
+        "x": 0,
+        "y": 0,
+        "type": "priority"
+      },
+      {
+        "id": "L2",
+        "x": -65,
+        "y": -55,
+        "type": "priority"
+      },
+      {
+        "id": "R0",
+        "x": 100,
+        "y": 0,
+        "type": "priority"
+      },
+      {
+        "id": "R1",
+        "x": 65,
+        "y": 55,
+        "type": "priority"
+      },
+      {
+        "id": "R2",
+        "x": 65,
+        "y": -55,
+        "type": "priority"
+      },
+      {
+        "id": "N8",
+        "x": -61.5,
+        "y": 100.5,
+        "type": "priority"
+      },
+      {
+        "id": "N9",
+        "x": 68.17,
+        "y": 103.17,
+        "type": "priority"
+      },
+      {
+        "id": "N10",
+        "x": -169.5,
+        "y": -50.17,
+        "type": "priority"
+      },
+      {
+        "id": "N11",
+        "x": -159.5,
+        "y": -122.5,
+        "type": "priority"
+      },
+      {
+        "id": "N12",
+        "x": -57.83,
+        "y": -127.5,
+        "type": "priority"
+      }
+    ],
+    "edges": [
+      {
+        "id": "E1",
+        "from": "L0",
+        "to": "L1",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E2",
+        "from": "L1",
+        "to": "C",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E3",
+        "from": "C",
+        "to": "L2",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E4",
+        "from": "L2",
+        "to": "L0",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E5",
+        "from": "C",
+        "to": "R1",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E6",
+        "from": "R1",
+        "to": "R0",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E7",
+        "from": "R0",
+        "to": "R2",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E8",
+        "from": "R2",
+        "to": "C",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E9",
+        "from": "N8",
+        "to": "L1",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E10",
+        "from": "N8",
+        "to": "N9",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E11",
+        "from": "N9",
+        "to": "R1",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E12",
+        "from": "L0",
+        "to": "N10",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E13",
+        "from": "N10",
+        "to": "N11",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E14",
+        "from": "N11",
+        "to": "N12",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E15",
+        "from": "N12",
+        "to": "L2",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E16",
+        "from": "N12",
+        "to": "R2",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      }
+    ]
+  }
+}

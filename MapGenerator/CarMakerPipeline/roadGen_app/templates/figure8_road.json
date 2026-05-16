@@ -1,0 +1,115 @@
+{
+  "projectName": "figure8_road",
+  "graph": {
+    "nodes": [
+      {
+        "id": "L0",
+        "x": -100,
+        "y": 0,
+        "type": "priority"
+      },
+      {
+        "id": "L1",
+        "x": -65,
+        "y": 55,
+        "type": "priority"
+      },
+      {
+        "id": "C",
+        "x": 0,
+        "y": 0,
+        "type": "priority"
+      },
+      {
+        "id": "L2",
+        "x": -65,
+        "y": -55,
+        "type": "priority"
+      },
+      {
+        "id": "R0",
+        "x": 100,
+        "y": 0,
+        "type": "priority"
+      },
+      {
+        "id": "R1",
+        "x": 65,
+        "y": 55,
+        "type": "priority"
+      },
+      {
+        "id": "R2",
+        "x": 65,
+        "y": -55,
+        "type": "priority"
+      }
+    ],
+    "edges": [
+      {
+        "id": "E1",
+        "from": "L0",
+        "to": "L1",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E2",
+        "from": "L1",
+        "to": "C",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E3",
+        "from": "C",
+        "to": "L2",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E4",
+        "from": "L2",
+        "to": "L0",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E5",
+        "from": "C",
+        "to": "R1",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E6",
+        "from": "R1",
+        "to": "R0",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E7",
+        "from": "R0",
+        "to": "R2",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E8",
+        "from": "R2",
+        "to": "C",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      }
+    ]
+  }
+}

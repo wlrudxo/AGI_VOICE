@@ -1,0 +1,669 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+
+from traffic_core import VehiclePlan, safe_name
+
+TRAFFIC_CONTROL_IPG_DRIVER = "ipg_driver"
+TRAFFIC_CONTROL_CONSTANT_SPEED = "constant_speed"
+DEFAULT_TRAFFIC_AUTODRIVER = "Car_Generic_Normal"
+DEFAULT_EGO_DRIVER_TEMPLATE = "Car_Normal"
+
+
+@dataclass
+class EgoPlan:
+    enabled: bool
+    route_name: str
+    vehicle_model: str
+    driver_template: str
+    speed_kmh: float
+    start_s: float
+    lane_offset: float
+
+
+@dataclass
+class TestRunConfig:
+    scenario_name: str
+    road_file_ref: str
+    route_ids: dict[str, str]
+    ego: EgoPlan | None
+    traffic: list[VehiclePlan]
+    duration_s: float = 1000.0
+    file_ident: str = "CarMaker-TestRun 15"
+
+
+@dataclass
+class TestRunWriteResult:
+    output_path: Path
+    scenario_name: str
+    road_file_ref: str
+    route_ids: dict[str, str]
+    n_traffic: int
+    ego_enabled: bool
+    report: str
+
+
+def cm_float(value: float, precision: int = 3) -> str:
+    text = f"{value:.{precision}f}"
+    return text.rstrip("0").rstrip(".") if "." in text else text
+
+
+def project_road_reference(project_dir: Path, road_path: Path) -> str:
+    road_path = road_path.resolve()
+    road_dir = (project_dir / "Data" / "Road").resolve()
+    try:
+        return road_path.relative_to(road_dir).as_posix()
+    except ValueError:
+        return road_path.name
+
+
+def _route_id_for(route_ids: dict[str, str], route_name: str) -> str:
+    route_id = route_ids.get(route_name)
+    if not route_id:
+        known = ", ".join(sorted(route_ids)) or "(none)"
+        raise ValueError(f"No CarMaker route ObjId for route '{route_name}'. Known routes: {known}")
+    return route_id
+
+
+def _traffic_control_mode(vehicle: VehiclePlan) -> str:
+    value = (vehicle.control_mode or TRAFFIC_CONTROL_IPG_DRIVER).strip().lower()
+    value = value.replace("-", "_").replace(" ", "_")
+    if value in {"constant", "constant_speed", "scripted", "scripted_constant_speed", "veltransition"}:
+        return TRAFFIC_CONTROL_CONSTANT_SPEED
+    return TRAFFIC_CONTROL_IPG_DRIVER
+
+
+def _append_driver_considerations(lines: list[str]) -> None:
+    lines.extend(
+        [
+            "Driver.Consider.SpeedLimit = 1",
+            "Driver.Consider.Stop = 1",
+            "Driver.Consider.TrfLight = 1",
+            "Driver.Consider.GiveWay = 0",
+            "Driver.Consider.Pedestrian = 0",
+            "Driver.Consider.Traffic = 1",
+        ]
+    )
+
+
+def _append_environment(lines: list[str]) -> None:
+    lines.extend(
+        [
+            "Env.StartTime.Year = 2014",
+            "Env.StartTime.Month = 1",
+            "Env.StartTime.Day = 1",
+            "Env.StartTime.Hour = 12",
+            "Env.StartTime.Min = 0",
+            "Env.StartTime.Sec = 0",
+            "Env.StartTime.DeltaUTC = 0.0",
+            "Env.GNav.Active = 0",
+            "Env.Temperature = 20.0",
+            "Env.AirDensity = 1.205",
+            "Env.AirPressure = 1.013",
+            "Env.AirHumidity = 60",
+            "Env.SolarRadiation = 400.0",
+            "Env.Sun.Position = angleDefinition",
+            "Env.Sun.Azimuth = 45.0",
+            "Env.Sun.Elevation = 45.0",
+            "Env.Cloud.Kind = simple",
+            "Env.Cloud.Height = 800",
+            "Env.Cloud.Intensity = 0.1",
+            "Env.Cloud.Velocity = 15",
+            "Env.Cloud.Angle = 0",
+            "Env.FogActive = 0",
+            "Env.VisRangeInFog = 10000.0",
+            "Env.FogUseSkyColor = 0",
+            "Env.FogColor = 0.5 0.5 0.5",
+            "Env.Precipitation.Type = None",
+            "Env.Wind.Kind = none",
+            "Env.Wind.Velocity = 0.0",
+            "Env.Wind.Angle = 0.0",
+            "Env.Kind = Generic",
+            "Env.Temp.Offset_Elev = -0.0065",
+            "Env.Temp.Offset_sRoad.Amplify = 1.0",
+            "Env.Temp.Offset_sRoad.On = 0",
+            "Env.Temp.Offset_Time.Amplify = 1.0",
+            "Env.Temp.Offset_Time.On = 1",
+            "Env.Temp.Offset_Time:",
+            "\t0.0 -2.0",
+            "\t3.0 -2.5",
+            "\t6.0 -2.7",
+            "\t7.5 -2.7",
+            "\t9.0 -2.5",
+            "\t10.0 -2.3",
+            "\t11.0 -1.6",
+            "\t12.0 0.0",
+            "\t13.0 1.4",
+            "\t14.0 2.1",
+            "\t15.5 2.5",
+            "\t17.0 2.2",
+            "\t18.0 1.7",
+            "\t19.0 1.1",
+            "\t20.0 0.2",
+            "\t21.0 -0.6",
+            "\t22.0 -1.1",
+            "\t23.0 -1.6",
+            "\t24.0 -2.0",
+            "Env.Settings.Commands:",
+            "Env.nEvent = 0",
+        ]
+    )
+
+
+def _append_route_driver_profile(lines: list[str]) -> None:
+    """Embed a complete CarMaker route-driver profile.
+
+    CarMaker example TestRuns keep these Driver and IPGOperator parameters in
+    the TestRun even when Vehicle.DriverTemplate.FName points to Car_Normal.
+    Writing only Driver.Consider.* is not enough for reliable route driving.
+    """
+    lines.extend(
+        [
+            "Driver.Info = Route driver profile generated by trafficGen_app",
+            "Driver.Mode = std",
+            "Driver.MultiStep = 1",
+            "Driver.Course.LapDriving = 1",
+            "Driver.Course.CornerCutCoef = 0.5",
+            "Driver.Course.ApexShiftCoef = 0.0",
+            "Driver.Course.CornerRoundCoef = 0.0",
+            "Driver.Course.ShapeCoef = 1.0",
+            "Driver.Course.PylonShiftFdCoef = 0.1",
+            "Driver.Course.PylonShiftBkCoef = 0.1",
+            "Driver.Course.Generation = Route",
+            "Driver.Course.LenThresh = 1000",
+            "Driver.Course.tSync = 100",
+            "Driver.Course.Range = 200",
+            "Driver.Acc.GGExp:",
+            "\t50 1.0 1.0",
+            "Driver.Acc.axMax = 3.0",
+            "Driver.Acc.axMin = -4.0",
+            "Driver.Acc.ayMax = 4.0",
+            "Driver.Acc.UseVelDepend = 0",
+            "Driver.Acc.Factor.Accel = 1.0",
+            "Driver.Acc.Factor.Decel = 1.0",
+            "Driver.Acc.Factor.Lateral = 0.95",
+            "Driver.Vel.CruisingSpeed = 150.0",
+            "Driver.Vel.dtMinAccelDecel = 4",
+            "Driver.Vel.Random.Amp = 0.0",
+            "Driver.Vel.Random.Freq = 1.0",
+            "Driver.Vel.LatInclFromRoad = 1",
+            "Driver.Vel.MinimumSpeed = 1.0",
+            "Driver.Long.Active = 1",
+            "Driver.Long.TractionControl = 1",
+            "Driver.Long.dtAccBrake = 0.5",
+            "Driver.Long.dtAccBrakeKind = 0",
+            "Driver.Long.DevMax = 0.0",
+            "Driver.Long.tReact = 0.0",
+            "Driver.Long.SmoothCoef = 0.0",
+            "Driver.Long.SmoothThrottleLimit = 1.0",
+            "Driver.Long.AccuracyCoef = 1",
+            "Driver.Long.Rally.BrakeSlipCoef =",
+            "Driver.Long.Rally.SideSlipCoef =",
+            "Driver.Long.Rally.Active = 0",
+            "Driver.Long.DriveCycle.Coef = 0",
+            "Driver.Long.DriveCycle.Tol = 0",
+            "Driver.Long.Junction.Param = 0.50 0.50 0.50",
+            "Driver.Long.DragTorqueBraking = 0",
+            "Driver.Long.ThrottleVelRelease = 10.0",
+            "Driver.Long.ThrottleVelPush = 10.0",
+            "Driver.Long.BrakeVelRelease = 10.0",
+            "Driver.Long.BrakeVelPush = 10.0",
+            "Driver.Long.ActuatorAccMax = 1000.0",
+            "Driver.Long.ThrottleAmp = 1.0",
+            "Driver.Long.BrakeAmp = 1.0",
+            "Driver.Long.ClutchAmp = 1.0",
+            "Driver.Long.dtSwitchGear = 0.0",
+            "Driver.Long.Road3DRedCoef = 0.0",
+            "Driver.Lat.Active = 1",
+            "Driver.Lat.RiderRollType = 3",
+            "Driver.Lat.RiderRollAmplify = 1.0",
+            "Driver.Lat.DevMax = 0.0",
+            "Driver.Lat.tReact = 0.0",
+            "Driver.Lat.DevProReact =",
+            "Driver.Lat.tDwell =",
+            "Driver.Lat.StAHandOverHand =",
+            "Driver.Lat.tHandOverHand =",
+            "Driver.Lat.AccuracyCoef = 1.0",
+            "Driver.Lat.StTorqueRequestSensitivity =",
+            "Driver.Lat.StTorqueRequestCompCoef =",
+            "Driver.Lat.StWhlAngleMax = 630",
+            "Driver.Lat.StWhlAngleVelMax = 500",
+            "Driver.Lat.StWhlAngleAccMax = 3000.0",
+            "Driver.Lat.StWhlTorqueMax = 20.0",
+            "Driver.Lat.StWhlTorqueVelMax = 1000.0",
+            "Driver.Lat.SteeringAmp = 1.0",
+            "Driver.DecShift.UseBrakePark = 0",
+            "Driver.DecShift.tSwitchGear = 0.0",
+            "Driver.DecShift.AsymClutch = 0.0",
+            "Driver.DecShift.AsymClutchDown = 0.0",
+            "Driver.DecShift.AsymShift = 0.0",
+            "Driver.DecShift.tSSNeutralGear =",
+            "Driver.DecShift.nEngine.Limits:",
+            "\t1500 4000",
+            "Driver.DecShift.nEngine.Shift:",
+            "\t2000 3000",
+        ]
+    )
+    _append_driver_considerations(lines)
+    lines.extend(
+        [
+            "Driver.Traffic.Overtake = 0",
+            "Driver.Traffic.TimeGapMin = 1.8",
+            "Driver.Traffic.TimeGapMax = 5.0",
+            "Driver.Traffic.DistMin = 6.0",
+            "Driver.Traffic.DistMax = 250.0",
+            "Driver.Traffic.EcoCoef = 0.75",
+            "Driver.Traffic.Overtake.Rate = 1.0",
+            "Driver.Traffic.Overtake.dSpeedMin = 10.0",
+            "Driver.Traffic.Overtake.Multilane = 1",
+            "Driver.Traffic.Ongoing.FollowVelThresh = 60.0",
+            "Driver.Traffic.Ongoing.OvertakeVelDiff = 20.0",
+            "Driver.Traffic.Overtake.SetIndicator = 1",
+            "Driver.Percept.nObjMax = 4",
+            "Driver.Percept.nLanesMax = 3",
+            "Driver.Percept.UpdRate = 100",
+            "Driver.DecShift.nEngine.MaxSpeed:",
+            "\t3000 4000",
+            "\t5000 6000",
+            "Driver.DecShift.nEngine.MaxSpeed.UserDefined = 0",
+            "Driver.Acc.VelDepend:",
+            "\t20.00 8.17 -11.97 8.98",
+            "\t30.00 8.12 -11.97 9.21",
+            "\t40.00 7.99 -11.97 9.44",
+            "\t50.00 7.69 -11.99 9.68",
+            "\t60.00 6.99 -12.02 9.92",
+            "Driver.Acc.VelDepend.UserDefined = 0",
+            "Driver.OutSdcv = 0",
+            "Driver.Knowl.N = 0",
+            "DrivMan.VhclOperator.Info = Route operator generated by trafficGen_app",
+            "DrivMan.VhclOperator.tWaitForNextState = 0.5",
+            "DrivMan.VhclOperator.Gradient.Active = 1",
+            "DrivMan.VhclOperator.Gradient.Gas = 2.0",
+            "DrivMan.VhclOperator.Gradient.Brake = 2.0",
+            "DrivMan.VhclOperator.Gradient.Clutch = 2.0",
+            "DrivMan.VhclOperator.Gradient.BrakePark = 2.0",
+            "DrivMan.VhclOperator.Gradient.BrakeLever = 2.0",
+            "DrivMan.VhclOperator.Gradient.Steer = 2.0",
+            "DrivMan.VhclOperator.Absent.Key = 0",
+            "DrivMan.VhclOperator.Absent.GearNo = 0",
+            "DrivMan.VhclOperator.Absent.SelectorCtrl = -9",
+            "DrivMan.VhclOperator.Absent.Gas = 0.00",
+            "DrivMan.VhclOperator.Absent.Brake = 0.00",
+            "DrivMan.VhclOperator.Absent.Clutch = 0.00",
+            "DrivMan.VhclOperator.Absent.BrakePark = 1.00",
+            "DrivMan.VhclOperator.Absent.BrakeLever = 0.00",
+            "DrivMan.VhclOperator.Absent.SteerAng = 0.0",
+            "DrivMan.VhclOperator.Absent.SteerTrq = 0.0",
+            "DrivMan.VhclOperator.Absent.UAQ.Active = 0",
+            "DrivMan.VhclOperator.PowerOff.Key = 1",
+            "DrivMan.VhclOperator.PowerOff.GearNo = 0",
+            "DrivMan.VhclOperator.PowerOff.SelectorCtrl = -9",
+            "DrivMan.VhclOperator.PowerOff.Gas = 0.00",
+            "DrivMan.VhclOperator.PowerOff.Brake = 0.00",
+            "DrivMan.VhclOperator.PowerOff.Clutch = 0.00",
+            "DrivMan.VhclOperator.PowerOff.BrakePark = 1.00",
+            "DrivMan.VhclOperator.PowerOff.BrakeLever = 0.00",
+            "DrivMan.VhclOperator.PowerOff.SteerAng = 0.0",
+            "DrivMan.VhclOperator.PowerOff.SteerTrq = 0.0",
+            "DrivMan.VhclOperator.PowerOff.UAQ.Active = 0",
+            "DrivMan.VhclOperator.PowerAcc.Key = 2",
+            "DrivMan.VhclOperator.PowerAcc.GearNo = 0",
+            "DrivMan.VhclOperator.PowerAcc.SelectorCtrl = -9",
+            "DrivMan.VhclOperator.PowerAcc.Gas = 0.00",
+            "DrivMan.VhclOperator.PowerAcc.Brake = 0.00",
+            "DrivMan.VhclOperator.PowerAcc.Clutch = 0.00",
+            "DrivMan.VhclOperator.PowerAcc.BrakePark = 1.00",
+            "DrivMan.VhclOperator.PowerAcc.BrakeLever = 0.00",
+            "DrivMan.VhclOperator.PowerAcc.SteerAng = -99999",
+            "DrivMan.VhclOperator.PowerAcc.SteerTrq = 0.0",
+            "DrivMan.VhclOperator.PowerAcc.UAQ.Active = 0",
+            "DrivMan.VhclOperator.PowerOn.Key = 3",
+            "DrivMan.VhclOperator.PowerOn.GearNo = 0",
+            "DrivMan.VhclOperator.PowerOn.SelectorCtrl = -9",
+            "DrivMan.VhclOperator.PowerOn.Gas = 0.00",
+            "DrivMan.VhclOperator.PowerOn.Brake = 0.00",
+            "DrivMan.VhclOperator.PowerOn.Clutch = 0.00",
+            "DrivMan.VhclOperator.PowerOn.BrakePark = 1.00",
+            "DrivMan.VhclOperator.PowerOn.BrakeLever = 0.00",
+            "DrivMan.VhclOperator.PowerOn.SteerAng = -99999",
+            "DrivMan.VhclOperator.PowerOn.SteerTrq = 0.0",
+            "DrivMan.VhclOperator.PowerOn.UAQ.Active = 0",
+            "DrivMan.VhclOperator.Starting.Key = 4",
+            "DrivMan.VhclOperator.Starting.GearNo = 0",
+            "DrivMan.VhclOperator.Starting.SelectorCtrl = 0",
+            "DrivMan.VhclOperator.Starting.Gas = 0.00",
+            "DrivMan.VhclOperator.Starting.Brake = 1.00",
+            "DrivMan.VhclOperator.Starting.Clutch = 1.00",
+            "DrivMan.VhclOperator.Starting.BrakePark = 0.00",
+            "DrivMan.VhclOperator.Starting.BrakeLever = 1.00",
+            "DrivMan.VhclOperator.Starting.SteerAng = -99999",
+            "DrivMan.VhclOperator.Starting.SteerTrq = 0.0",
+            "DrivMan.VhclOperator.Starting.UAQ.Active = 0",
+            "DrivMan.VhclOperator.Driving.Key = 3",
+            "DrivMan.VhclOperator.Driving.GearNo = 1",
+            "DrivMan.VhclOperator.Driving.SelectorCtrl = 1",
+            "DrivMan.VhclOperator.Driving.Gas = 0.00",
+            "DrivMan.VhclOperator.Driving.Brake = 0.00",
+            "DrivMan.VhclOperator.Driving.Clutch = 1.00",
+            "DrivMan.VhclOperator.Driving.BrakePark = 0.00",
+            "DrivMan.VhclOperator.Driving.BrakeLever = 0.00",
+            "DrivMan.VhclOperator.Driving.SteerAng = -99999",
+            "DrivMan.VhclOperator.Driving.SteerTrq = 0.0",
+            "DrivMan.VhclOperator.Driving.UAQ.Active = 0",
+            "DrivMan.VhclOperator.Stand2Off.GearNo = 0",
+            "DrivMan.VhclOperator.Stand2Off.SelectorCtrl = 0",
+            "DrivMan.VhclOperator.Stand2Off.Gas = 0.00",
+            "DrivMan.VhclOperator.Stand2Off.Brake = 0.70",
+            "DrivMan.VhclOperator.Stand2Off.Clutch = 1.00",
+            "DrivMan.VhclOperator.Stand2Off.BrakePark = 0.00",
+            "DrivMan.VhclOperator.Stand2Off.BrakeLever = 0.00",
+            "DrivMan.VhclOperator.Stand2Off.SteerAng = -99999",
+            "DrivMan.VhclOperator.Stand2Off.SteerTrq = 0.0",
+            "DrivMan.VhclOperator.Stand2Off.UAQ.Active = 0",
+            "DrivMan.VhclOperator.Brake2Stand.v_lim = 5.0",
+            "DrivMan.VhclOperator.Brake2Stand.Grad = 500.0",
+            "DrivMan.VhclOperator.Brake2Stand.Brake = 0.70",
+            "DrivMan.VhclOperator.Brake2Stand.v_BrakeEnd = 0.1",
+            "DrivMan.VhclOperator.Steer2Zero.Grad = 30.0",
+        ]
+    )
+
+
+def _append_overwrite_settings(lines: list[str]) -> None:
+    lines.extend(
+        [
+            "DrivMan.OW.Active = 0",
+            "DrivMan.OW.Quantities =",
+            "DrivMan.OW.StartGearNo = 1",
+            "DrivMan.OW.StartVelocity =",
+            "DrivMan.OW.GasMax = 0.5",
+            "DrivMan.OW.RefCh = Time",
+            "DrivMan.OW.ConsiderRoadSigns = 0",
+            "DrivMan.OW.sRoute.Offset = 0",
+        ]
+    )
+
+
+def _append_ego(lines: list[str], ego: EgoPlan, route_ids: dict[str, str], duration_s: float) -> None:
+    route_id = _route_id_for(route_ids, ego.route_name)
+    speed = cm_float(ego.speed_kmh)
+    duration = cm_float(duration_s)
+    driver_template = ego.driver_template.strip() or DEFAULT_EGO_DRIVER_TEMPLATE
+    lines.extend(
+        [
+            f"Vehicle = {ego.vehicle_model}",
+            "Trailer =",
+            "Tire.0 =",
+            "Tire.1 =",
+            "Tire.2 =",
+            "Tire.3 =",
+            "Snapshot.TimeLimit =",
+            "Snapshot.DistLimit =",
+            f"Vehicle.DriverTemplate.FName = {driver_template}",
+            "Vehicle.KnowledgeTemplate.Name =",
+            "Vehicle.UserDriver.Long.FName =",
+        ]
+    )
+    lines.extend(
+        [
+            "Vehicle.Routing.Type = Route",
+            f"Vehicle.Routing.ObjId = {route_id}",
+            "Vehicle.StartPos.Type = Route",
+            f"Vehicle.StartPos.ObjId = {route_id}",
+            f"Vehicle.StartPos = {cm_float(ego.start_s)} {cm_float(ego.lane_offset)}",
+            "Vehicle.StartPos.Orientation.Type = Relative",
+            "Vehicle.StartPos.Orientation = 0",
+            "DrivMan.nMan = 1",
+            f"DrivMan.Man.Start.Velocity = {speed}",
+            "DrivMan.Man.Start.GearNo = 0",
+            "DrivMan.Man.Start.SteerAng = 0",
+            f"DrivMan.Man.Start.LaneOffset = {cm_float(ego.lane_offset)}",
+            "DrivMan.Man.Start.OperatorActive = 1",
+            "DrivMan.Man.Start.OperatorState = drive",
+            "DrivMan.VhclOperator.Kind = IPGOperator 1",
+            "DrivMan.SelectorCtrlMapping.Kind =",
+            "DrivMan.Man.0.nLongSteps = 1",
+            "DrivMan.Man.0.nLatSteps = 1",
+            "DrivMan.Man.0.CombinedSteps = 1",
+            "DrivMan.Man.0.MaxExec = 1",
+            "DrivMan.Man.0.ConsiderDomain = own",
+            "DrivMan.Man.0.Transition.Interrupt = end",
+            "DrivMan.Man.0.Transition.EndCond = end",
+            "DrivMan.Man.0.Transition.SimultanStart = end",
+            "DrivMan.Man.0.LongStep.0.Info = Drive",
+            f"DrivMan.Man.0.LongStep.0.TimeLimit = {duration}",
+            f"DrivMan.Man.0.LongStep.0.Dyn = Driver 1 0 {speed}",
+            "DrivMan.Man.0.LatStep.0.Info = Drive",
+            f"DrivMan.Man.0.LatStep.0.TimeLimit = {duration}",
+            "DrivMan.Man.0.LatStep.0.Dyn = Driver 0",
+            "DrivMan.Global.EndCond = rise(Time > " + duration + ")",
+            "DrivMan.SpeedUnit = kmh",
+        ]
+    )
+
+
+def _append_no_ego(lines: list[str], duration_s: float) -> None:
+    duration = cm_float(duration_s)
+    lines.extend(
+        [
+            f"Vehicle.DriverTemplate.FName = {DEFAULT_EGO_DRIVER_TEMPLATE}",
+            "Vehicle.KnowledgeTemplate.Name =",
+            "Vehicle.UserDriver.Long.FName =",
+        ]
+    )
+    lines.extend(
+        [
+            f"DrivMan.Global.EndCond = rise(Time > {duration})",
+            "DrivMan.SpeedUnit = kmh",
+        ]
+    )
+
+
+def _append_traffic_vehicle(
+    lines: list[str],
+    index: int,
+    vehicle: VehiclePlan,
+    route_ids: dict[str, str],
+    duration_s: float,
+) -> None:
+    if _is_pedestrian(vehicle):
+        _append_pedestrian(lines, index, vehicle, route_ids, duration_s)
+        return
+
+    route_id = _route_id_for(route_ids, vehicle.route_name)
+    speed = cm_float(vehicle.speed_kmh)
+    duration = cm_float(duration_s)
+    control_mode = _traffic_control_mode(vehicle)
+    auto_driver = vehicle.driver_model if control_mode == TRAFFIC_CONTROL_IPG_DRIVER else ""
+    auto_driver_field = (auto_driver or DEFAULT_TRAFFIC_AUTODRIVER) if control_mode == TRAFFIC_CONTROL_IPG_DRIVER else ""
+    long_dyn = f"auto {speed}" if control_mode == TRAFFIC_CONTROL_IPG_DRIVER else f"VelTransition {speed} linear"
+    start_cond = ""
+    if vehicle.start_delay_s > 0:
+        start_cond = f"Time > {cm_float(vehicle.start_delay_s)}"
+    prefix = f"Traffic.{index}"
+    traffic_lines = [
+        f"{prefix}.Name = {safe_name(vehicle.name)}",
+        f"{prefix}.Info:",
+        "\tGenerated by trafficGen_app",
+        f"{prefix}.DetectMask = 1 1",
+        f"{prefix}.UpdRate = 200",
+        f"{prefix}.AutoDrv.UpdRate = 100",
+        f"{prefix}.Lighting = 0",
+        f"{prefix}.FreeMotion = 0",
+        f"{prefix}.TrailerName =",
+        f"{prefix}.Template.FName = {vehicle.model}",
+        f"{prefix}.AutoDriver.FName = {auto_driver_field}",
+        f"{prefix}.Routing.Type = Route",
+        f"{prefix}.Routing.ObjId = {route_id}",
+        f"{prefix}.StartPos.Type = Route",
+        f"{prefix}.StartPos.ObjId = {route_id}",
+        f"{prefix}.StartPos = {cm_float(vehicle.start_s)} {cm_float(vehicle.lane_offset)}",
+        f"{prefix}.StartPos.Orientation.Type = Relative",
+        f"{prefix}.StartPos.Orientation = 0.0 0.0 0.0",
+        f"{prefix}.StartPos.z_off = 0",
+    ]
+    if control_mode == TRAFFIC_CONTROL_IPG_DRIVER:
+        traffic_lines.append(f"{prefix}.AutoDriver.Long.ConsiderRoadElm = 1  0  1")
+    traffic_lines.extend(
+        [
+            f"{prefix}.Man.Start.StartCond = {start_cond}",
+            f"{prefix}.nMan = 1",
+            f"{prefix}.Man.Start.Velocity = {speed}",
+            f"{prefix}.Man.TreatAtEnd = FreezeVel",
+            f"{prefix}.Man.0.nLongSteps = 1",
+            f"{prefix}.Man.0.nLatSteps = 1",
+            f"{prefix}.Man.0.CombinedSteps = 1",
+            f"{prefix}.Man.0.MaxExec = 1",
+            f"{prefix}.Man.0.ConsiderDomain = own",
+            f"{prefix}.Man.0.Transition.Interrupt = end",
+            f"{prefix}.Man.0.Transition.EndCond = end",
+            f"{prefix}.Man.0.Transition.SimultanStart = end",
+            f"{prefix}.Man.0.LongStep.0.Limit = t {duration}",
+            f"{prefix}.Man.0.LongStep.0.Dyn = {long_dyn}",
+            f"{prefix}.Man.0.LatStep.0.Limit = t {duration}",
+        ]
+    )
+    lines.extend(traffic_lines)
+
+
+def _is_pedestrian(vehicle: VehiclePlan) -> bool:
+    lowered = vehicle.model.lower()
+    return "pedestrian" in lowered or "people" in lowered
+
+
+def _append_pedestrian(
+    lines: list[str],
+    index: int,
+    vehicle: VehiclePlan,
+    route_ids: dict[str, str],
+    duration_s: float,
+) -> None:
+    route_id = _route_id_for(route_ids, vehicle.route_name)
+    reverse = vehicle.speed_kmh < 0
+    speed_abs = abs(vehicle.speed_kmh)
+    speed = cm_float(speed_abs)
+    walk_distance = cm_float(max(5.0, min(200.0, duration_s * speed_abs / 3.6)))
+    orientation_yaw = "180.0" if reverse else "0.0"
+    start_cond = ""
+    if vehicle.start_delay_s > 0:
+        start_cond = f"Time > {cm_float(vehicle.start_delay_s)}"
+    prefix = f"Traffic.{index}"
+    lines.extend(
+        [
+            f"{prefix}.Name = {safe_name(vehicle.name)}",
+            f"{prefix}.Info:",
+            "\tGenerated pedestrian by trafficGen_app",
+            f"{prefix}.DetectMask = 0 0",
+            f"{prefix}.UpdRate = 200",
+            f"{prefix}.AutoDrv.UpdRate = 200",
+            f"{prefix}.Lighting = 0",
+            f"{prefix}.FreeMotion = 0",
+            f"{prefix}.TrailerName =",
+            f"{prefix}.Template.FName = {vehicle.model}",
+            f"{prefix}.AutoDriver.FName =",
+            f"{prefix}.Routing.Type = Route",
+            f"{prefix}.Routing.ObjId = {route_id}",
+            f"{prefix}.StartPos.Type = Route",
+            f"{prefix}.StartPos.ObjId = {route_id}",
+            f"{prefix}.StartPos = {cm_float(vehicle.start_s)} {cm_float(vehicle.lane_offset)}",
+            f"{prefix}.StartPos.Orientation.Type = Relative",
+            f"{prefix}.StartPos.Orientation = 0.0 0.0 {orientation_yaw}",
+            f"{prefix}.Man.Start.StartCond = {start_cond}",
+            f"{prefix}.nMan = 1",
+            f"{prefix}.Man.Start.Velocity = {speed}",
+            f"{prefix}.Man.TreatAtEnd = FreezePos",
+            f"{prefix}.Man.0.nLongSteps = 1",
+            f"{prefix}.Man.0.nLatSteps = 1",
+            f"{prefix}.Man.0.CombinedSteps = 1",
+            f"{prefix}.Man.0.MaxExec = 1",
+            f"{prefix}.Man.0.ConsiderDomain = own",
+            f"{prefix}.Man.0.Transition.Interrupt = end",
+            f"{prefix}.Man.0.Transition.EndCond = end",
+            f"{prefix}.Man.0.Transition.SimultanStart = end",
+            f"{prefix}.Man.0.LongStep.0.Limit = s {walk_distance}",
+            f"{prefix}.Man.0.LongStep.0.Dyn = VelTransition {speed} constAcc",
+            f"{prefix}.Man.0.LatStep.0.Limit = s {walk_distance}",
+        ]
+    )
+
+
+def build_testrun_text(config: TestRunConfig) -> str:
+    lines = [
+        "#INFOFILE1.1 (UTF-8) - Do not remove this line!",
+        f"FileIdent = {config.file_ident}",
+        "FileCreator = trafficGen_app",
+        "Description:",
+        f"\tGenerated from RD5 route references: {', '.join(config.route_ids.values())}",
+        f"Road.FName = {config.road_file_ref}",
+    ]
+
+    if config.ego and config.ego.enabled:
+        _append_ego(lines, config.ego, config.route_ids, config.duration_s)
+    else:
+        _append_no_ego(lines, config.duration_s)
+
+    _append_environment(lines)
+    _append_route_driver_profile(lines)
+
+    lines.extend(
+        [
+            "Traffic.SpeedUnit = kmh",
+            "Traffic.IFF.FName =",
+            "Traffic.IFF.Time.Name =",
+            "Traffic.GenDriverBehavior.FName = Default",
+        ]
+    )
+    for index, vehicle in enumerate(config.traffic):
+        _append_traffic_vehicle(lines, index, vehicle, config.route_ids, config.duration_s)
+    lines.extend(
+        [
+            f"Traffic.N = {len(config.traffic)}",
+            "Traffic.SmartGen.Mode = 0 0 0",
+        ]
+    )
+    _append_overwrite_settings(lines)
+    return "\n".join(lines) + "\n"
+
+
+def build_testrun_report(result: TestRunWriteResult) -> str:
+    lines = [
+        "# CarMaker TestRun Report",
+        "",
+        f"- TestRun: `{result.output_path}`",
+        f"- Scenario name: `{result.scenario_name}`",
+        f"- Road.FName: `{result.road_file_ref}`",
+        f"- Ego enabled: `{result.ego_enabled}`",
+        f"- Traffic actors: `{result.n_traffic}`",
+        "",
+        "## Route ObjIds",
+        "",
+    ]
+    for name, route_id in sorted(result.route_ids.items()):
+        lines.append(f"- `{name}` -> `{route_id}`")
+    lines.extend(
+        [
+            "",
+            "## CarMaker Use",
+            "",
+            "Open this TestRun from the CarMaker project that contains the referenced RD5 under `Data/Road`.",
+            "Ego uses `Vehicle.*` keys, while traffic cars and pedestrians use `Traffic.N` and `Traffic.<index>.*` keys.",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
+def write_testrun(config: TestRunConfig, output_path: Path) -> TestRunWriteResult:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(build_testrun_text(config), encoding="utf-8")
+    result = TestRunWriteResult(
+        output_path=output_path,
+        scenario_name=config.scenario_name,
+        road_file_ref=config.road_file_ref,
+        route_ids=config.route_ids,
+        n_traffic=len(config.traffic),
+        ego_enabled=bool(config.ego and config.ego.enabled),
+        report="",
+    )
+    result.report = build_testrun_report(result)
+    return result

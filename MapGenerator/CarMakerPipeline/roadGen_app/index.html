@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Road Graph Generator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div class="brand">
+          <strong>Road Graph Generator</strong>
+          <span id="health">SUMO 확인 중</span>
+        </div>
+        <label class="name-field">
+          <span>Project</span>
+          <input id="projectName" value="figure8_demo" />
+        </label>
+        <div class="actions">
+          <button id="saveBtn" type="button">저장</button>
+          <button id="loadBtn" type="button">불러오기</button>
+          <button id="generateBtn" class="primary" type="button">XODR 생성</button>
+        </div>
+      </header>
+
+      <section class="workspace">
+        <aside class="panel left">
+          <h2>편집</h2>
+          <div class="segmented" role="group" aria-label="Edit mode">
+            <button class="active" data-mode="select" type="button">선택</button>
+            <button data-mode="node" type="button">노드</button>
+            <button data-mode="edge" type="button">엣지</button>
+          </div>
+
+          <div class="tool-grid">
+            <button id="deleteBtn" type="button">선택 삭제</button>
+            <button id="clearBtn" type="button">초기화</button>
+          </div>
+
+          <h2>프리셋</h2>
+          <div class="tool-grid">
+            <button data-template="figure8" type="button">8자 도로</button>
+            <button data-template="nine" type="button">9자 도로</button>
+            <button data-template="y" type="button">Y자 도로</button>
+            <button data-template="t" type="button">T자 도로</button>
+          </div>
+
+          <h2>기본값</h2>
+          <label>
+            <span>차선 수</span>
+            <input id="defaultLanes" type="number" min="1" max="5" value="1" />
+          </label>
+          <label>
+            <span>속도 km/h</span>
+            <input id="defaultSpeed" type="number" min="5" max="130" value="50" />
+          </label>
+          <label class="check">
+            <input id="defaultTwoWay" type="checkbox" checked />
+            <span>기본 양방향</span>
+          </label>
+        </aside>
+
+        <section class="canvas-wrap">
+          <svg id="graphSvg" viewBox="-320 -230 640 460" aria-label="Road graph canvas">
+            <g id="gridLayer"></g>
+            <g id="edgeLayer"></g>
+            <g id="nodeLayer"></g>
+            <g id="hintLayer"></g>
+          </svg>
+          <div class="canvas-help" id="canvasHelp">선택 모드: 노드 드래그, 엣지/노드 클릭 편집</div>
+        </section>
+
+        <aside class="panel right">
+          <h2>속성</h2>
+          <div id="emptyInspector" class="empty">선택한 항목이 없습니다.</div>
+          <div id="nodeInspector" hidden>
+            <label>
+              <span>Node ID</span>
+              <input id="nodeId" />
+            </label>
+            <label>
+              <span>X</span>
+              <input id="nodeX" type="number" step="1" />
+            </label>
+            <label>
+              <span>Y</span>
+              <input id="nodeY" type="number" step="1" />
+            </label>
+            <label>
+              <span>Type</span>
+              <select id="nodeType">
+                <option value="">default</option>
+                <option value="priority">priority</option>
+                <option value="traffic_light">traffic_light</option>
+                <option value="traffic_light_crosswalk">traffic_light_crosswalk</option>
+                <option value="crosswalk">crosswalk</option>
+                <option value="dead_end">dead_end</option>
+              </select>
+            </label>
+          </div>
+          <div id="edgeInspector" hidden>
+            <label>
+              <span>Edge ID</span>
+              <input id="edgeId" />
+            </label>
+            <label>
+              <span>From</span>
+              <input id="edgeFrom" disabled />
+            </label>
+            <label>
+              <span>To</span>
+              <input id="edgeTo" disabled />
+            </label>
+            <label>
+              <span>차선 수</span>
+              <input id="edgeLanes" type="number" min="1" max="5" />
+            </label>
+            <label>
+              <span>속도 km/h</span>
+              <input id="edgeSpeed" type="number" min="5" max="130" />
+            </label>
+            <label class="check">
+              <input id="edgeTwoWay" type="checkbox" />
+              <span>양방향 생성</span>
+            </label>
+          </div>
+
+          <h2>그래프</h2>
+          <div class="stats">
+            <span id="nodeCount">0 nodes</span>
+            <span id="edgeCount">0 edges</span>
+          </div>
+        </aside>
+      </section>
+
+      <section class="output">
+        <div class="result-links" id="resultLinks"></div>
+        <pre id="logBox">아직 생성된 파일이 없습니다.</pre>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

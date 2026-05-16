@@ -1,0 +1,277 @@
+{
+  "projectName": "figure8_extended",
+  "graph": {
+    "nodes": [
+      {
+        "id": "L0",
+        "x": -100,
+        "y": 0,
+        "type": "priority"
+      },
+      {
+        "id": "L1",
+        "x": -65,
+        "y": 55,
+        "type": "priority"
+      },
+      {
+        "id": "C",
+        "x": 0.0,
+        "y": 0.0,
+        "type": "traffic_light"
+      },
+      {
+        "id": "L2",
+        "x": -65,
+        "y": -55,
+        "type": "priority"
+      },
+      {
+        "id": "R0",
+        "x": 100,
+        "y": 0,
+        "type": "priority"
+      },
+      {
+        "id": "R1",
+        "x": 65,
+        "y": 55,
+        "type": "priority"
+      },
+      {
+        "id": "R2",
+        "x": 65,
+        "y": -55,
+        "type": "priority"
+      },
+      {
+        "id": "N8",
+        "x": -79.83,
+        "y": 130.17,
+        "type": "priority"
+      },
+      {
+        "id": "N9",
+        "x": 63.17,
+        "y": 143.83,
+        "type": "priority"
+      },
+      {
+        "id": "N10",
+        "x": -6.17,
+        "y": 182.83,
+        "type": "priority"
+      },
+      {
+        "id": "N11",
+        "x": -0.83,
+        "y": -134.33,
+        "type": "crosswalk"
+      },
+      {
+        "id": "N12",
+        "x": -195.83,
+        "y": -53.67,
+        "type": "priority"
+      },
+      {
+        "id": "N13",
+        "x": 191.5,
+        "y": -31.0,
+        "type": "priority"
+      },
+      {
+        "id": "N14",
+        "x": -1.72,
+        "y": 99.93,
+        "type": "traffic_light_crosswalk"
+      }
+    ],
+    "edges": [
+      {
+        "id": "E1",
+        "from": "L0",
+        "to": "L1",
+        "numLanes": 2,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E2",
+        "from": "L1",
+        "to": "C",
+        "numLanes": 2,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E3",
+        "from": "C",
+        "to": "L2",
+        "numLanes": 2,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E4",
+        "from": "L2",
+        "to": "L0",
+        "numLanes": 2,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E5",
+        "from": "C",
+        "to": "R1",
+        "numLanes": 2,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E6",
+        "from": "R1",
+        "to": "R0",
+        "numLanes": 2,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E7",
+        "from": "R0",
+        "to": "R2",
+        "numLanes": 2,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E8",
+        "from": "R2",
+        "to": "C",
+        "numLanes": 2,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E9",
+        "from": "N8",
+        "to": "L1",
+        "numLanes": 2,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E10",
+        "from": "N10",
+        "to": "N8",
+        "numLanes": 2,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E11",
+        "from": "N9",
+        "to": "N10",
+        "numLanes": 2,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E12",
+        "from": "R1",
+        "to": "N9",
+        "numLanes": 2,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E14",
+        "from": "N11",
+        "to": "C",
+        "numLanes": 2,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E15",
+        "from": "N12",
+        "to": "L0",
+        "numLanes": 2,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E16",
+        "from": "N12",
+        "to": "N8",
+        "numLanes": 2,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E17",
+        "from": "N12",
+        "to": "N11",
+        "numLanes": 2,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E18",
+        "from": "N11",
+        "to": "N13",
+        "numLanes": 2,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E19",
+        "from": "N13",
+        "to": "N9",
+        "numLanes": 2,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E20",
+        "from": "N13",
+        "to": "R0",
+        "numLanes": 2,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E21",
+        "from": "L1",
+        "to": "N14",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E22",
+        "from": "N14",
+        "to": "N9",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E23",
+        "from": "N14",
+        "to": "C",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      },
+      {
+        "id": "E24",
+        "from": "N10",
+        "to": "N14",
+        "numLanes": 1,
+        "speedKmh": 50.0,
+        "twoWay": true
+      }
+    ]
+  }
+}
