@@ -98,7 +98,7 @@ class TrafficGenApp(tk.Tk):
         self.include_uturns_var = tk.BooleanVar(value=False)
         self.allow_lane_changes_var = tk.BooleanVar(value=True)
         self.checkpoint_lanes_var = tk.StringVar()
-        self.click_target_var = tk.StringVar(value="start")
+        self.click_target_var = tk.StringVar(value="select")
         self.route_name_var = tk.StringVar(value="route_1")
         self.vehicle_name_var = tk.StringVar(value="Vehicle_1")
         self.model_var = tk.StringVar(value=DEFAULT_MODEL)
@@ -242,7 +242,7 @@ class TrafficGenApp(tk.Tk):
         pick_frame.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(6, 2))
         pick_frame.columnconfigure(1, weight=1)
         ttk.Label(pick_frame, text="Canvas click").grid(row=0, column=0, sticky="w", padx=(0, 8))
-        targets = [("Start", "start"), ("Goal", "goal"), ("Checkpoint", "checkpoint")]
+        targets = [("Select", "select"), ("Start", "start"), ("Goal", "goal"), ("Checkpoint", "checkpoint")]
         for column, (label, value) in enumerate(targets, start=1):
             ttk.Radiobutton(
                 pick_frame,
@@ -706,6 +706,12 @@ class TrafficGenApp(tk.Tk):
 
         self.selected_lane_id = lane_id
         target = self.click_target_var.get()
+        if target == "select":
+            lane = self.package.lanes.get(lane_id)
+            lane_kind = "internal lane" if lane and lane.internal else "lane"
+            self.log(f"Selected {lane_kind} {lane_id}.")
+            self.redraw()
+            return "break"
         if target == "goal":
             self.goal_lane_var.set(lane_id)
             action = "goal"
@@ -1441,6 +1447,28 @@ class TrafficGenApp(tk.Tk):
                     route_ids[route_name] = route.route_id
         return route_ids
 
+    def route_generation_base_rd5(self, rd5_path: Path, rd5: Rd5Road) -> tuple[Path, Rd5Road]:
+        if rd5.n_routes <= 0 or not rd5.original_file:
+            return rd5_path, rd5
+
+        original_stem = Path(rd5.original_file).stem
+        if not original_stem:
+            return rd5_path, rd5
+
+        candidate = rd5_path.with_name(f"{original_stem}.rd5")
+        if not candidate.exists() or candidate.resolve() == rd5_path.resolve():
+            return rd5_path, rd5
+
+        try:
+            candidate_rd5 = Rd5Road.load(candidate)
+        except RoadPackageError:
+            return rd5_path, rd5
+        if candidate_rd5.n_routes > 0:
+            return rd5_path, rd5
+
+        self.log(f"Using clean base RD5 for route generation: {candidate}")
+        return candidate, candidate_rd5
+
     def ensure_routes_enabled_rd5(
         self,
         rd5_output_dir: Path,
@@ -1453,6 +1481,7 @@ class TrafficGenApp(tk.Tk):
 
         current_rd5_path = rd5_path
         rd5 = Rd5Road.load(current_rd5_path)
+        current_rd5_path, rd5 = self.route_generation_base_rd5(current_rd5_path, rd5)
         route_ids = self.route_ids_from_rd5(rd5, route_names)
         route_map = self.route_lookup()
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 import re
 
@@ -437,6 +437,56 @@ def lane_path_sequence(results: list[Rd5MapResult], dedupe: bool = True) -> list
     return sequence
 
 
+def _is_same_link_lane_change(left: Rd5MapResult, right: Rd5MapResult) -> bool:
+    return bool(
+        left.rd5_link_id
+        and right.rd5_link_id
+        and left.rd5_link_id == right.rd5_link_id
+        and left.rd5_lane_path_id
+        and right.rd5_lane_path_id
+        and left.rd5_lane_path_id != right.rd5_lane_path_id
+    )
+
+
+def _trim_boundary_lane_changes(mapped_results: list[Rd5MapResult]) -> tuple[list[Rd5MapResult], list[Rd5MapResult]]:
+    """Drop in-link lane changes from route boundaries.
+
+    CarMaker can place the ego vehicle far off-road when a Route starts or
+    ends directly on an in-link lane-change ConPath. Interior lane changes are
+    still kept, but boundary lane changes are collapsed to the stable lane.
+    """
+    trimmed = list(mapped_results)
+    skipped: list[Rd5MapResult] = []
+
+    while len(trimmed) > 1 and _is_same_link_lane_change(trimmed[0], trimmed[1]):
+        removed = trimmed.pop(0)
+        skipped.append(
+            replace(
+                removed,
+                status="trimmed_boundary_lane_change",
+                message=(
+                    "Trimmed leading same-link lane change for stable CarMaker route start; "
+                    f"route now starts on `{trimmed[0].lane_id}`."
+                ),
+            )
+        )
+
+    while len(trimmed) > 1 and _is_same_link_lane_change(trimmed[-2], trimmed[-1]):
+        removed = trimmed.pop()
+        skipped.append(
+            replace(
+                removed,
+                status="trimmed_boundary_lane_change",
+                message=(
+                    "Trimmed trailing same-link lane change for stable CarMaker route end; "
+                    f"route now ends on `{trimmed[-1].lane_id}`."
+                ),
+            )
+        )
+
+    return trimmed, skipped
+
+
 def rd5_safe_name(value: str | None, fallback: str = "Route") -> str:
     value = (value or "").strip()
     cleaned = re.sub(r"[^A-Za-z0-9_]+", "_", value).strip("_")
@@ -721,6 +771,8 @@ def write_rd5_with_route(
     all_results = map_route_to_rd5(rd5, route)
     mapped_results = [item for item in all_results if item.ok or item.status == "ok_ambiguous"]
     skipped_results = [item for item in all_results if not (item.ok or item.status == "ok_ambiguous")]
+    mapped_results, boundary_skips = _trim_boundary_lane_changes(mapped_results)
+    skipped_results.extend(boundary_skips)
     lane_path_ids = lane_path_sequence(mapped_results)
 
     if not lane_path_ids:
