@@ -81,7 +81,7 @@ def _append_driver_considerations(lines: list[str]) -> None:
             "Driver.Consider.Stop = 1",
             "Driver.Consider.TrfLight = 1",
             "Driver.Consider.GiveWay = 0",
-            "Driver.Consider.Pedestrian = 0",
+            "Driver.Consider.Pedestrian = 1",
             "Driver.Consider.Traffic = 1",
         ]
     )
@@ -260,7 +260,7 @@ def _append_route_driver_profile(lines: list[str]) -> None:
             "Driver.Traffic.Ongoing.FollowVelThresh = 60.0",
             "Driver.Traffic.Ongoing.OvertakeVelDiff = 20.0",
             "Driver.Traffic.Overtake.SetIndicator = 1",
-            "Driver.Percept.nObjMax = 4",
+            "Driver.Percept.nObjMax = 32",
             "Driver.Percept.nLanesMax = 3",
             "Driver.Percept.UpdRate = 100",
             "Driver.DecShift.nEngine.MaxSpeed:",
@@ -554,7 +554,7 @@ def _append_pedestrian(
             f"{prefix}.Name = {safe_name(vehicle.name)}",
             f"{prefix}.Info:",
             "\tGenerated pedestrian by trafficGen_app",
-            f"{prefix}.DetectMask = 0 0",
+            f"{prefix}.DetectMask = 1 1",
             f"{prefix}.UpdRate = 200",
             f"{prefix}.AutoDrv.UpdRate = 200",
             f"{prefix}.Lighting = 0",

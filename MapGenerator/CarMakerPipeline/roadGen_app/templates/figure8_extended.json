@@ -59,14 +59,14 @@
       {
         "id": "N10",
         "x": -6.17,
-        "y": 182.83,
-        "type": "priority"
+        "y": 182.39,
+        "type": "traffic_light_crosswalk"
       },
       {
         "id": "N11",
         "x": -0.83,
-        "y": -134.33,
-        "type": "crosswalk"
+        "y": -134.77,
+        "type": "traffic_light_crosswalk"
       },
       {
         "id": "N12",

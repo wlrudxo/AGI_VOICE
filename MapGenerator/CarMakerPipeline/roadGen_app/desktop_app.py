@@ -1074,7 +1074,10 @@ class RoadGenDesktop(tk.Tk):
                             f"{intersections.crosswalk_markings} crosswalk stripes around "
                             f"{intersections.traffic_light_nodes} signal node(s), "
                             f"{intersections.crosswalk_nodes} crosswalk node(s); "
-                            f"traffic-light controls and DrvStop markers included for IPG Driver"
+                            f"{intersections.crosswalk_stop_markers} pedestrian stop marker(s), "
+                            f"{intersections.traffic_light_stop_markers} traffic light stop marker(s), "
+                            f"{intersections.traffic_light_stop_lines} traffic light stop line(s), "
+                            f"{intersections.traffic_light_phase_fixes} off-phase fix(es) included"
                         )
                 if result.errors:
                     self.log(f"IPGRoad import/write messages: {len(result.errors)}")

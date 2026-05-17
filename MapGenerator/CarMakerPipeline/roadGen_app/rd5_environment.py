@@ -44,6 +44,10 @@ class IntersectionDecorationResult:
     approach_links: int
     signal_objects: int
     crosswalk_markings: int
+    crosswalk_stop_markers: int = 0
+    traffic_light_stop_markers: int = 0
+    traffic_light_stop_lines: int = 0
+    traffic_light_phase_fixes: int = 0
 
 
 @dataclass
@@ -117,6 +121,16 @@ class LanePathRef:
     lane_path_id: str
     lane_object_id: str
     direction_sign: int
+    side: str
+    lane_index: int
+    width: float
+
+
+@dataclass(frozen=True)
+class ImportedTrfLightMountRef:
+    control_id: int
+    s: float
+    t: float
 
 
 CITY_BEGIN = "# RoadGen City Environment BEGIN"
@@ -166,6 +180,10 @@ INTERSECTION_CROSSWALK_STRIPE_WIDTH = 0.48
 INTERSECTION_CROSSWALK_STRIPE_PITCH = 0.82
 INTERSECTION_CROSSWALK_LANE_WIDTH = 3.5
 INTERSECTION_CROSSWALK_EXTRA_WIDTH = 0.4
+INTERSECTION_MARKING_LANE_EDGE_MARGIN = 0.12
+INTERSECTION_STOP_LINE_TO_CROSSWALK_GAP = 2.8
+INTERSECTION_CROSSWALK_STOP_MARKERS_ENABLED = True
+INTERSECTION_CROSSWALK_PED_WATCH_DISTANCE = 18.0
 INTERSECTION_SIGNAL_SETBACK = 2.6
 INTERSECTION_SIGNAL_SIDE_CLEARANCE = 1.05
 INTERSECTION_SIGNAL_SCALE = 1.0
@@ -179,6 +197,12 @@ INTERSECTION_DYNAMIC_SIGNALS_ENABLED = False
 INTERSECTION_SIGNAL_GREEN_SECONDS = 18.0
 INTERSECTION_SIGNAL_RED_SECONDS = 45.0
 INTERSECTION_STOP_MARKER_SETBACK = 4.2
+INTERSECTION_ATTACH_IMPORTED_TRFLIGHT_STOPS_ENABLED = True
+INTERSECTION_NORMALIZE_IMPORTED_TRFLIGHT_PHASES_ENABLED = True
+INTERSECTION_IMPORTED_TRFLIGHT_INITIAL_PHASE = 3
+INTERSECTION_SIGNAL_STOP_LINE_MARKINGS_ENABLED = True
+INTERSECTION_SIGNAL_STOP_LINE_WIDTH = 0.45
+INTERSECTION_SIGNAL_STOP_MARKER_MOUNT_OFFSET = 0.0
 TRAFFIC_LIGHT_NODE_TYPES = {"traffic_light", "traffic_light_crosswalk"}
 CROSSWALK_NODE_TYPES = {"traffic_light_crosswalk", "crosswalk"}
 MAX_CITY_ATTEMPTS_PER_SLOT = 28
@@ -224,7 +248,18 @@ ROADMARKING_ID_RE = re.compile(r"^RL\.(\d+)\.RoadMarking\.(\d+)\.ID\s*=\s*(\d+)\
 MARKER_ID_RE = re.compile(r"^RL\.(\d+)\.Marker\.(\d+)\.ID\s*=\s*(\d+)\s+(\d+)\s*$")
 MOUNT_ID_RE = re.compile(r"^RL\.(\d+)\.Mount\.(\d+)\.ID\s*=\s*(\d+)\s+(\d+)\s*$")
 MOUNT_CHILD_ID_RE = re.compile(r"^RL\.(\d+)\.Mount\.(\d+)\.(\d+)\.ID\s*=\s*(\d+)\s*$")
+MOUNT_CHILD_VALUE_RE = re.compile(
+    rf"^RL\.(\d+)\.Mount\.(\d+)\.(\d+)\s*=\s*1\s+(\d+)\s+({FLOAT_RE})\s+({FLOAT_RE})\b"
+)
 CONTROL_TRFLIGHT_RE = re.compile(r"^Control\.TrfLight\.(\d+)\s*=\s*(\d+)\s+")
+CONTROL_TRFLIGHT_LINE_RE = re.compile(
+    r'^(Control\.TrfLight\.\d+\s*=\s*)(\d+)(\s+\S+\s+(?:"[^"]*"|\S+)\s+)(\d+)(\s+.*)$'
+)
+MARKER_TYPE_RE = re.compile(r"^RL\.(\d+)\.Marker\.(\d+)\.Type\s*=\s*(\w+)\s*$")
+MARKER_PARAM_RE = re.compile(
+    rf"^RL\.(\d+)\.Marker\.(\d+)\.Param\s*=\s*"
+    rf"({FLOAT_RE})\s+({FLOAT_RE})\s+(-?\d+)\s+(-?\d+)\s+(\d+)\b"
+)
 ANY_ID_RE = re.compile(r"\.ID\s*=\s*(\d+)\b")
 LINK_VISUALIZATION_RE = re.compile(r"^Link\.(\d+)\.Visualization\.(RoadsideWidth|RoadsideSlope)\s*=")
 LINK_VISUALIZATION_VALUE_RE = re.compile(
@@ -245,6 +280,8 @@ LANE_MATERIAL_RE = re.compile(
 )
 LINK_LANE_ID_RE = re.compile(r"^Link\.(\d+)\.LaneSection\.\d+\.Lane([RL])\.(\d+)\.ID\s*=\s*(\d+)")
 LINK_LANE_VALUE_RE = re.compile(r"^Link\.(\d+)\.LaneSection\.\d+\.Lane([RL])\.(\d+)\s*=\s*(\d+)\b")
+LINK_LANE_WIDTH_POINTS_RE = re.compile(r"^Link\.(\d+)\.LaneSection\.\d+\.Lane([RL])\.(\d+)\.Width\.Points:")
+LINK_LANE_WIDTH_POINT_RE = re.compile(rf"^\s*\d+\s+(\d+)\s+\S+\s+\S+\s+({FLOAT_RE})\b")
 LANE_PATH_RE = re.compile(r"^LanePath\.(\d+)\s*=\s*(\d+)\s+(\d+)\b")
 BBOX_RE = re.compile(rf"^Geometry\.Bbox\s*=\s*({FLOAT_RE})\s+({FLOAT_RE})\s+({FLOAT_RE})\s+({FLOAT_RE})\s+({FLOAT_RE})\s+({FLOAT_RE})")
 
@@ -573,31 +610,121 @@ def _parse_next_traffic_light_control_index(lines: list[str]) -> int:
     return max_index + 1
 
 
+def _parse_imported_trflight_controls_by_rl(lines: list[str]) -> dict[int, list[ImportedTrfLightMountRef]]:
+    control_ids = {int(match.group(2)) for line in lines if (match := CONTROL_TRFLIGHT_RE.match(line))}
+    result: dict[int, list[ImportedTrfLightMountRef]] = {}
+    seen: dict[int, set[int]] = {}
+    for line in lines:
+        match = MOUNT_CHILD_VALUE_RE.match(line)
+        if not match:
+            continue
+        rl_id = int(match.group(1))
+        control_id = int(match.group(4))
+        if control_id not in control_ids:
+            continue
+        if control_id in seen.setdefault(rl_id, set()):
+            continue
+        seen[rl_id].add(control_id)
+        result.setdefault(rl_id, []).append(
+            ImportedTrfLightMountRef(
+                control_id=control_id,
+                s=float(match.group(5)),
+                t=float(match.group(6)),
+            )
+        )
+    return result
+
+
+def _parse_existing_trflight_stop_lane_paths(lines: list[str]) -> set[tuple[int, str]]:
+    marker_lanes: dict[tuple[int, int], str] = {}
+    marker_types: dict[tuple[int, int], str] = {}
+    marker_stop_types: dict[tuple[int, int], str] = {}
+    for line in lines:
+        if match := MARKER_ID_RE.match(line):
+            marker_lanes[(int(match.group(1)), int(match.group(2)))] = match.group(4)
+            continue
+        if match := MARKER_TYPE_RE.match(line):
+            marker_types[(int(match.group(1)), int(match.group(2)))] = match.group(3)
+            continue
+        if match := MARKER_PARAM_RE.match(line):
+            marker_stop_types[(int(match.group(1)), int(match.group(2)))] = match.group(7)
+
+    result: set[tuple[int, str]] = set()
+    for key, lane_path_id in marker_lanes.items():
+        if marker_types.get(key) == "DrvStop" and marker_stop_types.get(key) == "2":
+            result.add((key[0], lane_path_id))
+    return result
+
+
+def _patch_imported_trflight_initial_phases(
+    lines: list[str],
+    controls_by_rl: dict[int, list[ImportedTrfLightMountRef]],
+) -> int:
+    if not INTERSECTION_NORMALIZE_IMPORTED_TRFLIGHT_PHASES_ENABLED:
+        return 0
+    mounted_control_ids = {ref.control_id for refs in controls_by_rl.values() for ref in refs}
+    if not mounted_control_ids:
+        return 0
+
+    phase = str(INTERSECTION_IMPORTED_TRFLIGHT_INITIAL_PHASE)
+    changed = 0
+    for index, line in enumerate(lines):
+        match = CONTROL_TRFLIGHT_LINE_RE.match(line)
+        if not match:
+            continue
+        control_id = int(match.group(2))
+        initial_phase = match.group(4)
+        if control_id not in mounted_control_ids or initial_phase != "0":
+            continue
+        lines[index] = f"{match.group(1)}{match.group(2)}{match.group(3)}{phase}{match.group(5)}"
+        changed += 1
+    return changed
+
+
 def _parse_lane_paths_by_link(lines: list[str]) -> dict[int, list[LanePathRef]]:
     lane_objects_by_link: dict[int, set[str]] = {}
     lane_type_by_key: dict[tuple[int, str, int], str] = {}
     lane_object_by_key: dict[tuple[int, str, int], str] = {}
     lane_direction_by_object: dict[str, int] = {}
+    lane_meta_by_object: dict[str, tuple[str, int]] = {}
+    lane_width_by_object: dict[str, float] = {}
     lane_paths_by_object: dict[str, list[LanePathRef]] = {}
+    width_lane_object_id: str | None = None
 
     for line in lines:
         if match := LINK_LANE_VALUE_RE.match(line):
             lane_type_by_key[(int(match.group(1)), match.group(2), int(match.group(3)))] = match.group(4)
+            width_lane_object_id = None
             continue
         if match := LINK_LANE_ID_RE.match(line):
             side = match.group(2)
+            lane_index = int(match.group(3))
             lane_object_id = match.group(4)
-            lane_object_by_key[(int(match.group(1)), side, int(match.group(3)))] = lane_object_id
+            lane_object_by_key[(int(match.group(1)), side, lane_index)] = lane_object_id
             lane_direction_by_object[lane_object_id] = -1 if side == "L" else 1
+            lane_meta_by_object[lane_object_id] = (side, lane_index)
+            width_lane_object_id = None
+            continue
+        if match := LINK_LANE_WIDTH_POINTS_RE.match(line):
+            width_lane_object_id = lane_object_by_key.get((int(match.group(1)), match.group(2), int(match.group(3))))
+            continue
+        if width_lane_object_id and (match := LINK_LANE_WIDTH_POINT_RE.match(line)):
+            if match.group(1) == width_lane_object_id:
+                lane_width_by_object[width_lane_object_id] = max(0.1, float(match.group(2)))
             continue
         if match := LANE_PATH_RE.match(line):
             lane_object_id = match.group(3)
+            side, lane_index = lane_meta_by_object.get(lane_object_id, ("R", 0))
             lane_path = LanePathRef(
                 lane_path_id=match.group(2),
                 lane_object_id=lane_object_id,
                 direction_sign=lane_direction_by_object.get(lane_object_id, 1),
+                side=side,
+                lane_index=lane_index,
+                width=lane_width_by_object.get(lane_object_id, INTERSECTION_CROSSWALK_LANE_WIDTH),
             )
             lane_paths_by_object.setdefault(lane_path.lane_object_id, []).append(lane_path)
+            width_lane_object_id = None
 
     for key, lane_object_id in lane_object_by_key.items():
         link_index, side, _lane_index = key
@@ -608,7 +735,10 @@ def _parse_lane_paths_by_link(lines: list[str]) -> dict[int, list[LanePathRef]]:
     result: dict[int, list[LanePathRef]] = {}
     for link_index, lane_objects in lane_objects_by_link.items():
         refs: list[LanePathRef] = []
-        for lane_object_id in sorted(lane_objects, key=lambda value: int(value)):
+        for lane_object_id in sorted(
+            lane_objects,
+            key=lambda value: (*lane_meta_by_object.get(value, ("R", 0)), int(value)),
+        ):
             refs.extend(lane_paths_by_object.get(lane_object_id, []))
         if refs:
             result[link_index] = refs
@@ -1222,6 +1352,155 @@ def _approach_half_road_width(approach: IntersectionApproach) -> float:
     return max(lane_width * 0.5, approach.lane_count * lane_width * 0.5 + INTERSECTION_CROSSWALK_EXTRA_WIDTH)
 
 
+def _approach_lane_paths(
+    approach: IntersectionApproach,
+    lane_paths_by_link: dict[int, list[LanePathRef]],
+    *,
+    require_incoming: bool = False,
+) -> list[LanePathRef]:
+    lane_paths = lane_paths_by_link.get(approach.link.index, [])
+    if not lane_paths:
+        return []
+
+    expected_direction = 1 if approach.at_end else -1
+    matching = [lane_path for lane_path in lane_paths if lane_path.direction_sign == expected_direction]
+    if require_incoming:
+        return matching
+    return matching or lane_paths
+
+
+def _lane_lateral_bounds(
+    lane_path: LanePathRef,
+    all_lane_paths: list[LanePathRef],
+) -> tuple[float, float] | None:
+    side = lane_path.side
+    lane_widths = {
+        (item.side, item.lane_index): max(0.1, item.width)
+        for item in all_lane_paths
+    }
+    width = lane_widths.get((side, lane_path.lane_index), max(0.1, lane_path.width))
+    inner = 0.0
+    for index in range(lane_path.lane_index):
+        inner += lane_widths.get((side, index), width)
+    outer = inner + width
+    margin = min(INTERSECTION_MARKING_LANE_EDGE_MARGIN, max(0.0, width * 0.2))
+    if outer - inner <= margin * 2.0:
+        return None
+
+    if side == "L":
+        return inner + margin, outer - margin
+    return -(outer - margin), -(inner + margin)
+
+
+def _fallback_approach_lateral_bounds(approach: IntersectionApproach) -> tuple[float, float]:
+    lane_width = INTERSECTION_CROSSWALK_LANE_WIDTH
+    total_width = max(lane_width, approach.lane_count * lane_width)
+    inner = INTERSECTION_MARKING_LANE_EDGE_MARGIN
+    outer = max(inner + 0.6, total_width - INTERSECTION_MARKING_LANE_EDGE_MARGIN)
+    if approach.at_end:
+        return -outer, -inner
+    return inner, outer
+
+
+def _approach_lateral_spans(
+    approach: IntersectionApproach,
+    lane_paths_by_link: dict[int, list[LanePathRef]],
+    *,
+    require_incoming: bool = False,
+) -> list[tuple[LanePathRef | None, float, float]]:
+    all_lane_paths = lane_paths_by_link.get(approach.link.index, [])
+    spans: list[tuple[LanePathRef | None, float, float]] = []
+    for lane_path in _approach_lane_paths(
+        approach,
+        lane_paths_by_link,
+        require_incoming=require_incoming,
+    ):
+        bounds = _lane_lateral_bounds(lane_path, all_lane_paths)
+        if bounds is None:
+            continue
+        spans.append((lane_path, bounds[0], bounds[1]))
+    if spans:
+        return spans
+    if require_incoming:
+        return []
+
+    t0, t1 = _fallback_approach_lateral_bounds(approach)
+    return [(None, t0, t1)]
+
+
+def _combined_lateral_span(
+    spans: list[tuple[LanePathRef | None, float, float]]
+) -> tuple[float, float] | None:
+    if not spans:
+        return None
+    values: list[float] = []
+    for _lane_path, t0, t1 in spans:
+        values.extend([t0, t1])
+    return min(values), max(values)
+
+
+def _crosswalk_lateral_span(
+    approach: IntersectionApproach,
+    lane_paths_by_link: dict[int, list[LanePathRef]],
+) -> tuple[float, float]:
+    spans = _approach_lateral_spans(approach, lane_paths_by_link)
+    values: list[float] = []
+    for _lane_path, t0, t1 in spans:
+        values.extend([t0, t1])
+
+    default_extent = max(0.8, _approach_half_road_width(approach) - 0.25)
+    lane_extent = max((abs(value) for value in values), default=default_extent)
+    lateral_extent = max(default_extent, lane_extent)
+    return lateral_extent, -lateral_extent
+
+
+def _crosswalk_stripe_distances_from_node() -> list[float]:
+    stripe_span = (INTERSECTION_CROSSWALK_STRIPES - 1) * INTERSECTION_CROSSWALK_STRIPE_PITCH
+    base_distance = max(0.4, INTERSECTION_CROSSWALK_SETBACK - stripe_span / 2.0)
+    return [base_distance + index * INTERSECTION_CROSSWALK_STRIPE_PITCH for index in range(INTERSECTION_CROSSWALK_STRIPES)]
+
+
+def _crosswalk_far_distance_from_node() -> float:
+    stripe_span = (INTERSECTION_CROSSWALK_STRIPES - 1) * INTERSECTION_CROSSWALK_STRIPE_PITCH
+    return INTERSECTION_CROSSWALK_SETBACK + stripe_span / 2.0
+
+
+def _crosswalk_band_width() -> float:
+    stripe_span = (INTERSECTION_CROSSWALK_STRIPES - 1) * INTERSECTION_CROSSWALK_STRIPE_PITCH
+    return max(INTERSECTION_CROSSWALK_STRIPE_WIDTH, stripe_span + INTERSECTION_CROSSWALK_STRIPE_WIDTH)
+
+
+def _intersection_stop_line_s(approach: IntersectionApproach) -> float:
+    return _approach_s_position(
+        approach,
+        _crosswalk_far_distance_from_node() + INTERSECTION_STOP_LINE_TO_CROSSWALK_GAP,
+    )
+
+
+def _append_transverse_road_marking(
+    lines: list[str],
+    key: str,
+    object_id: int,
+    owner_id: int,
+    s_position: float,
+    t0: float,
+    t1: float,
+    stripe_width: float,
+    *,
+    broken: bool = False,
+) -> None:
+    lines.append(f"{key}.ID = {object_id} {owner_id}")
+    marking_style = "2 1 0 0.5 0.5" if broken else "1 1 0 2 4"
+    lines.append(
+        f"{key} = {_format_number(s_position)} 0 -10 1 0 0 "
+        f"{_format_number(stripe_width)} 0 {marking_style} 1 1 0"
+    )
+    lines.append(f"{key}.Material.0 = white 0 0 0 0 0 0 0 0 0 0 0")
+    lines.append(f"{key}.PointList:")
+    lines.append(f"\t0 {_format_number(t0)}")
+    lines.append(f"\t0 {_format_number(t1)}")
+
+
 def _approach_node_distance(approach: IntersectionApproach) -> float:
     link = approach.link
     if approach.at_end:
@@ -1248,35 +1527,160 @@ def _select_signal_display_approaches(approaches: list[IntersectionApproach]) ->
 def _intersection_crosswalk_lines(
     approaches: list[IntersectionApproach],
     existing_markings: dict[int, int],
+    lane_paths_by_link: dict[int, list[LanePathRef]],
     next_obj_id: int,
 ) -> tuple[list[str], int, int]:
     lines: list[str] = []
     added = 0
-    stripe_span = (INTERSECTION_CROSSWALK_STRIPES - 1) * INTERSECTION_CROSSWALK_STRIPE_PITCH
     for approach in approaches:
         link = approach.link
-        center_s = _approach_s_position(approach, INTERSECTION_CROSSWALK_SETBACK)
-        half_width = _approach_half_road_width(approach)
-        lateral_extent = max(0.8, half_width - 0.25)
+        lateral_span = _crosswalk_lateral_span(approach, lane_paths_by_link)
+        marking_index = existing_markings.get(link.rl_id, -1) + 1
+        existing_markings[link.rl_id] = marking_index
+        key = f"RL.{link.rl_id}.RoadMarking.{marking_index}"
+        _append_transverse_road_marking(
+            lines,
+            key,
+            next_obj_id,
+            link.rl_id,
+            _approach_s_position(approach, INTERSECTION_CROSSWALK_SETBACK),
+            lateral_span[0],
+            lateral_span[1],
+            _crosswalk_band_width(),
+            broken=True,
+        )
+        next_obj_id += 1
+        added += 1
+    return lines, next_obj_id, added
 
-        max_base_s = max(0.2, link.length - 0.2 - stripe_span)
-        base_s = max(0.2, min(max_base_s, center_s - stripe_span / 2.0))
-        for stripe_index in range(INTERSECTION_CROSSWALK_STRIPES):
-            marking_index = existing_markings.get(link.rl_id, -1) + 1
-            existing_markings[link.rl_id] = marking_index
-            key = f"RL.{link.rl_id}.RoadMarking.{marking_index}"
-            stripe_s = base_s + stripe_index * INTERSECTION_CROSSWALK_STRIPE_PITCH
-            lines.append(f"{key}.ID = {next_obj_id} {link.rl_id}")
+
+def _intersection_crosswalk_stop_marker_lines(
+    approaches: list[IntersectionApproach],
+    existing_markers: dict[int, int],
+    lane_paths_by_link: dict[int, list[LanePathRef]],
+    next_obj_id: int,
+) -> tuple[list[str], int, int]:
+    if not INTERSECTION_CROSSWALK_STOP_MARKERS_ENABLED:
+        return [], next_obj_id, 0
+
+    lines: list[str] = []
+    added = 0
+    for approach in approaches:
+        link = approach.link
+        marker_s = _intersection_stop_line_s(approach)
+        for lane_path in _approach_lane_paths(approach, lane_paths_by_link, require_incoming=True):
+            marker_index = existing_markers.get(link.rl_id, -1) + 1
+            existing_markers[link.rl_id] = marker_index
+            marker_key = f"RL.{link.rl_id}.Marker.{marker_index}"
+            lines.append(f"{marker_key}.ID = {next_obj_id} {lane_path.lane_path_id}")
+            lines.append(f"{marker_key}.Type = DrvStop")
+            # RDST_Pedestrian (3): vehicles watch for pedestrians within the distance.
             lines.append(
-                f"{key} = {_format_number(stripe_s)} 0 -10 1 0 0 "
-                f"{_format_number(INTERSECTION_CROSSWALK_STRIPE_WIDTH)} 0 2 1 0 0.5 0.5 1 1 0"
+                f"{marker_key}.Param = {_format_number(marker_s)} 0 {lane_path.direction_sign} "
+                f"-1 3 {_format_number(INTERSECTION_CROSSWALK_PED_WATCH_DISTANCE)}"
             )
-            lines.append(f"{key}.Material.0 = white 0 0 0 0 0 0 0 0 0 0 0")
-            lines.append(f"{key}.PointList:")
-            lines.append(f"\t0 {_format_number(lateral_extent)}")
-            lines.append(f"\t0 {_format_number(-lateral_extent)}")
             next_obj_id += 1
             added += 1
+    return lines, next_obj_id, added
+
+
+def _trflight_stop_s(
+    link: LinkRef,
+    mount_ref: ImportedTrfLightMountRef,
+    lane_path: LanePathRef,
+) -> float:
+    offset = max(0.0, INTERSECTION_SIGNAL_STOP_MARKER_MOUNT_OFFSET)
+    if lane_path.direction_sign >= 0:
+        value = mount_ref.s - offset
+    else:
+        value = mount_ref.s + offset
+    return max(0.2, min(link.length - 0.2, value))
+
+
+def _intersection_signal_stop_line_lines(
+    approaches: list[IntersectionApproach],
+    existing_markings: dict[int, int],
+    controls_by_rl: dict[int, list[ImportedTrfLightMountRef]],
+    lane_paths_by_link: dict[int, list[LanePathRef]],
+    next_obj_id: int,
+) -> tuple[list[str], int, int]:
+    if not INTERSECTION_SIGNAL_STOP_LINE_MARKINGS_ENABLED:
+        return [], next_obj_id, 0
+
+    lines: list[str] = []
+    added = 0
+    emitted: set[tuple[int, float, float, float]] = set()
+    for approach in approaches:
+        link = approach.link
+        mount_refs = controls_by_rl.get(link.rl_id, [])
+        lateral_span = _combined_lateral_span(
+            _approach_lateral_spans(approach, lane_paths_by_link, require_incoming=True)
+        )
+        if not mount_refs or lateral_span is None:
+            continue
+
+        stop_s = _intersection_stop_line_s(approach)
+        stop_key = (link.rl_id, round(stop_s, 3), round(lateral_span[0], 3), round(lateral_span[1], 3))
+        if stop_key in emitted:
+            continue
+        emitted.add(stop_key)
+
+        marking_index = existing_markings.get(link.rl_id, -1) + 1
+        existing_markings[link.rl_id] = marking_index
+        key = f"RL.{link.rl_id}.RoadMarking.{marking_index}"
+        _append_transverse_road_marking(
+            lines,
+            key,
+            next_obj_id,
+            link.rl_id,
+            stop_s,
+            lateral_span[0],
+            lateral_span[1],
+            INTERSECTION_SIGNAL_STOP_LINE_WIDTH,
+        )
+        next_obj_id += 1
+        added += 1
+    return lines, next_obj_id, added
+
+
+def _imported_trflight_stop_marker_lines(
+    approaches: list[IntersectionApproach],
+    existing_markers: dict[int, int],
+    lane_paths_by_link: dict[int, list[LanePathRef]],
+    controls_by_rl: dict[int, list[ImportedTrfLightMountRef]],
+    existing_trflight_stops: set[tuple[int, str]],
+    next_obj_id: int,
+) -> tuple[list[str], int, int]:
+    if not INTERSECTION_ATTACH_IMPORTED_TRFLIGHT_STOPS_ENABLED:
+        return [], next_obj_id, 0
+
+    lines: list[str] = []
+    added = 0
+    emitted: set[tuple[int, str]] = set()
+    for approach in approaches:
+        link = approach.link
+        mount_refs = controls_by_rl.get(link.rl_id, [])
+        lane_paths = _approach_lane_paths(approach, lane_paths_by_link, require_incoming=True)
+        if not mount_refs or not lane_paths:
+            continue
+
+        for lane_index, lane_path in enumerate(lane_paths):
+            stop_key = (link.rl_id, lane_path.lane_path_id)
+            if stop_key in existing_trflight_stops or stop_key in emitted:
+                continue
+            mount_ref = mount_refs[min(lane_index, len(mount_refs) - 1)]
+            stop_s = _intersection_stop_line_s(approach)
+            marker_index = existing_markers.get(link.rl_id, -1) + 1
+            existing_markers[link.rl_id] = marker_index
+            marker_key = f"RL.{link.rl_id}.Marker.{marker_index}"
+            lines.append(f"{marker_key}.ID = {next_obj_id} {lane_path.lane_path_id}")
+            lines.append(f"{marker_key}.Type = DrvStop")
+            lines.append(
+                f"{marker_key}.Param = {_format_number(stop_s)} 0 {lane_path.direction_sign} {mount_ref.control_id} 2 0"
+            )
+            next_obj_id += 1
+            added += 1
+            emitted.add(stop_key)
     return lines, next_obj_id, added
 
 
@@ -1286,6 +1690,7 @@ def _intersection_signal_lines(
     existing_markers: dict[int, int],
     existing_mounts: dict[int, int],
     lane_paths_by_link: dict[int, list[LanePathRef]],
+    imported_controls_by_rl: dict[int, list[ImportedTrfLightMountRef]],
     next_obj_id: int,
     next_control_index: int,
 ) -> tuple[list[str], int, int, int]:
@@ -1297,22 +1702,23 @@ def _intersection_signal_lines(
         s_pos = _approach_s_position(approach, INTERSECTION_SIGNAL_SETBACK)
         half_width = _approach_half_road_width(approach)
         lateral = half_width + DEFAULT_SHOULDER_WIDTH + INTERSECTION_SIGNAL_SIDE_CLEARANCE
-        geo_index = existing_geo.get(link.rl_id, -1) + 1
-        existing_geo[link.rl_id] = geo_index
-        key = f"RL.{link.rl_id}.GeoObject.{geo_index}"
-        lines.append(f"{key}.ID = {next_obj_id} {link.rl_id}")
-        lines.append(
-            "{key} = {s} 0 {s} 0 {t} 0 0 0 0 0 {yaw} {scale} {scale} {scale} 0 {model}".format(
-                key=key,
-                s=_format_number(s_pos),
-                t=_format_number(lateral),
-                yaw=_format_number(link.yaw),
-                scale=_format_number(INTERSECTION_SIGNAL_SCALE),
-                model=INTERSECTION_SIGNAL_MODEL,
+        if not imported_controls_by_rl.get(link.rl_id):
+            geo_index = existing_geo.get(link.rl_id, -1) + 1
+            existing_geo[link.rl_id] = geo_index
+            key = f"RL.{link.rl_id}.GeoObject.{geo_index}"
+            lines.append(f"{key}.ID = {next_obj_id} {link.rl_id}")
+            lines.append(
+                "{key} = {s} 0 {s} 0 {t} 0 0 0 0 0 {yaw} {scale} {scale} {scale} 0 {model}".format(
+                    key=key,
+                    s=_format_number(s_pos),
+                    t=_format_number(lateral),
+                    yaw=_format_number(link.yaw),
+                    scale=_format_number(INTERSECTION_SIGNAL_SCALE),
+                    model=INTERSECTION_SIGNAL_MODEL,
+                )
             )
-        )
-        next_obj_id += 1
-        added += 1
+            next_obj_id += 1
+            added += 1
 
         if not INTERSECTION_DYNAMIC_SIGNALS_ENABLED:
             continue
@@ -1360,15 +1766,15 @@ def _intersection_signal_lines(
         next_obj_id += 1
         added += 1
 
-        stop_s = _approach_s_position(approach, INTERSECTION_STOP_MARKER_SETBACK)
-        for lane_path in lane_paths_by_link.get(link.index, []):
+        stop_s = _intersection_stop_line_s(approach)
+        for lane_path in _approach_lane_paths(approach, lane_paths_by_link, require_incoming=True):
             marker_index = existing_markers.get(link.rl_id, -1) + 1
             existing_markers[link.rl_id] = marker_index
             marker_key = f"RL.{link.rl_id}.Marker.{marker_index}"
             lines.append(f"{marker_key}.ID = {next_obj_id} {lane_path.lane_path_id}")
             lines.append(f"{marker_key}.Type = DrvStop")
             lines.append(
-                f"{marker_key}.Param = {_format_number(stop_s)} 1 {lane_path.direction_sign} {control_id} 2 0"
+                f"{marker_key}.Param = {_format_number(stop_s)} 0 {lane_path.direction_sign} {control_id} 2 0"
             )
             next_obj_id += 1
             added += 1
@@ -1425,10 +1831,10 @@ def decorate_rd5_intersections(
         all_approaches = _approaches_for_traffic_lights(parsed_links, all_intersection_nodes, graph_edges)
     signal_node_ids = {node.node_id for node in traffic_light_nodes}
     crosswalk_node_ids = {node.node_id for node in crosswalk_nodes}
-    signal_approaches = [item for item in all_approaches if item.node.node_id in signal_node_ids]
-    signal_approaches = _select_signal_display_approaches(signal_approaches)
+    signal_stop_approaches = [item for item in all_approaches if item.node.node_id in signal_node_ids]
+    signal_approaches = _select_signal_display_approaches(signal_stop_approaches)
     crosswalk_approaches = [item for item in all_approaches if item.node.node_id in crosswalk_node_ids]
-    if not signal_approaches and not crosswalk_approaches:
+    if not signal_stop_approaches and not crosswalk_approaches:
         if removed_objects:
             _patch_scalar(lines, "nObjects", max(0, n_objects - removed_objects))
             _patch_scalar(lines, "MaxUsedObjId", max_used_obj_id)
@@ -1444,25 +1850,62 @@ def decorate_rd5_intersections(
 
     generated: list[str] = [INTERSECTION_BEGIN]
     next_obj_id = max_used_obj_id + 1
+    existing_markers = _parse_existing_marker_indices(lines)
+    existing_markings = _parse_existing_roadmarking_indices(lines)
+    lane_paths_by_link = _parse_lane_paths_by_link(lines)
+    imported_controls_by_rl = _parse_imported_trflight_controls_by_rl(lines)
+    traffic_light_phase_fixes = _patch_imported_trflight_initial_phases(lines, imported_controls_by_rl)
     signal_lines, next_obj_id, signal_objects, _next_control_index = _intersection_signal_lines(
         signal_approaches,
         _parse_existing_geo_indices(lines),
-        _parse_existing_marker_indices(lines),
+        existing_markers,
         _parse_existing_mount_indices(lines),
-        _parse_lane_paths_by_link(lines),
+        lane_paths_by_link,
+        imported_controls_by_rl,
         next_obj_id,
         _parse_next_traffic_light_control_index(lines),
     )
     generated.extend(signal_lines)
+    traffic_light_marker_lines, next_obj_id, traffic_light_stop_markers = _imported_trflight_stop_marker_lines(
+        signal_stop_approaches,
+        existing_markers,
+        lane_paths_by_link,
+        imported_controls_by_rl,
+        _parse_existing_trflight_stop_lane_paths(lines),
+        next_obj_id,
+    )
+    generated.extend(traffic_light_marker_lines)
+    traffic_light_stop_line_lines, next_obj_id, traffic_light_stop_lines = _intersection_signal_stop_line_lines(
+        signal_stop_approaches,
+        existing_markings,
+        imported_controls_by_rl,
+        lane_paths_by_link,
+        next_obj_id,
+    )
+    generated.extend(traffic_light_stop_line_lines)
     crosswalk_lines, next_obj_id, crosswalk_markings = _intersection_crosswalk_lines(
         crosswalk_approaches,
-        _parse_existing_roadmarking_indices(lines),
+        existing_markings,
+        lane_paths_by_link,
         next_obj_id,
     )
     generated.extend(crosswalk_lines)
+    crosswalk_marker_lines, next_obj_id, crosswalk_stop_markers = _intersection_crosswalk_stop_marker_lines(
+        crosswalk_approaches,
+        existing_markers,
+        lane_paths_by_link,
+        next_obj_id,
+    )
+    generated.extend(crosswalk_marker_lines)
     generated.append(INTERSECTION_END)
 
-    generated_objects = signal_objects + crosswalk_markings
+    generated_objects = (
+        signal_objects
+        + traffic_light_stop_markers
+        + traffic_light_stop_lines
+        + crosswalk_markings
+        + crosswalk_stop_markers
+    )
     _patch_scalar(lines, "nObjects", max(0, n_objects - removed_objects) + generated_objects)
     _patch_scalar(lines, "MaxUsedObjId", max(max_used_obj_id, next_obj_id - 1))
 
@@ -1477,6 +1920,10 @@ def decorate_rd5_intersections(
         approach_links=len(all_approaches),
         signal_objects=signal_objects,
         crosswalk_markings=crosswalk_markings,
+        crosswalk_stop_markers=crosswalk_stop_markers,
+        traffic_light_stop_markers=traffic_light_stop_markers,
+        traffic_light_stop_lines=traffic_light_stop_lines,
+        traffic_light_phase_fixes=traffic_light_phase_fixes,
     )
 
 

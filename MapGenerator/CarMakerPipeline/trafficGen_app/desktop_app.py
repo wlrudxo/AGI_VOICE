@@ -1279,7 +1279,11 @@ class TrafficGenApp(tk.Tk):
             self.log(
                 "Intersection decorations synced to route RD5: "
                 f"{result.signal_objects} signal objects, "
-                f"{result.crosswalk_markings} crosswalk markings"
+                f"{result.crosswalk_markings} crosswalk markings, "
+                f"{result.crosswalk_stop_markers} pedestrian stop markers, "
+                f"{result.traffic_light_stop_markers} traffic light stop markers, "
+                f"{result.traffic_light_stop_lines} traffic light stop lines, "
+                f"{result.traffic_light_phase_fixes} off-phase fixes"
             )
 
     def write_rd5_route_copy(self) -> None:

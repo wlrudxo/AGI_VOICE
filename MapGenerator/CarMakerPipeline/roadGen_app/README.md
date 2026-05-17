@@ -6,7 +6,7 @@ and converting the result to OpenDRIVE `.xodr` with SUMO `netconvert`.
 ## Desktop App, No Local Web Server
 
 ```powershell
-cd <repo>\MapGenerator\CarMakerPipeline\roadGen_app
+cd C:\Users\user\Desktop\과제\AGI\roadGen_app
 python desktop_app.py
 ```
 
@@ -16,7 +16,7 @@ The app calls the same Python generation pipeline directly.
 ## Browser App, Localhost Bridge
 
 ```powershell
-cd <repo>\MapGenerator\CarMakerPipeline\roadGen_app
+cd C:\Users\user\Desktop\과제\AGI\roadGen_app
 python server.py
 ```
 
@@ -40,11 +40,21 @@ http://127.0.0.1:8765
    `traffic_light_crosswalk`, or `crosswalk`. During `Copy To CarMaker`, the app
    detects those graph nodes and adds RD5 intersection decorations around the
    matching road endpoints. `traffic_light` creates signal objects plus
-   `Control.TrfLight` timing and `DrvStop` markers for IPG Driver vehicles.
+   visual signal objects for IPGMovie.
    `traffic_light_crosswalk` adds those signals and zebra-style crosswalk road
-   markings. `crosswalk` adds only the crosswalk markings. Internally,
+   markings plus pedestrian-aware `DrvStop` markers on the lane paths.
+   `crosswalk` adds the crosswalk markings and the same pedestrian-aware stop
+   markers without signal objects. Internally,
    `traffic_light_crosswalk` is exported to SUMO as `traffic_light`, while the
    richer type is kept in `graph.json` for the RD5 post-processing step.
+   If the XODR-to-RD5 import already created CarMaker `Control.TrfLight` and
+   `Mount` entries, RoadGen reuses those imported controllers instead of adding
+   duplicate visual signal objects. It also adds LanePath-level
+   `DrvStop` markers of type `RDST_TrfLight` at the imported signal mount's
+   actual `s` position, draws matching visible stop-line markings, and changes
+   imported controllers from initial phase `0` (off) to `3` (red), matching the
+   structure used by CarMaker example roads where IPG Driver detects traffic
+   lights.
 7. Optional: set `Env` to `City` before `Copy To CarMaker` to add building
    scenery to the generated RD5. `City Seed` controls repeatability: `Stable`
    reuses the same layout for the same project name, while `Random` generates a
@@ -94,11 +104,11 @@ Use one of these flows:
   `.net.xml` and shift route lane IDs such as `E*_0`.
   If any graph nodes are marked as `traffic_light`, `traffic_light_crosswalk`,
   or `crosswalk`, the app also adds a generated RD5 intersection-decoration
-  block. Signal nodes get CarMaker Movie HAWK signal objects, native
-  `Mount` traffic-light heads, simple periodic `Control.TrfLight` timing, and
-  lane-level `DrvStop` markers so IPG Driver traffic can react to red lights.
+  block. Signal nodes get CarMaker Movie HAWK signal objects.
   Crosswalk nodes get zebra stripes as RD5 `RoadMarking` entries, using the same
-  point-list pattern as CarMaker urban-road examples. These decorations are
+  point-list pattern as CarMaker urban-road examples. They also get lane-level
+  `RDST_Pedestrian` Driver stop markers so IPG Driver can watch for pedestrians
+  around the crossing. These decorations are
   derived from the saved `graph.json`, the generated `.xodr`, and the converted
   RD5 `odrRoadId` tags, so changing a node back to `priority` removes the
   generated block the next time the RD5 is written.
