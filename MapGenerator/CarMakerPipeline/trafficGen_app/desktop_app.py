@@ -17,6 +17,7 @@ from tkinter import filedialog, messagebox, ttk
 
 from traffic_core import (
     DEFAULT_ROADGEN_EXPORTS,
+    Lane,
     ROOT,
     RoadPackage,
     RoadPackageError,
@@ -60,6 +61,10 @@ PEDESTRIAN_MODELS = [
     "2_People/Pedestrian_Female_Sportive_01",
     "2_People/Pedestrian_Female_Child_01_142cm",
 ]
+ROADGEN_DEFAULT_LANE_WIDTH_M = 3.2
+ROADGEN_DEFAULT_SHOULDER_WIDTH_M = 0.8
+ROADGEN_DEFAULT_SIDEWALK_WIDTH_M = 2.2
+PEDESTRIAN_SIDEWALK_JITTER_M = 0.25
 
 
 def find_carmaker_home() -> Path | None:
@@ -119,8 +124,8 @@ class TrafficGenApp(tk.Tk):
         self.ped_density_var = tk.DoubleVar(value=8.0)
         self.ped_speed_min_var = tk.DoubleVar(value=3.0)
         self.ped_speed_max_var = tk.DoubleVar(value=5.5)
-        self.ped_offset_min_var = tk.DoubleVar(value=-2.3)
-        self.ped_offset_max_var = tk.DoubleVar(value=-1.8)
+        self.ped_offset_min_var = tk.DoubleVar(value=-3.75)
+        self.ped_offset_max_var = tk.DoubleVar(value=-3.25)
         self.ped_direction_var = tk.StringVar(value="Random")
         self.ped_start_delay_span_var = tk.DoubleVar(value=0.0)
 
@@ -932,23 +937,107 @@ class TrafficGenApp(tk.Tk):
     def is_pedestrian_plan(self, vehicle: VehiclePlan) -> bool:
         return vehicle_category(vehicle.model) == "pedestrian"
 
-    def pedestrian_route_from_selected_lane(self) -> tuple[PlannedRoute | None, str]:
+    def pedestrian_outer_lane(self, lane: Lane) -> Lane:
+        if not self.package:
+            return lane
+        edge = self.package.edges.get(lane.edge_id)
+        if not edge:
+            return lane
+        candidates = [
+            self.package.lanes[lane_id]
+            for lane_id in edge.lanes
+            if lane_id in self.package.lanes and not self.package.lanes[lane_id].internal
+        ]
+        if not candidates:
+            return lane
+        return min(candidates, key=lambda item: item.index)
+
+    def estimate_lane_width(self, edge_id: str) -> float:
+        if not self.package:
+            return ROADGEN_DEFAULT_LANE_WIDTH_M
+        edge = self.package.edges.get(edge_id)
+        if not edge:
+            return ROADGEN_DEFAULT_LANE_WIDTH_M
+        lanes = sorted(
+            [self.package.lanes[lane_id] for lane_id in edge.lanes if lane_id in self.package.lanes],
+            key=lambda item: item.index,
+        )
+        widths: list[float] = []
+        for left, right in zip(lanes, lanes[1:]):
+            if left.internal or right.internal or not left.shape or not right.shape:
+                continue
+            sample_count = min(len(left.shape), len(right.shape))
+            if sample_count <= 0:
+                continue
+            distances = [
+                math.hypot(left.shape[index][0] - right.shape[index][0], left.shape[index][1] - right.shape[index][1])
+                for index in range(sample_count)
+            ]
+            if distances:
+                widths.append(sum(distances) / len(distances))
+        if widths:
+            return max(2.5, min(4.5, sum(widths) / len(widths)))
+        return ROADGEN_DEFAULT_LANE_WIDTH_M
+
+    def pedestrian_sidewalk_offset_range(self, lane: Lane) -> tuple[float, float]:
+        lane_width = self.estimate_lane_width(lane.edge_id)
+        road_edge_from_lane = (lane.index + 0.5) * lane_width
+        sidewalk_center = -(
+            road_edge_from_lane
+            + ROADGEN_DEFAULT_SHOULDER_WIDTH_M
+            + ROADGEN_DEFAULT_SIDEWALK_WIDTH_M / 2.0
+        )
+        jitter = min(PEDESTRIAN_SIDEWALK_JITTER_M, max(0.1, ROADGEN_DEFAULT_SIDEWALK_WIDTH_M * 0.2))
+        return sidewalk_center - jitter, sidewalk_center + jitter
+
+    def normalize_pedestrian_offset_range(
+        self,
+        lane: Lane | None,
+        offset_min: float,
+        offset_max: float,
+    ) -> tuple[float, float, bool]:
+        if lane is None or not self.rd5_has_visual_sidewalks():
+            return offset_min, offset_max, False
+
+        lane_width = self.estimate_lane_width(lane.edge_id)
+        road_edge_from_lane = (lane.index + 0.5) * lane_width
+        sidewalk_inner = -(road_edge_from_lane + ROADGEN_DEFAULT_SHOULDER_WIDTH_M + 0.25)
+        sidewalk_outer = -(
+            road_edge_from_lane
+            + ROADGEN_DEFAULT_SHOULDER_WIDTH_M
+            + ROADGEN_DEFAULT_SIDEWALK_WIDTH_M
+            - 0.25
+        )
+        safe_min, safe_max = sorted((sidewalk_outer, sidewalk_inner))
+        current_center = (offset_min + offset_max) / 2.0
+        if safe_min <= current_center <= safe_max:
+            return offset_min, offset_max, False
+
+        centered_min, centered_max = self.pedestrian_sidewalk_offset_range(lane)
+        self.ped_offset_min_var.set(round(centered_min, 3))
+        self.ped_offset_max_var.set(round(centered_max, 3))
+        return centered_min, centered_max, True
+
+    def pedestrian_route_from_selected_lane(self) -> tuple[PlannedRoute | None, str, Lane | None]:
         if not self.package or not self.selected_lane_id:
-            return None, ""
+            return None, "", None
         lane = self.package.lanes.get(self.selected_lane_id)
         if not lane:
             raise RoadPackageError(f"Selected lane was not found: {self.selected_lane_id}")
         if lane.internal:
             raise RoadPackageError("Select an external road lane for pedestrian placement, not an internal junction lane.")
-        route_name = safe_name(f"ped_{lane.edge_id}_{lane.index}")
+        ped_lane = self.pedestrian_outer_lane(lane)
+        route_name = safe_name(f"ped_{ped_lane.edge_id}_{ped_lane.index}")
         route = PlannedRoute(
             name=route_name,
-            start_lane=lane.id,
-            goal_lane=lane.id,
-            lane_path=[lane.id],
-            steps=[self.package.lane_step(lane.id)],
+            start_lane=ped_lane.id,
+            goal_lane=ped_lane.id,
+            lane_path=[ped_lane.id],
+            steps=[self.package.lane_step(ped_lane.id)],
         )
-        return route, f"selected lane {lane.id}"
+        if ped_lane.id != lane.id:
+            return route, f"selected lane {lane.id}, sidewalk route {ped_lane.id}", ped_lane
+        return route, f"selected lane {ped_lane.id}", ped_lane
 
     def rd5_has_visual_sidewalks(self) -> bool:
         rd5_text = self.rd5_path_var.get().strip()
@@ -969,12 +1058,13 @@ class TrafficGenApp(tk.Tk):
             return
 
         try:
-            route, source_label = self.pedestrian_route_from_selected_lane()
+            route, source_label, placement_lane = self.pedestrian_route_from_selected_lane()
             if route:
                 route_name = self.save_route_object(route, route.name)
             elif self.current_route:
                 route = self.current_route
                 source_label = f"current route {route.name}"
+                placement_lane = None
                 route_name = self.save_current_route()
             else:
                 messagebox.showinfo(
@@ -1003,6 +1093,11 @@ class TrafficGenApp(tk.Tk):
             speed_min, speed_max = speed_max, speed_min
         if offset_min > offset_max:
             offset_min, offset_max = offset_max, offset_min
+        offset_min, offset_max, adjusted_offsets = self.normalize_pedestrian_offset_range(
+            placement_lane,
+            offset_min,
+            offset_max,
+        )
 
         if density <= 0:
             messagebox.showinfo("Add Pedestrians", "Pedestrian density is zero.")
@@ -1062,6 +1157,8 @@ class TrafficGenApp(tk.Tk):
             f"speed {speed_min:g}-{speed_max:g} km/h; offset {offset_min:g}..{offset_max:g} m; "
             f"direction {self.ped_direction_var.get()}"
         )
+        if adjusted_offsets:
+            self.log("Pedestrian offsets were moved to the visual sidewalk center to avoid shoulder placement.")
 
     def remove_generated_pedestrians(self) -> None:
         before = len(self.vehicles)

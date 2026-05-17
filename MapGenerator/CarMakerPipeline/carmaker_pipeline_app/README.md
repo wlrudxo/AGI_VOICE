@@ -68,15 +68,16 @@ RoadReadOpenDRIVE() -> RoadWriteFile(...rd5...)
 ```
 
 The `City` environment option post-processes the generated RD5 by inserting
-road-relative `GeoObject` building scenery. Building placement reads the
+road-relative `GeoObject` building scenery plus default RD5 `TreeStrip`
+vegetation for empty roadside space. Building placement reads the
 CarMaker building `.objinfo` bounding boxes and rejects candidates that are too
 close to any RD5 road segment, so larger buildings are placed farther away from
-the road. The option does not replace the RD5 terrain, because mismatched
-terrain height can make the vehicle appear to drive through the ground. It also
-adds a modest per-link roadside mesh. The roadside additions are generated once
-per physical road geometry to avoid stacked surfaces on bidirectional duplicate
-links. The earlier sidewalk-profile `Bump` experiment is disabled because it can
-overwrite lane cross-sections on generated roads. This is visual roadside
+the road. Tree strips are based on CarMaker's own urban-road examples and fill
+non-building gaps with grass/greenery near the sidewalk. The option does not
+replace the RD5 terrain, because mismatched terrain height can make the vehicle
+appear to drive through the ground. It also adds a modest per-link roadside
+mesh. The roadside additions are generated once per physical road geometry to
+avoid stacked surfaces on bidirectional duplicate links. This is visual roadside
 scenery; it does not rewrite the lane topology into routeable `RLT_Pedestrian`
 lanes.
 

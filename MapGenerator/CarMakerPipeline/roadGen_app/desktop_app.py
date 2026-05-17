@@ -1046,6 +1046,7 @@ class RoadGenDesktop(tk.Tk):
                         self.log(
                             f"City environment added: {city.objects_added} buildings on {city.links_used} road links; "
                             f"{city.sidewalk_bumps} visual shoulder+sidewalk strips; "
+                            f"{city.tree_strips} tree/grass strips; "
                             f"density {city.building_density:g}; seed {city.seed}; road lane topology left unchanged"
                         )
                 else:

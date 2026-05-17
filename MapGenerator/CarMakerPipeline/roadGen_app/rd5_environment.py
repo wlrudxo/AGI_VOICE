@@ -22,6 +22,7 @@ class CityEnvironmentResult:
     seed: int
     building_density: float = 1.0
     sidewalk_bumps: int = 0
+    tree_strips: int = 0
     pedestrian_lanes: int = 0
     pedestrian_lane_widths: int = 0
     pedestrian_lane_materials: int = 0
@@ -172,6 +173,16 @@ CITY_SIDEWALK_CURB_HEIGHT = 0.12
 CITY_SIDEWALK_SURFACE_HEIGHT = 0.15
 CITY_SIDEWALK_START_EXTENSION = 10.0
 CITY_SIDEWALK_END_EXTENSION = 10.0
+CITY_TREE_STRIP_ENABLED = True
+CITY_TREE_STRIP_LATERAL_OFFSET = 5.0
+CITY_TREE_STRIP_WIDTH = 4.0
+CITY_TREE_STRIP_DENSITY = 35.0
+CITY_TREE_STRIP_MIN_LENGTH = 16.0
+CITY_TREE_STRIP_END_MARGIN = 6.0
+CITY_TREE_STRIP_SCALE_X = 1.0
+CITY_TREE_STRIP_SCALE_Y = 1.0
+CITY_TREE_STRIP_RANDOM_X = 0.5
+CITY_TREE_STRIP_RANDOM_Y = 0.5
 INTERSECTION_NODE_MATCH_RADIUS = 12.0
 INTERSECTION_MIN_LINK_LENGTH = 18.0
 INTERSECTION_CROSSWALK_SETBACK = 5.5
@@ -244,6 +255,7 @@ ANY_NODE0_RE = re.compile(rf"^(?:Link\.\d+|Junction\.\d+\.Link\.\d+)\.Node0\s*=\
 ANY_NODE1_RE = re.compile(rf"^(?:Link\.\d+|Junction\.\d+\.Link\.\d+)\.Node1\s*=\s*({FLOAT_RE})\s+({FLOAT_RE})\s+({FLOAT_RE})")
 GEO_ID_RE = re.compile(r"^RL\.(\d+)\.GeoObject\.(\d+)\.ID\s*=\s*(\d+)\s+(\d+)\s*$")
 BUMP_ID_RE = re.compile(r"^RL\.(\d+)\.Bump\.(\d+)\.ID\s*=\s*(\d+)\s+(\d+)\s*$")
+TREESTRIP_ID_RE = re.compile(r"^RL\.(\d+)\.TreeStrip\.(\d+)\.ID\s*=\s*(\d+)\s+(\d+)\s*$")
 ROADMARKING_ID_RE = re.compile(r"^RL\.(\d+)\.RoadMarking\.(\d+)\.ID\s*=\s*(\d+)\s+(\d+)\s*$")
 MARKER_ID_RE = re.compile(r"^RL\.(\d+)\.Marker\.(\d+)\.ID\s*=\s*(\d+)\s+(\d+)\s*$")
 MOUNT_ID_RE = re.compile(r"^RL\.(\d+)\.Mount\.(\d+)\.ID\s*=\s*(\d+)\s+(\d+)\s*$")
@@ -364,6 +376,7 @@ def _strip_generated_block(lines: list[str], begin_marker: str, end_marker: str)
             if (
                 GEO_ID_RE.match(line)
                 or BUMP_ID_RE.match(line)
+                or TREESTRIP_ID_RE.match(line)
                 or ROADMARKING_ID_RE.match(line)
                 or MARKER_ID_RE.match(line)
                 or MOUNT_ID_RE.match(line)
@@ -562,6 +575,18 @@ def _parse_existing_bump_indices(lines: list[str]) -> dict[int, int]:
         rl_id = int(match.group(1))
         bump_index = int(match.group(2))
         result[rl_id] = max(result.get(rl_id, -1), bump_index)
+    return result
+
+
+def _parse_existing_tree_strip_indices(lines: list[str]) -> dict[int, int]:
+    result: dict[int, int] = {}
+    for line in lines:
+        match = TREESTRIP_ID_RE.match(line)
+        if not match:
+            continue
+        rl_id = int(match.group(1))
+        strip_index = int(match.group(2))
+        result[rl_id] = max(result.get(rl_id, -1), strip_index)
     return result
 
 
@@ -1340,6 +1365,54 @@ def _city_sidewalk_bump_lines(
     return lines, next_obj_id, added
 
 
+def _city_tree_strip_lines(
+    links: list[LinkRef],
+    existing_strips: dict[int, int],
+    next_obj_id: int,
+    rng: random.Random,
+) -> tuple[list[str], int, int]:
+    if not CITY_TREE_STRIP_ENABLED:
+        return [], next_obj_id, 0
+
+    lines: list[str] = []
+    added = 0
+    for link in links:
+        start_s = min(CITY_TREE_STRIP_END_MARGIN, max(0.0, link.length * 0.15))
+        end_s = max(start_s, link.length - start_s)
+        if end_s - start_s < CITY_TREE_STRIP_MIN_LENGTH:
+            continue
+
+        sides = [-1, 1]
+        rng.shuffle(sides)
+        for side in sides:
+            strip_index = existing_strips.get(link.rl_id, -1) + 1
+            existing_strips[link.rl_id] = strip_index
+            key = f"RL.{link.rl_id}.TreeStrip.{strip_index}"
+            lateral = side * CITY_TREE_STRIP_LATERAL_OFFSET
+            density = CITY_TREE_STRIP_DENSITY * rng.uniform(0.75, 1.25)
+            width = CITY_TREE_STRIP_WIDTH * rng.uniform(0.85, 1.15)
+            lines.append(f"{key}.ID = {next_obj_id} {link.rl_id}")
+            lines.append(
+                "{key} = {start_s} 0 {end_s} 0 {lateral} {side} {density} {width} "
+                "{scale_x} {scale_y} {random_x} {random_y}".format(
+                    key=key,
+                    start_s=_format_number(start_s),
+                    end_s=_format_number(end_s),
+                    lateral=_format_number(lateral),
+                    side=side,
+                    density=_format_number(density),
+                    width=_format_number(width),
+                    scale_x=_format_number(CITY_TREE_STRIP_SCALE_X),
+                    scale_y=_format_number(CITY_TREE_STRIP_SCALE_Y),
+                    random_x=_format_number(CITY_TREE_STRIP_RANDOM_X),
+                    random_y=_format_number(CITY_TREE_STRIP_RANDOM_Y),
+                )
+            )
+            next_obj_id += 1
+            added += 1
+    return lines, next_obj_id, added
+
+
 def _approach_s_position(approach: IntersectionApproach, setback: float) -> float:
     link = approach.link
     if approach.at_end:
@@ -2048,6 +2121,15 @@ def decorate_rd5_city(
             next_obj_id,
         )
         generated.extend(sidewalk_lines)
+    tree_strips_added = 0
+    existing_tree_strips = _parse_existing_tree_strip_indices(lines)
+    tree_strip_lines, next_obj_id, tree_strips_added = _city_tree_strip_lines(
+        roadside_links,
+        existing_tree_strips,
+        next_obj_id,
+        rng,
+    )
+    generated.extend(tree_strip_lines)
     objects_added = 0
     used_rl_ids: set[int] = set()
     placed: list[PlacedBuilding] = []
@@ -2131,7 +2213,7 @@ def decorate_rd5_city(
                 placed.append(PlacedBuilding(x=x_pos, y=y_pos, radius=radius))
 
     generated.append(CITY_END)
-    generated_object_ids = sidewalk_objects_added + objects_added
+    generated_object_ids = sidewalk_objects_added + tree_strips_added + objects_added
     if generated_object_ids == 0:
         raise EnvironmentError("No city objects were generated.")
 
@@ -2149,6 +2231,7 @@ def decorate_rd5_city(
         seed=seed_int,
         building_density=building_density,
         sidewalk_bumps=sidewalk_objects_added,
+        tree_strips=tree_strips_added,
         pedestrian_lanes=pedestrian_lanes,
         pedestrian_lane_widths=pedestrian_lane_widths,
         pedestrian_lane_materials=pedestrian_lane_materials,

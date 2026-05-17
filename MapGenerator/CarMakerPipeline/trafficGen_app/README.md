@@ -223,10 +223,11 @@ Typical flow:
    creates a short pedestrian route on that lane and scatters pedestrians along
    it. `Density persons/km` controls how many pedestrians are placed from that
    lane length. Start `s`, walking speed, lateral offset, and direction are
-   randomized per pedestrian. Keep the offset range negative and outside the
-   driving lane, for example `-2.3 .. -1.8`, so walkers stay near the visual
-   sidewalk and do not disturb vehicle motion. The model and direction can also
-   be fixed or set to `Random`.
+   randomized per pedestrian. For RoadGen roads with visual sidewalks, the app
+   recenters unsafe shoulder-side offsets onto the sidewalk center. With the
+   default `0.8 m` shoulder and `2.2 m` sidewalk this is usually about
+   `-3.75 .. -3.25 m` from the outer lane center. The model and direction can
+   also be fixed or set to `Random`.
 5. Select the base or route-enabled RD5.
 6. Set `TestRun name`.
 7. Click `Generate TestRun`.

@@ -66,7 +66,9 @@ http://127.0.0.1:8765
    mouse wheel. At higher densities the generator also places second and third
    rows of buildings farther from the road so the scene reads as a denser city,
    while road clearance is still preserved. Buildings are rotated parallel to
-   the nearest generated road link.
+   the nearest generated road link. The City pass also adds RD5 `TreeStrip`
+   vegetation along the roadside by default, so empty roadside space between
+   sidewalks and buildings reads as grass/greenery instead of bare terrain.
 8. For CarMaker, use `Copy To CarMaker` or the generated import notes. Do not
    select the `.xodr` directly as a normal file under `Data/Road`.
 
@@ -122,8 +124,10 @@ Use one of these flows:
   building-to-building spacing, and add extra rows of buildings farther away
   from the roadside. Road clearance is still preserved. Building yaw is aligned
   parallel to the local road link, with only a tiny jitter so dense blocks look
-  more ordered. It leaves the RD5 terrain unchanged to avoid mismatched ground
-  height in Movie.
+  more ordered. It also writes `RL.*.TreeStrip.*` entries, based on CarMaker's
+  own urban-road examples, to fill non-building roadside areas with vegetation.
+  It leaves the RD5 terrain unchanged to avoid mismatched ground height in
+  Movie.
   The city pass reuses the same shoulder+sidewalk profile and also adds a
   wider per-link roadside mesh. For generated two-way roads, it treats
   duplicated opposite links as one physical road and places each strip only on
