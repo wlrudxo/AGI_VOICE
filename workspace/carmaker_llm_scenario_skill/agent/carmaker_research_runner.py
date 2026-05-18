@@ -205,6 +205,7 @@ def drive_command(args: argparse.Namespace) -> int:
     if args.dry_run:
         print("DRY RUN: no backend or CarMaker commands will be sent.", flush=True)
         print(f"TestRun: {args.testrun}", flush=True)
+        print(f"LoadTestRun skipped: {args.skip_load}", flush=True)
         print(f"Trigger: {trigger}", flush=True)
         print(f"Quantities: {', '.join(quantities)}", flush=True)
         print("Actions:", flush=True)
@@ -224,6 +225,7 @@ def drive_command(args: argparse.Namespace) -> int:
         pause_time_scale=args.pause_time_scale,
         pause_duration_ms=args.pause_duration_ms,
         default_action_duration_ms=args.default_duration_ms,
+        skip_load=args.skip_load,
         stop_at_end=not args.no_stop,
         settle_after_start_sec=args.settle_after_start_sec,
     )
@@ -310,6 +312,11 @@ def parse_args() -> argparse.Namespace:
     drive.add_argument("--pause-duration-ms", type=int, default=30000)
     drive.add_argument("--default-duration-ms", type=int, default=60000)
     drive.add_argument("--settle-after-start-sec", type=float, default=0.2)
+    drive.add_argument(
+        "--skip-load",
+        action="store_true",
+        help="Reuse the currently loaded TestRun and only StopSim/StartSim for demo reruns.",
+    )
     drive.add_argument("--no-stop", action="store_true")
     drive.add_argument("--run-id")
     drive.add_argument("--output-dir", default=str(DEFAULT_REPORT_DIR / "runs"))

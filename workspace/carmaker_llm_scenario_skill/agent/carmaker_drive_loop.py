@@ -166,6 +166,7 @@ class DriveLoopConfig:
     pause_time_scale: float
     pause_duration_ms: int
     default_action_duration_ms: int
+    skip_load: bool = False
     stop_at_end: bool = True
     settle_after_start_sec: float = 0.2
 
@@ -183,8 +184,11 @@ def run_triggered_drive(client: CommandClient, config: DriveLoopConfig) -> Path:
     trigger_record: dict[str, Any] | None = None
     with SnapshotLogger(client, config.quantities, config.output_dir) as logger:
         print(f"StopSim -> {client.command('StopSim')}", flush=True)
-        load_command = f'LoadTestRun "{config.testrun}"'
-        print(f"LoadTestRun -> {client.command(load_command)}", flush=True)
+        if config.skip_load:
+            print("LoadTestRun -> skipped; using the currently loaded TestRun", flush=True)
+        else:
+            load_command = f'LoadTestRun "{config.testrun}"'
+            print(f"LoadTestRun -> {client.command(load_command)}", flush=True)
         print("DVAWrite DM.v.Trgt 13.88888888888889 120000 Abs -> " + client.command("DVAWrite DM.v.Trgt 13.88888888888889 120000 Abs"), flush=True)
         print("DVAWrite DM.LaneOffset 0.0 120000 Abs -> " + client.command("DVAWrite DM.LaneOffset 0.0 120000 Abs"), flush=True)
         print("DVAWrite DM.Brake 0.0 120000 Abs -> " + client.command("DVAWrite DM.Brake 0.0 120000 Abs"), flush=True)
@@ -223,6 +227,7 @@ def run_triggered_drive(client: CommandClient, config: DriveLoopConfig) -> Path:
         f"# CarMaker Triggered Drive: {config.output_dir.name}",
         "",
         f"- TestRun: `{config.testrun}`",
+        f"- LoadTestRun skipped: `{config.skip_load}`",
         f"- Trigger: `{config.trigger}`",
         f"- Trigger fired: `{trigger_fired}`",
         f"- Samples: `{logger.sample_count}`",
@@ -249,13 +254,16 @@ def wait_for_fresh_sim_time(
     if "Vhcl.sRoad" in quantities:
         probe_quantities.append("Vhcl.sRoad")
     deadline = time.monotonic() + timeout_sec
+    previous_time: float | None = None
     while time.monotonic() < deadline:
         values = read_quantities(client, probe_quantities)
         sim_time = values.get("Time", 0.0)
         s_road = values.get("Vhcl.sRoad", 0.0)
-        if 0.05 <= sim_time <= 2.0 and abs(s_road) < 1000:
+        advancing = previous_time is not None and sim_time > previous_time + 0.02
+        if 0.05 <= sim_time <= 2.0 and advancing and abs(s_road) < 1000:
             if settle_after_start_sec > 0:
                 time.sleep(settle_after_start_sec)
             return
+        previous_time = sim_time
         time.sleep(0.1)
     raise RuntimeError("Simulation time did not restart cleanly after StartSim")
