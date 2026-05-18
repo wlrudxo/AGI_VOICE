@@ -12,6 +12,13 @@ vite.config.ts.timestamp-*
 # Legacy backend (removed - now using Rust backend)
 backend_legacy/
 
+# Legacy app generated artifacts
+legacy/v2/.svelte-kit/
+legacy/v2/build/
+legacy/v2/src-tauri/target/
+legacy/v2/src-tauri/gen/
+legacy/v2/node_modules/
+
 # Python cache
 __pycache__/
 *.py[cod]

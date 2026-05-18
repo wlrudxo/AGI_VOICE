@@ -7,7 +7,7 @@ Goals:
 - keep the V2 frontend user experience unchanged
 - replace the Rust/Tauri backend with a Python-centered backend
 - use Electron only as a thin desktop shell
-- retain legacy V2 code separately under `../v2_legacy`
+- retain legacy V2 code separately under `../legacy/v2`
 
 ## Layout
 

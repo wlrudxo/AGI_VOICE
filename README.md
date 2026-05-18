@@ -65,7 +65,9 @@ AGI_VOICE/
 │   │   └── python-api/
 │   ├── packages/
 │   └── scripts/
-├── v2_legacy/              # 이전 루트 V2 앱 코드 보관 위치
+├── legacy/                 # 이전 구현과 폐기된 검토 문서
+│   ├── v2/                 # 이전 루트 V2 앱 코드
+│   └── docs/               # 이전 설계/실험 문서
 ├── docs/
 ├── MapGenerator/
 │   └── CarMakerPipeline/   # CarMaker road/traffic generation pipeline
@@ -77,5 +79,6 @@ AGI_VOICE/
 
 ## 참고
 
-- 이전 루트 앱 코드(`src`, `src-tauri`, `static`)는 `v2_legacy/`로 이동했습니다.
+- 이전 루트 앱 코드(`src`, `src-tauri`, `static`)는 `legacy/v2/`에 보관합니다.
+- V2의 `.svelte-kit/`, `build/`, `src-tauri/target/` 같은 생성물은 추적하지 않습니다.
 - Map/RAG는 V3에서 아직 별도 정리 중이며, 현재 메인 전환 범위에서는 완전 parity 대상으로 보지 않습니다.
