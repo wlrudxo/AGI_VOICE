@@ -24,7 +24,7 @@ import time
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 from urllib import error, request
 
 from carmaker_command import VehicleCommand, parse_commands
@@ -62,6 +62,11 @@ CURATED_TESTRUNS = {
 }
 KEY_VALUE_RE = re.compile(r"^([^#:\s][^:=]*?)\s*=\s*(.*)$")
 TOKEN_RE = re.compile(r"\b[A-Za-z_][A-Za-z0-9_.]*\b")
+
+
+class CommandClient(Protocol):
+    def command(self, command: str) -> str:
+        ...
 
 
 @dataclass
@@ -348,7 +353,7 @@ def parse_dvaread_response(response: str, quantities: list[str]) -> dict[str, fl
     return parsed
 
 
-def read_quantities(client: BackendClient | DirectCarMakerCommandClient, quantities: list[str]) -> dict[str, float]:
+def read_quantities(client: CommandClient, quantities: list[str]) -> dict[str, float]:
     response = client.command(f"DVARead {' '.join(quantities)}")
     return parse_dvaread_response(response, quantities)
 
@@ -393,16 +398,14 @@ def ensure_connection(
 
 
 def execute_vehicle_command(
-    client: BackendClient | DirectCarMakerCommandClient,
+    client: CommandClient,
     command: VehicleCommand,
 ) -> str:
-    duration = 99999 if command.duration == -1 else command.duration
-    raw = f"DVAWrite {command.variable} {command.value} {duration} {command.mode}"
-    return client.command(raw)
+    return client.command(command.raw_command)
 
 
 def execute_trigger_action(
-    client: BackendClient | DirectCarMakerCommandClient,
+    client: CommandClient,
     trigger: TriggerSpec,
 ) -> list[str]:
     results: list[str] = []
@@ -417,23 +420,35 @@ def execute_trigger_action(
 
 
 def read_state_snapshot(state_reader: DirectCarMakerStateReader) -> dict[str, float | str | None]:
-    try:
-        return state_reader.read()
-    except RuntimeError as exc:
-        return {
-            "SC.State": math.nan,
-            "SC.TAccel": math.nan,
-            "SC.State.Label": f"unavailable: {exc}",
-            "SC.TimeMode": "unknown",
-        }
+    return state_reader.read()
 
 
 def load_action_text(args: argparse.Namespace) -> str:
+    if args.action and args.action_file:
+        raise RuntimeError("Use either --action or --action-file, not both")
     if args.action:
         return args.action
     if args.action_file:
-        return Path(args.action_file).read_text(encoding="utf-8")
+        path = Path(args.action_file)
+        if not path.exists():
+            raise RuntimeError(f"Action file not found: {path}")
+        return path.read_text(encoding="utf-8")
     return ""
+
+
+def validate_positive(name: str, value: float) -> None:
+    if value <= 0:
+        raise RuntimeError(f"{name} must be greater than zero")
+
+
+def validate_run_args(args: argparse.Namespace) -> None:
+    validate_positive("--duration", args.duration)
+    validate_positive("--interval", args.interval)
+    validate_positive("--trigger-time-scale", args.trigger_time_scale)
+    if args.trigger_duration_ms <= 0:
+        raise RuntimeError("--trigger-duration-ms must be greater than zero")
+    if args.direct_carmaker and args.connect:
+        raise RuntimeError("--connect is only valid when using the V3 backend")
 
 
 def validate_testrun_choice(testrun: str, allow_uncurated: bool) -> None:
@@ -460,6 +475,7 @@ def run_dry_plan(args: argparse.Namespace, quantities: list[str], trigger: Trigg
 
 
 def run_experiment(args: argparse.Namespace) -> int:
+    validate_run_args(args)
     validate_testrun_choice(args.testrun, args.allow_uncurated)
     quantities = parse_quantity_arg(args.quantities)
     action_text = load_action_text(args)
@@ -515,10 +531,16 @@ def run_experiment(args: argparse.Namespace) -> int:
 
                 values = read_quantities(client, quantities)
                 state = read_state_snapshot(state_reader)
+                state_value = state["SC.State"]
+                time_accel_value = state["SC.TAccel"]
+                if not isinstance(state_value, (int, float)) or not isinstance(
+                    time_accel_value, (int, float)
+                ):
+                    raise RuntimeError(f"Invalid state snapshot: {state!r}")
                 values.update(
                     {
-                        "SC.State": float(state["SC.State"]),
-                        "SC.TAccel": float(state["SC.TAccel"]),
+                        "SC.State": float(state_value),
+                        "SC.TAccel": float(time_accel_value),
                     }
                 )
                 sample_count += 1
@@ -600,6 +622,8 @@ def write_run_summary(
         f"# CarMaker Research Run: {summary_path.parent.name}",
         "",
         f"- TestRun: `{args.testrun}`",
+        f"- Command path: `{'direct-carmaker' if args.direct_carmaker else 'v3-backend'}`",
+        f"- Endpoint: `{args.host}:{args.port}`",
         f"- Duration requested: `{args.duration}` seconds",
         f"- Interval: `{args.interval}` seconds",
         f"- Samples: `{sample_count}`",
@@ -689,6 +713,9 @@ def self_test_command(args: argparse.Namespace) -> int:
     )
     fake_args = argparse.Namespace(
         testrun="Examples/BasicFunctions/Traffic/Man_AutonomousJunctions",
+        direct_carmaker=True,
+        host=DEFAULT_CARMAKER_HOST,
+        port=DEFAULT_CARMAKER_PORT,
         duration=1.0,
         interval=0.5,
     )

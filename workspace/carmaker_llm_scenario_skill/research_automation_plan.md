@@ -238,6 +238,15 @@ python3 agent/carmaker_research_runner.py self-test
   - Observed effect: `DM.Brake` became `0.3` at samples 5-6 and `Car.v`
     dropped from about `13.81 m/s` at trigger sample 4 to about `9.45 m/s`
     by sample 7.
+- 2026-05-18: Cleaned up the runner after live verification.
+  - Added explicit validation for duration, interval, trigger time-scale, trigger
+    duration, and invalid `--direct-carmaker --connect` combinations.
+  - Made `--action` and `--action-file` mutually exclusive and fail clearly when
+    the action file is missing.
+  - Tightened state snapshot handling so uncertain `SC.State` / `SC.TAccel`
+    reads stop the run instead of being silently treated as unknown telemetry.
+  - Added command path and endpoint to each run summary for direct/backend
+    provenance.
 
 ## Completion Audit
 
