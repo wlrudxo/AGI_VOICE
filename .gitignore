@@ -86,6 +86,7 @@ workspace/carmaker_llm_scenario_skill/reports/**/core_check.md
 workspace/carmaker_llm_scenario_skill/reports/**/lane_change_sample_*.md
 workspace/carmaker_llm_scenario_skill/reports/**/osc2cm_log_summary.md
 workspace/carmaker_llm_scenario_skill/reports/**/reference_*.md
+workspace/carmaker_llm_scenario_skill/reports/research_automation/runs/
 
 # CarMaker map/traffic pipeline generated and local-only artifacts
 MapGenerator/CarMakerPipeline/**/__pycache__/
