@@ -258,9 +258,9 @@ Notes:
 
 Repo docs:
 
-- `docs/Integration_Guide.md`: CarMaker TCP/APO control, `DVARead`, `DVAWrite`, traffic telemetry.
-- `CarMaker_RealtimeControl/README.md`: low-level CarMaker APO client, GUI/CLI, LLM control.
-- `skills/docs/04-road-scenario-and-ipgroad.md`: scenario authoring routing: Scenario Editor, OpenSCENARIO, IPGRoad API.
+- `agent/`: current CarMaker LLM research runner, direct TCP command helpers, and trigger monitors.
+- `references/legacy_realtime_control_integration_guide.md`: legacy TCP/APO control notes kept for historical reference.
+- `references/ipg_skill_library/docs/04-road-scenario-and-ipgroad.md`: scenario authoring routing: Scenario Editor, OpenSCENARIO, IPGRoad API.
 - `docs/UAQ_08_Traffic.md`: runtime traffic quantities such as `Traffic.nObjs`, `Traffic.<ObjectName>.sRoad`, `tRoad`, velocity.
 
 Installed local docs:

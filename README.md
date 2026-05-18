@@ -66,11 +66,13 @@ AGI_VOICE/
 │   ├── packages/
 │   └── scripts/
 ├── v2_legacy/              # 이전 루트 V2 앱 코드 보관 위치
-├── agent/
 ├── docs/
 ├── MapGenerator/
 │   └── CarMakerPipeline/   # CarMaker road/traffic generation pipeline
-└── CarMaker_RealtimeControl/
+└── workspace/
+    └── carmaker_llm_scenario_skill/
+        ├── agent/          # CarMaker LLM research runner and direct-control tools
+        └── references/     # IPG docs/skill source library and legacy notes
 ```
 
 ## 참고

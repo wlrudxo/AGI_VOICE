@@ -1,5 +1,10 @@
 # CarMaker Python 제어 시스템 통합 가이드
 
+> Legacy note: this document describes the removed top-level
+> `CarMaker_RealtimeControl/` prototype stack. The current CarMaker LLM
+> automation entrypoints live under
+> `workspace/carmaker_llm_scenario_skill/agent/`.
+
 본 문서는 CarMaker를 Python으로 제어하는 시스템을 실제 프로그램에 이식하기 위한 가이드입니다.
 
 ---

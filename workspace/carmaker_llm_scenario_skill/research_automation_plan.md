@@ -24,14 +24,14 @@ choose official TestRun/map
 
 ## Current Skill Surface
 
-- `agent/carmaker_command.py`
+- `workspace/carmaker_llm_scenario_skill/agent/carmaker_command.py`
   - Sends parsed `DVAWrite` commands through the V3 backend.
   - Supports `--resume-time` for trigger-time action after near-pausing with
     `SC.TAccel`.
-- `agent/carmaker_monitor.py`
+- `workspace/carmaker_llm_scenario_skill/agent/carmaker_monitor.py`
   - Samples current backend telemetry and direct `SC.State` / `SC.TAccel`.
   - Uses a fixed config for front traffic object fields.
-- `agent/carmaker_trigger_monitor.py`
+- `workspace/carmaker_llm_scenario_skill/agent/carmaker_trigger_monitor.py`
   - Monitors one condition, slows simulation with `SC.TAccel = 0.0001`, and
     prints a planning snapshot.
 - `v3/services/python-api/app/services/carmaker.py`
@@ -59,7 +59,7 @@ workflow that can:
 Add one agent-side research runner instead of widening the V3 UI first:
 
 ```text
-agent/carmaker_research_runner.py
+workspace/carmaker_llm_scenario_skill/agent/carmaker_research_runner.py
 ```
 
 Responsibilities:
@@ -116,7 +116,7 @@ TestRun is outside the curated set unless `--allow-uncurated` is passed.
 - 2026-05-15: Plan created after reading current V3 backend, agent scripts, and
   IPG official ScriptControl examples. Confirmed official commands:
   `LoadTestRun`, `StartSim`, `StopSim`.
-- 2026-05-15: Implemented `agent/carmaker_research_runner.py`.
+- 2026-05-15: Implemented `workspace/carmaker_llm_scenario_skill/agent/carmaker_research_runner.py`.
   - `catalog` scans official CarMaker 15.0.1 TestRun InfoFiles and writes
     `reports/research_automation/official_testrun_catalog.md`.
   - `select` lets an LLM narrow candidates by curated status, tags, and text
@@ -136,20 +136,20 @@ TestRun is outside the curated set unless `--allow-uncurated` is passed.
 Catalog official scenarios:
 
 ```bash
-python3 agent/carmaker_research_runner.py catalog --curated-only
+python3 workspace/carmaker_llm_scenario_skill/agent/carmaker_research_runner.py catalog --curated-only
 ```
 
 Select official scenarios by tags or text:
 
 ```bash
-python3 agent/carmaker_research_runner.py select --curated-only --tags traffic,junction
-python3 agent/carmaker_research_runner.py select --curated-only --search pedestrian
+python3 workspace/carmaker_llm_scenario_skill/agent/carmaker_research_runner.py select --curated-only --tags traffic,junction
+python3 workspace/carmaker_llm_scenario_skill/agent/carmaker_research_runner.py select --curated-only --search pedestrian
 ```
 
 Dry-run an experiment plan:
 
 ```bash
-python3 agent/carmaker_research_runner.py run \
+python3 workspace/carmaker_llm_scenario_skill/agent/carmaker_research_runner.py run \
   --testrun Examples/BasicFunctions/Traffic/Man_AutonomousJunctions \
   --quantities Time,Car.v,Vhcl.sRoad,Vhcl.tRoad,DM.Brake,Traffic.nObjs \
   --duration 15 \
@@ -162,7 +162,7 @@ python3 agent/carmaker_research_runner.py run \
 Run against a live V3 backend and CarMaker APO listener:
 
 ```bash
-python3 agent/carmaker_research_runner.py run \
+python3 workspace/carmaker_llm_scenario_skill/agent/carmaker_research_runner.py run \
   --backend-url http://127.0.0.1:8010 \
   --connect \
   --testrun Examples/BasicFunctions/Traffic/Man_AutonomousJunctions \
@@ -177,7 +177,7 @@ Run directly against the CarMaker 15 TcpCmdPort when the V3 backend is not
 running:
 
 ```bash
-python3 agent/carmaker_research_runner.py run \
+python3 workspace/carmaker_llm_scenario_skill/agent/carmaker_research_runner.py run \
   --direct-carmaker \
   --host localhost \
   --port 16660 \
@@ -199,20 +199,20 @@ workspace/carmaker_llm_scenario_skill/reports/research_automation/runs/<run_id>/
 Offline runner self-test:
 
 ```bash
-python3 agent/carmaker_research_runner.py self-test
+python3 workspace/carmaker_llm_scenario_skill/agent/carmaker_research_runner.py self-test
 ```
 
 ## Verification Log
 
-- `python3 -m py_compile agent/carmaker_research_runner.py agent/carmaker_command.py agent/carmaker_state.py`
+- `python3 -m py_compile workspace/carmaker_llm_scenario_skill/agent/carmaker_research_runner.py workspace/carmaker_llm_scenario_skill/agent/carmaker_command.py workspace/carmaker_llm_scenario_skill/agent/carmaker_state.py`
   passed.
-- `python3 agent/carmaker_research_runner.py catalog --curated-only` produced 7
+- `python3 workspace/carmaker_llm_scenario_skill/agent/carmaker_research_runner.py catalog --curated-only` produced 7
   curated official TestRun entries.
-- `python3 agent/carmaker_research_runner.py select --curated-only --tags traffic,junction`
+- `python3 workspace/carmaker_llm_scenario_skill/agent/carmaker_research_runner.py select --curated-only --tags traffic,junction`
   selected `Examples/BasicFunctions/Traffic/Man_AutonomousJunctions`.
-- `python3 agent/carmaker_research_runner.py select --curated-only --search pedestrian`
+- `python3 workspace/carmaker_llm_scenario_skill/agent/carmaker_research_runner.py select --curated-only --search pedestrian`
   selected `Examples/BasicFunctions/Traffic/Man_FollowTraj_PedestrianCrossing`.
-- `python3 agent/carmaker_research_runner.py self-test` passed.
+- `python3 workspace/carmaker_llm_scenario_skill/agent/carmaker_research_runner.py self-test` passed.
 - `run --dry-run` produced the intended Load/Start/Monitor/Trigger/Action/Stop
   plan.
 - Missing trigger action fails closed with
@@ -247,6 +247,13 @@ python3 agent/carmaker_research_runner.py self-test
     reads stop the run instead of being silently treated as unknown telemetry.
   - Added command path and endpoint to each run summary for direct/backend
     provenance.
+- 2026-05-18: Consolidated CarMaker LLM research assets into this workspace.
+  - Moved the current agent tools from top-level `agent/` to `agent/` inside
+    this workspace.
+  - Moved the IPG skill/document source library under
+    `references/ipg_skill_library/`.
+  - Removed the old top-level `CarMaker_RealtimeControl/` prototype stack from
+    the tracked tree; a legacy integration note remains under `references/`.
 
 ## Completion Audit
 
