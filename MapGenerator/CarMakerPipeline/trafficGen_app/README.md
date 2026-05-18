@@ -227,9 +227,11 @@ Typical flow:
    produced by a lateral route offset computed from lane width, shoulder width,
    and sidewalk width, so multi-lane roads place pedestrians farther from the
    road center. `Density persons/km` controls how many pedestrians are placed
-   from that lane length. Start `s`, walking speed, lateral offset within the
-   sidewalk band, and direction are randomized per pedestrian. The model and
-   direction can also be fixed or set to `Random`.
+   from that lane length. Start `s` is generated inside the route length using
+   stratified random spacing, so multiple pedestrians are spread along the
+   selected lane instead of all clustering at one random section. Walking speed,
+   lateral offset within the sidewalk band, and direction are randomized per
+   pedestrian. The model and direction can also be fixed or set to `Random`.
 5. Select the base or route-enabled RD5.
 6. Set `TestRun name`.
 7. Click `Generate TestRun`.
@@ -294,9 +296,11 @@ The generated TestRun keeps ego and traffic separate:
   sidewalk band. This mirrors the CarMaker example pattern such as
   `AEB_CrossingCarIntersection`, where pedestrians are normal traffic actors on
   ordinary RD5 routes rather than `CustomPath` actors. Their long/lat step
-  limits use route distance (`s`). Random sidewalk pedestrians use `DetectMask =
-  1 1` so sensors and IPG Driver/autonomous traffic can detect them. On roads
-  generated with RoadGen crosswalk nodes, the RD5 also contains
+  limits use the remaining route distance (`s`) from each pedestrian's start
+  position, so short lanes do not receive a 200 m maneuver beyond the end of
+  the route. Random sidewalk pedestrians use `DetectMask = 1 1` so sensors and
+  IPG Driver/autonomous traffic can detect them. On roads generated with RoadGen
+  crosswalk nodes, the RD5 also contains
   `RDST_Pedestrian` Driver stop markers so IPG Driver can yield near the
   crossing.
 

@@ -31,6 +31,7 @@ class TestRunConfig:
     route_ids: dict[str, str]
     ego: EgoPlan | None
     traffic: list[VehiclePlan]
+    route_lengths: dict[str, float] | None = None
     duration_s: float = 1000.0
     file_ident: str = "CarMaker-TestRun 15"
 
@@ -82,6 +83,12 @@ def _clamp(value: float, lower: float, upper: float) -> float:
 
 def _route_safe_pedestrian_offset(value: float) -> float:
     return _clamp(value, -PEDESTRIAN_ROUTE_OFFSET_LIMIT_M, PEDESTRIAN_ROUTE_OFFSET_LIMIT_M)
+
+
+def _route_safe_start_s(value: float, route_length: float | None) -> float:
+    if route_length is None or route_length <= 1.0:
+        return max(0.0, value)
+    return _clamp(value, 0.0, max(0.0, route_length - 1.0))
 
 
 def _unique_object_name(raw_name: str, used_names: set[str], fallback: str) -> str:
@@ -489,10 +496,11 @@ def _append_traffic_vehicle(
     vehicle: VehiclePlan,
     route_ids: dict[str, str],
     duration_s: float,
+    route_length: float | None = None,
     object_name: str | None = None,
 ) -> None:
     if _is_pedestrian(vehicle):
-        _append_pedestrian(lines, index, vehicle, route_ids, duration_s, object_name)
+        _append_pedestrian(lines, index, vehicle, route_ids, duration_s, route_length, object_name)
         return
 
     route_id = _route_id_for(route_ids, vehicle.route_name)
@@ -529,9 +537,10 @@ def _append_traffic_vehicle(
     ]
     if control_mode == TRAFFIC_CONTROL_IPG_DRIVER:
         traffic_lines.append(f"{prefix}.AutoDriver.Long.ConsiderRoadElm = 1  0  1")
+    if start_cond:
+        traffic_lines.append(f"{prefix}.Man.Start.StartCond = {start_cond}")
     traffic_lines.extend(
         [
-            f"{prefix}.Man.Start.StartCond = {start_cond}",
             f"{prefix}.nMan = 1",
             f"{prefix}.Man.Start.Velocity = {speed}",
             f"{prefix}.Man.TreatAtEnd = FreezeVel",
@@ -562,13 +571,18 @@ def _append_pedestrian(
     vehicle: VehiclePlan,
     route_ids: dict[str, str],
     duration_s: float,
+    route_length: float | None = None,
     object_name: str | None = None,
 ) -> None:
     route_id = _route_id_for(route_ids, vehicle.route_name)
     reverse = vehicle.speed_kmh < 0
     speed_abs = abs(vehicle.speed_kmh)
     speed = cm_float(speed_abs)
-    walk_distance = cm_float(max(5.0, min(200.0, duration_s * speed_abs / 3.6)))
+    start_s = _route_safe_start_s(vehicle.start_s, route_length)
+    walk_distance_m = max(1.0, min(200.0, duration_s * speed_abs / 3.6))
+    if route_length is not None and route_length > 1.0:
+        walk_distance_m = min(walk_distance_m, max(1.0, route_length - start_s - 0.5))
+    walk_distance = cm_float(walk_distance_m)
     orientation_yaw = "180.0" if reverse else "0.0"
     start_cond = ""
     if vehicle.start_delay_s > 0:
@@ -592,10 +606,15 @@ def _append_pedestrian(
             f"{prefix}.Routing.ObjId = {route_id}",
             f"{prefix}.StartPos.Type = Route",
             f"{prefix}.StartPos.ObjId = {route_id}",
-            f"{prefix}.StartPos = {cm_float(vehicle.start_s)} {cm_float(lateral_offset)}",
+            f"{prefix}.StartPos = {cm_float(start_s)} {cm_float(lateral_offset)}",
             f"{prefix}.StartPos.Orientation.Type = Relative",
             f"{prefix}.StartPos.Orientation = 0.0 0.0 {orientation_yaw}",
-            f"{prefix}.Man.Start.StartCond = {start_cond}",
+        ]
+    )
+    if start_cond:
+        lines.append(f"{prefix}.Man.Start.StartCond = {start_cond}")
+    lines.extend(
+        [
             f"{prefix}.nMan = 1",
             f"{prefix}.Man.Start.Velocity = {speed}",
             f"{prefix}.Man.TreatAtEnd = FreezePos",
@@ -641,9 +660,18 @@ def build_testrun_text(config: TestRunConfig) -> str:
         ]
     )
     used_names: set[str] = set()
+    route_lengths = config.route_lengths or {}
     for index, vehicle in enumerate(config.traffic):
         object_name = _unique_object_name(vehicle.name, used_names, f"Traffic_{index + 1}")
-        _append_traffic_vehicle(lines, index, vehicle, config.route_ids, config.duration_s, object_name)
+        _append_traffic_vehicle(
+            lines,
+            index,
+            vehicle,
+            config.route_ids,
+            config.duration_s,
+            route_lengths.get(vehicle.route_name),
+            object_name,
+        )
     lines.extend(
         [
             f"Traffic.N = {len(config.traffic)}",

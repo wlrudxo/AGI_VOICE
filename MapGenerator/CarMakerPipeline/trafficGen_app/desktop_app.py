@@ -1132,8 +1132,14 @@ class TrafficGenApp(tk.Tk):
         model_text = self.ped_model_var.get().strip()
         direction_mode = self.ped_direction_var.get().strip().lower()
 
+        s_span = max(0.0, start_s_max - start_s_min)
         for offset_index in range(count):
-            start_s = rng.uniform(start_s_min, start_s_max)
+            if count <= 1 or s_span <= 0.0:
+                start_s = rng.uniform(start_s_min, start_s_max)
+            else:
+                bin_start = start_s_min + s_span * offset_index / count
+                bin_end = start_s_min + s_span * (offset_index + 1) / count
+                start_s = rng.uniform(bin_start, bin_end)
             lateral_offset = rng.uniform(offset_min, offset_max)
             speed = rng.uniform(speed_min, speed_max)
             if direction_mode == "reverse":
@@ -1608,6 +1614,12 @@ class TrafficGenApp(tk.Tk):
             if road_path.resolve() != project_road_path.resolve():
                 shutil.copy2(road_path, project_road_path)
 
+            route_lookup = self.route_lookup()
+            route_lengths = {
+                name: route_lookup[name].total_length
+                for name in route_names
+                if name in route_lookup
+            }
             self.rd5_path_var.set(str(project_road_path))
             project_config = TestRunConfig(
                 scenario_name=scenario_name,
@@ -1615,6 +1627,7 @@ class TrafficGenApp(tk.Tk):
                 route_ids=route_ids,
                 ego=ego,
                 traffic=self.vehicles,
+                route_lengths=route_lengths,
                 duration_s=duration_s,
             )
             project_result = write_testrun(project_config, testrun_dir / scenario_name)
