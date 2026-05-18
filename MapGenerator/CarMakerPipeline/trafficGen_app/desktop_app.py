@@ -29,7 +29,14 @@ from traffic_core import (
     vehicle_category,
     write_plan,
 )
-from rd5_core import Rd5Road, build_mapping_report, lane_path_sequence, map_route_to_rd5, write_rd5_with_route
+from rd5_core import (
+    Rd5Road,
+    build_mapping_report,
+    lane_path_sequence,
+    map_route_to_rd5,
+    write_rd5_with_pedestrian_paths,
+    write_rd5_with_route,
+)
 from testrun_core import EgoPlan, TestRunConfig, project_road_reference, write_testrun
 
 ROADGEN_APP = ROOT.parent / "roadGen_app"
@@ -65,8 +72,8 @@ ROADGEN_DEFAULT_LANE_WIDTH_M = 3.2
 ROADGEN_DEFAULT_SHOULDER_WIDTH_M = 0.8
 ROADGEN_DEFAULT_SIDEWALK_WIDTH_M = 2.2
 PEDESTRIAN_SIDEWALK_JITTER_M = 0.25
-PEDESTRIAN_ROUTE_SAFE_OFFSET_MIN_M = -0.6
-PEDESTRIAN_ROUTE_SAFE_OFFSET_MAX_M = 0.6
+PEDESTRIAN_PATH_SAFE_OFFSET_MIN_M = -0.6
+PEDESTRIAN_PATH_SAFE_OFFSET_MAX_M = 0.6
 
 
 def find_carmaker_home() -> Path | None:
@@ -1006,8 +1013,8 @@ class TrafficGenApp(tk.Tk):
     ) -> tuple[float, float, bool]:
         del lane
         requested_min, requested_max = sorted((offset_min, offset_max))
-        safe_min = PEDESTRIAN_ROUTE_SAFE_OFFSET_MIN_M
-        safe_max = PEDESTRIAN_ROUTE_SAFE_OFFSET_MAX_M
+        safe_min = PEDESTRIAN_PATH_SAFE_OFFSET_MIN_M
+        safe_max = PEDESTRIAN_PATH_SAFE_OFFSET_MAX_M
         clamped_min = max(requested_min, safe_min)
         clamped_max = min(requested_max, safe_max)
         if clamped_min > clamped_max:
@@ -1172,8 +1179,7 @@ class TrafficGenApp(tk.Tk):
         )
         if adjusted_offsets:
             self.log(
-                "Pedestrian offsets were clamped to the route-safe road area. "
-                "Moving pedestrians directly on visual sidewalks needs CustomPath-based pedestrian paths."
+                "Pedestrian offsets were clamped to the CustomPath width around the sidewalk centerline."
             )
 
     def remove_generated_pedestrians(self) -> None:
@@ -1484,7 +1490,10 @@ class TrafficGenApp(tk.Tk):
         rd5_output_dir: Path,
         report_dir: Path,
         route_names: set[str],
+        pedestrian_route_names: set[str] | None = None,
     ) -> tuple[Path, dict[str, str]]:
+        pedestrian_route_names = pedestrian_route_names or set()
+        vehicle_route_names = route_names - pedestrian_route_names
         rd5_path = Path(self.rd5_path_var.get())
         if not rd5_path.exists():
             raise RoadPackageError(f"RD5 file does not exist: {rd5_path}")
@@ -1492,11 +1501,11 @@ class TrafficGenApp(tk.Tk):
         current_rd5_path = rd5_path
         rd5 = Rd5Road.load(current_rd5_path)
         current_rd5_path, rd5 = self.route_generation_base_rd5(current_rd5_path, rd5)
-        route_ids = self.route_ids_from_rd5(rd5, route_names)
+        route_ids = self.route_ids_from_rd5(rd5, vehicle_route_names)
         route_map = self.route_lookup()
 
         rd5_output_dir.mkdir(parents=True, exist_ok=True)
-        for route_name in sorted(route_names):
+        for route_name in sorted(vehicle_route_names):
             route = route_map.get(route_name)
             if route and route.is_same_edge_lane_change_only():
                 raise RoadPackageError(
@@ -1505,7 +1514,7 @@ class TrafficGenApp(tk.Tk):
                     "Choose start/goal lanes on different edges, or include a downstream checkpoint/goal edge."
                 )
 
-        for route_name in sorted(route_names):
+        for route_name in sorted(vehicle_route_names):
             if route_name in route_ids:
                 continue
             route = route_map.get(route_name)
@@ -1521,7 +1530,46 @@ class TrafficGenApp(tk.Tk):
             (report_dir / f"rd5_route_write_report_{route_name}.md").write_text(result.report, encoding="utf-8")
             current_rd5_path = result.output_path
             rd5 = Rd5Road.load(current_rd5_path)
-            route_ids.update(self.route_ids_from_rd5(rd5, route_names))
+            route_ids.update(self.route_ids_from_rd5(rd5, vehicle_route_names))
+
+        pedestrian_routes = {}
+        for route_name in sorted(pedestrian_route_names):
+            route = route_map.get(route_name)
+            if not route:
+                raise RoadPackageError(
+                    f"Pedestrian route '{route_name}' is not saved in the app yet. "
+                    "Click a lane and add pedestrians again, or save the current route."
+                )
+            pedestrian_routes[route_name] = route
+
+        if pedestrian_routes:
+            lane_width_by_edge = {
+                step.edge_id: self.estimate_lane_width(step.edge_id)
+                for route in pedestrian_routes.values()
+                for step in route.steps
+                if not step.internal
+            }
+            output_rd5 = rd5_output_dir / (
+                f"{safe_name(current_rd5_path.stem)}_pedpaths_{datetime.now().strftime('%H%M%S')}.rd5"
+            )
+            ped_result = write_rd5_with_pedestrian_paths(
+                rd5,
+                pedestrian_routes,
+                output_rd5,
+                lane_width_by_edge=lane_width_by_edge,
+                default_lane_width=ROADGEN_DEFAULT_LANE_WIDTH_M,
+                shoulder_width=ROADGEN_DEFAULT_SHOULDER_WIDTH_M,
+                sidewalk_width=ROADGEN_DEFAULT_SIDEWALK_WIDTH_M,
+            )
+            self.decorate_rd5_intersections_if_available(ped_result.output_path)
+            route_ids.update(ped_result.path_ids)
+            (report_dir / "rd5_pedestrian_path_report.md").write_text(ped_result.report, encoding="utf-8")
+            current_rd5_path = ped_result.output_path
+            rd5 = Rd5Road.load(current_rd5_path)
+            self.log(
+                "Wrote pedestrian sidewalk CustomPaths: "
+                + ", ".join(f"{name}->{path_id}" for name, path_id in sorted(ped_result.path_ids.items()))
+            )
 
         self.decorate_rd5_intersections_if_available(current_rd5_path)
         self.rd5_path_var.set(str(current_rd5_path))
@@ -1546,9 +1594,27 @@ class TrafficGenApp(tk.Tk):
         fallback_name = ego_route_name or (self.vehicles[0].route_name if self.vehicles else "route_testrun")
         scenario_name = safe_name(self.scenario_name_var.get() or f"{fallback_name}_testrun")
         route_names = set()
+        non_pedestrian_route_names = set()
         if self.ego_enabled_var.get():
             route_names.add(ego_route_name)
+            non_pedestrian_route_names.add(ego_route_name)
         route_names.update(vehicle.route_name for vehicle in self.vehicles)
+        non_pedestrian_route_names.update(
+            vehicle.route_name for vehicle in self.vehicles if not self.is_pedestrian_plan(vehicle)
+        )
+        pedestrian_route_names = {
+            vehicle.route_name
+            for vehicle in self.vehicles
+            if self.is_pedestrian_plan(vehicle)
+        }
+        route_conflicts = sorted(pedestrian_route_names & non_pedestrian_route_names)
+        if route_conflicts:
+            messagebox.showerror(
+                "Generate TestRun",
+                "Pedestrians need their own sidewalk CustomPath route names. Conflicting route names: "
+                + ", ".join(route_conflicts),
+            )
+            return None
 
         try:
             duration_s = float(self.duration_var.get())
@@ -1570,7 +1636,12 @@ class TrafficGenApp(tk.Tk):
             road_dir.mkdir(parents=True, exist_ok=True)
             testrun_dir.mkdir(parents=True, exist_ok=True)
 
-            road_path, route_ids = self.ensure_routes_enabled_rd5(road_dir, output_dir, route_names)
+            road_path, route_ids = self.ensure_routes_enabled_rd5(
+                road_dir,
+                output_dir,
+                route_names,
+                pedestrian_route_names=pedestrian_route_names,
+            )
             missing_routes = sorted(name for name in route_names if name not in route_ids)
             if missing_routes:
                 raise RoadPackageError(
