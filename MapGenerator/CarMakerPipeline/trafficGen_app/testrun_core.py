@@ -10,8 +10,7 @@ TRAFFIC_CONTROL_CONSTANT_SPEED = "constant_speed"
 DEFAULT_TRAFFIC_AUTODRIVER = "Car_Generic_Normal"
 DEFAULT_EGO_DRIVER_TEMPLATE = "Car_Normal"
 PEDESTRIAN_DETECT_MASK = "1 1"
-PEDESTRIAN_ROUTE_SAFE_OFFSET_MIN_M = -0.6
-PEDESTRIAN_ROUTE_SAFE_OFFSET_MAX_M = 0.6
+PEDESTRIAN_ROUTE_OFFSET_LIMIT_M = 30.0
 
 
 @dataclass
@@ -82,7 +81,7 @@ def _clamp(value: float, lower: float, upper: float) -> float:
 
 
 def _route_safe_pedestrian_offset(value: float) -> float:
-    return _clamp(value, PEDESTRIAN_ROUTE_SAFE_OFFSET_MIN_M, PEDESTRIAN_ROUTE_SAFE_OFFSET_MAX_M)
+    return _clamp(value, -PEDESTRIAN_ROUTE_OFFSET_LIMIT_M, PEDESTRIAN_ROUTE_OFFSET_LIMIT_M)
 
 
 def _unique_object_name(raw_name: str, used_names: set[str], fallback: str) -> str:
@@ -565,7 +564,7 @@ def _append_pedestrian(
     duration_s: float,
     object_name: str | None = None,
 ) -> None:
-    path_id = _route_id_for(route_ids, vehicle.route_name)
+    route_id = _route_id_for(route_ids, vehicle.route_name)
     reverse = vehicle.speed_kmh < 0
     speed_abs = abs(vehicle.speed_kmh)
     speed = cm_float(speed_abs)
@@ -589,10 +588,10 @@ def _append_pedestrian(
             f"{prefix}.TrailerName =",
             f"{prefix}.Template.FName = {vehicle.model}",
             f"{prefix}.AutoDriver.FName =",
-            f"{prefix}.Routing.Type = Off",
-            f"{prefix}.Routing.ObjId = {path_id}",
-            f"{prefix}.StartPos.Type = Path",
-            f"{prefix}.StartPos.ObjId = {path_id}",
+            f"{prefix}.Routing.Type = Route",
+            f"{prefix}.Routing.ObjId = {route_id}",
+            f"{prefix}.StartPos.Type = Route",
+            f"{prefix}.StartPos.ObjId = {route_id}",
             f"{prefix}.StartPos = {cm_float(vehicle.start_s)} {cm_float(lateral_offset)}",
             f"{prefix}.StartPos.Orientation.Type = Relative",
             f"{prefix}.StartPos.Orientation = 0.0 0.0 {orientation_yaw}",
@@ -665,7 +664,7 @@ def build_testrun_report(result: TestRunWriteResult) -> str:
         f"- Ego enabled: `{result.ego_enabled}`",
         f"- Traffic actors: `{result.n_traffic}`",
         "",
-        "## Route/Path ObjIds",
+        "## Route ObjIds",
         "",
     ]
     for name, route_id in sorted(result.route_ids.items()):
