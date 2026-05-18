@@ -130,6 +130,56 @@ TestRun is outside the curated set unless `--allow-uncurated` is passed.
     generation without requiring CarMaker.
   - Curated TestRuns are enforced by default. Use `--allow-uncurated` only after
     inspecting a candidate.
+- 2026-05-18: Confirmed CarMaker 15.0.1 + MATLAB R2025a + CM4SL startup path.
+  - MATLAB path setup:
+    `C:\IPG\carmaker\win64-15.0.1\Matlab`,
+    `C:\IPG\carmaker\win64-15.0.1\Matlab\R2025a`,
+    `C:\IPG\carmaker\win64-15.0.1\CM4SL\R2025a`.
+  - The stale CM13 project prompt was caused by
+    `C:\Users\user\.CarMaker-12.rc` pointing `Pref(ProjectDirs.CM-15.0)` at an
+    old `JW_MAGMA_PROTO_20260420_CM13` project. It was changed to
+    `E:/CarMakerProject/AGI`.
+  - `CarMaker4SL.slx` and `CM_Simulink` alone are not enough for
+    `Examples/BasicFunctions/Simulink/CountryRoad_ACC`; the TestRun expects the
+    `ACC` or `AccelCtrl_ACC` Simulink model.
+  - Working smoke sequence:
+    `cd E:\CarMakerProject\AGI\src_cm4sl`, run `cmenv`, copy
+    `Templates\Car4SL_Extras\src_cm4sl\ACC.mdl` into the project `src_cm4sl`,
+    open `E:\CarMakerProject\AGI\src_cm4sl\ACC.mdl`, then run
+    `cmcmd('activemodel', 'ACC')`.
+  - After that, loading
+    `Examples/BasicFunctions/Simulink/CountryRoad_ACC` and pressing Start
+    successfully entered the Simulink-backed run instead of returning from
+    `simulink init` to `idle`.
+
+## CarMaker for Simulink Smoke Contract
+
+Use this when setting up ego-controller work in MATLAB R2025a:
+
+```matlab
+addpath('C:\IPG\carmaker\win64-15.0.1\Matlab')
+addpath('C:\IPG\carmaker\win64-15.0.1\Matlab\R2025a')
+addpath('C:\IPG\carmaker\win64-15.0.1\CM4SL\R2025a')
+
+cd('E:\CarMakerProject\AGI\src_cm4sl')
+cmenv
+copyfile('C:\IPG\carmaker\win64-15.0.1\Templates\Car4SL_Extras\src_cm4sl\ACC.mdl', ...
+         'E:\CarMakerProject\AGI\src_cm4sl\ACC.mdl')
+
+open_system('E:\CarMakerProject\AGI\src_cm4sl\ACC.mdl')
+cmcmd('activemodel', 'ACC')
+cmcmd('activemodel')
+```
+
+Then load this CarMaker TestRun:
+
+```text
+Examples/BasicFunctions/Simulink/CountryRoad_ACC
+```
+
+If CarMaker status briefly shows `simulink init` and returns to `idle`, check
+that the active Simulink model is `ACC` and that `ACC.mdl` is open from the
+project `src_cm4sl` folder.
 
 ## LLM Usage Contract
 

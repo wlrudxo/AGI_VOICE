@@ -1,2 +1,3 @@
-target_speed 95 60000
+raw DVAWrite AccelCtrl.ACC.IsActive 1 60000 Abs
+raw DVAWrite AccelCtrl.ACC.DesiredSpd 26.38888888888889 60000 Abs
 lane_offset 3.5 60000

@@ -1,1 +1,7 @@
-lane_offset 0.0 30000
+lane_offset 2.5 4000
+wait 800
+lane_offset 1.5 4000
+wait 800
+lane_offset 0.5 4000
+wait 800
+lane_offset 0.0 4000

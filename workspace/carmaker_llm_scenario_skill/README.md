@@ -71,6 +71,82 @@ set Pgm(TcpCmdPort) 16660
 
 This opens the CarMaker TCP command port when the AGI project is loaded. If `netstat -ano | findstr :16660` has no `LISTENING` entry, V3 / API connection failures are CarMaker project startup issues, not scenario-generation issues.
 
+## Run Failure Triage
+
+Always inspect the CarMaker Session Log before doing deep signal analysis. The
+session log tells whether the run ended normally or aborted, and it records the
+first simulator-level failure reason.
+
+Session log location for the AGI project:
+
+```text
+E:\CarMakerProject\AGI\SimOutput\DESKTOP-QHUIRV6\Log\
+/mnt/e/CarMakerProject/AGI/SimOutput/DESKTOP-QHUIRV6/Log/
+```
+
+Typical command:
+
+```bash
+tail -120 /mnt/e/CarMakerProject/AGI/SimOutput/DESKTOP-QHUIRV6/Log/DESKTOP-QHUIRV6_*.log
+```
+
+Triage order:
+
+1. Check Session Log first.
+   - `SIM_END` means the scenario completed.
+   - `SIM_ABORT` means CarMaker stopped the run.
+   - `ERROR` lines usually contain the root failure, time, distance, and
+     sometimes global position. Example:
+     `Vehicle leaves road at about x=-2552.01, y=-15.7529 TireNo=3`.
+2. Check the runner summary and samples.
+   - Confirm which trigger policies fired.
+   - Confirm which action script was applied.
+   - Confirm the trigger snapshot time and monitored values.
+3. Inspect `.erg` only after the session log explains the failure class.
+   - Use `.erg.info` to find recorded quantities.
+   - For road departure, inspect `Car.tx`, `Car.ty`, `Car.v`, `Car.ay`,
+     `Car.YawRate`, `Car.SideSlipAngle`, `Car.Roll`, and `Vhcl.sRoad`.
+   - Use ERG to explain dynamics before the abort, not to discover the first
+     failure reason.
+
+Recent lesson from `Overtaking_AGI_Demo` with CM4SL ACC:
+
+- The session log showed `Vehicle leaves road`, so the first issue was not ACC
+  speed tracking but lateral return stability.
+- ERG then confirmed aggressive return dynamics: large `Car.ay`, high
+  `Car.YawRate`, and increasing side-slip after the return policy.
+- For ACC CM4SL vehicles, the target speed is
+  `AccelCtrl.ACC.DesiredSpd`, not `DM.v.Trgt`.
+
+## Drive Action DSL
+
+The drive runner accepts small action scripts for trigger policies. The helper
+commands default to CarMaker DVA mode `Abs`, matching the official `DVAWrite`
+default. A mode can be provided as the optional final argument when a different
+write behavior is needed.
+
+```text
+target_speed <kph> [duration_ms] [mode]
+lane_offset <meters> [duration_ms] [mode]
+brake <value> [duration_ms] [mode]
+gas <value> [duration_ms] [mode]
+wait [duration_ms]
+raw <CarMaker command>
+```
+
+Supported modes are `Abs`, `Off`, `Fac`, `AbsRamp`, and `FacRamp`. Use `raw`
+for quantities that do not have a helper yet, such as CM4SL ACC internals:
+
+```text
+raw DVAWrite AccelCtrl.ACC.DesiredSpd 26.38888888888889 60000 Abs
+lane_offset 3.5 60000
+lane_offset 0.0 8000 AbsRamp
+```
+
+For lane return, a single long `AbsRamp` from `3.5` to `0.0` can still be too
+aggressive depending on speed and road curvature. The current demo policy uses
+staged `AbsRamp` offsets with waits between stages.
+
 ## Local Scenario Assets
 
 ### OpenSCENARIO / OpenDRIVE

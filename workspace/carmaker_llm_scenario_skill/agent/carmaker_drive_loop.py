@@ -16,6 +16,9 @@ from carmaker_runtime import (
 )
 
 
+ALLOWED_DVA_MODES = ("Abs", "Off", "Fac", "AbsRamp", "FacRamp")
+
+
 def utc_stamp() -> str:
     return datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
 
@@ -116,6 +119,12 @@ def execute_drive_line(client: CommandClient, line: str, default_duration_ms: in
     if not parts:
         return
     op = parts[0].lower()
+    if op == "wait":
+        duration_ms = int(float(parts[1])) if len(parts) > 1 else default_duration_ms
+        if verbose:
+            print(f"Action: wait {duration_ms} ms", flush=True)
+        time.sleep(duration_ms / 1000.0)
+        return
     if op == "raw":
         command = line[len(parts[0]):].strip()
     elif op == "start":
@@ -133,22 +142,26 @@ def execute_drive_line(client: CommandClient, line: str, default_duration_ms: in
         if len(parts) < 2:
             raise RuntimeError("target_speed requires kph")
         duration_ms = int(float(parts[2])) if len(parts) > 2 else default_duration_ms
-        command = f"DVAWrite DM.v.Trgt {float(parts[1]) / 3.6} {duration_ms} Abs"
+        mode = parse_dva_mode(parts, 3)
+        command = f"DVAWrite DM.v.Trgt {float(parts[1]) / 3.6} {duration_ms} {mode}"
     elif op == "lane_offset":
         if len(parts) < 2:
             raise RuntimeError("lane_offset requires meters")
         duration_ms = int(float(parts[2])) if len(parts) > 2 else default_duration_ms
-        command = f"DVAWrite DM.LaneOffset {float(parts[1])} {duration_ms} Abs"
+        mode = parse_dva_mode(parts, 3)
+        command = f"DVAWrite DM.LaneOffset {float(parts[1])} {duration_ms} {mode}"
     elif op == "brake":
         if len(parts) < 2:
             raise RuntimeError("brake requires value")
         duration_ms = int(float(parts[2])) if len(parts) > 2 else default_duration_ms
-        command = f"DVAWrite DM.Brake {float(parts[1])} {duration_ms} Abs"
+        mode = parse_dva_mode(parts, 3)
+        command = f"DVAWrite DM.Brake {float(parts[1])} {duration_ms} {mode}"
     elif op == "gas":
         if len(parts) < 2:
             raise RuntimeError("gas requires value")
         duration_ms = int(float(parts[2])) if len(parts) > 2 else default_duration_ms
-        command = f"DVAWrite DM.Gas {float(parts[1])} {duration_ms} Abs"
+        mode = parse_dva_mode(parts, 3)
+        command = f"DVAWrite DM.Gas {float(parts[1])} {duration_ms} {mode}"
     else:
         raise RuntimeError(f"Unknown drive action: {op}")
     result = client.command(command)
@@ -156,6 +169,16 @@ def execute_drive_line(client: CommandClient, line: str, default_duration_ms: in
         print(f"Action: {command}", flush=True)
         print(f"{command} -> {result}", flush=True)
     time.sleep(0.03)
+
+
+def parse_dva_mode(parts: list[str], index: int) -> str:
+    if len(parts) <= index:
+        return "Abs"
+    mode = parts[index]
+    for allowed in ALLOWED_DVA_MODES:
+        if mode.lower() == allowed.lower():
+            return allowed
+    raise RuntimeError(f"Unsupported DVA mode: {mode}")
 
 
 @dataclass
