@@ -340,7 +340,7 @@ def parse_dvaread_response(response: str, quantities: list[str]) -> dict[str, fl
     if not response.startswith("O"):
         raise RuntimeError(f"DVARead failed: {response!r}")
     values = response[1:].strip().split()
-    if len(values) < len(quantities):
+    if len(values) != len(quantities):
         raise RuntimeError(
             f"DVARead returned {len(values)} value(s) for {len(quantities)} quantity request: {response!r}"
         )
@@ -474,6 +474,309 @@ def run_dry_plan(args: argparse.Namespace, quantities: list[str], trigger: Trigg
         print("Stop command: StopSim", flush=True)
 
 
+def create_command_client(args: argparse.Namespace) -> CommandClient:
+    if args.direct_carmaker:
+        print(f"Connected directly to CarMaker: {args.host}:{args.port}", flush=True)
+        return DirectCarMakerCommandClient(args.host, args.port)
+
+    client = BackendClient(args.backend_url)
+    status = ensure_connection(client, args.connect, args.host, args.port)
+    print(f"Connected to CarMaker via backend: {status['host']}:{status['port']}", flush=True)
+    return client
+
+
+def strip_ok_prefix(response: str) -> str:
+    return response[1:].strip() if response.startswith("O") else response
+
+
+def load_testrun_command(args: argparse.Namespace) -> int:
+    validate_testrun_choice(args.testrun, args.allow_uncurated)
+    if args.direct_carmaker and args.connect:
+        raise RuntimeError("--connect is only valid when using the V3 backend")
+
+    verify_keys = args.verify_key or [
+        "Vehicle",
+        "Traffic.N",
+        "DrivMan.Man.0.LongStep.0.Dyn",
+        "DrivMan.Man.0.LatStep.0.Dyn",
+    ]
+
+    print(f"TestRun: {args.testrun}", flush=True)
+    if args.dry_run:
+        print("DRY RUN: no backend or CarMaker commands will be sent.", flush=True)
+        if args.stop_first:
+            print("Stop command: StopSim", flush=True)
+        print(f"Load command: LoadTestRun \"{args.testrun}\"", flush=True)
+        print(f"Verify keys: {', '.join(verify_keys)}", flush=True)
+        return 0
+
+    client = create_command_client(args)
+    if args.stop_first:
+        stop_result = client.command("StopSim")
+        print(f"StopSim -> {stop_result}", flush=True)
+
+    load_result = client.command(f'LoadTestRun "{args.testrun}"')
+    print(f"LoadTestRun -> {load_result}", flush=True)
+
+    for key in verify_keys:
+        response = client.command(f'IFileRead TestRun "{key}"')
+        print(f"{key} = {strip_ok_prefix(response)}", flush=True)
+    return 0
+
+
+def snapshot_command(args: argparse.Namespace) -> int:
+    if args.direct_carmaker and args.connect:
+        raise RuntimeError("--connect is only valid when using the V3 backend")
+
+    quantities = parse_quantity_arg(args.quantities)
+    for required in STATE_QUANTITIES:
+        if required not in quantities:
+            quantities.append(required)
+
+    print(f"Quantities: {', '.join(quantities)}", flush=True)
+    if args.dry_run:
+        print("DRY RUN: no backend or CarMaker commands will be sent.", flush=True)
+        if not args.no_pause:
+            print(
+                f"Pause command: DVAWrite SC.TAccel {args.pause_time_scale} "
+                f"{args.pause_duration_ms} Abs",
+                flush=True,
+            )
+        print(f"Read command: DVARead {' '.join(quantities)}", flush=True)
+        if args.resume_after_read:
+            print("Resume command: DVAWrite SC.TAccel 1.0 3000 Abs", flush=True)
+        return 0
+
+    client = create_command_client(args)
+    if not args.no_pause:
+        pause_result = client.command(
+            f"DVAWrite SC.TAccel {args.pause_time_scale} {args.pause_duration_ms} Abs"
+        )
+        print(f"Pause -> {pause_result}", flush=True)
+        time.sleep(args.pause_settle_sec)
+
+    values = read_quantities(client, quantities)
+    for key in quantities:
+        value = values.get(key)
+        if isinstance(value, float):
+            print(f"{key} = {value:.6g}", flush=True)
+        else:
+            print(f"{key} = {value}", flush=True)
+
+    if args.resume_after_read:
+        resume_result = client.command("DVAWrite SC.TAccel 1.0 3000 Abs")
+        print(f"Resume -> {resume_result}", flush=True)
+    return 0
+
+
+def build_control_commands(args: argparse.Namespace) -> tuple[list[str], list[str]]:
+    action = args.control_action
+    commands: list[str] = []
+    readback: list[str] = []
+
+    if action == "start":
+        return ["StartSim"], ["SC.State", "SC.TAccel"]
+    if action == "stop":
+        return ["StopSim"], ["SC.State", "SC.TAccel"]
+    if action == "pause":
+        return [
+            f"DVAWrite SC.TAccel {args.pause_time_scale} {args.duration_ms} Abs"
+        ], ["SC.TAccel", "SC.State"]
+    if action == "resume":
+        return ["DVAWrite SC.TAccel 1.0 3000 Abs"], ["SC.TAccel", "SC.State"]
+    if action == "raw":
+        if not args.raw_command:
+            raise RuntimeError("control raw requires --command")
+        return [args.raw_command], []
+
+    if args.resume_first:
+        commands.append("DVAWrite SC.TAccel 1.0 3000 Abs")
+
+    variable = {
+        "gas": "DM.Gas",
+        "brake": "DM.Brake",
+        "steer": "DM.Steer.Ang",
+        "lane-offset": "DM.LaneOffset",
+        "target-speed": "DM.v.Trgt",
+    }[action]
+
+    if action == "target-speed":
+        if args.kph is None and args.mps is None:
+            raise RuntimeError("control target-speed requires --kph or --mps")
+        if args.kph is not None and args.mps is not None:
+            raise RuntimeError("Use either --kph or --mps, not both")
+        value = args.mps if args.mps is not None else args.kph / 3.6
+    else:
+        if args.value is None:
+            raise RuntimeError(f"control {action} requires --value")
+        value = args.value
+
+    commands.append(f"DVAWrite {variable} {value} {args.duration_ms} {args.mode}")
+    readback.extend([variable, "SC.TAccel", "SC.State"])
+    return commands, readback
+
+
+def control_command(args: argparse.Namespace) -> int:
+    if args.direct_carmaker and args.connect:
+        raise RuntimeError("--connect is only valid when using the V3 backend")
+
+    commands, readback = build_control_commands(args)
+    print(f"Control action: {args.control_action}", flush=True)
+    for command in commands:
+        print(f"Command: {command}", flush=True)
+
+    if args.dry_run:
+        print("DRY RUN: no backend or CarMaker commands will be sent.", flush=True)
+        if readback and not args.no_readback:
+            print(f"Readback: DVARead {' '.join(readback)}", flush=True)
+        return 0
+
+    client = create_command_client(args)
+    for command in commands:
+        result = client.command(command)
+        print(f"{command} -> {result}", flush=True)
+        time.sleep(args.command_delay_sec)
+
+    if readback and not args.no_readback:
+        values = read_quantities(client, readback)
+        for key in readback:
+            value = values.get(key)
+            if isinstance(value, float):
+                print(f"{key} = {value:.6g}", flush=True)
+            else:
+                print(f"{key} = {value}", flush=True)
+    return 0
+
+
+def split_script_line(line: str) -> list[str]:
+    return [part for part in re.split(r"\s+", line.strip()) if part]
+
+
+def quantities_for_expression(expression: str) -> list[str]:
+    reserved = {"and", "or", "not", "abs", "sqrt", "pow", "min", "max", "True", "False"}
+    quantities: list[str] = []
+    for token in TOKEN_RE.findall(expression):
+        if token not in reserved and token not in quantities:
+            quantities.append(token)
+    return quantities
+
+
+def load_script_lines(args: argparse.Namespace) -> list[str]:
+    if args.script and args.line:
+        raise RuntimeError("Use either --script or --line, not both")
+    if args.script:
+        path = Path(args.script)
+        if not path.exists():
+            raise RuntimeError(f"Script file not found: {path}")
+        raw_lines = path.read_text(encoding="utf-8").splitlines()
+    else:
+        raw_lines = args.line or []
+    lines = []
+    for raw_line in raw_lines:
+        line = raw_line.strip()
+        if line and not line.startswith("#"):
+            lines.append(line)
+    if not lines:
+        raise RuntimeError("Script is empty")
+    return lines
+
+
+def script_command(args: argparse.Namespace) -> int:
+    if args.direct_carmaker and args.connect:
+        raise RuntimeError("--connect is only valid when using the V3 backend")
+
+    lines = load_script_lines(args)
+    print("Script:", flush=True)
+    for idx, line in enumerate(lines, start=1):
+        print(f"  {idx}. {line}", flush=True)
+
+    if args.dry_run:
+        print("DRY RUN: no backend or CarMaker commands will be sent.", flush=True)
+        return 0
+
+    client = create_command_client(args)
+    for idx, line in enumerate(lines, start=1):
+        parts = split_script_line(line)
+        op = parts[0].lower()
+        print(f"[{idx}] {line}", flush=True)
+
+        if op == "load":
+            if len(parts) != 2:
+                raise RuntimeError("load requires one TestRun name")
+            result = client.command(f'LoadTestRun "{parts[1]}"')
+            print(f"LoadTestRun -> {result}", flush=True)
+        elif op == "stop":
+            print(f"StopSim -> {client.command('StopSim')}", flush=True)
+        elif op == "start":
+            print(f"StartSim -> {client.command('StartSim')}", flush=True)
+        elif op == "resume":
+            duration_ms = int(float(parts[1])) if len(parts) > 1 else args.default_duration_ms
+            command = f"DVAWrite SC.TAccel 1.0 {duration_ms} Abs"
+            print(f"{command} -> {client.command(command)}", flush=True)
+        elif op == "pause":
+            scale = float(parts[1]) if len(parts) > 1 else 0.0001
+            duration_ms = int(float(parts[2])) if len(parts) > 2 else args.default_duration_ms
+            command = f"DVAWrite SC.TAccel {scale} {duration_ms} Abs"
+            print(f"{command} -> {client.command(command)}", flush=True)
+        elif op == "target_speed":
+            if len(parts) < 2:
+                raise RuntimeError("target_speed requires kph")
+            kph = float(parts[1])
+            duration_ms = int(float(parts[2])) if len(parts) > 2 else args.default_duration_ms
+            command = f"DVAWrite DM.v.Trgt {kph / 3.6} {duration_ms} Abs"
+            print(f"{command} -> {client.command(command)}", flush=True)
+        elif op == "lane_offset":
+            if len(parts) < 2:
+                raise RuntimeError("lane_offset requires meters")
+            value = float(parts[1])
+            duration_ms = int(float(parts[2])) if len(parts) > 2 else args.default_duration_ms
+            command = f"DVAWrite DM.LaneOffset {value} {duration_ms} Abs"
+            print(f"{command} -> {client.command(command)}", flush=True)
+        elif op == "raw":
+            command = line[len(parts[0]):].strip()
+            if not command:
+                raise RuntimeError("raw requires a CarMaker command")
+            print(f"{command} -> {client.command(command)}", flush=True)
+        elif op == "wait":
+            if len(parts) != 2:
+                raise RuntimeError("wait requires seconds")
+            seconds = float(parts[1])
+            time.sleep(seconds)
+        elif op == "wait_until":
+            if len(parts) < 2:
+                raise RuntimeError("wait_until requires an expression")
+            timeout_sec = args.wait_timeout_sec
+            interval_sec = args.wait_interval_sec
+            expression_tokens = parts[1:]
+            if len(expression_tokens) >= 2:
+                try:
+                    timeout_sec = float(expression_tokens[-1])
+                    expression_tokens = expression_tokens[:-1]
+                except ValueError:
+                    pass
+            expression = " ".join(expression_tokens)
+            quantities = quantities_for_expression(expression)
+            if not quantities:
+                raise RuntimeError(f"No quantities found in expression: {expression}")
+            deadline = time.monotonic() + timeout_sec
+            while True:
+                values = read_quantities(client, quantities)
+                print(
+                    "  "
+                    + ", ".join(f"{key}={values.get(key):.6g}" for key in quantities),
+                    flush=True,
+                )
+                if evaluate_expression(expression, values):
+                    print(f"  condition met: {expression}", flush=True)
+                    break
+                if time.monotonic() >= deadline:
+                    raise RuntimeError(f"wait_until timed out after {timeout_sec}s: {expression}")
+                time.sleep(interval_sec)
+        else:
+            raise RuntimeError(f"Unknown script operation: {op}")
+    return 0
+
+
 def run_experiment(args: argparse.Namespace) -> int:
     validate_run_args(args)
     validate_testrun_choice(args.testrun, args.allow_uncurated)
@@ -502,14 +805,11 @@ def run_experiment(args: argparse.Namespace) -> int:
     summary_path = output_dir / "summary.md"
 
     if args.direct_carmaker:
-        client = DirectCarMakerCommandClient(args.host, args.port)
+        client = create_command_client(args)
         state_reader = DirectCarMakerStateReader(args.host, args.port)
-        print(f"Connected directly to CarMaker: {args.host}:{args.port}", flush=True)
     else:
-        client = BackendClient(args.backend_url)
+        client = create_command_client(args)
         state_reader = DirectCarMakerStateReader(args.host, args.port, backend_url=args.backend_url)
-        status = ensure_connection(client, args.connect, args.host, args.port)
-        print(f"Connected to CarMaker via backend: {status['host']}:{status['port']}", flush=True)
 
     sample_count = 0
     failure: str | None = None
@@ -765,6 +1065,85 @@ def parse_args() -> argparse.Namespace:
     select.add_argument("--curated-only", action="store_true")
     select.add_argument("--limit", type=int, default=20)
 
+    load = subparsers.add_parser("load", help="Load one TestRun and verify key InfoFile values.")
+    load.add_argument("--testrun", required=True, help='Example: "Overtaking"')
+    load.add_argument("--backend-url", default=DEFAULT_BACKEND_URL)
+    load.add_argument("--direct-carmaker", action="store_true", help="Bypass the V3 backend and send commands directly to CarMaker TcpCmdPort.")
+    load.add_argument("--connect", action="store_true")
+    load.add_argument("--host", default=DEFAULT_CARMAKER_HOST)
+    load.add_argument("--port", type=int, default=DEFAULT_CARMAKER_PORT)
+    load.add_argument("--stop-first", action="store_true", help="Send StopSim before loading the TestRun.")
+    load.add_argument("--allow-uncurated", action="store_true")
+    load.add_argument("--dry-run", action="store_true")
+    load.add_argument(
+        "--verify-key",
+        action="append",
+        help="InfoFile key to read after loading. Repeat for multiple keys.",
+    )
+
+    snapshot = subparsers.add_parser(
+        "snapshot",
+        help="Optionally slow simulation time, read selected DVA quantities, and keep the scene stable.",
+    )
+    snapshot.add_argument("--backend-url", default=DEFAULT_BACKEND_URL)
+    snapshot.add_argument("--direct-carmaker", action="store_true", help="Bypass the V3 backend and send commands directly to CarMaker TcpCmdPort.")
+    snapshot.add_argument("--connect", action="store_true")
+    snapshot.add_argument("--host", default=DEFAULT_CARMAKER_HOST)
+    snapshot.add_argument("--port", type=int, default=DEFAULT_CARMAKER_PORT)
+    snapshot.add_argument("--quantities", help="Comma-separated DVARead quantities.")
+    snapshot.add_argument("--no-pause", action="store_true", help="Read quantities without changing SC.TAccel first.")
+    snapshot.add_argument("--pause-time-scale", type=float, default=0.0001)
+    snapshot.add_argument("--pause-duration-ms", type=int, default=30000)
+    snapshot.add_argument("--pause-settle-sec", type=float, default=0.1)
+    snapshot.add_argument("--resume-after-read", action="store_true")
+    snapshot.add_argument("--dry-run", action="store_true")
+
+    control = subparsers.add_parser("control", help="Send named simulation or ego control commands.")
+    control.add_argument(
+        "control_action",
+        choices=[
+            "start",
+            "stop",
+            "pause",
+            "resume",
+            "target-speed",
+            "gas",
+            "brake",
+            "steer",
+            "lane-offset",
+            "raw",
+        ],
+    )
+    control.add_argument("--backend-url", default=DEFAULT_BACKEND_URL)
+    control.add_argument("--direct-carmaker", action="store_true", help="Bypass the V3 backend and send commands directly to CarMaker TcpCmdPort.")
+    control.add_argument("--connect", action="store_true")
+    control.add_argument("--host", default=DEFAULT_CARMAKER_HOST)
+    control.add_argument("--port", type=int, default=DEFAULT_CARMAKER_PORT)
+    control.add_argument("--value", type=float, help="Control value for gas/brake/steer/lane-offset.")
+    control.add_argument("--kph", type=float, help="Target speed in km/h for target-speed.")
+    control.add_argument("--mps", type=float, help="Target speed in m/s for target-speed.")
+    control.add_argument("--duration-ms", type=int, default=3000)
+    control.add_argument("--mode", default="Abs", choices=["Abs", "AbsRamp", "Fac", "FacRamp", "Off"])
+    control.add_argument("--pause-time-scale", type=float, default=0.0001)
+    control.add_argument("--resume-first", action="store_true", help="Restore SC.TAccel=1.0 before ego control commands.")
+    control.add_argument("--command", dest="raw_command", help="Raw CarMaker command for control raw.")
+    control.add_argument("--command-delay-sec", type=float, default=0.05)
+    control.add_argument("--no-readback", action="store_true")
+    control.add_argument("--dry-run", action="store_true")
+
+    script = subparsers.add_parser("script", help="Run a small CarMaker control script with waits and conditions.")
+    script.add_argument("--backend-url", default=DEFAULT_BACKEND_URL)
+    script.add_argument("--direct-carmaker", action="store_true", help="Bypass the V3 backend and send commands directly to CarMaker TcpCmdPort.")
+    script.add_argument("--connect", action="store_true")
+    script.add_argument("--host", default=DEFAULT_CARMAKER_HOST)
+    script.add_argument("--port", type=int, default=DEFAULT_CARMAKER_PORT)
+    script.add_argument("--script", help="Path to a script file.")
+    script.add_argument("--line", action="append", help="Script line. Repeat for multiple lines.")
+    script.add_argument("--default-duration-ms", type=int, default=60000)
+    script.add_argument("--wait-timeout-sec", type=float, default=10.0)
+    script.add_argument("--wait-interval-sec", type=float, default=0.25)
+    script.add_argument("--dry-run", action="store_true")
+
     run = subparsers.add_parser("run", help="Load, run, monitor, and summarize one TestRun.")
     run.add_argument("--testrun", required=True, help='Example: "Examples/BasicFunctions/Traffic/Man_AutonomousJunctions"')
     run.add_argument("--backend-url", default=DEFAULT_BACKEND_URL)
@@ -799,6 +1178,14 @@ def main() -> int:
             return catalog_command(args)
         if args.command == "select":
             return select_command(args)
+        if args.command == "load":
+            return load_testrun_command(args)
+        if args.command == "snapshot":
+            return snapshot_command(args)
+        if args.command == "control":
+            return control_command(args)
+        if args.command == "script":
+            return script_command(args)
         if args.command == "run":
             return run_experiment(args)
         if args.command == "self-test":

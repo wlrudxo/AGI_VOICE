@@ -1,0 +1,11 @@
+# Demo script: load, overtake, return shortly after passing the lead vehicle.
+stop
+load Overtaking_AGI_Demo
+resume 120000
+start
+target_speed 95 60000
+lane_offset 3.5 60000
+wait_until Time > 4.5 8
+lane_offset 0 60000
+wait_until Time > 10 12
+stop
