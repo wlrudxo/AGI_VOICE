@@ -119,11 +119,13 @@ def ensure_connection(
 
 def create_command_client(args: Any) -> CommandClient:
     if args.direct_carmaker:
-        print(f"Connected directly to CarMaker: {args.host}:{args.port}", flush=True)
+        if not getattr(args, "quiet", False):
+            print(f"Connected directly to CarMaker: {args.host}:{args.port}", flush=True)
         return DirectCarMakerCommandClient(args.host, args.port)
     client = BackendClient(args.backend_url)
     status = ensure_connection(client, args.connect, args.host, args.port)
-    print(f"Connected to CarMaker via backend: {status['host']}:{status['port']}", flush=True)
+    if not getattr(args, "quiet", False):
+        print(f"Connected to CarMaker via backend: {status['host']}:{status['port']}", flush=True)
     return client
 
 

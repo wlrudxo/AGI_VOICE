@@ -222,8 +222,11 @@ def drive_command(args: argparse.Namespace) -> int:
         skip_load=args.skip_load,
         stop_at_end=not args.no_stop,
         settle_after_start_sec=args.settle_after_start_sec,
+        verbose=not args.quiet,
     )
-    run_triggered_drive(client, config)
+    summary_path = run_triggered_drive(client, config)
+    if args.quiet:
+        print(f"Summary: {summary_path}", flush=True)
     return 0
 
 
@@ -364,6 +367,11 @@ def parse_args() -> argparse.Namespace:
         help="Reuse the currently loaded TestRun and only StopSim/StartSim for demo reruns.",
     )
     drive.add_argument("--no-stop", action="store_true")
+    drive.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Suppress per-command and per-sample console logs while still writing CSV/JSONL.",
+    )
     drive.add_argument("--run-id")
     drive.add_argument("--output-dir", default=str(DEFAULT_REPORT_DIR / "runs"))
     drive.add_argument("--dry-run", action="store_true")

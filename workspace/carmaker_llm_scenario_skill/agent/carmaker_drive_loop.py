@@ -25,6 +25,7 @@ class SnapshotLogger:
     client: CommandClient
     quantities: list[str]
     output_dir: Path
+    verbose: bool = True
     jsonl_file: Any = None
     csv_file: Any = None
     csv_writer: Any = None
@@ -69,7 +70,8 @@ class SnapshotLogger:
         row.update(values)
         self.csv_writer.writerow(row)
         self.csv_file.flush()
-        print(format_logged_sample(record), flush=True)
+        if self.verbose:
+            print(format_logged_sample(record), flush=True)
         return record
 
 
@@ -109,7 +111,7 @@ def parse_drive_action_lines(lines: list[str] | None, file_path: str | None) -> 
     ]
 
 
-def execute_drive_line(client: CommandClient, line: str, default_duration_ms: int) -> None:
+def execute_drive_line(client: CommandClient, line: str, default_duration_ms: int, verbose: bool) -> None:
     parts = [part for part in line.split() if part]
     if not parts:
         return
@@ -149,8 +151,10 @@ def execute_drive_line(client: CommandClient, line: str, default_duration_ms: in
         command = f"DVAWrite DM.Gas {float(parts[1])} {duration_ms} Abs"
     else:
         raise RuntimeError(f"Unknown drive action: {op}")
-    print(f"Action: {command}", flush=True)
-    print(f"{command} -> {client.command(command)}", flush=True)
+    result = client.command(command)
+    if verbose:
+        print(f"Action: {command}", flush=True)
+        print(f"{command} -> {result}", flush=True)
     time.sleep(0.03)
 
 
@@ -177,6 +181,14 @@ class DriveLoopConfig:
     skip_load: bool = False
     stop_at_end: bool = True
     settle_after_start_sec: float = 0.2
+    verbose: bool = True
+
+
+def log_command(client: CommandClient, command: str, verbose: bool, label: str | None = None) -> str:
+    result = client.command(command)
+    if verbose:
+        print(f"{label or command} -> {result}", flush=True)
+    return result
 
 
 def run_triggered_drive(client: CommandClient, config: DriveLoopConfig) -> Path:
@@ -191,18 +203,19 @@ def run_triggered_drive(client: CommandClient, config: DriveLoopConfig) -> Path:
 
     config.output_dir.mkdir(parents=True, exist_ok=True)
     summary_path = config.output_dir / "summary.md"
-    with SnapshotLogger(client, config.quantities, config.output_dir) as logger:
-        print(f"StopSim -> {client.command('StopSim')}", flush=True)
+    with SnapshotLogger(client, config.quantities, config.output_dir, verbose=config.verbose) as logger:
+        log_command(client, "StopSim", config.verbose)
         if config.skip_load:
-            print("LoadTestRun -> skipped; using the currently loaded TestRun", flush=True)
+            if config.verbose:
+                print("LoadTestRun -> skipped; using the currently loaded TestRun", flush=True)
         else:
             load_command = f'LoadTestRun "{config.testrun}"'
-            print(f"LoadTestRun -> {client.command(load_command)}", flush=True)
-        print("DVAWrite DM.v.Trgt 13.88888888888889 120000 Abs -> " + client.command("DVAWrite DM.v.Trgt 13.88888888888889 120000 Abs"), flush=True)
-        print("DVAWrite DM.LaneOffset 0.0 120000 Abs -> " + client.command("DVAWrite DM.LaneOffset 0.0 120000 Abs"), flush=True)
-        print("DVAWrite DM.Brake 0.0 120000 Abs -> " + client.command("DVAWrite DM.Brake 0.0 120000 Abs"), flush=True)
-        print("DVAWrite SC.TAccel 1.0 120000 Abs -> " + client.command("DVAWrite SC.TAccel 1.0 120000 Abs"), flush=True)
-        print(f"StartSim -> {client.command('StartSim')}", flush=True)
+            log_command(client, load_command, config.verbose, "LoadTestRun")
+        log_command(client, "DVAWrite DM.v.Trgt 13.88888888888889 120000 Abs", config.verbose)
+        log_command(client, "DVAWrite DM.LaneOffset 0.0 120000 Abs", config.verbose)
+        log_command(client, "DVAWrite DM.Brake 0.0 120000 Abs", config.verbose)
+        log_command(client, "DVAWrite SC.TAccel 1.0 120000 Abs", config.verbose)
+        log_command(client, "StartSim", config.verbose)
         wait_for_fresh_sim_time(client, config.quantities, config.settle_after_start_sec)
         logger.started_monotonic = time.monotonic()
         start_time = time.monotonic()
@@ -217,26 +230,27 @@ def run_triggered_drive(client: CommandClient, config: DriveLoopConfig) -> Path:
                 if policy.fired or not evaluate_expression(policy.trigger, values):
                     continue
                 policy.fired = True
-                print(f"TRIGGER FIRED [{policy.name}]: {policy.trigger}", flush=True)
+                if config.verbose:
+                    print(f"TRIGGER FIRED [{policy.name}]: {policy.trigger}", flush=True)
                 pause_cmd = f"DVAWrite SC.TAccel {config.pause_time_scale} {config.pause_duration_ms} Abs"
-                print(f"{pause_cmd} -> {client.command(pause_cmd)}", flush=True)
+                log_command(client, pause_cmd, config.verbose)
                 time.sleep(0.1)
                 policy.trigger_record = logger.sample(f"trigger_paused_snapshot:{policy.name}")
-                print(
-                    f"TRIGGER SNAPSHOT JSON [{policy.name}]:",
-                    json.dumps(policy.trigger_record, ensure_ascii=False),
-                    flush=True,
-                )
-                print("DVAWrite SC.TAccel 1.0 120000 Abs -> " + client.command("DVAWrite SC.TAccel 1.0 120000 Abs"), flush=True)
+                if config.verbose:
+                    print(
+                        f"TRIGGER SNAPSHOT JSON [{policy.name}]:",
+                        json.dumps(policy.trigger_record, ensure_ascii=False),
+                        flush=True,
+                    )
+                log_command(client, "DVAWrite SC.TAccel 1.0 120000 Abs", config.verbose)
                 for line in policy.action_lines:
-                    execute_drive_line(client, line, config.default_action_duration_ms)
+                    execute_drive_line(client, line, config.default_action_duration_ms, config.verbose)
             time.sleep(config.sample_interval)
 
         final_record = logger.sample("final")
         stop_result = ""
         if config.stop_at_end:
-            stop_result = client.command("StopSim")
-            print(f"StopSim -> {stop_result}", flush=True)
+            stop_result = log_command(client, "StopSim", config.verbose)
 
     lines = [
         f"# CarMaker Triggered Drive: {config.output_dir.name}",
@@ -260,7 +274,8 @@ def run_triggered_drive(client: CommandClient, config: DriveLoopConfig) -> Path:
         if policy.trigger_record:
             lines.append(f"- Trigger Time: `{policy.trigger_record['values'].get('Time')}`")
     summary_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"Summary: {summary_path}", flush=True)
+    if config.verbose:
+        print(f"Summary: {summary_path}", flush=True)
     return summary_path
 
 
