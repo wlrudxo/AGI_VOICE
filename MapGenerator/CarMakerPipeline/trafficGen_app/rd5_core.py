@@ -88,6 +88,13 @@ class Rd5RouteWriteResult:
     report: str
 
 
+@dataclass
+class Rd5PedestrianPathWriteResult:
+    output_path: Path
+    path_ids: dict[str, str]
+    report: str
+
+
 class Rd5Road:
     def __init__(self, path: Path) -> None:
         self.path = path
@@ -539,6 +546,28 @@ def _next_object_ids_with_conpaths(rd5: Rd5Road, n_conpaths: int) -> tuple[list[
     return con_path_ids, route_id, drv_path_id, base + n_conpaths + 2
 
 
+def _numeric_max_used_id(rd5: Rd5Road) -> int:
+    if rd5.max_used_obj_id:
+        return rd5.max_used_obj_id
+    numeric_ids: list[int] = []
+    for line in rd5.lines:
+        for token in re.findall(r"\b\d+\b", line):
+            try:
+                numeric_ids.append(int(token))
+            except ValueError:
+                pass
+    return max(numeric_ids, default=0)
+
+
+def _next_custom_path_index(lines: list[str]) -> int:
+    highest = -1
+    for line in lines:
+        match = re.match(r"CustomPath\.(\d+)\s*=", line.strip())
+        if match:
+            highest = max(highest, int(match.group(1)))
+    return highest + 1
+
+
 def _insert_route_length(lines: list[str], route_index: int, route_length: float) -> None:
     route_length_line = f"Route.{route_index}.Length = {_format_float(route_length)}"
     last_route_length = None
@@ -581,6 +610,21 @@ def _insert_route_block(
 
 
 def _insert_con_path_blocks(lines: list[str], blocks: list[str]) -> None:
+    if not blocks:
+        return
+    insert_at = len(lines)
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("Route.") and ".ID" in stripped:
+            insert_at = index
+            break
+        if stripped.startswith("MaxUsedObjId ="):
+            insert_at = index
+            break
+    lines[insert_at:insert_at] = blocks
+
+
+def _insert_custom_path_blocks(lines: list[str], blocks: list[str]) -> None:
     if not blocks:
         return
     insert_at = len(lines)
@@ -639,6 +683,194 @@ def build_rd5_write_report(result: Rd5RouteWriteResult) -> str:
         lines.append("")
         lines.append("Skipped steps are usually SUMO/OpenDRIVE internal junction connector lanes that are not exposed as RD5 Link.Tag entries.")
     return "\n".join(lines) + "\n"
+
+
+def _sidewalk_center_offset_from_lane(
+    xodr_lane_id: str | None,
+    *,
+    lane_width: float,
+    shoulder_width: float,
+    sidewalk_width: float,
+) -> float:
+    try:
+        lane_number = int(xodr_lane_id or "-1")
+    except ValueError:
+        lane_number = -1
+    side = -1.0 if lane_number < 0 else 1.0
+    lane_count_from_center = max(1, abs(lane_number))
+    distance = lane_count_from_center * lane_width + shoulder_width + sidewalk_width / 2.0
+    return side * distance
+
+
+def _custom_path_blocks(
+    *,
+    route_name: str,
+    route: PlannedRoute,
+    mapped_results: list[Rd5MapResult],
+    rd5: Rd5Road,
+    path_index: int,
+    first_object_id: int,
+    lane_width_by_edge: dict[str, float] | None,
+    default_lane_width: float,
+    shoulder_width: float,
+    sidewalk_width: float,
+    path_half_width: float,
+) -> tuple[list[str], str, int]:
+    path_id = str(first_object_id)
+    rl_id = str(first_object_id + 1)
+    seg_id = str(first_object_id + 2)
+    curve_id = str(first_object_id + 3)
+    next_id = first_object_id + 4
+
+    points: list[tuple[str, float, float]] = []
+    for item in mapped_results:
+        link = _link_by_id(rd5, item.rd5_link_id)
+        if not link or not link.link_id:
+            continue
+        link_length = link.length
+        if not link_length or link_length <= 1.0:
+            step = next((step for step in route.steps if step.lane_id == item.lane_id), None)
+            link_length = step.length if step and step.length > 1.0 else 10.0
+        lane_width = default_lane_width
+        if lane_width_by_edge and item.edge_id in lane_width_by_edge:
+            lane_width = lane_width_by_edge[item.edge_id]
+        lateral = _sidewalk_center_offset_from_lane(
+            item.xodr_lane_id,
+            lane_width=lane_width,
+            shoulder_width=shoulder_width,
+            sidewalk_width=sidewalk_width,
+        )
+        start_s = 0.5
+        end_s = max(start_s + 0.5, link_length - 0.5)
+        if points and points[-1][0] == link.link_id:
+            points[-1] = (link.link_id, end_s, lateral)
+        else:
+            points.append((link.link_id, start_s, lateral))
+            points.append((link.link_id, end_s, lateral))
+
+    if len(points) < 2:
+        raise RoadPackageError(f"Could not build a pedestrian CustomPath for route `{route_name}`.")
+
+    blocks = [
+        f"CustomPath.{path_index} = {path_id} 1 -1 -1 0",
+        f"CustomPath.{path_index}.RL.ID = {rl_id}",
+        f"CustomPath.{path_index}.Seg.0.ID = {seg_id}",
+        f"CustomPath.{path_index}.Seg.0.Type = PointList",
+        f"CustomPath.{path_index}.Seg.0.Param = 0 0 0 0 0 0 0 0",
+        f"CustomPath.{path_index}.Seg.0.Curve.ID = {curve_id}",
+        f"CustomPath.{path_index}.Seg.0.Curve.Points:",
+    ]
+    for link_id, s_pos, lateral in points:
+        side = "1" if lateral > 0 else "-1" if lateral < 0 else "0"
+        blocks.append(
+            f"\t{next_id} {link_id} 0 0 {_format_float(s_pos)} 0 {_format_float(lateral)} {side} -999 -999"
+        )
+        next_id += 1
+
+    width_l_id = next_id
+    next_id += 1
+    width_l_point_0 = next_id
+    width_l_point_1 = next_id + 1
+    next_id += 2
+    width_r_id = next_id
+    next_id += 1
+    width_r_point_0 = next_id
+    width_r_point_1 = next_id + 1
+    next_id += 2
+    half_width = _format_float(path_half_width)
+    blocks.extend(
+        [
+            f"CustomPath.{path_index}.WidthL.ID = {width_l_id}",
+            f"CustomPath.{path_index}.WidthL.Param = 0",
+            f"CustomPath.{path_index}.WidthL.Points:",
+            f"\t{width_l_point_0} {path_id} 0 0 {half_width} -999 -999 -999 0",
+            f"\t{width_l_point_1} {path_id} 0 1 {half_width} -999 -999 -999 0",
+            f"CustomPath.{path_index}.WidthR.ID = {width_r_id}",
+            f"CustomPath.{path_index}.WidthR.Param = 0",
+            f"CustomPath.{path_index}.WidthR.Points:",
+            f"\t{width_r_point_0} {path_id} 0 0 {half_width} -999 -999 -999 0",
+            f"\t{width_r_point_1} {path_id} 0 1 {half_width} -999 -999 -999 0",
+        ]
+    )
+    return blocks, path_id, next_id
+
+
+def write_rd5_with_pedestrian_paths(
+    rd5: Rd5Road,
+    routes: dict[str, PlannedRoute],
+    output_path: str | Path,
+    *,
+    lane_width_by_edge: dict[str, float] | None = None,
+    default_lane_width: float = 3.2,
+    shoulder_width: float = 0.8,
+    sidewalk_width: float = 2.2,
+    path_half_width: float = 0.75,
+) -> Rd5PedestrianPathWriteResult:
+    if not routes:
+        return Rd5PedestrianPathWriteResult(Path(output_path), {}, "")
+
+    lines = list(rd5.lines)
+    path_index = _next_custom_path_index(lines)
+    next_object_id = _numeric_max_used_id(rd5) + 1
+    all_blocks: list[str] = []
+    path_ids: dict[str, str] = {}
+    report_lines = [
+        "# RD5 Pedestrian CustomPath Report",
+        "",
+        f"- Source RD5: `{rd5.path}`",
+        "",
+        "| Route | CustomPath ObjId | Source links |",
+        "|---|---:|---|",
+    ]
+
+    for route_name, route in sorted(routes.items()):
+        mapped = [
+            item
+            for item in map_route_to_rd5(rd5, route, skip_internal=True)
+            if item.ok or item.status == "ok_ambiguous"
+        ]
+        mapped = [item for item in mapped if item.rd5_link_id]
+        if not mapped:
+            raise RoadPackageError(
+                f"Pedestrian route `{route_name}` could not be mapped to any RD5 link. "
+                "Load the RD5 converted from the same RoadGen export."
+            )
+        blocks, path_id, next_object_id = _custom_path_blocks(
+            route_name=route_name,
+            route=route,
+            mapped_results=mapped,
+            rd5=rd5,
+            path_index=path_index,
+            first_object_id=next_object_id,
+            lane_width_by_edge=lane_width_by_edge,
+            default_lane_width=default_lane_width,
+            shoulder_width=shoulder_width,
+            sidewalk_width=sidewalk_width,
+            path_half_width=path_half_width,
+        )
+        all_blocks.extend(blocks)
+        path_ids[route_name] = path_id
+        source_links = " ".join(dict.fromkeys(item.rd5_link_id or "" for item in mapped))
+        report_lines.append(f"| `{route_name}` | `{path_id}` | `{source_links}` |")
+        path_index += 1
+
+    _insert_custom_path_blocks(lines, all_blocks)
+    object_count = next_object_id - (_numeric_max_used_id(rd5) + 1)
+    if rd5.n_objects:
+        _patch_scalar(lines, "nObjects", rd5.n_objects + object_count)
+    if not _patch_scalar(lines, "MaxUsedObjId", next_object_id - 1):
+        lines.append(f"MaxUsedObjId = {next_object_id - 1}")
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    report_lines.extend(
+        [
+            "",
+            "The generated paths follow the RD5 Link centerline with a lateral offset computed from the OpenDRIVE lane side/count, lane width, shoulder width, and sidewalk width.",
+        ]
+    )
+    return Rd5PedestrianPathWriteResult(output_path, path_ids, "\n".join(report_lines) + "\n")
 
 
 def _lane_change_window(link_length: float | None, ordinal: int, total: int) -> tuple[float, float]:
