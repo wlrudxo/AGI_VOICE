@@ -1,0 +1,14 @@
+{
+  "policies": [
+    {
+      "name": "start_overtake",
+      "trigger": "Time >= 1.0",
+      "actionFile": "overtake_start_policy.txt"
+    },
+    {
+      "name": "return_after_pass",
+      "trigger": "Vhcl.sRoad > Traffic.T00.sRoad + 20",
+      "actionFile": "overtake_return_policy.txt"
+    }
+  ]
+}

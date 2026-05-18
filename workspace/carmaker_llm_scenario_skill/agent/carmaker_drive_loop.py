@@ -155,11 +155,19 @@ def execute_drive_line(client: CommandClient, line: str, default_duration_ms: in
 
 
 @dataclass
+class TriggerPolicy:
+    name: str
+    trigger: str
+    action_lines: list[str]
+    fired: bool = False
+    trigger_record: dict[str, Any] | None = None
+
+
+@dataclass
 class DriveLoopConfig:
     testrun: str
     quantities: list[str]
-    trigger: str
-    action_lines: list[str]
+    policies: list[TriggerPolicy]
     output_dir: Path
     sample_interval: float
     duration: float
@@ -172,16 +180,17 @@ class DriveLoopConfig:
 
 
 def run_triggered_drive(client: CommandClient, config: DriveLoopConfig) -> Path:
-    for quantity in quantities_for_expression(config.trigger):
-        if quantity not in config.quantities:
-            config.quantities.append(quantity)
+    if not config.policies:
+        raise RuntimeError("At least one trigger policy is required")
+    for policy in config.policies:
+        for quantity in quantities_for_expression(policy.trigger):
+            if quantity not in config.quantities:
+                config.quantities.append(quantity)
     if "SC.TAccel" not in config.quantities:
         config.quantities.append("SC.TAccel")
 
     config.output_dir.mkdir(parents=True, exist_ok=True)
     summary_path = config.output_dir / "summary.md"
-    trigger_fired = False
-    trigger_record: dict[str, Any] | None = None
     with SnapshotLogger(client, config.quantities, config.output_dir) as logger:
         print(f"StopSim -> {client.command('StopSim')}", flush=True)
         if config.skip_load:
@@ -204,16 +213,22 @@ def run_triggered_drive(client: CommandClient, config: DriveLoopConfig) -> Path:
                 break
             record = logger.sample("monitor")
             values = record["values"]
-            if not trigger_fired and evaluate_expression(config.trigger, values):
-                trigger_fired = True
-                print(f"TRIGGER FIRED: {config.trigger}", flush=True)
+            for policy in config.policies:
+                if policy.fired or not evaluate_expression(policy.trigger, values):
+                    continue
+                policy.fired = True
+                print(f"TRIGGER FIRED [{policy.name}]: {policy.trigger}", flush=True)
                 pause_cmd = f"DVAWrite SC.TAccel {config.pause_time_scale} {config.pause_duration_ms} Abs"
                 print(f"{pause_cmd} -> {client.command(pause_cmd)}", flush=True)
                 time.sleep(0.1)
-                trigger_record = logger.sample("trigger_paused_snapshot")
-                print("TRIGGER SNAPSHOT JSON:", json.dumps(trigger_record, ensure_ascii=False), flush=True)
+                policy.trigger_record = logger.sample(f"trigger_paused_snapshot:{policy.name}")
+                print(
+                    f"TRIGGER SNAPSHOT JSON [{policy.name}]:",
+                    json.dumps(policy.trigger_record, ensure_ascii=False),
+                    flush=True,
+                )
                 print("DVAWrite SC.TAccel 1.0 120000 Abs -> " + client.command("DVAWrite SC.TAccel 1.0 120000 Abs"), flush=True)
-                for line in config.action_lines:
+                for line in policy.action_lines:
                     execute_drive_line(client, line, config.default_action_duration_ms)
             time.sleep(config.sample_interval)
 
@@ -228,8 +243,7 @@ def run_triggered_drive(client: CommandClient, config: DriveLoopConfig) -> Path:
         "",
         f"- TestRun: `{config.testrun}`",
         f"- LoadTestRun skipped: `{config.skip_load}`",
-        f"- Trigger: `{config.trigger}`",
-        f"- Trigger fired: `{trigger_fired}`",
+        f"- Trigger policies: `{len(config.policies)}`",
         f"- Samples: `{logger.sample_count}`",
         f"- Quantities: `{', '.join(config.quantities)}`",
         f"- CSV: `samples.csv`",
@@ -237,8 +251,14 @@ def run_triggered_drive(client: CommandClient, config: DriveLoopConfig) -> Path:
         f"- Final Time: `{final_record['values'].get('Time')}`",
         f"- Stop result: `{stop_result}`",
     ]
-    if trigger_record:
-        lines.append(f"- Trigger Time: `{trigger_record['values'].get('Time')}`")
+    for policy in config.policies:
+        lines.append("")
+        lines.append(f"## Trigger Policy: {policy.name}")
+        lines.append(f"- Trigger: `{policy.trigger}`")
+        lines.append(f"- Fired: `{policy.fired}`")
+        lines.append(f"- Action lines: `{len(policy.action_lines)}`")
+        if policy.trigger_record:
+            lines.append(f"- Trigger Time: `{policy.trigger_record['values'].get('Time')}`")
     summary_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"Summary: {summary_path}", flush=True)
     return summary_path

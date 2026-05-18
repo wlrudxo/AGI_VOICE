@@ -15,6 +15,7 @@ from carmaker_catalog import (
 )
 from carmaker_drive_loop import (
     DriveLoopConfig,
+    TriggerPolicy,
     parse_drive_action_lines,
     run_triggered_drive,
     utc_stamp,
@@ -192,33 +193,26 @@ def drive_command(args: argparse.Namespace) -> int:
     if args.direct_carmaker and args.connect:
         raise RuntimeError("--connect is only valid when using the V3 backend")
     quantities = parse_quantity_arg(args.quantities)
-    action_lines = parse_drive_action_lines(args.action_line, args.action_file)
-    if not action_lines:
-        raise RuntimeError("drive requires --action-line or --action-file")
+    policies = build_trigger_policies(args)
     run_id = args.run_id or f"{args.testrun.replace('/', '_')}_{utc_stamp()}"
     output_dir = Path(args.output_dir) / run_id
-    trigger = args.trigger
-    if args.trigger_time is not None:
-        trigger = f"Time >= {args.trigger_time}"
-    if not trigger:
-        raise RuntimeError("drive requires --trigger or --trigger-time")
     if args.dry_run:
         print("DRY RUN: no backend or CarMaker commands will be sent.", flush=True)
         print(f"TestRun: {args.testrun}", flush=True)
         print(f"LoadTestRun skipped: {args.skip_load}", flush=True)
-        print(f"Trigger: {trigger}", flush=True)
         print(f"Quantities: {', '.join(quantities)}", flush=True)
-        print("Actions:", flush=True)
-        for line in action_lines:
-            print(f"  - {line}", flush=True)
+        print("Trigger policies:", flush=True)
+        for policy in policies:
+            print(f"  - {policy.name}: {policy.trigger}", flush=True)
+            for line in policy.action_lines:
+                print(f"      action: {line}", flush=True)
         print(f"Output: {output_dir}", flush=True)
         return 0
     client = create_command_client(args)
     config = DriveLoopConfig(
         testrun=args.testrun,
         quantities=quantities,
-        trigger=trigger,
-        action_lines=action_lines,
+        policies=policies,
         output_dir=output_dir,
         sample_interval=args.sample_interval,
         duration=args.duration,
@@ -231,6 +225,54 @@ def drive_command(args: argparse.Namespace) -> int:
     )
     run_triggered_drive(client, config)
     return 0
+
+
+def build_trigger_policies(args: argparse.Namespace) -> list[TriggerPolicy]:
+    if args.policy_file and (args.trigger or args.trigger_time is not None or args.action_line or args.action_file):
+        raise RuntimeError("Use either --policy-file or the single-trigger --trigger/--action-file arguments")
+    if args.policy_file:
+        return load_policy_file(Path(args.policy_file))
+
+    trigger = args.trigger
+    if args.trigger_time is not None:
+        trigger = f"Time >= {args.trigger_time}"
+    if not trigger:
+        raise RuntimeError("drive requires --policy-file, --trigger, or --trigger-time")
+    action_lines = parse_drive_action_lines(args.action_line, args.action_file)
+    if not action_lines:
+        raise RuntimeError("drive requires --policy-file, --action-line, or --action-file")
+    return [TriggerPolicy(name="default", trigger=trigger, action_lines=action_lines)]
+
+
+def load_policy_file(path: Path) -> list[TriggerPolicy]:
+    if not path.exists():
+        raise RuntimeError(f"Policy file not found: {path}")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(data, dict):
+        entries = data.get("policies")
+    else:
+        entries = data
+    if not isinstance(entries, list) or not entries:
+        raise RuntimeError("Policy file must contain a non-empty policy list")
+    policies: list[TriggerPolicy] = []
+    for index, entry in enumerate(entries, start=1):
+        if not isinstance(entry, dict):
+            raise RuntimeError(f"Policy #{index} must be an object")
+        name = str(entry.get("name") or f"policy_{index}")
+        trigger = str(entry.get("trigger") or "").strip()
+        if not trigger:
+            raise RuntimeError(f"Policy '{name}' is missing trigger")
+        action_lines = [str(line).strip() for line in entry.get("actionLines", []) if str(line).strip()]
+        action_file = entry.get("actionFile")
+        if action_file:
+            action_path = Path(str(action_file))
+            if not action_path.is_absolute():
+                action_path = path.parent / action_path
+            action_lines.extend(parse_drive_action_lines(None, str(action_path)))
+        if not action_lines:
+            raise RuntimeError(f"Policy '{name}' has no actionLines or actionFile")
+        policies.append(TriggerPolicy(name=name, trigger=trigger, action_lines=action_lines))
+    return policies
 
 
 def self_test_command(args: argparse.Namespace) -> int:
@@ -302,6 +344,10 @@ def parse_args() -> argparse.Namespace:
     drive.add_argument("--testrun", required=True)
     drive.add_argument("--allow-uncurated", action="store_true")
     drive.add_argument("--quantities")
+    drive.add_argument(
+        "--policy-file",
+        help="JSON file with multiple trigger policies. Each policy has name, trigger, and actionFile/actionLines.",
+    )
     drive.add_argument("--trigger")
     drive.add_argument("--trigger-time", type=float, help="Pause and snapshot when Time reaches this value.")
     drive.add_argument("--action-line", action="append")
