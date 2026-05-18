@@ -15,6 +15,7 @@ entrypoint for:
 """
 
 import argparse
+import csv
 import json
 import math
 import re
@@ -681,99 +682,363 @@ def load_script_lines(args: argparse.Namespace) -> list[str]:
     return lines
 
 
+@dataclass
+class SnapshotLogger:
+    client: CommandClient
+    quantities: list[str]
+    sample_interval_sec: float
+    output_dir: Path
+    start_settle_sec: float = 0.2
+    jsonl_file: Any = None
+    csv_file: Any = None
+    csv_writer: Any = None
+    started_monotonic: float = 0.0
+    next_sample_monotonic: float = 0.0
+    sample_count: int = 0
+    active: bool = False
+    jsonl_path: Path | None = None
+    csv_path: Path | None = None
+
+    def __enter__(self) -> "SnapshotLogger":
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.jsonl_path = self.output_dir / "samples.jsonl"
+        self.csv_path = self.output_dir / "samples.csv"
+        self.jsonl_file = self.jsonl_path.open("w", encoding="utf-8")
+        self.csv_file = self.csv_path.open("w", encoding="utf-8", newline="")
+        self.csv_writer = csv.DictWriter(
+            self.csv_file,
+            fieldnames=["sample", "elapsedSec", *self.quantities],
+        )
+        self.csv_writer.writeheader()
+        self.started_monotonic = time.monotonic()
+        self.next_sample_monotonic = self.started_monotonic
+        return self
+
+    def __exit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
+        if self.jsonl_file:
+            self.jsonl_file.close()
+        if self.csv_file:
+            self.csv_file.close()
+
+    def sample(self, reason: str) -> dict[str, Any]:
+        values = read_quantities(self.client, self.quantities)
+        self.sample_count += 1
+        elapsed = round(time.monotonic() - self.started_monotonic, 4)
+        record = {
+            "sample": self.sample_count,
+            "elapsedSec": elapsed,
+            "reason": reason,
+            "values": values,
+        }
+        self.jsonl_file.write(json.dumps(record, ensure_ascii=False) + "\n")
+        self.jsonl_file.flush()
+        row = {"sample": self.sample_count, "elapsedSec": elapsed}
+        row.update(values)
+        self.csv_writer.writerow(row)
+        self.csv_file.flush()
+        print(format_logged_sample(record), flush=True)
+        return record
+
+    def begin(self) -> None:
+        self.active = True
+        if self.start_settle_sec > 0:
+            time.sleep(self.start_settle_sec)
+        self.started_monotonic = time.monotonic()
+        self.sample("start")
+        self.next_sample_monotonic = time.monotonic() + self.sample_interval_sec
+
+    def sample_if_due(self, reason: str) -> dict[str, Any] | None:
+        if not self.active:
+            return None
+        now = time.monotonic()
+        if now < self.next_sample_monotonic:
+            return None
+        record = self.sample(reason)
+        self.next_sample_monotonic = now + self.sample_interval_sec
+        return record
+
+    def wait(self, seconds: float, reason: str) -> None:
+        deadline = time.monotonic() + seconds
+        while True:
+            self.sample_if_due(reason)
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            time.sleep(min(remaining, self.sample_interval_sec / 2))
+
+
+def format_logged_sample(record: dict[str, Any]) -> str:
+    values = record["values"]
+    preferred = ["Time", "Car.v", "DM.v.Trgt", "DM.LaneOffset", "Vhcl.sRoad", "DM.Brake"]
+    parts = []
+    for key in preferred:
+        value = values.get(key)
+        if isinstance(value, (int, float)):
+            parts.append(f"{key}={value:.4g}")
+    return f"  sample[{record['sample']:03d}] elapsed={record['elapsedSec']:.2f}s " + ", ".join(parts)
+
+
 def script_command(args: argparse.Namespace) -> int:
     if args.direct_carmaker and args.connect:
         raise RuntimeError("--connect is only valid when using the V3 backend")
 
     lines = load_script_lines(args)
+    log_quantities = parse_quantity_arg(args.quantities)
+    args.manual_log_start = any(split_script_line(line)[0].lower() == "log_start" for line in lines)
     print("Script:", flush=True)
     for idx, line in enumerate(lines, start=1):
         print(f"  {idx}. {line}", flush=True)
+    if args.log_snapshots:
+        print(f"Snapshot log quantities: {', '.join(log_quantities)}", flush=True)
 
+    if args.dry_run:
+        print("DRY RUN: no backend or CarMaker commands will be sent.", flush=True)
+        if args.log_snapshots:
+            run_id = args.run_id or f"script_{utc_stamp()}"
+            print(f"Snapshot log output: {Path(args.output_dir) / run_id}", flush=True)
+        return 0
+
+    client = create_command_client(args)
+    logger_context: Any
+    if args.log_snapshots:
+        run_id = args.run_id or f"script_{utc_stamp()}"
+        logger_context = SnapshotLogger(
+            client=client,
+            quantities=log_quantities,
+            sample_interval_sec=args.sample_interval,
+            output_dir=Path(args.output_dir) / run_id,
+            start_settle_sec=args.start_settle_sec,
+        )
+    else:
+        logger_context = None
+
+    def execute_lines(logger: SnapshotLogger | None) -> None:
+        for idx, line in enumerate(lines, start=1):
+            if logger:
+                logger.sample_if_due("before_line")
+            execute_script_line(args, client, logger, idx, line)
+        if logger and logger.active:
+            logger.sample("final")
+
+    if logger_context:
+        with logger_context as logger:
+            execute_lines(logger)
+            print(f"Snapshot JSONL: {logger.jsonl_path}", flush=True)
+            print(f"Snapshot CSV: {logger.csv_path}", flush=True)
+    else:
+        execute_lines(None)
+    return 0
+
+
+def execute_script_line(
+    args: argparse.Namespace,
+    client: CommandClient,
+    logger: SnapshotLogger | None,
+    idx: int,
+    line: str,
+) -> None:
+    parts = split_script_line(line)
+    op = parts[0].lower()
+    print(f"[{idx}] {line}", flush=True)
+
+    if op == "load":
+        if len(parts) != 2:
+            raise RuntimeError("load requires one TestRun name")
+        result = client.command(f'LoadTestRun "{parts[1]}"')
+        print(f"LoadTestRun -> {result}", flush=True)
+    elif op == "stop":
+        print(f"StopSim -> {client.command('StopSim')}", flush=True)
+    elif op == "start":
+        print(f"StartSim -> {client.command('StartSim')}", flush=True)
+        if logger and not logger.active and not args.manual_log_start:
+            logger.begin()
+    elif op == "log_start":
+        if not logger:
+            print("log_start skipped: snapshot logging is disabled", flush=True)
+            return
+        if logger.active:
+            print("log_start skipped: snapshot logging is already active", flush=True)
+            return
+        logger.begin()
+    elif op == "resume":
+        duration_ms = int(float(parts[1])) if len(parts) > 1 else args.default_duration_ms
+        command = f"DVAWrite SC.TAccel 1.0 {duration_ms} Abs"
+        print(f"{command} -> {client.command(command)}", flush=True)
+    elif op == "pause":
+        scale = float(parts[1]) if len(parts) > 1 else 0.0001
+        duration_ms = int(float(parts[2])) if len(parts) > 2 else args.default_duration_ms
+        command = f"DVAWrite SC.TAccel {scale} {duration_ms} Abs"
+        print(f"{command} -> {client.command(command)}", flush=True)
+    elif op == "target_speed":
+        if len(parts) < 2:
+            raise RuntimeError("target_speed requires kph")
+        kph = float(parts[1])
+        duration_ms = int(float(parts[2])) if len(parts) > 2 else args.default_duration_ms
+        command = f"DVAWrite DM.v.Trgt {kph / 3.6} {duration_ms} Abs"
+        print(f"{command} -> {client.command(command)}", flush=True)
+    elif op == "lane_offset":
+        if len(parts) < 2:
+            raise RuntimeError("lane_offset requires meters")
+        value = float(parts[1])
+        duration_ms = int(float(parts[2])) if len(parts) > 2 else args.default_duration_ms
+        command = f"DVAWrite DM.LaneOffset {value} {duration_ms} Abs"
+        print(f"{command} -> {client.command(command)}", flush=True)
+    elif op == "raw":
+        command = line[len(parts[0]):].strip()
+        if not command:
+            raise RuntimeError("raw requires a CarMaker command")
+        print(f"{command} -> {client.command(command)}", flush=True)
+    elif op == "wait":
+        if len(parts) != 2:
+            raise RuntimeError("wait requires seconds")
+        seconds = float(parts[1])
+        if logger:
+            logger.wait(seconds, "wait")
+        else:
+            time.sleep(seconds)
+    elif op == "wait_until":
+        if len(parts) < 2:
+            raise RuntimeError("wait_until requires an expression")
+        timeout_sec = args.wait_timeout_sec
+        interval_sec = args.wait_interval_sec
+        expression_tokens = parts[1:]
+        if len(expression_tokens) >= 2:
+            try:
+                timeout_sec = float(expression_tokens[-1])
+                expression_tokens = expression_tokens[:-1]
+            except ValueError:
+                pass
+        expression = " ".join(expression_tokens)
+        quantities = quantities_for_expression(expression)
+        if not quantities:
+            raise RuntimeError(f"No quantities found in expression: {expression}")
+        deadline = time.monotonic() + timeout_sec
+        while True:
+            if logger:
+                logger.sample_if_due("wait_until")
+            values = read_quantities(client, quantities)
+            print(
+                "  "
+                + ", ".join(f"{key}={values.get(key):.6g}" for key in quantities),
+                flush=True,
+            )
+            if evaluate_expression(expression, values):
+                print(f"  condition met: {expression}", flush=True)
+                break
+            if time.monotonic() >= deadline:
+                raise RuntimeError(f"wait_until timed out after {timeout_sec}s: {expression}")
+            time.sleep(interval_sec)
+    else:
+        raise RuntimeError(f"Unknown script operation: {op}")
+
+
+def read_queued_script_lines(command_file: Path, offset: int) -> tuple[list[str], int]:
+    if not command_file.exists():
+        return [], offset
+    with command_file.open("r", encoding="utf-8") as file:
+        file.seek(offset)
+        raw_lines = file.readlines()
+        new_offset = file.tell()
+    lines = []
+    for raw_line in raw_lines:
+        line = raw_line.strip()
+        if line and not line.startswith("#"):
+            lines.append(line)
+    return lines, new_offset
+
+
+def load_optional_line_block(lines: list[str] | None, file_path: str | None) -> list[str]:
+    if lines and file_path:
+        raise RuntimeError("Use either inline trigger lines or a trigger file, not both")
+    raw_lines: list[str]
+    if file_path:
+        path = Path(file_path)
+        if not path.exists():
+            raise RuntimeError(f"Trigger action file not found: {path}")
+        raw_lines = path.read_text(encoding="utf-8").splitlines()
+    else:
+        raw_lines = lines or []
+    return [
+        line.strip()
+        for line in raw_lines
+        if line.strip() and not line.strip().startswith("#")
+    ]
+
+
+def live_command(args: argparse.Namespace) -> int:
+    if args.direct_carmaker and args.connect:
+        raise RuntimeError("--connect is only valid when using the V3 backend")
+    if args.duration <= 0:
+        raise RuntimeError("--duration must be greater than zero")
+    if args.sample_interval <= 0:
+        raise RuntimeError("--sample-interval must be greater than zero")
+
+    quantities = parse_quantity_arg(args.quantities)
+    trigger_lines = load_optional_line_block(args.trigger_line, args.trigger_action_file)
+    if args.trigger and not trigger_lines:
+        raise RuntimeError("--trigger requires --trigger-line or --trigger-action-file")
+    if trigger_lines and not args.trigger:
+        raise RuntimeError("Trigger actions require --trigger")
+    if args.trigger:
+        for quantity in quantities_for_expression(args.trigger):
+            if quantity not in quantities:
+                quantities.append(quantity)
+    command_file = Path(args.command_file)
+    run_id = args.run_id or f"live_{utc_stamp()}"
+    output_dir = Path(args.output_dir) / run_id
+    print(f"Live snapshot quantities: {', '.join(quantities)}", flush=True)
+    if args.trigger:
+        print(f"Trigger: {args.trigger}", flush=True)
+        print("Trigger actions:", flush=True)
+        for line in trigger_lines:
+            print(f"  - {line}", flush=True)
+    print(f"Command queue: {command_file}", flush=True)
+    print(f"Output: {output_dir}", flush=True)
     if args.dry_run:
         print("DRY RUN: no backend or CarMaker commands will be sent.", flush=True)
         return 0
 
-    client = create_command_client(args)
-    for idx, line in enumerate(lines, start=1):
-        parts = split_script_line(line)
-        op = parts[0].lower()
-        print(f"[{idx}] {line}", flush=True)
+    command_file.parent.mkdir(parents=True, exist_ok=True)
+    command_file.touch(exist_ok=True)
+    command_offset = 0 if args.replay_existing else command_file.stat().st_size
 
-        if op == "load":
-            if len(parts) != 2:
-                raise RuntimeError("load requires one TestRun name")
-            result = client.command(f'LoadTestRun "{parts[1]}"')
-            print(f"LoadTestRun -> {result}", flush=True)
-        elif op == "stop":
-            print(f"StopSim -> {client.command('StopSim')}", flush=True)
-        elif op == "start":
-            print(f"StartSim -> {client.command('StartSim')}", flush=True)
-        elif op == "resume":
-            duration_ms = int(float(parts[1])) if len(parts) > 1 else args.default_duration_ms
-            command = f"DVAWrite SC.TAccel 1.0 {duration_ms} Abs"
-            print(f"{command} -> {client.command(command)}", flush=True)
-        elif op == "pause":
-            scale = float(parts[1]) if len(parts) > 1 else 0.0001
-            duration_ms = int(float(parts[2])) if len(parts) > 2 else args.default_duration_ms
-            command = f"DVAWrite SC.TAccel {scale} {duration_ms} Abs"
-            print(f"{command} -> {client.command(command)}", flush=True)
-        elif op == "target_speed":
-            if len(parts) < 2:
-                raise RuntimeError("target_speed requires kph")
-            kph = float(parts[1])
-            duration_ms = int(float(parts[2])) if len(parts) > 2 else args.default_duration_ms
-            command = f"DVAWrite DM.v.Trgt {kph / 3.6} {duration_ms} Abs"
-            print(f"{command} -> {client.command(command)}", flush=True)
-        elif op == "lane_offset":
-            if len(parts) < 2:
-                raise RuntimeError("lane_offset requires meters")
-            value = float(parts[1])
-            duration_ms = int(float(parts[2])) if len(parts) > 2 else args.default_duration_ms
-            command = f"DVAWrite DM.LaneOffset {value} {duration_ms} Abs"
-            print(f"{command} -> {client.command(command)}", flush=True)
-        elif op == "raw":
-            command = line[len(parts[0]):].strip()
-            if not command:
-                raise RuntimeError("raw requires a CarMaker command")
-            print(f"{command} -> {client.command(command)}", flush=True)
-        elif op == "wait":
-            if len(parts) != 2:
-                raise RuntimeError("wait requires seconds")
-            seconds = float(parts[1])
-            time.sleep(seconds)
-        elif op == "wait_until":
-            if len(parts) < 2:
-                raise RuntimeError("wait_until requires an expression")
-            timeout_sec = args.wait_timeout_sec
-            interval_sec = args.wait_interval_sec
-            expression_tokens = parts[1:]
-            if len(expression_tokens) >= 2:
-                try:
-                    timeout_sec = float(expression_tokens[-1])
-                    expression_tokens = expression_tokens[:-1]
-                except ValueError:
-                    pass
-            expression = " ".join(expression_tokens)
-            quantities = quantities_for_expression(expression)
-            if not quantities:
-                raise RuntimeError(f"No quantities found in expression: {expression}")
-            deadline = time.monotonic() + timeout_sec
-            while True:
-                values = read_quantities(client, quantities)
-                print(
-                    "  "
-                    + ", ".join(f"{key}={values.get(key):.6g}" for key in quantities),
-                    flush=True,
-                )
-                if evaluate_expression(expression, values):
-                    print(f"  condition met: {expression}", flush=True)
-                    break
-                if time.monotonic() >= deadline:
-                    raise RuntimeError(f"wait_until timed out after {timeout_sec}s: {expression}")
-                time.sleep(interval_sec)
-        else:
-            raise RuntimeError(f"Unknown script operation: {op}")
+    client = create_command_client(args)
+    args.manual_log_start = True
+    command_index = 0
+    trigger_fired = False
+    deadline = time.monotonic() + args.duration
+    with SnapshotLogger(
+        client=client,
+        quantities=quantities,
+        sample_interval_sec=args.sample_interval,
+        output_dir=output_dir,
+        start_settle_sec=args.start_settle_sec,
+    ) as logger:
+        logger.begin()
+        while True:
+            lines, command_offset = read_queued_script_lines(command_file, command_offset)
+            for line in lines:
+                if line.lower() in {"quit", "exit"}:
+                    print("Live loop exit requested.", flush=True)
+                    print(f"Snapshot JSONL: {logger.jsonl_path}", flush=True)
+                    print(f"Snapshot CSV: {logger.csv_path}", flush=True)
+                    return 0
+                command_index += 1
+                execute_script_line(args, client, logger, command_index, line)
+            if time.monotonic() >= deadline:
+                break
+            record = logger.sample_if_due("live")
+            if args.trigger and not trigger_fired and record:
+                if evaluate_expression(args.trigger, record["values"]):
+                    trigger_fired = True
+                    print(f"TRIGGER FIRED: {args.trigger}", flush=True)
+                    for line in trigger_lines:
+                        command_index += 1
+                        execute_script_line(args, client, logger, command_index, line)
+            time.sleep(min(0.05, args.sample_interval / 2))
+        logger.sample("final")
+        print(f"Snapshot JSONL: {logger.jsonl_path}", flush=True)
+        print(f"Snapshot CSV: {logger.csv_path}", flush=True)
     return 0
 
 
@@ -1142,7 +1407,38 @@ def parse_args() -> argparse.Namespace:
     script.add_argument("--default-duration-ms", type=int, default=60000)
     script.add_argument("--wait-timeout-sec", type=float, default=10.0)
     script.add_argument("--wait-interval-sec", type=float, default=0.25)
+    script.add_argument("--quantities", help="Comma-separated DVARead quantities to log during script execution.")
+    script.add_argument("--log-snapshots", action="store_true", help="Write selected DVARead quantities to JSONL and CSV while the script runs.")
+    script.add_argument("--sample-interval", type=float, default=0.5, help="Snapshot logging interval in seconds.")
+    script.add_argument("--start-settle-sec", type=float, default=0.2, help="Delay after StartSim before taking the first logged snapshot.")
+    script.add_argument("--run-id", help="Output folder name for snapshot logs.")
+    script.add_argument("--output-dir", default=str(DEFAULT_REPORT_DIR / "runs"))
     script.add_argument("--dry-run", action="store_true")
+
+    live = subparsers.add_parser(
+        "live",
+        help="Continuously log selected raw DVA snapshots and execute queued script commands.",
+    )
+    live.add_argument("--backend-url", default=DEFAULT_BACKEND_URL)
+    live.add_argument("--direct-carmaker", action="store_true", help="Bypass the V3 backend and send commands directly to CarMaker TcpCmdPort.")
+    live.add_argument("--connect", action="store_true")
+    live.add_argument("--host", default=DEFAULT_CARMAKER_HOST)
+    live.add_argument("--port", type=int, default=DEFAULT_CARMAKER_PORT)
+    live.add_argument("--quantities", help="Comma-separated DVARead quantities to log.")
+    live.add_argument("--sample-interval", type=float, default=0.5)
+    live.add_argument("--duration", type=float, default=60.0)
+    live.add_argument("--trigger", help='Expression evaluated against logged raw snapshots, e.g. "Time > 0.3 and Time < 2".')
+    live.add_argument("--trigger-line", action="append", help="Script command to execute once when --trigger fires. Repeat for multiple commands.")
+    live.add_argument("--trigger-action-file", help="Read trigger script commands from a file.")
+    live.add_argument("--command-file", default=str(DEFAULT_REPORT_DIR / "live_commands.txt"))
+    live.add_argument("--replay-existing", action="store_true", help="Execute lines already present in --command-file.")
+    live.add_argument("--default-duration-ms", type=int, default=60000)
+    live.add_argument("--wait-timeout-sec", type=float, default=10.0)
+    live.add_argument("--wait-interval-sec", type=float, default=0.25)
+    live.add_argument("--start-settle-sec", type=float, default=0.0)
+    live.add_argument("--run-id", help="Output folder name for snapshot logs.")
+    live.add_argument("--output-dir", default=str(DEFAULT_REPORT_DIR / "runs"))
+    live.add_argument("--dry-run", action="store_true")
 
     run = subparsers.add_parser("run", help="Load, run, monitor, and summarize one TestRun.")
     run.add_argument("--testrun", required=True, help='Example: "Examples/BasicFunctions/Traffic/Man_AutonomousJunctions"')
@@ -1186,6 +1482,8 @@ def main() -> int:
             return control_command(args)
         if args.command == "script":
             return script_command(args)
+        if args.command == "live":
+            return live_command(args)
         if args.command == "run":
             return run_experiment(args)
         if args.command == "self-test":
