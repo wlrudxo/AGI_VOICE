@@ -273,6 +273,7 @@ MARKER_PARAM_RE = re.compile(
     rf"({FLOAT_RE})\s+({FLOAT_RE})\s+(-?\d+)\s+(-?\d+)\s+(\d+)\b"
 )
 ANY_ID_RE = re.compile(r"\.ID\s*=\s*(\d+)\b")
+LEADING_OBJECT_ID_RE = re.compile(r"^\s+(\d+)(?:\s+|$)")
 LINK_VISUALIZATION_RE = re.compile(r"^Link\.(\d+)\.Visualization\.(RoadsideWidth|RoadsideSlope)\s*=")
 LINK_VISUALIZATION_VALUE_RE = re.compile(
     rf"^Link\.(\d+)\.Visualization\.(RoadsideWidth|RoadsideSlope)\s*="
@@ -548,6 +549,9 @@ def _max_object_id_in_lines(lines: list[str]) -> int:
         match = ANY_ID_RE.search(line)
         if match:
             max_id = max(max_id, int(match.group(1)))
+        leading_match = LEADING_OBJECT_ID_RE.match(line)
+        if leading_match:
+            max_id = max(max_id, int(leading_match.group(1)))
         control_match = CONTROL_TRFLIGHT_RE.match(line)
         if control_match:
             max_id = max(max_id, int(control_match.group(2)))
