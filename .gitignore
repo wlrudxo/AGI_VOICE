@@ -26,6 +26,10 @@ __pycache__/
 .claude/settings.local.json
 **/.claude/settings.local.json
 
+# Local agent/research instructions and paper workspace
+AGENTS.md
+Paper_AGI_KSAE202601/
+
 # FAISS index (generated from embeddings)
 **/faiss_map_db/
 **/faiss_index/
