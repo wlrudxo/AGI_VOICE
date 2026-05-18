@@ -65,6 +65,8 @@ ROADGEN_DEFAULT_LANE_WIDTH_M = 3.2
 ROADGEN_DEFAULT_SHOULDER_WIDTH_M = 0.8
 ROADGEN_DEFAULT_SIDEWALK_WIDTH_M = 2.2
 PEDESTRIAN_SIDEWALK_JITTER_M = 0.25
+PEDESTRIAN_ROUTE_SAFE_OFFSET_MIN_M = -0.6
+PEDESTRIAN_ROUTE_SAFE_OFFSET_MAX_M = 0.6
 
 
 def find_carmaker_home() -> Path | None:
@@ -124,8 +126,8 @@ class TrafficGenApp(tk.Tk):
         self.ped_density_var = tk.DoubleVar(value=8.0)
         self.ped_speed_min_var = tk.DoubleVar(value=3.0)
         self.ped_speed_max_var = tk.DoubleVar(value=5.5)
-        self.ped_offset_min_var = tk.DoubleVar(value=-3.75)
-        self.ped_offset_max_var = tk.DoubleVar(value=-3.25)
+        self.ped_offset_min_var = tk.DoubleVar(value=-0.4)
+        self.ped_offset_max_var = tk.DoubleVar(value=0.4)
         self.ped_direction_var = tk.StringVar(value="Random")
         self.ped_start_delay_span_var = tk.DoubleVar(value=0.0)
 
@@ -1002,27 +1004,23 @@ class TrafficGenApp(tk.Tk):
         offset_min: float,
         offset_max: float,
     ) -> tuple[float, float, bool]:
-        if lane is None or not self.rd5_has_visual_sidewalks():
-            return offset_min, offset_max, False
-
-        lane_width = self.estimate_lane_width(lane.edge_id)
-        road_edge_from_lane = (lane.index + 0.5) * lane_width
-        sidewalk_inner = -(road_edge_from_lane + ROADGEN_DEFAULT_SHOULDER_WIDTH_M + 0.25)
-        sidewalk_outer = -(
-            road_edge_from_lane
-            + ROADGEN_DEFAULT_SHOULDER_WIDTH_M
-            + ROADGEN_DEFAULT_SIDEWALK_WIDTH_M
-            - 0.25
-        )
-        safe_min, safe_max = sorted((sidewalk_outer, sidewalk_inner))
-        current_center = (offset_min + offset_max) / 2.0
-        if safe_min <= current_center <= safe_max:
-            return offset_min, offset_max, False
-
-        centered_min, centered_max = self.pedestrian_sidewalk_offset_range(lane)
-        self.ped_offset_min_var.set(round(centered_min, 3))
-        self.ped_offset_max_var.set(round(centered_max, 3))
-        return centered_min, centered_max, True
+        del lane
+        requested_min, requested_max = sorted((offset_min, offset_max))
+        safe_min = PEDESTRIAN_ROUTE_SAFE_OFFSET_MIN_M
+        safe_max = PEDESTRIAN_ROUTE_SAFE_OFFSET_MAX_M
+        clamped_min = max(requested_min, safe_min)
+        clamped_max = min(requested_max, safe_max)
+        if clamped_min > clamped_max:
+            width = min(0.8, safe_max - safe_min)
+            center = (requested_min + requested_max) / 2.0
+            center = max(safe_min + width / 2.0, min(safe_max - width / 2.0, center))
+            clamped_min = center - width / 2.0
+            clamped_max = center + width / 2.0
+        adjusted = abs(clamped_min - offset_min) > 1e-6 or abs(clamped_max - offset_max) > 1e-6
+        if adjusted:
+            self.ped_offset_min_var.set(round(clamped_min, 3))
+            self.ped_offset_max_var.set(round(clamped_max, 3))
+        return clamped_min, clamped_max, adjusted
 
     def pedestrian_route_from_selected_lane(self) -> tuple[PlannedRoute | None, str, Lane | None]:
         if not self.package or not self.selected_lane_id:
@@ -1042,7 +1040,7 @@ class TrafficGenApp(tk.Tk):
             steps=[self.package.lane_step(ped_lane.id)],
         )
         if ped_lane.id != lane.id:
-            return route, f"selected lane {lane.id}, sidewalk route {ped_lane.id}", ped_lane
+            return route, f"selected lane {lane.id}, pedestrian route lane {ped_lane.id}", ped_lane
         return route, f"selected lane {ped_lane.id}", ped_lane
 
     def rd5_has_visual_sidewalks(self) -> bool:
@@ -1119,7 +1117,16 @@ class TrafficGenApp(tk.Tk):
         margin = min(10.0, route_length * 0.2)
         start_s_min = margin
         start_s_max = max(start_s_min, route_length - margin)
-        existing_count = sum(1 for vehicle in self.vehicles if self.is_pedestrian_plan(vehicle))
+        used_names = {safe_name(vehicle.name) for vehicle in self.vehicles}
+
+        def allocate_pedestrian_name() -> str:
+            suffix = 1
+            while f"Ped_{suffix}" in used_names:
+                suffix += 1
+            name = f"Ped_{suffix}"
+            used_names.add(name)
+            return name
+
         model_text = self.ped_model_var.get().strip()
         direction_mode = self.ped_direction_var.get().strip().lower()
 
@@ -1139,7 +1146,7 @@ class TrafficGenApp(tk.Tk):
                 model = rng.choice(PEDESTRIAN_MODELS)
             self.vehicles.append(
                 VehiclePlan(
-                    name=f"Ped_{existing_count + offset_index + 1}",
+                    name=allocate_pedestrian_name(),
                     route_name=route_name,
                     model=model,
                     driver_model="",
@@ -1164,7 +1171,10 @@ class TrafficGenApp(tk.Tk):
             f"direction {self.ped_direction_var.get()}"
         )
         if adjusted_offsets:
-            self.log("Pedestrian offsets were moved to the visual sidewalk center to avoid shoulder placement.")
+            self.log(
+                "Pedestrian offsets were clamped to the route-safe road area. "
+                "Moving pedestrians directly on visual sidewalks needs CustomPath-based pedestrian paths."
+            )
 
     def remove_generated_pedestrians(self) -> None:
         before = len(self.vehicles)
