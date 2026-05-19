@@ -10,7 +10,8 @@ TRAFFIC_CONTROL_CONSTANT_SPEED = "constant_speed"
 DEFAULT_TRAFFIC_AUTODRIVER = "Car_Generic_Normal"
 DEFAULT_EGO_DRIVER_TEMPLATE = "Car_Normal"
 PEDESTRIAN_DETECT_MASK = "1 1"
-PEDESTRIAN_ROUTE_OFFSET_LIMIT_M = 30.0
+PEDESTRIAN_ROUTE_OFFSET_LIMIT_M = 25.0
+DEFAULT_MOVING_PEDESTRIAN_TEMPLATE = "2_People/Pedestrian_Male_Casual_01_IPG"
 
 
 @dataclass
@@ -81,14 +82,24 @@ def _clamp(value: float, lower: float, upper: float) -> float:
     return max(lower, min(upper, value))
 
 
-def _route_safe_pedestrian_offset(value: float) -> float:
-    return _clamp(value, -PEDESTRIAN_ROUTE_OFFSET_LIMIT_M, PEDESTRIAN_ROUTE_OFFSET_LIMIT_M)
-
-
 def _route_safe_start_s(value: float, route_length: float | None) -> float:
     if route_length is None or route_length <= 1.0:
         return max(0.0, value)
     return _clamp(value, 0.0, max(0.0, route_length - 1.0))
+
+
+def _moving_pedestrian_template(model: str, speed_abs_kmh: float) -> str:
+    if speed_abs_kmh <= 0.01:
+        return model
+    lowered = model.lower()
+    if "pedestrian" not in lowered and "people" not in lowered:
+        return model
+    if lowered.endswith("_ipg"):
+        return model
+    # CarMaker's AEB pedestrian examples use the *_IPG template for moving
+    # pedestrians. The non-IPG templates are visible as static people, but they
+    # are less reliable when driven by route maneuvers in CM 15.
+    return DEFAULT_MOVING_PEDESTRIAN_TEMPLATE
 
 
 def _unique_object_name(raw_name: str, used_names: set[str], fallback: str) -> str:
@@ -575,19 +586,33 @@ def _append_pedestrian(
     object_name: str | None = None,
 ) -> None:
     route_id = _route_id_for(route_ids, vehicle.route_name)
-    reverse = vehicle.speed_kmh < 0
     speed_abs = abs(vehicle.speed_kmh)
-    speed = cm_float(speed_abs)
     start_s = _route_safe_start_s(vehicle.start_s, route_length)
-    walk_distance_m = max(1.0, min(200.0, duration_s * speed_abs / 3.6))
+    direction = -1.0 if vehicle.speed_kmh < 0 else 1.0
     if route_length is not None and route_length > 1.0:
-        walk_distance_m = min(walk_distance_m, max(1.0, route_length - start_s - 0.5))
-    walk_distance = cm_float(walk_distance_m)
-    orientation_yaw = "180.0" if reverse else "0.0"
+        if direction < 0:
+            available_distance = max(0.0, start_s - 0.5)
+        else:
+            available_distance = max(0.0, route_length - start_s - 0.5)
+    else:
+        available_distance = max(0.0, duration_s * max(speed_abs, 0.1) / 3.6)
+    if speed_abs <= 0.01 or available_distance <= 0.01:
+        walk_distance_m = 0.0
+        walk_time_s = duration_s
+    else:
+        walk_distance_m = min(200.0, duration_s * speed_abs / 3.6, available_distance)
+        walk_time_s = _clamp(walk_distance_m / max(speed_abs / 3.6, 0.1), 1.0, duration_s)
+    target_s = start_s + direction * walk_distance_m
+    if route_length is not None and route_length > 1.0:
+        target_s = _route_safe_start_s(target_s, route_length)
+    walk_time = cm_float(walk_time_s)
+    target_s_text = cm_float(target_s)
+    template_model = _moving_pedestrian_template(vehicle.model, speed_abs)
     start_cond = ""
     if vehicle.start_delay_s > 0:
         start_cond = f"Time > {cm_float(vehicle.start_delay_s)}"
-    lateral_offset = _route_safe_pedestrian_offset(vehicle.lane_offset)
+    lateral_offset = _clamp(vehicle.lane_offset, -PEDESTRIAN_ROUTE_OFFSET_LIMIT_M, PEDESTRIAN_ROUTE_OFFSET_LIMIT_M)
+    orientation_yaw = 180.0 if direction < 0 else 0.0
     prefix = f"Traffic.{index}"
     lines.extend(
         [
@@ -600,7 +625,7 @@ def _append_pedestrian(
             f"{prefix}.Lighting = 0",
             f"{prefix}.FreeMotion = 0",
             f"{prefix}.TrailerName =",
-            f"{prefix}.Template.FName = {vehicle.model}",
+            f"{prefix}.Template.FName = {template_model}",
             f"{prefix}.AutoDriver.FName =",
             f"{prefix}.Routing.Type = Route",
             f"{prefix}.Routing.ObjId = {route_id}",
@@ -608,7 +633,7 @@ def _append_pedestrian(
             f"{prefix}.StartPos.ObjId = {route_id}",
             f"{prefix}.StartPos = {cm_float(start_s)} {cm_float(lateral_offset)}",
             f"{prefix}.StartPos.Orientation.Type = Relative",
-            f"{prefix}.StartPos.Orientation = 0.0 0.0 {orientation_yaw}",
+            f"{prefix}.StartPos.Orientation = 0.0 0.0 {cm_float(orientation_yaw)}",
         ]
     )
     if start_cond:
@@ -616,7 +641,7 @@ def _append_pedestrian(
     lines.extend(
         [
             f"{prefix}.nMan = 1",
-            f"{prefix}.Man.Start.Velocity = {speed}",
+            f"{prefix}.Man.Start.Velocity = 0.0",
             f"{prefix}.Man.TreatAtEnd = FreezePos",
             f"{prefix}.Man.0.nLongSteps = 1",
             f"{prefix}.Man.0.nLatSteps = 1",
@@ -626,9 +651,9 @@ def _append_pedestrian(
             f"{prefix}.Man.0.Transition.Interrupt = end",
             f"{prefix}.Man.0.Transition.EndCond = end",
             f"{prefix}.Man.0.Transition.SimultanStart = end",
-            f"{prefix}.Man.0.LongStep.0.Limit = s {walk_distance}",
-            f"{prefix}.Man.0.LongStep.0.Dyn = VelTransition {speed} constAcc",
-            f"{prefix}.Man.0.LatStep.0.Limit = s {walk_distance}",
+            f"{prefix}.Man.0.LongStep.0.Limit = t {walk_time}",
+            f"{prefix}.Man.0.LongStep.0.Dyn = s {target_s_text}",
+            f"{prefix}.Man.0.LatStep.0.Limit = t {walk_time}",
         ]
     )
 

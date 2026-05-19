@@ -368,6 +368,9 @@ class PipelineApp(tk.Tk):
             args.extend(["--project", self.project_var.get()])
         if self.scenario_var.get():
             args.extend(["--scenario", self.scenario_var.get()])
+        preset = Path(self.export_var.get()) / "video2map_trafficgen_preset.json" if self.export_var.get() else None
+        if preset and preset.exists():
+            args.extend(["--preset", str(preset)])
         subprocess.Popen(args, cwd=TRAFFICGEN_DIR)
         self.log("Opened TrafficGen app with current paths.")
 

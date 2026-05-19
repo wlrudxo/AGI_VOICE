@@ -213,25 +213,35 @@ Typical flow:
 1. Plan a lane route.
 2. For ego, click `Use Current` in the `Ego route` row.
 3. Optional: plan another lane route and add traffic vehicles on that current route.
+   Set `Model` to `Random` to choose one of the built-in `1_Vehicles/...`
+   CarMaker traffic templates each time a vehicle is added. You can still type
+   a specific template path manually when a fixed model is needed.
    For traffic cars, `Motion` selects how CarMaker drives the actor:
    `IPG Driver (AutoDriver)` writes `Traffic.<i>.AutoDriver.FName` and
    `Traffic.<i>.Man.0.LongStep.0.Dyn = auto <speed>`, while
    `Scripted constant speed` writes a simple
    `VelTransition <speed> linear` maneuver with no traffic AutoDriver template.
+   Traffic-car start positions are checked before export. `Route s forward m`
+   must stay inside the route length, and `Lateral offset m` must stay inside
+   the estimated start-lane width, with a small safety margin. Pedestrian
+   offsets use their separate sidewalk-side validation.
 4. Optional: use `Random Pedestrians` to add walking pedestrians. Click one
    lane in the map, then click `Add Pedestrians On Selected Lane`; the app
    creates a pedestrian route for that road edge and scatters pedestrians along
-   it. During TestRun generation, pedestrian routes are written as normal RD5
-   `Route.*` objects and referenced with `Traffic.<index>.StartPos.Type =
-   Route`, matching the CarMaker example TestRuns. The sidewalk position is
-   produced by a lateral route offset computed from lane width, shoulder width,
-   and sidewalk width, so multi-lane roads place pedestrians farther from the
-   road center. `Density persons/km` controls how many pedestrians are placed
-   from that lane length. Start `s` is generated inside the route length using
-   stratified random spacing, so multiple pedestrians are spread along the
-   selected lane instead of all clustering at one random section. Walking speed,
-   lateral offset within the sidewalk band, and direction are randomized per
-   pedestrian. The model and direction can also be fixed or set to `Random`.
+   it. During TestRun generation, pedestrian routes are written as ordinary RD5
+   `Route` references, matching the IPG pedestrian examples. The lateral offset
+   is clamped to the narrow CarMaker-valid sidewalk/side lane beside the outer
+   driving lane, around `-(lane_width / 2 + 1.02m)`. This biases pedestrians
+   toward the sidewalk side while keeping them inside CarMaker's road envelope.
+   This avoids placing movable
+   traffic objects on the wider visual sidewalk bump, which CarMaker can treat
+   as outside the road and deactivate. `Density persons/km` controls how many
+   pedestrians are placed from that lane length. Start `s` is generated inside
+   the route length using stratified random spacing, so multiple pedestrians are
+   spread along the selected lane instead of all clustering at one random
+   section. Walking speed, small lateral jitter in the valid side lane, and
+   direction are randomized per pedestrian. The model and direction can also be
+   fixed or set to `Random`.
 5. Select the base or route-enabled RD5.
 6. Set `TestRun name`.
 7. Click `Generate TestRun`.
@@ -244,6 +254,11 @@ selected CarMaker project:
 <CarMakerProject>/Data/Road/
 ```
 
+Route-enabled RD5 filenames are shortened and include a small hash such as
+`figure8_extended_routes_a1b2c3d4e5_01.rd5`. This avoids Windows path-length
+failures when several long route and pedestrian names are written into one
+scenario.
+
 The generated TestRun is written directly to:
 
 ```text
@@ -251,6 +266,8 @@ The generated TestRun is written directly to:
 ```
 
 The `TestRun name` field is the saved file name under `Data/TestRun`.
+If that name is very long, the app shortens it with the same hash suffix before
+writing the file so CarMaker and Windows can open it reliably.
 
 The default project path is:
 
@@ -285,21 +302,23 @@ The generated TestRun keeps ego and traffic separate:
 - Ego car: `Vehicle.Routing.*`, `Vehicle.StartPos.*`, `DrivMan.*`
 - Traffic cars: `Traffic.N`, `Traffic.<index>.Routing.*`,
   `Traffic.<index>.StartPos.*`, `Traffic.<index>.Man.*`.
+  The UI can randomize the traffic template from a curated set of common
+  `1_Vehicles/...` CarMaker models, or preserve a manually typed template path.
   In `IPG Driver (AutoDriver)` mode, traffic cars use the selected CarMaker
   traffic driver template, for example `Car_Generic_Normal` or `Car_HDM_Normal`,
   and an `auto <speed>` long maneuver. In `Scripted constant speed` mode, the
   AutoDriver field is left empty and the car follows a fixed speed transition.
-- Pedestrians: also `Traffic.N` entries, but with `2_People/...` templates and
-  a pedestrian-style `VelTransition <walking speed> constAcc` maneuver. They
-  use `Traffic.<index>.StartPos.Type = Route`, the same route ObjId used by
-  `Traffic.<index>.Routing.ObjId`, and a lateral offset into the RoadGen
-  sidewalk band. This mirrors the CarMaker example pattern such as
-  `AEB_CrossingCarIntersection`, where pedestrians are normal traffic actors on
-  ordinary RD5 routes rather than `CustomPath` actors. Their long/lat step
-  limits use the remaining route distance (`s`) from each pedestrian's start
-  position, so short lanes do not receive a 200 m maneuver beyond the end of
-  the route. Random sidewalk pedestrians use `DetectMask = 1 1` so sensors and
-  IPG Driver/autonomous traffic can detect them. On roads generated with RoadGen
+- Pedestrians: also `Traffic.N` entries, but with `2_People/...` templates
+  placed on RD5 `Route` references with a lateral offset into the imported
+  sidewalk/side lane. The TestRun writes
+  `Traffic.<index>.Routing.Type = Route`,
+  `Traffic.<index>.StartPos.Type = Route`, and the route ObjId in
+  `Traffic.<index>.StartPos.ObjId`. The app deliberately uses the CarMaker road
+  envelope's side lane instead of the wider visual sidewalk bump; offsets that
+  are too far from the route can make CarMaker log `placed outside of the road`
+  and deactivate the pedestrian. Random sidewalk pedestrians use
+  `DetectMask = 1 1` so sensors and IPG
+  Driver/autonomous traffic can detect them. On roads generated with RoadGen
   crosswalk nodes, the RD5 also contains
   `RDST_Pedestrian` Driver stop markers so IPG Driver can yield near the
   crossing.

@@ -94,6 +94,12 @@ class SidewalkBumpRef:
 
 
 @dataclass(frozen=True)
+class TreeStripRef:
+    link: LinkRef
+    side: int
+
+
+@dataclass(frozen=True)
 class TrafficLightNode:
     node_id: str
     x: float
@@ -178,7 +184,8 @@ CITY_TREE_STRIP_LATERAL_OFFSET = 5.0
 CITY_TREE_STRIP_WIDTH = 4.0
 CITY_TREE_STRIP_DENSITY = 35.0
 CITY_TREE_STRIP_MIN_LENGTH = 16.0
-CITY_TREE_STRIP_END_MARGIN = 6.0
+CITY_TREE_STRIP_END_MARGIN = 10.0
+CITY_TREE_STRIP_ROAD_CLEARANCE = 0.35
 CITY_TREE_STRIP_SCALE_X = 1.0
 CITY_TREE_STRIP_SCALE_Y = 1.0
 CITY_TREE_STRIP_RANDOM_X = 0.5
@@ -1185,6 +1192,61 @@ def _sidewalk_bump_refs(links: list[LinkRef]) -> list[SidewalkBumpRef]:
     return refs
 
 
+def _tree_strip_refs(links: list[LinkRef]) -> list[TreeStripRef]:
+    grouped: dict[tuple[tuple[int, int], tuple[int, int]], list[LinkRef]] = {}
+    for link in links:
+        grouped.setdefault(_link_geometry_key(link), []).append(link)
+
+    refs: list[TreeStripRef] = []
+    for group in grouped.values():
+        ordered = sorted(group, key=lambda item: item.index)
+        if len(ordered) >= 2:
+            # Opposite one-way links share the same road geometry. Placing
+            # TreeStrip on both local sides can put greenery on the inner lane
+            # or median; the local right side of each directed link is the
+            # physical outside, matching the visual sidewalk bump strategy.
+            refs.extend(TreeStripRef(link=link, side=-1) for link in ordered)
+        else:
+            link = ordered[0]
+            refs.append(TreeStripRef(link=link, side=-1))
+            refs.append(TreeStripRef(link=link, side=1))
+    return refs
+
+
+def _tree_strip_outer_road_extent(
+    link: LinkRef,
+    side: int,
+    lane_paths_by_link: dict[int, list[LanePathRef]],
+) -> float:
+    lane_paths = lane_paths_by_link.get(link.index, [])
+    target_side = "R" if side < 0 else "L"
+    candidates = [lane_path for lane_path in lane_paths if lane_path.side == target_side]
+    if not candidates:
+        candidates = lane_paths
+
+    extents: list[float] = []
+    for lane_path in candidates:
+        bounds = _lane_lateral_bounds(lane_path, lane_paths)
+        if not bounds:
+            continue
+        if side < 0:
+            extents.append(abs(min(bounds)))
+        else:
+            extents.append(max(bounds))
+    return max(extents, default=0.0)
+
+
+def _tree_strip_lateral(
+    link: LinkRef,
+    side: int,
+    width: float,
+    lane_paths_by_link: dict[int, list[LanePathRef]],
+) -> float:
+    outer_road_extent = _tree_strip_outer_road_extent(link, side, lane_paths_by_link)
+    safe_abs_lateral = outer_road_extent + width / 2.0 + CITY_TREE_STRIP_ROAD_CLEARANCE
+    return side * max(CITY_TREE_STRIP_LATERAL_OFFSET, safe_abs_lateral)
+
+
 def _model_objinfo_path(movie_root: Path, model: str) -> Path:
     return movie_root / model.replace(".mobj", ".objinfo")
 
@@ -1370,50 +1432,50 @@ def _city_sidewalk_bump_lines(
 
 
 def _city_tree_strip_lines(
-    links: list[LinkRef],
+    refs: list[TreeStripRef],
     existing_strips: dict[int, int],
     next_obj_id: int,
     rng: random.Random,
+    lane_paths_by_link: dict[int, list[LanePathRef]],
 ) -> tuple[list[str], int, int]:
     if not CITY_TREE_STRIP_ENABLED:
         return [], next_obj_id, 0
 
     lines: list[str] = []
     added = 0
-    for link in links:
+    for ref in refs:
+        link = ref.link
         start_s = min(CITY_TREE_STRIP_END_MARGIN, max(0.0, link.length * 0.15))
         end_s = max(start_s, link.length - start_s)
         if end_s - start_s < CITY_TREE_STRIP_MIN_LENGTH:
             continue
 
-        sides = [-1, 1]
-        rng.shuffle(sides)
-        for side in sides:
-            strip_index = existing_strips.get(link.rl_id, -1) + 1
-            existing_strips[link.rl_id] = strip_index
-            key = f"RL.{link.rl_id}.TreeStrip.{strip_index}"
-            lateral = side * CITY_TREE_STRIP_LATERAL_OFFSET
-            density = CITY_TREE_STRIP_DENSITY * rng.uniform(0.75, 1.25)
-            width = CITY_TREE_STRIP_WIDTH * rng.uniform(0.85, 1.15)
-            lines.append(f"{key}.ID = {next_obj_id} {link.rl_id}")
-            lines.append(
-                "{key} = {start_s} 0 {end_s} 0 {lateral} {side} {density} {width} "
-                "{scale_x} {scale_y} {random_x} {random_y}".format(
-                    key=key,
-                    start_s=_format_number(start_s),
-                    end_s=_format_number(end_s),
-                    lateral=_format_number(lateral),
-                    side=side,
-                    density=_format_number(density),
-                    width=_format_number(width),
-                    scale_x=_format_number(CITY_TREE_STRIP_SCALE_X),
-                    scale_y=_format_number(CITY_TREE_STRIP_SCALE_Y),
-                    random_x=_format_number(CITY_TREE_STRIP_RANDOM_X),
-                    random_y=_format_number(CITY_TREE_STRIP_RANDOM_Y),
-                )
+        side = ref.side
+        strip_index = existing_strips.get(link.rl_id, -1) + 1
+        existing_strips[link.rl_id] = strip_index
+        key = f"RL.{link.rl_id}.TreeStrip.{strip_index}"
+        density = CITY_TREE_STRIP_DENSITY * rng.uniform(0.75, 1.25)
+        width = CITY_TREE_STRIP_WIDTH * rng.uniform(0.85, 1.15)
+        lateral = _tree_strip_lateral(link, side, width, lane_paths_by_link)
+        lines.append(f"{key}.ID = {next_obj_id} {link.rl_id}")
+        lines.append(
+            "{key} = {start_s} 0 {end_s} 0 {lateral} {side} {density} {width} "
+            "{scale_x} {scale_y} {random_x} {random_y}".format(
+                key=key,
+                start_s=_format_number(start_s),
+                end_s=_format_number(end_s),
+                lateral=_format_number(lateral),
+                side=side,
+                density=_format_number(density),
+                width=_format_number(width),
+                scale_x=_format_number(CITY_TREE_STRIP_SCALE_X),
+                scale_y=_format_number(CITY_TREE_STRIP_SCALE_Y),
+                random_x=_format_number(CITY_TREE_STRIP_RANDOM_X),
+                random_y=_format_number(CITY_TREE_STRIP_RANDOM_Y),
             )
-            next_obj_id += 1
-            added += 1
+        )
+        next_obj_id += 1
+        added += 1
     return lines, next_obj_id, added
 
 
@@ -2096,6 +2158,7 @@ def decorate_rd5_city(
     if removed_objects:
         max_used_obj_id = max(_max_object_id_in_lines(lines), 0)
     existing_geo = _parse_existing_geo_indices(lines)
+    lane_paths_by_link = _parse_lane_paths_by_link(lines)
     road_segments = _parse_road_segments(lines)
     parsed_links = [link for link in _parse_links(lines) if link.length >= min_link_length]
     links = _unique_links(parsed_links)
@@ -2128,10 +2191,11 @@ def decorate_rd5_city(
     tree_strips_added = 0
     existing_tree_strips = _parse_existing_tree_strip_indices(lines)
     tree_strip_lines, next_obj_id, tree_strips_added = _city_tree_strip_lines(
-        roadside_links,
+        _tree_strip_refs(parsed_links),
         existing_tree_strips,
         next_obj_id,
         rng,
+        lane_paths_by_link,
     )
     generated.extend(tree_strip_lines)
     objects_added = 0

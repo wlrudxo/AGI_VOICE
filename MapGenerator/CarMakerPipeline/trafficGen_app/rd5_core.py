@@ -92,6 +92,7 @@ class Rd5RouteWriteResult:
 class Rd5PedestrianPathWriteResult:
     output_path: Path
     path_ids: dict[str, str]
+    path_lengths: dict[str, float]
     report: str
 
 
@@ -715,7 +716,7 @@ def _custom_path_blocks(
     shoulder_width: float,
     sidewalk_width: float,
     path_half_width: float,
-) -> tuple[list[str], str, int]:
+) -> tuple[list[str], str, float, int]:
     path_id = str(first_object_id)
     rl_id = str(first_object_id + 1)
     seg_id = str(first_object_id + 2)
@@ -723,6 +724,7 @@ def _custom_path_blocks(
     next_id = first_object_id + 4
 
     points: list[tuple[str, float, float]] = []
+    path_length = 0.0
     for item in mapped_results:
         link = _link_by_id(rd5, item.rd5_link_id)
         if not link or not link.link_id:
@@ -747,6 +749,7 @@ def _custom_path_blocks(
         else:
             points.append((link.link_id, start_s, lateral))
             points.append((link.link_id, end_s, lateral))
+            path_length += max(0.0, end_s - start_s)
 
     if len(points) < 2:
         raise RoadPackageError(f"Could not build a pedestrian CustomPath for route `{route_name}`.")
@@ -792,7 +795,7 @@ def _custom_path_blocks(
             f"\t{width_r_point_1} {path_id} 0 1 {half_width} -999 -999 -999 0",
         ]
     )
-    return blocks, path_id, next_id
+    return blocks, path_id, path_length, next_id
 
 
 def write_rd5_with_pedestrian_paths(
@@ -807,20 +810,21 @@ def write_rd5_with_pedestrian_paths(
     path_half_width: float = 0.75,
 ) -> Rd5PedestrianPathWriteResult:
     if not routes:
-        return Rd5PedestrianPathWriteResult(Path(output_path), {}, "")
+        return Rd5PedestrianPathWriteResult(Path(output_path), {}, {}, "")
 
     lines = list(rd5.lines)
     path_index = _next_custom_path_index(lines)
     next_object_id = _numeric_max_used_id(rd5) + 1
     all_blocks: list[str] = []
     path_ids: dict[str, str] = {}
+    path_lengths: dict[str, float] = {}
     report_lines = [
         "# RD5 Pedestrian CustomPath Report",
         "",
         f"- Source RD5: `{rd5.path}`",
         "",
-        "| Route | CustomPath ObjId | Source links |",
-        "|---|---:|---|",
+        "| Route | CustomPath ObjId | Path length m | Source links |",
+        "|---|---:|---:|---|",
     ]
 
     for route_name, route in sorted(routes.items()):
@@ -835,7 +839,7 @@ def write_rd5_with_pedestrian_paths(
                 f"Pedestrian route `{route_name}` could not be mapped to any RD5 link. "
                 "Load the RD5 converted from the same RoadGen export."
             )
-        blocks, path_id, next_object_id = _custom_path_blocks(
+        blocks, path_id, path_length, next_object_id = _custom_path_blocks(
             route_name=route_name,
             route=route,
             mapped_results=mapped,
@@ -850,8 +854,9 @@ def write_rd5_with_pedestrian_paths(
         )
         all_blocks.extend(blocks)
         path_ids[route_name] = path_id
+        path_lengths[route_name] = path_length
         source_links = " ".join(dict.fromkeys(item.rd5_link_id or "" for item in mapped))
-        report_lines.append(f"| `{route_name}` | `{path_id}` | `{source_links}` |")
+        report_lines.append(f"| `{route_name}` | `{path_id}` | `{_format_float(path_length)}` | `{source_links}` |")
         path_index += 1
 
     _insert_custom_path_blocks(lines, all_blocks)
@@ -870,7 +875,7 @@ def write_rd5_with_pedestrian_paths(
             "The generated paths follow the RD5 Link centerline with a lateral offset computed from the OpenDRIVE lane side/count, lane width, shoulder width, and sidewalk width.",
         ]
     )
-    return Rd5PedestrianPathWriteResult(output_path, path_ids, "\n".join(report_lines) + "\n")
+    return Rd5PedestrianPathWriteResult(output_path, path_ids, path_lengths, "\n".join(report_lines) + "\n")
 
 
 def _lane_change_window(link_length: float | None, ordinal: int, total: int) -> tuple[float, float]:

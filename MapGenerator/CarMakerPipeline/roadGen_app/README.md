@@ -126,6 +126,11 @@ Use one of these flows:
   parallel to the local road link, with only a tiny jitter so dense blocks look
   more ordered. It also writes `RL.*.TreeStrip.*` entries, based on CarMaker's
   own urban-road examples, to fill non-building roadside areas with vegetation.
+  For imported two-way roads, tree strips are placed only on each directed
+  link's physical outside side, and they keep a larger end margin near
+  intersections so greenery does not spill into the drivable road. The lateral
+  position is also pushed outside the parsed RD5 LanePath width instead of using
+  a fixed offset only, which keeps vegetation clear of multi-lane sections.
   It leaves the RD5 terrain unchanged to avoid mismatched ground height in
   Movie.
   The city pass reuses the same shoulder+sidewalk profile and also adds a

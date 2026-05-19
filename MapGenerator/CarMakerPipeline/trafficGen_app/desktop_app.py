@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 from datetime import datetime
+import hashlib
+import json
 import os
 import math
 from pathlib import Path
@@ -54,13 +57,34 @@ DEFAULT_CM_PROJECT = Path(r"C:\CM_Projects\MapGen_TEST")
 DEFAULT_EGO_MODEL = "Examples/DemoCar_BA"
 DEFAULT_EGO_DRIVER = "Car_Normal"
 DEFAULT_CARMAKER_HOME = Path(r"C:\IPG\carmaker\win64-15.0.1")
-DEFAULT_PEDESTRIAN_MODEL = "2_People/Pedestrian_Male_Casual_01"
+DEFAULT_PEDESTRIAN_MODEL = "2_People/Pedestrian_Male_Casual_01_IPG"
 TRAFFIC_CONTROL_LABELS = {
     "IPG Driver (AutoDriver)": "ipg_driver",
     "Scripted constant speed": "constant_speed",
 }
 TRAFFIC_CONTROL_NAMES = {value: label for label, value in TRAFFIC_CONTROL_LABELS.items()}
+TRAFFIC_VEHICLE_MODELS = [
+    "1_Vehicles/Audi_S3_2015",
+    "1_Vehicles/Audi_TT_2015",
+    "1_Vehicles/VW_Beetle_2012_Blue",
+    "1_Vehicles/Suzuki_Vitara_2015",
+    "1_Vehicles/Lexus_NX300h_2015",
+    "1_Vehicles/Renault_Megane_2016",
+    "1_Vehicles/Toyota_Camry_2018",
+    "1_Vehicles/MB_CClass_2015",
+    "1_Vehicles/MB_EClass_2017",
+    "1_Vehicles/MB_GLC_2016",
+    "1_Vehicles/Peugeot_3008_2016",
+    "1_Vehicles/Honda_Pilot_2016",
+    "1_Vehicles/Nissan_Murano_2016",
+    "1_Vehicles/VW_Transporter_2016",
+    "1_Vehicles/Ford_Transit_2014",
+    "1_Vehicles/Tesla_S_2016",
+    "1_Vehicles/BMW_5_2017",
+    "1_Vehicles/Audi_R8_2016",
+]
 PEDESTRIAN_MODELS = [
+    "2_People/Pedestrian_Male_Casual_01_IPG",
     "2_People/Pedestrian_Male_Casual_01",
     "2_People/Pedestrian_Male_Casual_01_Red",
     "2_People/Pedestrian_Female_Casual_01",
@@ -70,7 +94,23 @@ PEDESTRIAN_MODELS = [
 ROADGEN_DEFAULT_LANE_WIDTH_M = 3.2
 ROADGEN_DEFAULT_SHOULDER_WIDTH_M = 0.8
 ROADGEN_DEFAULT_SIDEWALK_WIDTH_M = 2.2
-PEDESTRIAN_SIDEWALK_JITTER_M = 0.25
+ROADGEN_RD5_SIDEWALK_LANE_WIDTH_M = 1.0
+ROADGEN_RD5_SIDEWALK_OUTWARD_BIAS_M = 0.52
+PEDESTRIAN_SIDEWALK_JITTER_M = 0.12
+TRAFFIC_LANE_OFFSET_MARGIN_M = 0.15
+
+
+def short_hash(text: str, length: int = 10) -> str:
+    return hashlib.sha1(text.encode("utf-8", errors="ignore")).hexdigest()[:length]
+
+
+def shorten_stem(stem: str, max_length: int = 48) -> str:
+    clean = safe_name(stem) or "road"
+    if len(clean) <= max_length:
+        return clean
+    digest = short_hash(clean)
+    keep = max(8, max_length - len(digest) - 1)
+    return f"{clean[:keep].rstrip('_-')}_{digest}"
 
 
 def find_carmaker_home() -> Path | None:
@@ -91,6 +131,7 @@ class TrafficGenApp(tk.Tk):
         initial_rd5: Path | None = None,
         initial_project: Path | None = None,
         initial_scenario: str | None = None,
+        initial_preset: Path | None = None,
     ) -> None:
         super().__init__()
         self.title("Traffic Route Generator")
@@ -107,7 +148,7 @@ class TrafficGenApp(tk.Tk):
         self.click_target_var = tk.StringVar(value="select")
         self.route_name_var = tk.StringVar(value="route_1")
         self.vehicle_name_var = tk.StringVar(value="Vehicle_1")
-        self.model_var = tk.StringVar(value=DEFAULT_MODEL)
+        self.model_var = tk.StringVar(value="Random")
         self.driver_model_var = tk.StringVar(value=DEFAULT_DRIVER)
         self.traffic_control_var = tk.StringVar(value="IPG Driver (AutoDriver)")
         self.speed_var = tk.DoubleVar(value=50.0)
@@ -144,6 +185,7 @@ class TrafficGenApp(tk.Tk):
         self.last_rd5_route_result = None
         self.last_testrun_path: Path | None = None
         self.last_testrun_project: Path | None = None
+        self.pending_preset_path = initial_preset
         self.bounds: tuple[float, float, float, float] | None = None
         self.selected_lane_id: str | None = None
         self.hover_lane_id: str | None = None
@@ -173,6 +215,7 @@ class TrafficGenApp(tk.Tk):
         ttk.Button(top, text="Browse", command=self.browse_folder).grid(row=0, column=2, padx=2)
         ttk.Button(top, text="Load", command=self.load_package).grid(row=0, column=3, padx=2)
         ttk.Button(top, text="Latest", command=self.use_latest).grid(row=0, column=4, padx=2)
+        ttk.Button(top, text="Load Preset", command=self.browse_preset).grid(row=0, column=5, padx=2)
 
         body = ttk.PanedWindow(self, orient="horizontal")
         body.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
@@ -300,6 +343,14 @@ class TrafficGenApp(tk.Tk):
                     values=list(TRAFFIC_CONTROL_LABELS),
                     state="readonly",
                     width=26,
+                ).grid(row=row, column=1, sticky="ew", pady=2)
+            elif label == "Model":
+                ttk.Combobox(
+                    vehicle_box,
+                    textvariable=variable,
+                    values=["Random", *TRAFFIC_VEHICLE_MODELS],
+                    state="normal",
+                    width=28,
                 ).grid(row=row, column=1, sticky="ew", pady=2)
             else:
                 ttk.Entry(vehicle_box, textvariable=variable, width=28).grid(row=row, column=1, sticky="ew", pady=2)
@@ -444,6 +495,7 @@ class TrafficGenApp(tk.Tk):
             columns=("actor", "route", "speed", "start"),
             show="headings",
             height=7,
+            selectmode="extended",
         )
         self.vehicle_tree.heading("actor", text="Actor")
         self.vehicle_tree.heading("route", text="Route")
@@ -556,6 +608,20 @@ class TrafficGenApp(tk.Tk):
         if selected:
             self.cm_project_var.set(selected)
 
+    def browse_preset(self) -> None:
+        initial_dir = Path(self.folder_var.get()) if self.folder_var.get() else DEFAULT_ROADGEN_EXPORTS
+        selected = filedialog.askopenfilename(
+            initialdir=str(initial_dir if initial_dir.exists() else DEFAULT_ROADGEN_EXPORTS),
+            title="Select Video2Map TrafficGen preset",
+            filetypes=[("Video2Map preset", "video2map_trafficgen_preset.json"), ("JSON files", "*.json"), ("All files", "*.*")],
+        )
+        if not selected:
+            return
+        if not self.package:
+            self.load_package()
+        if self.package:
+            self.apply_video2map_preset(Path(selected))
+
     def browse_carmaker_home(self) -> None:
         initial = self.cm_home_var.get() or str(DEFAULT_CARMAKER_HOME)
         selected = filedialog.askdirectory(initialdir=initial, title="Select CarMaker win64 installation folder")
@@ -597,6 +663,139 @@ class TrafficGenApp(tk.Tk):
         self.compute_bounds()
         self.redraw()
         self.log(f"Loaded package: {self.package.files.folder}")
+        if self.pending_preset_path:
+            preset_path = self.pending_preset_path
+            self.pending_preset_path = None
+            self.apply_video2map_preset(preset_path)
+
+    def lane_from_edge(self, edge_id: str, prefer_index: int = 0) -> str | None:
+        if not self.package:
+            return None
+        lanes = [
+            lane
+            for lane in self.package.lanes.values()
+            if not lane.internal and lane.edge_id == edge_id
+        ]
+        if not lanes:
+            return None
+        lanes.sort(key=lambda lane: (abs(lane.index - prefer_index), lane.index))
+        return lanes[0].id
+
+    def route_from_preset_spec(self, spec: dict):
+        if not self.package:
+            raise RoadPackageError("Load a road package before applying a preset.")
+        tokens = [
+            str(token).strip()
+            for token in spec.get("lane_tokens", [])
+            if str(token).strip()
+        ]
+        valid_tokens = [token for token in tokens if token in self.package.lanes]
+        if len(valid_tokens) < 2:
+            valid_tokens = []
+            edge_ids = [str(edge_id).strip() for edge_id in spec.get("edge_ids", []) if str(edge_id).strip()]
+            lane_indices = spec.get("lane_indices") or {}
+            for edge_id in edge_ids:
+                try:
+                    preferred_index = int(lane_indices.get(edge_id, 0))
+                except Exception:
+                    preferred_index = 0
+                lane_id = self.lane_from_edge(edge_id, preferred_index)
+                if lane_id and (not valid_tokens or valid_tokens[-1] != lane_id):
+                    valid_tokens.append(lane_id)
+        if len(valid_tokens) < 2:
+            raise RoadPackageError(f"Preset route `{spec.get('name') or '(unnamed)'}` has fewer than two usable lanes.")
+        try:
+            route = self.package.plan_route_via(
+                valid_tokens,
+                include_uturns=bool(spec.get("include_uturns", False)),
+                allow_lane_changes=bool(spec.get("allow_lane_changes", True)),
+            )
+        except RoadPackageError:
+            if len(valid_tokens) <= 2:
+                raise
+            route = self.package.plan_route_via(
+                [valid_tokens[0], valid_tokens[-1]],
+                include_uturns=bool(spec.get("include_uturns", False)),
+                allow_lane_changes=bool(spec.get("allow_lane_changes", True)),
+            )
+        route.name = safe_name(spec.get("name") or route.name)
+        return route
+
+    def apply_video2map_preset(self, preset_path: Path) -> None:
+        if not self.package:
+            messagebox.showinfo("Load Preset", "Load a RoadGen export first.")
+            return
+        try:
+            data = json.loads(Path(preset_path).read_text(encoding="utf-8"))
+            route_by_name = {}
+            self.saved_routes.clear()
+            self.vehicles.clear()
+
+            for spec in data.get("routes", []):
+                route = self.route_from_preset_spec(spec)
+                route_name = self.save_route_object(route, route.name)
+                route_by_name[route_name] = route
+                route_by_name[safe_name(route_name)] = route
+
+            ego = data.get("ego") or {}
+            ego_route_name = safe_name(ego.get("route_name") or "")
+            if ego_route_name and ego_route_name in route_by_name:
+                self.ego_enabled_var.set(bool(ego.get("enabled", True)))
+                self.ego_route_name_var.set(ego_route_name)
+                self.ego_model_var.set(ego.get("model") or DEFAULT_EGO_MODEL)
+                self.ego_driver_var.set(ego.get("driver") or DEFAULT_EGO_DRIVER)
+                self.ego_speed_var.set(float(ego.get("speed_kmh", 50.0)))
+                self.ego_start_s_var.set(float(ego.get("start_s", 0.0)))
+                self.ego_lane_offset_var.set(float(ego.get("lane_offset", 0.0)))
+
+            for actor in data.get("traffic", []):
+                route_name = safe_name(actor.get("route_name") or "")
+                route = route_by_name.get(route_name)
+                if not route:
+                    continue
+                if "start_s" in actor:
+                    start_s = float(actor.get("start_s", 0.0))
+                else:
+                    ratio = float(actor.get("start_s_ratio", 0.1))
+                    start_s = max(0.0, min(route.total_length - 1.0, route.total_length * ratio))
+                vehicle = VehiclePlan(
+                    name=safe_name(actor.get("name") or f"Vehicle_{len(self.vehicles) + 1}"),
+                    route_name=route_name,
+                    model=actor.get("model") or DEFAULT_MODEL,
+                    driver_model=actor.get("driver_model") or DEFAULT_DRIVER,
+                    speed_kmh=float(actor.get("speed_kmh", 30.0)),
+                    start_s=start_s,
+                    lane_offset=float(actor.get("lane_offset", 0.0)),
+                    start_delay_s=float(actor.get("start_delay_s", 0.0)),
+                    control_mode=actor.get("control_mode") or "ipg_driver",
+                )
+                validation_errors = self.validate_traffic_vehicle_start(vehicle, route)
+                if validation_errors:
+                    self.log(f"Skipped preset vehicle {vehicle.name}: {'; '.join(validation_errors)}")
+                    continue
+                self.vehicles.append(vehicle)
+
+            preferred_route = route_by_name.get(self.ego_route_name_var.get()) or next(iter(route_by_name.values()), None)
+            if preferred_route:
+                self.current_route = preferred_route
+                self.display_route = None
+                self.display_route_owner = ""
+                self.route_name_var.set(preferred_route.name)
+                self.start_lane_var.set(preferred_route.start_lane)
+                self.goal_lane_var.set(preferred_route.goal_lane)
+                self.checkpoint_lanes_var.set("")
+                self.render_route_text(preferred_route, view_label="Video2Map preset route")
+            if data.get("scenario_name"):
+                self.scenario_name_var.set(safe_name(data["scenario_name"]))
+            self.refresh_vehicle_tree()
+            self.redraw()
+            self.log(
+                f"Loaded Video2Map preset: {preset_path} "
+                f"({len(self.saved_routes)} route(s), {len(self.vehicles)} traffic actor(s))"
+            )
+        except Exception as exc:
+            messagebox.showerror("Load Preset", str(exc))
+            self.log(f"Preset load failed: {exc}")
 
     def sync_rd5_for_loaded_package(self) -> None:
         if not self.package or not self.package.files.xodr:
@@ -606,9 +805,14 @@ class TrafficGenApp(tk.Tk):
             return
         project_dir = Path(self.cm_project_var.get())
         candidate = project_dir / "Data" / "Road" / f"{self.package.files.xodr.stem}.rd5"
-        if candidate.exists():
+        if candidate.exists() and self.rd5_matches_loaded_package(candidate):
             self.rd5_path_var.set(str(candidate))
             self.log(f"RD5 auto-selected for loaded package: {candidate}")
+        elif candidate.exists():
+            self.log(
+                "RD5 candidate exists but was not auto-selected because it was converted from a different XODR. "
+                f"Convert the currently loaded RoadGen export first: {self.package.files.xodr}"
+            )
 
     def rd5_matches_loaded_package(self, rd5_path: Path) -> bool:
         if not self.package or not self.package.files.xodr or not rd5_path.exists():
@@ -930,10 +1134,12 @@ class TrafficGenApp(tk.Tk):
             messagebox.showerror("Add Vehicle", "Speed, route s, lateral offset, and start delay must be numbers.")
             return
 
+        model_text = self.model_var.get().strip()
+        model = random.choice(TRAFFIC_VEHICLE_MODELS) if not model_text or model_text.lower() == "random" else model_text
         vehicle = VehiclePlan(
             name=safe_name(self.vehicle_name_var.get() or f"Vehicle_{len(self.vehicles) + 1}"),
             route_name=route_name,
-            model=self.model_var.get().strip() or DEFAULT_MODEL,
+            model=model,
             driver_model=self.driver_model_var.get().strip() or DEFAULT_DRIVER,
             speed_kmh=speed,
             start_s=start_s,
@@ -941,13 +1147,58 @@ class TrafficGenApp(tk.Tk):
             start_delay_s=start_delay,
             control_mode=TRAFFIC_CONTROL_LABELS.get(self.traffic_control_var.get(), "ipg_driver"),
         )
+        validation_errors = self.validate_traffic_vehicle_start(vehicle, self.current_route)
+        if validation_errors:
+            messagebox.showerror("Add Vehicle", "\n".join(validation_errors))
+            self.log(f"Rejected vehicle {vehicle.name}: {'; '.join(validation_errors)}")
+            return
         self.vehicles.append(vehicle)
         self.vehicle_name_var.set(f"Vehicle_{len(self.vehicles) + 1}")
         self.refresh_vehicle_tree()
-        self.log(f"Added vehicle {vehicle.name} on {route_name}")
+        self.log(f"Added vehicle {vehicle.name} ({vehicle.model}) on {route_name}")
 
     def is_pedestrian_plan(self, vehicle: VehiclePlan) -> bool:
         return vehicle_category(vehicle.model) == "pedestrian"
+
+    def traffic_vehicle_start_limits(self, route: PlannedRoute) -> tuple[float, float, float, str]:
+        lane = self.package.lanes.get(route.start_lane) if self.package else None
+        lane_width = self.estimate_lane_width(lane.edge_id) if lane else ROADGEN_DEFAULT_LANE_WIDTH_M
+        half_width = max(0.25, lane_width / 2.0 - TRAFFIC_LANE_OFFSET_MARGIN_M)
+        return -half_width, half_width, lane_width, route.start_lane
+
+    def validate_traffic_vehicle_start(
+        self,
+        vehicle: VehiclePlan,
+        route: PlannedRoute | None,
+    ) -> list[str]:
+        if self.is_pedestrian_plan(vehicle):
+            return []
+        if route is None:
+            return [f"{vehicle.name}: route '{vehicle.route_name}' is not saved or planned."]
+
+        errors: list[str] = []
+        route_length = max(0.0, float(route.total_length))
+        if vehicle.start_s < 0.0 or (route_length > 0.0 and vehicle.start_s > route_length):
+            errors.append(
+                f"{vehicle.name}: route s {vehicle.start_s:g} m is outside route length 0..{route_length:g} m."
+            )
+
+        offset_min, offset_max, lane_width, start_lane = self.traffic_vehicle_start_limits(route)
+        if not (offset_min <= vehicle.lane_offset <= offset_max):
+            errors.append(
+                f"{vehicle.name}: lateral offset {vehicle.lane_offset:g} m is outside "
+                f"the safe lane range {offset_min:g}..{offset_max:g} m for start lane {start_lane} "
+                f"(estimated lane width {lane_width:g} m)."
+            )
+        return errors
+
+    def validate_traffic_vehicle_starts(self, route_lookup: dict[str, PlannedRoute]) -> list[str]:
+        errors: list[str] = []
+        for vehicle in self.vehicles:
+            if self.is_pedestrian_plan(vehicle):
+                continue
+            errors.extend(self.validate_traffic_vehicle_start(vehicle, route_lookup.get(vehicle.route_name)))
+        return errors
 
     def pedestrian_outer_lane(self, lane: Lane) -> Lane:
         if not self.package:
@@ -993,14 +1244,13 @@ class TrafficGenApp(tk.Tk):
 
     def pedestrian_sidewalk_offset_range(self, lane: Lane) -> tuple[float, float]:
         lane_width = self.estimate_lane_width(lane.edge_id)
-        road_edge_from_lane = (lane.index + 0.5) * lane_width
-        sidewalk_center = -(
-            road_edge_from_lane
-            + ROADGEN_DEFAULT_SHOULDER_WIDTH_M
-            + ROADGEN_DEFAULT_SIDEWALK_WIDTH_M / 2.0
+        sidewalk_lane_center = -(
+            lane_width / 2.0
+            + ROADGEN_RD5_SIDEWALK_LANE_WIDTH_M / 2.0
+            + ROADGEN_RD5_SIDEWALK_OUTWARD_BIAS_M
         )
-        jitter = min(PEDESTRIAN_SIDEWALK_JITTER_M, max(0.1, ROADGEN_DEFAULT_SIDEWALK_WIDTH_M * 0.2))
-        return sidewalk_center - jitter, sidewalk_center + jitter
+        jitter = min(PEDESTRIAN_SIDEWALK_JITTER_M, ROADGEN_RD5_SIDEWALK_LANE_WIDTH_M * 0.35)
+        return sidewalk_lane_center - jitter, sidewalk_lane_center + jitter
 
     def normalize_pedestrian_offset_range(
         self,
@@ -1021,6 +1271,14 @@ class TrafficGenApp(tk.Tk):
             self.ped_offset_min_var.set(round(clamped_min, 3))
             self.ped_offset_max_var.set(round(clamped_max, 3))
         return clamped_min, clamped_max, adjusted
+
+    def lane_width_by_edge(self) -> dict[str, float]:
+        if not self.package:
+            return {}
+        return {
+            edge_id: self.estimate_lane_width(edge_id)
+            for edge_id in self.package.edges
+        }
 
     def pedestrian_route_from_selected_lane(self) -> tuple[PlannedRoute | None, str, Lane | None]:
         if not self.package or not self.selected_lane_id:
@@ -1180,7 +1438,7 @@ class TrafficGenApp(tk.Tk):
         )
         if adjusted_offsets:
             self.log(
-                "Pedestrian offsets were clamped to the RoadGen sidewalk band beside the selected route lane."
+                "Pedestrian offsets were clamped to the CarMaker-valid sidewalk lane beside the selected route lane."
             )
 
     def remove_generated_pedestrians(self) -> None:
@@ -1228,14 +1486,23 @@ class TrafficGenApp(tk.Tk):
         selected = self.vehicle_tree.selection()
         if not selected:
             return
-        indexes = []
+        indexes: set[int] = set()
         for item in selected:
             if item.startswith("traffic:"):
-                indexes.append(int(item.split(":", 1)[1]))
-        for index in indexes:
-            if 0 <= index < len(self.vehicles):
-                self.vehicles.pop(index)
+                try:
+                    indexes.add(int(item.split(":", 1)[1]))
+                except ValueError:
+                    continue
+        before = len(self.vehicles)
+        self.vehicles = [
+            vehicle
+            for index, vehicle in enumerate(self.vehicles)
+            if index not in indexes
+        ]
+        removed = before - len(self.vehicles)
         self.refresh_vehicle_tree()
+        if removed:
+            self.log(f"Removed {removed} selected traffic/pedestrian actor(s)")
 
     def show_vehicle_details(self, _event=None) -> None:
         selected = self.vehicle_tree.selection()
@@ -1427,8 +1694,9 @@ class TrafficGenApp(tk.Tk):
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         route_name = safe_name(self.route_name_var.get() or self.current_route.name)
         output_dir = ROOT / "exports" / f"rd5_route_{stamp}"
-        output_rd5 = output_dir / f"{safe_name(rd5_path.stem)}_{route_name}.rd5"
-        report_path = output_dir / "rd5_route_write_report.md"
+        output_stem = f"{shorten_stem(rd5_path.stem)}_{shorten_stem(route_name)}"
+        output_rd5 = output_dir / f"{output_stem}.rd5"
+        report_path = output_dir / f"rd5_route_write_report_{shorten_stem(route_name, 72)}.md"
 
         try:
             rd5 = Rd5Road.load(rd5_path)
@@ -1443,7 +1711,7 @@ class TrafficGenApp(tk.Tk):
         self.set_text(self.route_text, result.report)
         self.last_rd5_route_result = result
         self.rd5_path_var.set(str(result.output_path))
-        self.log(f"Wrote RD5 route copy: {result.output_path}")
+        self.log(f"Wrote route-enabled RD5 copy: {result.output_path}")
         self.log(f"Saved RD5 route write report: {report_path}")
         self.log(f"Route {result.route_name}: {' '.join(result.drv_path_ids)}")
         messagebox.showinfo(
@@ -1493,19 +1761,29 @@ class TrafficGenApp(tk.Tk):
         route_names: set[str],
         pedestrian_route_names: set[str] | None = None,
     ) -> tuple[Path, dict[str, str]]:
-        del pedestrian_route_names
+        pedestrian_route_names = set(pedestrian_route_names or set())
+        normal_route_names = set(route_names)
         rd5_path = Path(self.rd5_path_var.get())
         if not rd5_path.exists():
             raise RoadPackageError(f"RD5 file does not exist: {rd5_path}")
+        if not self.rd5_matches_loaded_package(rd5_path):
+            raise RoadPackageError(
+                "The selected RD5 does not match the currently loaded RoadGen package/XODR. "
+                "Convert this RoadGen export to RD5 first, then generate the TestRun. "
+                f"Loaded XODR: {self.package.files.xodr}"
+            )
 
         current_rd5_path = rd5_path
         rd5 = Rd5Road.load(current_rd5_path)
         current_rd5_path, rd5 = self.route_generation_base_rd5(current_rd5_path, rd5)
-        route_ids = self.route_ids_from_rd5(rd5, route_names)
+        base_route_stem = shorten_stem(current_rd5_path.stem)
+        route_bundle_hash = short_hash("\n".join(sorted(normal_route_names)))
+        route_output_stem = f"{base_route_stem}_with_routes_{route_bundle_hash}"
+        route_ids = self.route_ids_from_rd5(rd5, normal_route_names)
         route_map = self.route_lookup()
 
         rd5_output_dir.mkdir(parents=True, exist_ok=True)
-        for route_name in sorted(route_names):
+        for route_name in sorted(normal_route_names):
             route = route_map.get(route_name)
             if route and route.is_same_edge_lane_change_only():
                 raise RoadPackageError(
@@ -1514,7 +1792,7 @@ class TrafficGenApp(tk.Tk):
                     "Choose start/goal lanes on different edges, or include a downstream checkpoint/goal edge."
                 )
 
-        for route_name in sorted(route_names):
+        for route_index, route_name in enumerate(sorted(normal_route_names), start=1):
             if route_name in route_ids:
                 continue
             route = route_map.get(route_name)
@@ -1522,15 +1800,18 @@ class TrafficGenApp(tk.Tk):
                 raise RoadPackageError(
                     f"Route '{route_name}' is not saved in the app yet. Plan that route, then set it as ego or add a traffic actor."
                 )
-            output_rd5 = rd5_output_dir / f"{safe_name(current_rd5_path.stem)}_{route_name}.rd5"
+            output_rd5 = rd5_output_dir / f"{route_output_stem}_{route_index:02d}.rd5"
             result = write_rd5_with_route(rd5, route, output_rd5, route_name=route_name)
             self.decorate_rd5_intersections_if_available(result.output_path)
             self.last_rd5_route_result = result
             route_ids[route_name] = result.route_id
-            (report_dir / f"rd5_route_write_report_{route_name}.md").write_text(result.report, encoding="utf-8")
+            report_name = f"rd5_route_write_report_{shorten_stem(route_name, 72)}.md"
+            (report_dir / report_name).write_text(result.report, encoding="utf-8")
             current_rd5_path = result.output_path
             rd5 = Rd5Road.load(current_rd5_path)
-            route_ids.update(self.route_ids_from_rd5(rd5, route_names))
+            route_ids.update(self.route_ids_from_rd5(rd5, normal_route_names))
+
+        self.last_rd5_pedestrian_path_lengths = {}
 
         self.decorate_rd5_intersections_if_available(current_rd5_path)
         self.rd5_path_var.set(str(current_rd5_path))
@@ -1553,7 +1834,10 @@ class TrafficGenApp(tk.Tk):
             self.ego_route_name_var.set(ego_route_name)
 
         fallback_name = ego_route_name or (self.vehicles[0].route_name if self.vehicles else "route_testrun")
-        scenario_name = safe_name(self.scenario_name_var.get() or f"{fallback_name}_testrun")
+        scenario_name_raw = safe_name(self.scenario_name_var.get() or f"{fallback_name}_testrun")
+        scenario_name = shorten_stem(scenario_name_raw, 80)
+        if scenario_name != scenario_name_raw:
+            self.log(f"Shortened TestRun name for path safety: {scenario_name}")
         route_names = set()
         if self.ego_enabled_var.get():
             route_names.add(ego_route_name)
@@ -1571,6 +1855,14 @@ class TrafficGenApp(tk.Tk):
             ego_lane_offset = float(self.ego_lane_offset_var.get())
         except (TypeError, ValueError):
             messagebox.showerror("Generate TestRun", "Ego speed, route s, lateral offset, and duration must be numbers.")
+            return None
+
+        route_lookup = self.route_lookup()
+        traffic_start_errors = self.validate_traffic_vehicle_starts(route_lookup)
+        if traffic_start_errors:
+            message = "Invalid traffic vehicle start position(s):\n- " + "\n- ".join(traffic_start_errors)
+            messagebox.showerror("Generate TestRun", message)
+            self.log(f"Generate TestRun blocked: {'; '.join(traffic_start_errors)}")
             return None
 
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -1614,19 +1906,44 @@ class TrafficGenApp(tk.Tk):
             if road_path.resolve() != project_road_path.resolve():
                 shutil.copy2(road_path, project_road_path)
 
-            route_lookup = self.route_lookup()
             route_lengths = {
                 name: route_lookup[name].total_length
                 for name in route_names
                 if name in route_lookup
             }
+            pedestrian_path_lengths = getattr(self, "last_rd5_pedestrian_path_lengths", {})
+            route_lengths.update(pedestrian_path_lengths)
+            traffic_plans = list(self.vehicles)
+            adjusted_pedestrian_starts = 0
+            if pedestrian_path_lengths:
+                adjusted_traffic: list[VehiclePlan] = []
+                for vehicle in traffic_plans:
+                    if not self.is_pedestrian_plan(vehicle):
+                        adjusted_traffic.append(vehicle)
+                        continue
+                    path_length = pedestrian_path_lengths.get(vehicle.route_name)
+                    source_route = route_lookup.get(vehicle.route_name)
+                    source_length = source_route.total_length if source_route else 0.0
+                    if path_length and path_length > 1.0 and source_length > 1.0:
+                        scaled_start_s = vehicle.start_s * path_length / source_length
+                        scaled_start_s = max(0.5, min(path_length - 0.5, scaled_start_s))
+                        if abs(scaled_start_s - vehicle.start_s) > 1e-6:
+                            adjusted_pedestrian_starts += 1
+                        adjusted_traffic.append(replace(vehicle, start_s=scaled_start_s))
+                    else:
+                        adjusted_traffic.append(vehicle)
+                traffic_plans = adjusted_traffic
+            if adjusted_pedestrian_starts:
+                self.log(
+                    f"Scaled {adjusted_pedestrian_starts} pedestrian start position(s) to the RD5 CustomPath length."
+                )
             self.rd5_path_var.set(str(project_road_path))
             project_config = TestRunConfig(
                 scenario_name=scenario_name,
                 road_file_ref=project_road_reference(project_dir, project_road_path),
                 route_ids=route_ids,
                 ego=ego,
-                traffic=self.vehicles,
+                traffic=traffic_plans,
                 route_lengths=route_lengths,
                 duration_s=duration_s,
             )
@@ -2113,12 +2430,14 @@ def main() -> None:
     parser.add_argument("--rd5", type=Path, help="CarMaker RD5 file to use")
     parser.add_argument("--project", type=Path, help="CarMaker project root")
     parser.add_argument("--scenario", help="Default TestRun/scenario name")
+    parser.add_argument("--preset", type=Path, help="Video2Map TrafficGen preset to load after the road package")
     args = parser.parse_args()
     app = TrafficGenApp(
         initial_folder=args.folder,
         initial_rd5=args.rd5,
         initial_project=args.project,
         initial_scenario=args.scenario,
+        initial_preset=args.preset,
     )
     app.mainloop()
 

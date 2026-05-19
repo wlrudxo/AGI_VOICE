@@ -6,6 +6,7 @@ import ctypes
 import inspect
 from pathlib import Path
 import os
+import subprocess
 import sys
 import zipfile
 
@@ -18,24 +19,35 @@ SUPPORTED_PYTHON_TAGS = {
     (3, 12): "cp312",
     (3, 13): "cp313",
 }
+DEFAULT_IPGMOVIE_READY_DELAY = 5.0
+DEFAULT_MOVIENX_READY_DELAY = 20.0
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run a CarMaker TestRun at a fixed realtime factor with IPGMovie.")
+    parser = argparse.ArgumentParser(description="Run a CarMaker TestRun at a fixed realtime factor with a movie frontend.")
     parser.add_argument("--project", required=True, type=Path, help="CarMaker project directory.")
     parser.add_argument("--testrun", required=True, type=Path, help="Generated TestRun file path.")
     parser.add_argument("--cm-home", required=True, type=Path, help="CarMaker win64 installation directory.")
     parser.add_argument("--factor", default=5.0, type=float, help="Requested realtime factor.")
     parser.add_argument(
+        "--movie-backend",
+        choices=("ipgmovie", "movienx"),
+        default="ipgmovie",
+        help="Movie frontend to launch after the target TestRun is confirmed.",
+    )
+    parser.add_argument(
         "--movie-ready-delay",
-        default=5.0,
+        default=None,
         type=float,
-        help="Seconds to wait after IPGMovie starts before switching to the requested realtime factor.",
+        help=(
+            "Seconds to wait after the movie frontend starts before switching to the requested realtime factor. "
+            "Default: 5s for IPGMovie, 20s for MovieNX."
+        ),
     )
     parser.add_argument(
         "--keep-movie-open",
         action="store_true",
-        help="Keep CarMaker/IPGMovie open after the simulation finishes. Close the windows to end this runner.",
+        help="Keep CarMaker/movie windows open after the simulation finishes. Close the windows to end this runner.",
     )
     return parser.parse_args()
 
@@ -108,6 +120,23 @@ def add_dll_directories(cm_home: Path) -> None:
         os.environ["PATH"] = os.pathsep.join([*path_parts, os.environ.get("PATH", "")])
 
 
+def find_movienx_exe(cm_home: Path) -> Path:
+    version_name = cm_home.name
+    candidates = []
+    if len(cm_home.parents) >= 2:
+        candidates.append(cm_home.parents[1] / "movienx" / version_name / "bin" / "MovieNX.exe")
+    candidates.extend(
+        [
+            Path(r"C:\IPG") / "movienx" / version_name / "bin" / "MovieNX.exe",
+            cm_home / "GUI" / "Movie.exe",
+        ]
+    )
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    raise RuntimeError(f"MovieNX executable not found for {cm_home}")
+
+
 def testrun_reference(project_dir: Path, testrun_path: Path) -> Path:
     data_testrun = (project_dir / "Data" / "TestRun").resolve()
     try:
@@ -125,6 +154,10 @@ def prepare_imports(cm_home: Path) -> None:
 
 
 def application_pid(application: object) -> int | None:
+    if isinstance(application, int):
+        return application if application > 0 else None
+    if isinstance(application, subprocess.Popen):
+        return application.pid if application.pid and application.pid > 0 else None
     getter = getattr(application, "get_pid", None)
     if not callable(getter):
         return None
@@ -172,7 +205,7 @@ async def wait_for_user_to_close_apps(applications: list[tuple[str, object]]) ->
         + ", ".join(f"{name} pid={pid}" for name, pid in pids),
         flush=True,
     )
-    print("Close CarMaker/IPGMovie to end this runner.", flush=True)
+    print("Close CarMaker/movie windows to end this runner.", flush=True)
     while any(process_is_alive(pid) for _name, pid in pids):
         await asyncio.sleep(1.0)
 
@@ -183,6 +216,8 @@ def run_interactive(
     factor: float,
     keep_movie_open: bool,
     movie_ready_delay: float,
+    movie_backend: str,
+    cm_home: Path,
 ) -> None:
     import cmapi
 
@@ -218,6 +253,7 @@ def run_interactive(
         await simcontrol.set_master(master)
 
         movie = None
+        movie_process = None
         connected = False
         movie_started = False
         try:
@@ -254,12 +290,30 @@ def run_interactive(
                     flush=True,
                 )
 
-            movie = cmapi.IPGMovie()
-            movie.attach_to_cm(master)
-            await movie.start()
-            movie_started = True
+            if movie_backend == "movienx":
+                master_pid = application_pid(master)
+                if not master_pid:
+                    raise RuntimeError("Could not determine CarMaker PID for MovieNX attachment.")
+                movienx_exe = find_movienx_exe(cm_home)
+                movie_args = [
+                    str(movienx_exe),
+                    "-apppid",
+                    str(master_pid),
+                    "-projectdir",
+                    str(project_dir),
+                    "-renderapi",
+                    "direct3d12",
+                ]
+                print("Starting MovieNX: " + " ".join(movie_args), flush=True)
+                movie_process = subprocess.Popen(movie_args, cwd=str(movienx_exe.parent))
+                movie_started = True
+            else:
+                movie = cmapi.IPGMovie()
+                movie.attach_to_cm(master)
+                await movie.start()
+                movie_started = True
             if movie_ready_delay > 0:
-                print(f"Waiting {movie_ready_delay:g}s for IPGMovie to become ready.", flush=True)
+                print(f"Waiting {movie_ready_delay:g}s for {movie_backend} to become ready.", flush=True)
                 await asyncio.sleep(movie_ready_delay)
 
             print(f"Setting realtime factor to {factor:g}.", flush=True)
@@ -276,27 +330,45 @@ def run_interactive(
             if keep_movie_open:
                 connected = False
                 movie_started = False
-                await wait_for_user_to_close_apps([("CarMaker", master), ("IPGMovie", movie)])
+                movie_label = "MovieNX" if movie_backend == "movienx" else "IPGMovie"
+                movie_app = movie_process if movie_backend == "movienx" else movie
+                await wait_for_user_to_close_apps([("CarMaker", master), (movie_label, movie_app)])
         finally:
             if connected:
                 await simcontrol.stop_and_disconnect()
             if movie is not None and movie_started:
                 await movie.stop()
+            if movie_process is not None and movie_started and movie_process.poll() is None:
+                movie_process.terminate()
 
     cmapi.Task.run_main_task(main())
 
 
 def main() -> int:
     args = parse_args()
+    movie_ready_delay = args.movie_ready_delay
+    if movie_ready_delay is None:
+        movie_ready_delay = (
+            DEFAULT_MOVIENX_READY_DELAY if args.movie_backend == "movienx" else DEFAULT_IPGMOVIE_READY_DELAY
+        )
     print(f"Project: {args.project}", flush=True)
     print(f"TestRun: {args.testrun}", flush=True)
     print(f"CarMaker home: {args.cm_home}", flush=True)
     print(f"Realtime factor: {args.factor}", flush=True)
-    print(f"Movie ready delay: {args.movie_ready_delay}", flush=True)
+    print(f"Movie ready delay: {movie_ready_delay}", flush=True)
+    print(f"Movie backend: {args.movie_backend}", flush=True)
     print(f"Keep movie open: {args.keep_movie_open}", flush=True)
     print(f"Python: {sys.executable} ({sys.version.split()[0]})", flush=True)
     prepare_imports(args.cm_home)
-    run_interactive(args.project, args.testrun, args.factor, args.keep_movie_open, args.movie_ready_delay)
+    run_interactive(
+        args.project,
+        args.testrun,
+        args.factor,
+        args.keep_movie_open,
+        movie_ready_delay,
+        args.movie_backend,
+        args.cm_home,
+    )
     print("CMAPI interactive run finished.", flush=True)
     return 0
 
