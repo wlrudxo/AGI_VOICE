@@ -39,6 +39,7 @@ def main() -> int:
     repo_root = Path(args.repo_root).resolve()
     experiment_dir = Path(args.experiment_dir).resolve()
     experiment_dir.mkdir(parents=True, exist_ok=True)
+    write_or_validate_optimizer_config(experiment_dir, args)
 
     rows = read_ledger(experiment_dir / "trials.jsonl")
     completed = completed_iterations(rows, args.method)
@@ -94,6 +95,42 @@ def parse_args() -> argparse.Namespace:
     if args.budget is None:
         args.budget = max(args.count, 30)
     return args
+
+
+def write_or_validate_optimizer_config(experiment_dir: Path, args: argparse.Namespace) -> None:
+    path = experiment_dir / "optimizer_config.json"
+    config = optimizer_config(args)
+    if not path.exists():
+        path.write_text(json.dumps(config, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        return
+
+    existing = json.loads(path.read_text(encoding="utf-8"))
+    mismatches = []
+    for key, expected in config.items():
+        if existing.get(key) != expected:
+            mismatches.append((key, existing.get(key), expected))
+    if mismatches:
+        details = "; ".join(
+            f"{key}: existing={old!r}, requested={new!r}" for key, old, new in mismatches
+        )
+        raise RuntimeError(
+            "Optimizer config mismatch for existing experiment directory. "
+            "Use a new --experiment-dir for a different reproducible run. "
+            + details
+        )
+
+
+def optimizer_config(args: argparse.Namespace) -> dict[str, Any]:
+    return {
+        "strategy": args.strategy,
+        "method": args.method,
+        "seed": args.seed,
+        "budget": args.budget,
+        "boInit": args.bo_init,
+        "boCandidates": args.bo_candidates,
+        "tunedKeys": list(TUNED_KEYS),
+        "logRanges": {key: list(value) for key, value in LOG_RANGES.items()},
+    }
 
 
 def plan_candidates(

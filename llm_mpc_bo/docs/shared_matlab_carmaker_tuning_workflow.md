@@ -218,18 +218,19 @@ py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
 ```powershell
 py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
   --strategy bo `
-  --count 30 `
-  --budget 30 `
-  --bo-init 10 `
-  --seed 7 `
+  --count 100 `
+  --budget 100 `
+  --bo-init 30 `
+  --seed 1 `
   --engine MATLAB_58352 `
-  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_bo_seed7
+  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_bo_seed1
 ```
 
 The important rule is to reuse the same `--experiment-dir` for the same
 optimization. The directory is the resumable state:
 
 ```text
+optimizer_config.json  locked strategy/seed/budget/range config
 trials.jsonl       evaluated trial ledger
 candidates.jsonl   proposed candidate ledger
 best_summary.json  best evaluated parameter set so far
@@ -241,6 +242,23 @@ If 12 trials were completed and the command is run again with the same method
 and directory, the next run starts at iteration 13. BO is executed sequentially:
 after each trial it rereads `trials.jsonl`, updates the surrogate from all
 successful observations, and proposes the next candidate.
+
+For the main 5D tuning experiment, use `--budget 100 --bo-init 30`. That means
+30 deterministic LHC initialization trials followed by 70 BO/EI trials. Use a
+new directory for each seed, for example:
+
+```text
+standard_slalom_bo_seed1
+standard_slalom_bo_seed2
+standard_slalom_bo_seed3
+standard_slalom_lhc_seed1
+standard_slalom_lhc_seed2
+standard_slalom_lhc_seed3
+```
+
+The optimizer config is locked on first use. If a later command uses a different
+seed, budget, BO init count, candidate pool size, tuned-key list, or range in
+the same directory, the CLI stops instead of mixing incompatible experiments.
 
 Dry-run shows the next candidates without starting CarMaker/Simulink:
 

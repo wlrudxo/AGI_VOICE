@@ -27,6 +27,10 @@ controllers.
 LowMu/icy-road variants are stress-test or future-work extensions, not the main
 benchmark for the current formal tuning run.
 
+Do not add reinforcement learning as a main comparison group for the first
+paper. The current experiment is static 5D MPC-weight tuning, not state-action
+policy learning, and a 100-run budget is too small for a fair RL baseline.
+
 ## Key Paths
 
 Repository:
@@ -303,6 +307,25 @@ MAX |e_t|: 2.2070 m
 Applied sign issue: false
 ```
 
+Latest automated BO smoke/formalization result:
+
+```text
+Experiment dir: llm_mpc_bo/results/experiments/standard_slalom_bo_seed7
+Completed trials: 12
+Best run: bo_0010
+Status: SIM_END
+J: 2.1349
+Pylon hits: 0
+RMSE e_t: 0.2603 m
+MAX |e_t|: 0.9529 m
+Best params:
+  q_y = 42.7413
+  q_psi = 79.8466
+  q_r = 15.1523
+  r_delta = 0.5276
+  r_d_delta = 0.9608
+```
+
 Interpretation:
 
 - The current verified steering sign is `Gain=1`, not an added software sign
@@ -400,7 +423,15 @@ llm_mpc_bo/scripts/mpc_experiment_cli.py  resumable LHC/random/BO loop
 ```
 
 The same `--experiment-dir` is the optimization state. It contains
-`trials.jsonl`, `candidates.jsonl`, `best_summary.json`, deterministic
-LHC/random candidate plans, and per-trial summaries. Reusing the directory
-continues from the next missing iteration. BO rereads `trials.jsonl` after each
-trial before proposing the next candidate.
+`optimizer_config.json`, `trials.jsonl`, `candidates.jsonl`,
+`best_summary.json`, deterministic LHC/random candidate plans, and per-trial
+summaries. Reusing the directory continues from the next missing iteration. BO
+rereads `trials.jsonl` after each trial before proposing the next candidate.
+
+Main 5D experiment design:
+
+```text
+BO: 100 total trials = 30 LHC initialization + 70 BO/EI
+LHC/random baselines: 100 trials each
+Use one fixed seed per repeated experiment and a separate directory per method/seed.
+```

@@ -101,6 +101,13 @@ Use five groups:
 5. Hybrid BO
 ```
 
+Do not include reinforcement learning as a main comparison group for the first
+paper. This experiment tunes five static MPC weights with a simulator-in-the-
+loop objective; it is not a sequential state-action policy-learning setup.
+With a 100-run budget, RL would be sample-starved and would compare a different
+problem formulation rather than a different optimizer for the same controller.
+Mention RL only as a related/future direction if needed.
+
 ### IPG Driver Baseline
 
 Run the standard CarMaker/IPG driver with no MPC override or with the existing
@@ -154,13 +161,29 @@ trial counts are comparable.
 
 ## Trial Budget
 
-Start with:
+Main 100-trial design:
 
 ```text
-30 trials per adaptive/search method
+BO method: 30 LHC initialization trials + 70 BO/EI trials
+Grid/LHC baseline: 100 LHC trials
+Random baseline: 100 random log-uniform trials
 ```
 
-This is enough to prove the full pipeline and produce:
+For BO, use:
+
+```text
+budget = 100
+bo_init = 30
+seed = fixed per repeated experiment
+```
+
+This is enough to form a meaningful 5D surrogate while keeping total runtime
+manageable when one run is about 10-20 seconds.
+
+The earlier 30-trial budget remains useful only for smoke/pipeline validation,
+not for final method comparison.
+
+Each completed 100-trial run should produce:
 
 ```text
 best objective vs iteration
@@ -170,18 +193,24 @@ steering command comparison
 method summary table
 ```
 
-If runtime and stability are acceptable, extend to:
+For repeated experiments, use separate fixed seeds and separate directories:
 
 ```text
-50 trials per method
+seed 1
+seed 2
+seed 3
 ```
+
+Use the same seed number across methods when comparing methods under matched
+conditions. For example, `bo_seed1`, `lhc_seed1`, and `random_seed1`.
 
 Recommended sequence:
 
 ```text
-Phase 1: 30 trials, one seed, all methods
-Phase 2: repeat the best two methods for 3 seeds
-Phase 3: optional 50-trial rerun for final plots
+Phase 1: BO 100 trials, seed 1, confirm the full 30+70 pipeline
+Phase 2: LHC/random 100 trials, seed 1, establish baseline
+Phase 3: repeat BO and best baseline for seeds 2 and 3
+Phase 4: add LLM-only/Hybrid BO runs with the same seed set
 ```
 
 ## Objective
@@ -310,6 +339,7 @@ continues from the next missing iteration instead of starting over.
 State files:
 
 ```text
+optimizer_config.json                locked strategy/seed/budget/range config
 trials.jsonl                         append-only evaluated trial ledger
 candidates.jsonl                     append-only proposed candidate ledger
 best_summary.json                    current best evaluated trial
@@ -323,6 +353,11 @@ can resume the same candidate sequence. BO rereads `trials.jsonl` after every
 trial, rebuilds the surrogate from all successful observations, and then
 chooses the next candidate. This is important because BO candidates are
 result-dependent and should not be planned as a static batch.
+
+`optimizer_config.json` prevents accidentally mixing different seeds, budgets,
+BO initialization counts, candidate-pool sizes, tuned keys, or search ranges in
+one experiment directory. Use a new `--experiment-dir` for every independent
+seed/method run.
 
 Examples:
 
@@ -339,12 +374,12 @@ py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
 ```powershell
 py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
   --strategy bo `
-  --count 30 `
-  --budget 30 `
-  --bo-init 10 `
-  --seed 7 `
+  --count 100 `
+  --budget 100 `
+  --bo-init 30 `
+  --seed 1 `
   --engine MATLAB_58352 `
-  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_bo_seed7
+  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_bo_seed1
 ```
 
 Dry-run can be used to inspect the next candidates without running CarMaker:
