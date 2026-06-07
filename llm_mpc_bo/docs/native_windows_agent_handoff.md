@@ -16,13 +16,16 @@ Keep the current direction:
 
 ```text
 standard Simulink MPC Controller block
-+ CarMaker Slalom18m low-friction scenario
-+ BO vs LLM-assisted BO tuning
++ CarMaker Slalom18m/UserSteer standard scenario
++ LHC/random vs BO vs LLM-only vs Hybrid BO tuning
 ```
 
 Do not switch to CARLA, CasADi, or a custom MPC solver unless explicitly asked.
 Do not make LQR/PD the main controller. PD/LQR are only smoke-test/fallback
 controllers.
+
+LowMu/icy-road variants are stress-test or future-work extensions, not the main
+benchmark for the current formal tuning run.
 
 ## Key Paths
 
@@ -293,7 +296,7 @@ The user changed the Simulink Gain block from -1 to 1.
 The MPC plant input gain was corrected so delta_cmd is steering wheel angle.
 With Gain=1 and params [30, 10, 0.5, 0.05, 0.5]:
 Status: SIM_END
-J: 32.3837
+J: 53.9036
 Pylon hits: 5
 RMSE e_t: 0.4972 m
 MAX |e_t|: 2.2070 m
@@ -306,7 +309,8 @@ Interpretation:
   flip.
 - The nominal/UserSteer CM4SL run completes in the shared-session workflow.
 - Tracking quality remains poor because it still hits 5 pylons.
-- Next work should tune MPC weights/rate limits around the current best set.
+- Next work should tune only the five MPC weights around the current best set:
+  `q_y, q_psi, q_r, r_delta, r_d_delta`.
 
 ## If `sigsOut` Is Missing
 
@@ -387,3 +391,16 @@ q_y, q_psi, q_r, r_delta, r_d_delta
 ```text
 theta -> update mpcobj -> run Simulink/CarMaker -> export -> evaluate J
 ```
+
+7. For repeatable optimization runs, use:
+
+```text
+llm_mpc_bo/scripts/mpc_trial_cli.py       one evaluated trial
+llm_mpc_bo/scripts/mpc_experiment_cli.py  resumable LHC/random/BO loop
+```
+
+The same `--experiment-dir` is the optimization state. It contains
+`trials.jsonl`, `candidates.jsonl`, `best_summary.json`, deterministic
+LHC/random candidate plans, and per-trial summaries. Reusing the directory
+continues from the next missing iteration. BO rereads `trials.jsonl` after each
+trial before proposing the next candidate.

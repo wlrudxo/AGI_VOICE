@@ -246,7 +246,7 @@ Latest result:
 
 ```text
 Status: SIM_END
-J: 32.3837
+J: 53.9036
 Pylon hits: 5
 RMSE e_t: 0.4972 m
 MAX |e_t|: 2.2070 m
@@ -294,3 +294,67 @@ return J/status/pylon hits on stdout
 
 This keeps LLM-only and Hybrid BO experiments reproducible while still allowing
 the LLM to reason over results and propose candidates.
+
+## Resumable Optimization CLI
+
+Implemented batch/resume CLI:
+
+```text
+llm_mpc_bo/scripts/mpc_experiment_cli.py
+```
+
+Use one `--experiment-dir` as the persistent optimization state. After an
+optimization has already run `n` trials, reuse the same directory and the CLI
+continues from the next missing iteration instead of starting over.
+
+State files:
+
+```text
+trials.jsonl                         append-only evaluated trial ledger
+candidates.jsonl                     append-only proposed candidate ledger
+best_summary.json                    current best evaluated trial
+candidate_plan_lhc_seed*_budget*.json deterministic LHC plan
+candidate_plan_random_seed*_budget*.json deterministic random plan
+trials/<run_id>/trial_summary.json   per-trial result snapshot
+```
+
+LHC/random plans are fixed by `strategy + seed + budget`, so interrupted runs
+can resume the same candidate sequence. BO rereads `trials.jsonl` after every
+trial, rebuilds the surrogate from all successful observations, and then
+chooses the next candidate. This is important because BO candidates are
+result-dependent and should not be planned as a static batch.
+
+Examples:
+
+```powershell
+py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
+  --strategy lhc `
+  --count 30 `
+  --budget 30 `
+  --seed 7 `
+  --engine MATLAB_58352 `
+  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_lhc_seed7
+```
+
+```powershell
+py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
+  --strategy bo `
+  --count 30 `
+  --budget 30 `
+  --bo-init 10 `
+  --seed 7 `
+  --engine MATLAB_58352 `
+  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_bo_seed7
+```
+
+Dry-run can be used to inspect the next candidates without running CarMaker:
+
+```powershell
+py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
+  --strategy bo `
+  --count 3 `
+  --budget 30 `
+  --seed 7 `
+  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_bo_seed7 `
+  --dry-run
+```

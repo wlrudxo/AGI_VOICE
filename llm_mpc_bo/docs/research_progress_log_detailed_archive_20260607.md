@@ -1406,3 +1406,76 @@ Notes:
 - Generic collision fields are included as extension points, but are currently
   false/zero unless the ERG summary provides them.
 - The first BO target is reducing pylon hits while preserving `SIM_END`.
+
+## Addendum: Resumable Optimization CLI
+
+Date: 2026-06-07
+
+Implemented:
+
+```text
+llm_mpc_bo/scripts/mpc_experiment_cli.py
+```
+
+Purpose:
+
+```text
+Run fixed-budget MPC tuning experiments while preserving enough state to resume
+the same optimization naturally after n completed trials.
+```
+
+Supported strategies:
+
+```text
+lhc
+random
+bo
+```
+
+The experiment directory is the optimization state:
+
+```text
+trials.jsonl       append-only evaluated trial ledger
+candidates.jsonl   append-only proposed candidate ledger
+best_summary.json  current best evaluated result
+candidate_plan_*   deterministic LHC/random candidate plans
+trials/<run_id>/   per-trial summary and analysis output
+```
+
+Resume rule:
+
+```text
+Reuse the same --experiment-dir, --method, seed, and budget.
+The CLI skips completed successful iterations and starts from the next missing
+iteration.
+```
+
+BO-specific rule:
+
+```text
+BO is not planned as a static batch. It runs one trial, rereads trials.jsonl,
+rebuilds the surrogate from successful observations, then proposes the next
+candidate.
+```
+
+Example:
+
+```powershell
+py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
+  --strategy bo `
+  --count 30 `
+  --budget 30 `
+  --bo-init 10 `
+  --seed 7 `
+  --engine MATLAB_58352 `
+  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_bo_seed7
+```
+
+Dry-run verification completed:
+
+```text
+py_compile: pass
+lhc --count 3 --budget 10 --seed 7 --dry-run: printed distinct candidates
+bo  --count 3 --budget 10 --seed 7 --dry-run: printed sequential LHC init candidates
+resume smoke with completed lhc iterations 1,2: next dry-run started at 3,4
+```

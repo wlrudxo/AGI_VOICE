@@ -200,6 +200,60 @@ best_summary.json
 trials/<run_id>/trial_summary.json
 ```
 
+## Run/Resume an Optimization Batch
+
+For grid/LHC/BO-style experiments, use the experiment CLI instead of manually
+calling the single-trial CLI repeatedly:
+
+```powershell
+py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
+  --strategy lhc `
+  --count 30 `
+  --budget 30 `
+  --seed 7 `
+  --engine MATLAB_58352 `
+  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_lhc_seed7
+```
+
+```powershell
+py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
+  --strategy bo `
+  --count 30 `
+  --budget 30 `
+  --bo-init 10 `
+  --seed 7 `
+  --engine MATLAB_58352 `
+  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_bo_seed7
+```
+
+The important rule is to reuse the same `--experiment-dir` for the same
+optimization. The directory is the resumable state:
+
+```text
+trials.jsonl       evaluated trial ledger
+candidates.jsonl   proposed candidate ledger
+best_summary.json  best evaluated parameter set so far
+candidate_plan_*   deterministic LHC/random candidate plan
+trials/<run_id>/   per-trial summaries and analysis outputs
+```
+
+If 12 trials were completed and the command is run again with the same method
+and directory, the next run starts at iteration 13. BO is executed sequentially:
+after each trial it rereads `trials.jsonl`, updates the surrogate from all
+successful observations, and proposes the next candidate.
+
+Dry-run shows the next candidates without starting CarMaker/Simulink:
+
+```powershell
+py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
+  --strategy bo `
+  --count 3 `
+  --budget 30 `
+  --seed 7 `
+  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_bo_seed7 `
+  --dry-run
+```
+
 Manual Python Engine form for debugging:
 
 This attaches to the existing MATLAB session, changes only `mpcobj`, runs
@@ -245,7 +299,7 @@ parameter set:
 
 ```text
 Status: SIM_END
-J: 32.3837
+J: 53.9036
 Pylon hits: 5
 RMSE e_t: 0.4972 m
 MAX |e_t|: 2.2070 m
