@@ -49,6 +49,8 @@ def main() -> int:
         matlab_result = run_matlab_trial(args, repo_root, trial_dir, params, run_id)
         record.update(matlab_result)
         record["ok"] = True
+        if not args.skip_trial_plots:
+            record["plots"] = generate_trial_plots(args, repo_root, trial_dir, run_id)
     except Exception as exc:  # keep a recoverable experiment ledger
         record.update(
             {
@@ -101,6 +103,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--results-mat", default=r"E:\CarMakerProject\AGI\src_cm4sl\Results.mat")
     parser.add_argument("--steering-gain", type=float, default=1.0, help="Simulink steering Gain block value.")
     parser.add_argument("--reset-mpc", action="store_true", help="Re-run init_slalom_mpc.m before applying params.")
+    parser.add_argument("--skip-trial-plots", action="store_true", help="Skip automatic trajectory/time PNG generation.")
+    parser.add_argument("--plot-python", default="py -3", help="Python command for matplotlib plotting. Default: py -3")
     parser.add_argument("--dry-run", action="store_true", help="Print resolved config without running MATLAB.")
     return parser.parse_args()
 
@@ -164,7 +168,37 @@ def compact_record(record: dict[str, Any]) -> dict[str, Any]:
         compact["params"] = record["params"]
     if "trialDir" in record:
         compact["trialDir"] = record["trialDir"]
+    if "plots" in record:
+        compact["plots"] = record["plots"]
     return compact
+
+
+def generate_trial_plots(
+    args: argparse.Namespace,
+    repo_root: Path,
+    trial_dir: Path,
+    run_id: str,
+) -> dict[str, Any]:
+    script = repo_root / "llm_mpc_bo" / "scripts" / "plot_mpc_trial.py"
+    command = args.plot_python.split() + [
+        str(script),
+        "--trial-dir",
+        str(trial_dir),
+        "--label",
+        run_id,
+    ]
+    try:
+        result = subprocess.run(
+            command,
+            cwd=str(repo_root),
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        payload = json.loads(result.stdout)
+        return {"ok": True, "trajectory": payload.get("trajectory"), "time": payload.get("time")}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
 
 
 def decode_normalized(values: list[Any]) -> dict[str, float]:

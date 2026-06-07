@@ -198,7 +198,14 @@ experiment_config.json
 trials.jsonl
 best_summary.json
 trials/<run_id>/trial_summary.json
+trials/<run_id>/trajectory_pylons.png
+trials/<run_id>/trial_time_signals.png
 ```
+
+The trial CLI generates trajectory/time PNGs automatically after a successful
+run. Plotting uses the `py -3` Python environment because that environment has
+`matplotlib`; the MATLAB Engine trial runner itself still uses Python 3.12.
+Use `--skip-trial-plots` only when plotting overhead is not wanted.
 
 ## Run/Resume an Optimization Batch
 
@@ -358,7 +365,7 @@ latest_erg_summary.json
 latest_erg_drive_log.csv
 ```
 
-To plot one analyzed MPC trial as a trajectory/pylon PNG:
+To regenerate one analyzed MPC trial as a trajectory/pylon PNG:
 
 ```powershell
 py -3 llm_mpc_bo/scripts/plot_mpc_trial.py `
