@@ -1,4 +1,4 @@
-function summary = analyze_results_mat(inputPath, outputDir, deltaCmdMode, ergSummaryPath, verbose, testrunName)
+function summary = analyze_results_mat(inputPath, outputDir, deltaCmdMode, ergSummaryPath, verbose, testrunName, writePlots)
 % Analyze Simulink To File output saved as Results.mat.
 %
 % Usage:
@@ -34,6 +34,9 @@ if nargin < 5
 end
 if nargin < 6
     testrunName = 'LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL';
+end
+if nargin < 7
+    writePlots = true;
 end
 deltaCmdMode = lower(string(deltaCmdMode));
 if ~ismember(deltaCmdMode, ["applied", "pre_gain"])
@@ -215,7 +218,9 @@ summary.signalInfo = signalInfo;
 jsonText = jsonencode(summary, PrettyPrint=true);
 write_text(fullfile(outputDir, 'summary.json'), jsonText);
 write_markdown(fullfile(outputDir, 'summary.md'), summary);
-write_plots(outputDir, T, summary);
+if writePlots
+    write_plots(outputDir, T, summary);
+end
 
 if verbose
     fprintf('%s\n', jsonText);

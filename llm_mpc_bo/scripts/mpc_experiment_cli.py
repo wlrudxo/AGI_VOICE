@@ -93,6 +93,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--testrun", default="LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL")
     parser.add_argument("--load-testrun", action="store_true")
     parser.add_argument("--allow-uncurated", action="store_true")
+    parser.add_argument("--write-trial-plots", action="store_true", help="Generate per-trial trajectory/time PNGs during the batch.")
+    parser.add_argument("--write-analysis-plots", action="store_true", help="Generate analyzer sroad_tracking/time_signals PNGs during each trial.")
     parser.add_argument("--skip-objective-plot", action="store_true")
     parser.add_argument("--skip-best-trial-plot", action="store_true")
     parser.add_argument("--plot-python", default="py -3", help="Python command for matplotlib plotting. Default: py -3")
@@ -355,6 +357,10 @@ def run_trial(args: argparse.Namespace, repo_root: Path, experiment_dir: Path, c
         command.append("--load-testrun")
     if args.allow_uncurated:
         command.append("--allow-uncurated")
+    if not args.write_trial_plots:
+        command.append("--skip-trial-plots")
+    if not args.write_analysis_plots:
+        command.append("--skip-analysis-plots")
 
     candidate_path = experiment_dir / "candidates.jsonl"
     append_jsonl(candidate_path, candidate_to_json(candidate))

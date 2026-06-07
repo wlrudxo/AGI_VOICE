@@ -271,6 +271,15 @@ without running new simulations. Use
 `--skip-objective-plot` or `--skip-best-trial-plot` only when plotting overhead
 is not wanted.
 
+During batch experiments, per-trial PNG generation is off by default to reduce
+runtime and disk churn. Each trial still keeps `aligned_signals.csv`,
+`summary.json`, `summary.md`, `latest_erg_summary.json`, and
+`trial_summary.json`, so trajectory/time plots can be regenerated later. Use
+`--write-trial-plots` to write `trajectory_pylons.png` and
+`trial_time_signals.png` for every trial during the batch. Use
+`--write-analysis-plots` only when the analyzer's debug `time_signals.png` and
+`sroad_tracking.png` are needed.
+
 If 12 trials were completed and the command is run again with the same method
 and directory, the next run starts at iteration 13. BO is executed sequentially:
 after each trial it rereads `trials.jsonl`, updates the surrogate from all

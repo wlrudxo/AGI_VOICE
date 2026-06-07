@@ -104,6 +104,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--steering-gain", type=float, default=1.0, help="Simulink steering Gain block value.")
     parser.add_argument("--reset-mpc", action="store_true", help="Re-run init_slalom_mpc.m before applying params.")
     parser.add_argument("--skip-trial-plots", action="store_true", help="Skip automatic trajectory/time PNG generation.")
+    parser.add_argument("--skip-analysis-plots", action="store_true", help="Skip analyzer sroad_tracking/time_signals PNG generation.")
     parser.add_argument("--plot-python", default="py -3", help="Python command for matplotlib plotting. Default: py -3")
     parser.add_argument("--dry-run", action="store_true", help="Print resolved config without running MATLAB.")
     return parser.parse_args()
@@ -264,6 +265,7 @@ def build_matlab_command(
     params_q = matlab_quote(params_json)
     steering_gain = f"{args.steering_gain:.17g}"
     reset_expr = "true" if args.reset_mpc else "false"
+    write_analysis_plots = "false" if args.skip_analysis_plots else "true"
 
     return f"""
 repoRoot = '{repo}';
@@ -307,7 +309,7 @@ afterInfo = dir(resultsMatPath);
 if afterInfo.datenum <= beforeDatenum
     error('Results.mat timestamp did not advance. Old/new datenum: %.12f / %.12f', beforeDatenum, afterInfo.datenum);
 end
-summary = analyze_results_mat(resultsMatPath, outputDir, 'applied', '', false, '{matlab_quote(args.testrun)}');
+summary = analyze_results_mat(resultsMatPath, outputDir, 'applied', '', false, '{matlab_quote(args.testrun)}', {write_analysis_plots});
 cliTrialRecord = struct();
 cliTrialRecord.runId = runId;
 cliTrialRecord.params = params;
