@@ -88,11 +88,13 @@ psi_ref = 1-D Lookup Table(s=Vhcl.sRoad, breakpoints=slalom_s_ref, table=slalom_
 Output:
 
 ```text
-MPC mv output -> Gain(-1) -> VhclCtrl Steering Ang
+MPC mv output -> Gain block -> VhclCtrl Steering Ang
 ```
 
-The `Gain(-1)` is important. Without it, the vehicle diverged before the
-slalom section because `e_t` and `delta_cmd` had the same sign.
+Latest verified state: the user changed this Gain block to `1`, and the
+vehicle completed the run. Do not add a second sign flip in MATLAB/Python.
+If the vehicle aborts early again, check this block and the sign diagnosis from
+`analyze_results_mat.m` before changing MPC weights.
 
 Effective steering override location:
 
@@ -114,7 +116,7 @@ slalom_delta_ff
 mpcobj
 ```
 
-Current `mpcobj`:
+Initial/default `mpcobj` from `init_slalom_mpc.m`:
 
 ```text
 Ts = 0.02
@@ -129,7 +131,41 @@ Weights.ManipulatedVariables = 0.2
 Weights.ManipulatedVariablesRate = 2
 ```
 
+Current convention after steering command scale correction:
+
+```text
+MPC output delta_cmd = VhclCtrl.Steering.Ang [rad]
+Simulink steering Gain = 1
+MPC plant input gain is scaled in init_slalom_mpc.m
+```
+
+Current checked tuned set:
+
+```text
+Weights.OutputVariables = [30, 10, 0.5]
+Weights.ManipulatedVariables = 0.05
+Weights.ManipulatedVariablesRate = 0.5
+MV.Min = -12
+MV.Max = 12
+MV.RateMin = -0.6
+MV.RateMax = 0.6
+```
+
 ## Preferred Native Run Procedure
+
+For the current tuning workflow, prefer the shared MATLAB/CarMaker loop
+documented in:
+
+```text
+llm_mpc_bo/docs/shared_matlab_carmaker_tuning_workflow.md
+```
+
+The important rule is: keep MATLAB, Simulink, and CarMaker GUI open; do not
+relaunch for every trial. Load the TestRun only when the GUI is blank or on the
+wrong run, then update `mpcobj` in the existing MATLAB base workspace and run
+`sim('UserSteer')`.
+
+### Fresh MATLAB Fallback
 
 In Windows MATLAB Desktop:
 
@@ -183,8 +219,9 @@ steer_manual
 delta_cmd or applied_delta_cmd or signal1
 ```
 
-The current model logs the applied Gain(-1)-corrected steering command as
-`signal1`; `analyze_results_mat.m` maps this automatically.
+The current model logs the applied steering command as `signal1`;
+`analyze_results_mat.m` maps this automatically. As of the latest verified
+run, the Simulink steering Gain block is `1`.
 
 Processed analysis outputs:
 
@@ -249,13 +286,27 @@ Pylon hits: 10
 BO J_failClosed: 52.9702
 ```
 
+Later correction after live shared-session testing:
+
+```text
+The user changed the Simulink Gain block from -1 to 1.
+The MPC plant input gain was corrected so delta_cmd is steering wheel angle.
+With Gain=1 and params [30, 10, 0.5, 0.05, 0.5]:
+Status: SIM_END
+J: 32.3837
+Pylon hits: 5
+RMSE e_t: 0.4972 m
+MAX |e_t|: 2.2070 m
+Applied sign issue: false
+```
+
 Interpretation:
 
-- The applied Gain(-1) sign path is correct.
-- The nominal/UserSteer CM4SL run completes.
-- Tracking quality remains poor for slalom because it hits 10 pylons.
-- Next work should tune MPC weights/rate limits and reference behavior, not
-  flip steering sign again.
+- The current verified steering sign is `Gain=1`, not an added software sign
+  flip.
+- The nominal/UserSteer CM4SL run completes in the shared-session workflow.
+- Tracking quality remains poor because it still hits 5 pylons.
+- Next work should tune MPC weights/rate limits around the current best set.
 
 ## If `sigsOut` Is Missing
 
@@ -321,14 +372,14 @@ llm_mpc_bo/scripts/erg_drive_summary.py
 
 ## Next Work
 
-1. Keep `Results.mat` logging active with applied `delta_cmd` after Gain(-1).
+1. Keep `Results.mat` logging active with the applied `delta_cmd`.
 2. Use `analyze_results_mat.m` after each run and use `summary.objective.JFailClosed` as the BO objective.
-3. Run the same fixed MPC on `UserSteer_LowMu06`.
-4. Tune manually enough to get a reasonable nominal controller.
+3. Use the shared MATLAB workflow instead of launching a new MATLAB per trial.
+4. Tune manually enough to reduce pylon hits on the nominal controller.
 5. Expose BO variables:
 
 ```text
-q_y, q_psi, q_r, r_delta, r_d_delta, delta_max_scale
+q_y, q_psi, q_r, r_delta, r_d_delta
 ```
 
 6. Build the trial runner:

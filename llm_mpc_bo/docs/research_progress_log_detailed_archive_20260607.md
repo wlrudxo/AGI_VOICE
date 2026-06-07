@@ -1220,7 +1220,7 @@ Behavior:
 
 - Loads `data` from `Results.mat`.
 - Accepts `delta_cmd`, `applied_delta_cmd`, or `signal1` as the logged steering command.
-- Defaults to treating the logged command as the applied Gain(-1)-corrected steering command.
+- Defaults to treating the logged command as the applied steering command.
 - Supports old pre-Gain files with `deltaCmdMode = 'pre_gain'`.
 - Aligns signals to the `s` timeseries time base.
 - Computes tracking, heading, yaw-rate, steering, steering-rate metrics.
@@ -1248,8 +1248,83 @@ BO J_failClosed: 52.9702
 
 Interpretation:
 
-- The Gain(-1) sign correction is correct when evaluating the applied command.
-- The nominal/UserSteer CM4SL MPC completes the scenario.
-- Performance is not yet acceptable because it hits 10 pylons.
-- Next work is MPC tuning and reference/weight/rate-limit adjustment, not
-  another steering-sign change.
+- Later live testing showed the Simulink steering Gain should be `1`.
+- `VhclCtrl.Steering.Ang` is steering wheel angle [rad].
+- The MPC plant input gain was corrected so `delta_cmd` is directly a steering
+  wheel angle command.
+- The nominal/UserSteer CM4SL MPC completes the scenario with 5 pylon hits after
+  this correction.
+
+## Addendum: Standard Slalom Main Experiment Plan
+
+Date: 2026-06-07
+
+Current decision:
+
+```text
+Use standard Slalom18m/UserSteer as the main paper benchmark.
+Keep LowMu/icy-road variants as stress-test or future-work extensions.
+```
+
+Reason:
+
+- The standard slalom already exposes meaningful closed-loop MPC tuning
+  difficulty.
+- Low friction currently mixes control tuning with model/input/debugging issues.
+- A clean nominal benchmark is better for comparing search methods.
+
+Controller convention:
+
+```text
+MPC output delta_cmd = VhclCtrl.Steering.Ang [rad]
+Simulink steering Gain = 1
+Fixed constraints: MV [-12, 12], Rate [-0.6, 0.6]
+```
+
+Tuned MPC variables:
+
+```text
+q_y, q_psi, q_r, r_delta, r_d_delta
+```
+
+Do not tune:
+
+```text
+Vx_model, steering scale, delta_max_scale, delta_rate_scale
+```
+
+Compared methods:
+
+```text
+1. IPG Driver baseline
+2. LHC/random search
+3. BO
+4. LLM-only
+5. Hybrid BO
+```
+
+Initial budget:
+
+```text
+30 trials per method, then optionally 50 trials if runtime is acceptable.
+```
+
+Latest checked direct steering-wheel-angle MPC result:
+
+```text
+Status: SIM_END
+J: 32.3837
+Pylon hits: 5
+RMSE e_t: 0.4972 m
+MAX |e_t|: 2.2070 m
+Max delta_cmd: 8.3915 rad
+Max steer_manual: 10.5771 rad
+Applied sign issue: false
+```
+
+Implementation note:
+
+Ad-hoc MATLAB/Python snippets used for LLM-based control should be converted
+into a CLI before formal experiments. The CLI should connect to the shared
+MATLAB engine, apply 5 MPC weights, run `sim('UserSteer')`, analyze
+`Results.mat` + ERG, and print/write J/status/pylon hits.
