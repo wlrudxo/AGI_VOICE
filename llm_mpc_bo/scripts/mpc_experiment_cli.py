@@ -89,6 +89,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--testrun", default="LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL")
     parser.add_argument("--load-testrun", action="store_true")
     parser.add_argument("--allow-uncurated", action="store_true")
+    parser.add_argument("--reset-mpc", action="store_true", help="Re-run init_slalom_mpc.m inside each trial before applying params.")
     parser.add_argument("--write-trial-plots", action="store_true", help="Generate per-trial trajectory/time PNGs during the batch.")
     parser.add_argument("--write-analysis-plots", action="store_true", help="Generate analyzer sroad_tracking/time_signals PNGs during each trial.")
     parser.add_argument("--skip-objective-plot", action="store_true", help="Deprecated; experiment result plots are always generated.")
@@ -353,6 +354,8 @@ def run_trial(args: argparse.Namespace, repo_root: Path, experiment_dir: Path, c
         command.append("--load-testrun")
     if args.allow_uncurated:
         command.append("--allow-uncurated")
+    if args.reset_mpc:
+        command.append("--reset-mpc")
     if not args.write_trial_plots:
         command.append("--skip-trial-plots")
     if not args.write_analysis_plots:
