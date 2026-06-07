@@ -267,9 +267,8 @@ This episode-vs-`J` plot is generated for LHC, random, and BO experiments from
 the current `trials.jsonl`. The best-trial plots are regenerated from
 `best_summary.json` and written directly under the experiment directory. A
 zero-count rerun can refresh only the experiment summary and best-trial plots
-without running new simulations. Use
-`--skip-objective-plot` or `--skip-best-trial-plot` only when plotting overhead
-is not wanted.
+without running new simulations. These experiment-level result plots are always
+generated after a batch command.
 
 During batch experiments, per-trial PNG generation is off by default to reduce
 runtime and disk churn. Each trial still keeps `aligned_signals.csv`,

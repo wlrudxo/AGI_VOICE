@@ -55,20 +55,16 @@ def main() -> int:
             completed = completed_iterations(rows, args.method)
             candidate = plan_bo_candidate(args, experiment_dir, rows, completed)
             run_trial(args, repo_root, experiment_dir, candidate)
-        if not args.skip_objective_plot:
-            print(json.dumps({"objectivePlot": generate_objective_plot(args, repo_root, experiment_dir)}, ensure_ascii=False))
-        if not args.skip_best_trial_plot:
-            print(json.dumps({"bestTrialPlot": generate_best_trial_plot(args, repo_root, experiment_dir)}, ensure_ascii=False))
+        print(json.dumps({"objectivePlot": generate_objective_plot(args, repo_root, experiment_dir)}, ensure_ascii=False))
+        print(json.dumps({"bestTrialPlot": generate_best_trial_plot(args, repo_root, experiment_dir)}, ensure_ascii=False))
         return 0
 
     candidates = plan_candidates(args, experiment_dir, rows, completed)
     for candidate in candidates:
         run_trial(args, repo_root, experiment_dir, candidate)
 
-    if not args.skip_objective_plot:
-        print(json.dumps({"objectivePlot": generate_objective_plot(args, repo_root, experiment_dir)}, ensure_ascii=False))
-    if not args.skip_best_trial_plot:
-        print(json.dumps({"bestTrialPlot": generate_best_trial_plot(args, repo_root, experiment_dir)}, ensure_ascii=False))
+    print(json.dumps({"objectivePlot": generate_objective_plot(args, repo_root, experiment_dir)}, ensure_ascii=False))
+    print(json.dumps({"bestTrialPlot": generate_best_trial_plot(args, repo_root, experiment_dir)}, ensure_ascii=False))
     return 0
 
 
@@ -95,8 +91,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--allow-uncurated", action="store_true")
     parser.add_argument("--write-trial-plots", action="store_true", help="Generate per-trial trajectory/time PNGs during the batch.")
     parser.add_argument("--write-analysis-plots", action="store_true", help="Generate analyzer sroad_tracking/time_signals PNGs during each trial.")
-    parser.add_argument("--skip-objective-plot", action="store_true")
-    parser.add_argument("--skip-best-trial-plot", action="store_true")
+    parser.add_argument("--skip-objective-plot", action="store_true", help="Deprecated; experiment result plots are always generated.")
+    parser.add_argument("--skip-best-trial-plot", action="store_true", help="Deprecated; experiment result plots are always generated.")
     parser.add_argument("--plot-python", default="py -3", help="Python command for matplotlib plotting. Default: py -3")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
