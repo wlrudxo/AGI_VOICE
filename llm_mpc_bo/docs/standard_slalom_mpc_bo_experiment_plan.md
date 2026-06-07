@@ -256,18 +256,25 @@ Applied sign issue: false
 Ad-hoc MATLAB/Python snippets used during LLM-based control should be converted
 into small CLI commands before running formal experiments.
 
-Recommended CLI shape:
+Implemented initial CLI:
 
 ```text
 llm_mpc_bo/scripts/mpc_trial_cli.py
-  --engine MATLAB_58352
-  --params-json ...
-  --run-id ...
-  --load-testrun false
-  --analyze true
 ```
 
-The CLI should:
+Example:
+
+```powershell
+py -3.12 llm_mpc_bo/scripts/mpc_trial_cli.py `
+  --engine MATLAB_58352 `
+  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_latest `
+  --method llm_only `
+  --iter 7 `
+  --run-id llm_only_0007 `
+  --params-json "{""q_y"":30,""q_psi"":10,""q_r"":0.5,""r_delta"":0.05,""r_d_delta"":0.5}"
+```
+
+The CLI:
 
 ```text
 connect to a shared MATLAB engine
@@ -276,6 +283,8 @@ apply the 5 MPC weights
 run sim('UserSteer')
 analyze Results.mat + ERG
 write trial_summary.json
+append trials.jsonl
+update best_summary.json
 return J/status/pylon hits on stdout
 ```
 

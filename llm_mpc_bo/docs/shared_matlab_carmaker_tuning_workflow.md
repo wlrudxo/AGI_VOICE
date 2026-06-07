@@ -179,6 +179,29 @@ state.
 
 ## Run One Trial From PowerShell
 
+Preferred CLI form:
+
+```powershell
+py -3.12 llm_mpc_bo/scripts/mpc_trial_cli.py `
+  --engine MATLAB_58352 `
+  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_latest `
+  --method manual `
+  --iter 1 `
+  --run-id manual_0001 `
+  --params-json "{""q_y"":30,""q_psi"":10,""q_r"":0.5,""r_delta"":0.05,""r_d_delta"":0.5}"
+```
+
+This writes:
+
+```text
+experiment_config.json
+trials.jsonl
+best_summary.json
+trials/<run_id>/trial_summary.json
+```
+
+Manual Python Engine form for debugging:
+
 This attaches to the existing MATLAB session, changes only `mpcobj`, runs
 Simulink, and analyzes the result:
 

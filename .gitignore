@@ -96,6 +96,7 @@ llm_mpc_bo/results/processed/sigsOut_latest/
 llm_mpc_bo/results/processed/sigsOut_latest_analysis/
 llm_mpc_bo/results/processed/*.mat
 llm_mpc_bo/results/trials/
+llm_mpc_bo/results/experiments/
 
 # CarMaker map/traffic pipeline generated and local-only artifacts
 MapGenerator/CarMakerPipeline/**/__pycache__/

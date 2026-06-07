@@ -1328,3 +1328,48 @@ Ad-hoc MATLAB/Python snippets used for LLM-based control should be converted
 into a CLI before formal experiments. The CLI should connect to the shared
 MATLAB engine, apply 5 MPC weights, run `sim('UserSteer')`, analyze
 `Results.mat` + ERG, and print/write J/status/pylon hits.
+
+## Addendum: Trial CLI and Append-Only Ledger
+
+Date: 2026-06-07
+
+Implemented:
+
+```text
+llm_mpc_bo/scripts/mpc_trial_cli.py
+```
+
+Purpose:
+
+```text
+Run one MPC trial through a shared MATLAB engine and append one JSON line to
+the experiment ledger.
+```
+
+CLI behavior:
+
+- Accepts either explicit 5-weight JSON params or a 5D normalized vector.
+- Rejects extra tuning variables outside:
+  `q_y, q_psi, q_r, r_delta, r_d_delta`.
+- Connects to an existing shared MATLAB engine.
+- Optionally loads the CarMaker TestRun through the existing TCP runner.
+- Applies MPC weights, runs `sim('UserSteer')`, analyzes `Results.mat` + ERG.
+- Writes per-trial `trial_summary.json`.
+- Appends `trials.jsonl`.
+- Updates `best_summary.json`.
+
+Smoke test:
+
+```text
+Experiment dir: llm_mpc_bo/results/experiments/standard_slalom_cli_smoke
+Run id: cli_smoke_0001
+Status: SIM_END
+J: 32.3837
+Pylon hits: 5
+RMSE e_t: 0.4972 m
+MAX |e_t|: 2.2070 m
+```
+
+The first smoke attempt failed due MATLAB string escaping and was intentionally
+preserved as a failed ledger row. The second row succeeded. Experiment outputs
+are ignored by git under `llm_mpc_bo/results/experiments/`.
