@@ -79,6 +79,7 @@ Best parameters:
 Generated check plots:
 
 ```text
+llm_mpc_bo/results/experiments/standard_slalom_lhc_seed1/objective_by_episode.png
 llm_mpc_bo/results/experiments/standard_slalom_replay_lhc0063/trials/replay_lhc0063/trajectory_pylons.png
 llm_mpc_bo/results/experiments/standard_slalom_replay_lhc0063/trials/replay_lhc0063/trial_time_signals.png
 ```
