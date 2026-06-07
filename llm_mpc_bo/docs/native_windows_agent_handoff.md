@@ -167,6 +167,12 @@ documented in:
 llm_mpc_bo/docs/shared_matlab_carmaker_tuning_workflow.md
 ```
 
+Keep compact experiment outcomes updated in:
+
+```text
+llm_mpc_bo/docs/standard_slalom_experiment_results.md
+```
+
 The important rule is: keep MATLAB, Simulink, and CarMaker GUI open; do not
 relaunch for every trial. Load the TestRun only when the GUI is blank or on the
 wrong run, then update `mpcobj` in the existing MATLAB base workspace and run
