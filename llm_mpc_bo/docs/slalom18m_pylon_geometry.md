@@ -104,8 +104,7 @@ Scripts:
 
 ```text
 llm_mpc_bo/scripts/extract_slalom_pylons.py
-llm_mpc_bo/scripts/plot_slalom_pylon_map.py
-llm_mpc_bo/scripts/plot_slalom_baseline.py
+llm_mpc_bo/scripts/plot_mpc_trial.py
 ```
 
 Processed pylon geometry:
@@ -118,6 +117,5 @@ llm_mpc_bo/results/processed/slalom18m_pylons.json
 Figures:
 
 ```text
-llm_mpc_bo/results/figures/slalom18m_pylon_map.png
-llm_mpc_bo/results/figures/slalom18m_xy_baseline_vs_lowmu.png
+llm_mpc_bo/results/experiments/<experiment>/best_trajectory_pylons.png
 ```
