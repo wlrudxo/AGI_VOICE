@@ -1,4 +1,4 @@
-function summary = analyze_results_mat(inputPath, outputDir, deltaCmdMode, ergSummaryPath, verbose)
+function summary = analyze_results_mat(inputPath, outputDir, deltaCmdMode, ergSummaryPath, verbose, testrunName)
 % Analyze Simulink To File output saved as Results.mat.
 %
 % Usage:
@@ -31,6 +31,9 @@ if nargin < 4
 end
 if nargin < 5
     verbose = true;
+end
+if nargin < 6
+    testrunName = 'LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL';
 end
 deltaCmdMode = lower(string(deltaCmdMode));
 if ~ismember(deltaCmdMode, ["applied", "pre_gain"])
@@ -188,7 +191,7 @@ summary.events.firstAbsAppliedDeltaCmdGt0p1 = first_event(baseTime, signals.s, a
 summary.events.firstSGe280 = first_event(baseTime, signals.s, e_t, signals.s >= 280);
 summary.events.firstSGe300 = first_event(baseTime, signals.s, e_t, signals.s >= 300);
 
-erg = load_or_create_erg_summary(outputDir, ergSummaryPath);
+erg = load_or_create_erg_summary(outputDir, ergSummaryPath, testrunName);
 summary.erg = erg;
 summary.objective = compute_bo_objective(summary.metrics, erg);
 
@@ -429,7 +432,7 @@ exportgraphics(fig, fullfile(outputDir, 'sroad_tracking.png'), 'Resolution', 160
 close(fig);
 end
 
-function erg = load_or_create_erg_summary(outputDir, ergSummaryPath)
+function erg = load_or_create_erg_summary(outputDir, ergSummaryPath, testrunName)
 erg = struct();
 erg.available = false;
 erg.path = '';
@@ -444,7 +447,7 @@ erg.distanceM = NaN;
 candidate = string(ergSummaryPath);
 if strlength(candidate) == 0
     defaultCandidate = fullfile(outputDir, 'latest_erg_summary.json');
-    latestErg = find_latest_erg();
+    latestErg = find_latest_erg(testrunName);
     if strlength(latestErg) > 0
         run_erg_summary(latestErg, outputDir, defaultCandidate);
         candidate = string(defaultCandidate);
@@ -482,7 +485,7 @@ end
 erg.crashOrSimFail = ~strcmp(string(erg.status), "SIM_END");
 end
 
-function latestErg = find_latest_erg()
+function latestErg = find_latest_erg(testrunName)
 latestErg = "";
 root = 'E:\CarMakerProject\AGI\SimOutput\DESKTOP-QHUIRV6';
 if ~exist(root, 'dir')
@@ -492,8 +495,9 @@ files = dir(fullfile(root, '**', '*.erg'));
 if isempty(files)
     return;
 end
+pattern = strrep(char(testrunName), '/', '_');
 names = string({files.name});
-keep = contains(names, 'LLM_MPC_BO_ICCAS_Slalom18m_UserSteer_CM4SL');
+keep = contains(names, pattern);
 files = files(keep);
 if isempty(files)
     return;

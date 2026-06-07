@@ -57,6 +57,8 @@ def main() -> int:
             run_trial(args, repo_root, experiment_dir, candidate)
         if not args.skip_objective_plot:
             print(json.dumps({"objectivePlot": generate_objective_plot(args, repo_root, experiment_dir)}, ensure_ascii=False))
+        if not args.skip_best_trial_plot:
+            print(json.dumps({"bestTrialPlot": generate_best_trial_plot(args, repo_root, experiment_dir)}, ensure_ascii=False))
         return 0
 
     candidates = plan_candidates(args, experiment_dir, rows, completed)
@@ -65,6 +67,8 @@ def main() -> int:
 
     if not args.skip_objective_plot:
         print(json.dumps({"objectivePlot": generate_objective_plot(args, repo_root, experiment_dir)}, ensure_ascii=False))
+    if not args.skip_best_trial_plot:
+        print(json.dumps({"bestTrialPlot": generate_best_trial_plot(args, repo_root, experiment_dir)}, ensure_ascii=False))
     return 0
 
 
@@ -86,9 +90,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--bo-candidates", type=int, default=512, help="Candidate pool size for BO acquisition.")
     parser.add_argument("--engine", default=None)
     parser.add_argument("--trial-cli", default="llm_mpc_bo/scripts/mpc_trial_cli.py")
+    parser.add_argument("--testrun", default="LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL")
     parser.add_argument("--load-testrun", action="store_true")
     parser.add_argument("--allow-uncurated", action="store_true")
     parser.add_argument("--skip-objective-plot", action="store_true")
+    parser.add_argument("--skip-best-trial-plot", action="store_true")
     parser.add_argument("--plot-python", default="py -3", help="Python command for matplotlib plotting. Default: py -3")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
@@ -130,6 +136,7 @@ def optimizer_config(args: argparse.Namespace) -> dict[str, Any]:
     return {
         "strategy": args.strategy,
         "method": args.method,
+        "testrun": args.testrun,
         "seed": args.seed,
         "budget": args.budget,
         "boInit": args.bo_init,
@@ -339,6 +346,8 @@ def run_trial(args: argparse.Namespace, repo_root: Path, experiment_dir: Path, c
         candidate.run_id,
         "--params-json",
         json.dumps(candidate.params, separators=(",", ":")),
+        "--testrun",
+        args.testrun,
     ]
     if args.engine:
         command.extend(["--engine", args.engine])
@@ -362,6 +371,43 @@ def generate_objective_plot(args: argparse.Namespace, repo_root: Path, experimen
         f"{args.method} seed{args.seed}, {args.budget} budget",
     ]
     try:
+        result = subprocess.run(
+            command,
+            cwd=str(repo_root),
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return {"ok": True, **json.loads(result.stdout)}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+def generate_best_trial_plot(args: argparse.Namespace, repo_root: Path, experiment_dir: Path) -> dict[str, Any]:
+    summary_path = experiment_dir / "best_summary.json"
+    if not summary_path.exists():
+        return {"ok": False, "error": f"missing {summary_path}"}
+
+    try:
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        best = summary.get("best") or {}
+        trial_dir_raw = best.get("trialDir")
+        run_id = best.get("runId")
+        if not trial_dir_raw:
+            return {"ok": False, "error": "best_summary.json has no best.trialDir"}
+
+        script = repo_root / "llm_mpc_bo" / "scripts" / "plot_mpc_trial.py"
+        command = args.plot_python.split() + [
+            str(script),
+            "--trial-dir",
+            str(Path(trial_dir_raw)),
+            "--label",
+            str(run_id or Path(trial_dir_raw).name),
+            "--trajectory-output",
+            str(experiment_dir / "best_trajectory_pylons.png"),
+            "--time-output",
+            str(experiment_dir / "best_trial_time_signals.png"),
+        ]
         result = subprocess.run(
             command,
             cwd=str(repo_root),

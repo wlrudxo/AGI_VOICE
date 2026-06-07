@@ -259,12 +259,17 @@ After the batch command exits, the CLI also regenerates:
 
 ```text
 objective_by_episode.png
+best_trajectory_pylons.png
+best_trial_time_signals.png
 ```
 
 This episode-vs-`J` plot is generated for LHC, random, and BO experiments from
-the current `trials.jsonl`. A zero-count rerun can refresh only the experiment
-summary plot without running new simulations. Use `--skip-objective-plot` only
-when plotting overhead is not wanted.
+the current `trials.jsonl`. The best-trial plots are regenerated from
+`best_summary.json` and written directly under the experiment directory. A
+zero-count rerun can refresh only the experiment summary and best-trial plots
+without running new simulations. Use
+`--skip-objective-plot` or `--skip-best-trial-plot` only when plotting overhead
+is not wanted.
 
 If 12 trials were completed and the command is run again with the same method
 and directory, the next run starts at iteration 13. BO is executed sequentially:

@@ -99,8 +99,8 @@ Generated check plots:
 
 ```text
 llm_mpc_bo/results/experiments/standard_slalom_lhc_seed1/objective_by_episode.png
-llm_mpc_bo/results/experiments/standard_slalom_replay_lhc0063/trials/replay_lhc0063/trajectory_pylons.png
-llm_mpc_bo/results/experiments/standard_slalom_replay_lhc0063/trials/replay_lhc0063/trial_time_signals.png
+llm_mpc_bo/results/experiments/standard_slalom_lhc_seed1/best_trajectory_pylons.png
+llm_mpc_bo/results/experiments/standard_slalom_lhc_seed1/best_trial_time_signals.png
 ```
 
 Interpretation:
@@ -180,6 +180,8 @@ Generated check plot:
 
 ```text
 llm_mpc_bo/results/experiments/standard_slalom_bo_seed1/objective_by_episode.png
+llm_mpc_bo/results/experiments/standard_slalom_bo_seed1/best_trajectory_pylons.png
+llm_mpc_bo/results/experiments/standard_slalom_bo_seed1/best_trial_time_signals.png
 ```
 
 Interpretation:
@@ -241,6 +243,8 @@ Generated check plot:
 
 ```text
 llm_mpc_bo/results/experiments/standard_slalom_random_seed1/objective_by_episode.png
+llm_mpc_bo/results/experiments/standard_slalom_random_seed1/best_trajectory_pylons.png
+llm_mpc_bo/results/experiments/standard_slalom_random_seed1/best_trial_time_signals.png
 ```
 
 Top 10 trials by objective:

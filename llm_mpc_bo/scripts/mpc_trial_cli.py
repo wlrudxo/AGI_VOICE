@@ -307,7 +307,7 @@ afterInfo = dir(resultsMatPath);
 if afterInfo.datenum <= beforeDatenum
     error('Results.mat timestamp did not advance. Old/new datenum: %.12f / %.12f', beforeDatenum, afterInfo.datenum);
 end
-summary = analyze_results_mat(resultsMatPath, outputDir, 'applied', '', false);
+summary = analyze_results_mat(resultsMatPath, outputDir, 'applied', '', false, '{matlab_quote(args.testrun)}');
 cliTrialRecord = struct();
 cliTrialRecord.runId = runId;
 cliTrialRecord.params = params;
