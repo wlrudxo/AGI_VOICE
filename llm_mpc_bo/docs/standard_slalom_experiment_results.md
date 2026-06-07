@@ -261,3 +261,37 @@ Top 10 trials by objective:
 | 8 | 92 | 22.8952 | SIM_END | 2 | 0.3436 | 1.7039 |
 | 9 | 19 | 23.0127 | SIM_END | 2 | 0.3675 | 1.6408 |
 | 10 | 51 | 23.2565 | SIM_END | 2 | 0.3932 | 1.9403 |
+
+## LowMu06 BO Seed 1, 150 Trials, Rate Limit 0.6 rad/s
+
+Experiment:
+
+```text
+method: bo
+seed: 1
+budget: 150
+boInit: 50
+scenario: LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_LowMu06
+experimentDir: llm_mpc_bo/results/experiments/lowmu06_bo_seed1
+completedAt: 2026-06-07 19:52 KST
+```
+
+Best trial:
+
+```text
+runId: bo_0081
+J: 53.6016778463
+status: SIM_END
+pylonHits: 5
+rmseET: 0.550112 m
+maxAbsET: 1.749648 m
+mvRateMin/Max: [-0.6, 0.6] rad/s
+```
+
+Interpretation:
+
+- The controller improved tracking compared with the manual LowMu06 run, but
+  did not approach the manual pylon-hit count of 2.
+- Manual steering stayed within the `±12 rad` angle limit but exceeded the
+  `±0.6 rad/s` rate limit frequently, so the next run relaxes the fixed
+  steering-wheel rate constraint to `±10 rad/s`.

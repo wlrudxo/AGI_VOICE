@@ -83,11 +83,11 @@ mpcverbosity(mpcVerbosityStatus);
 mpcobj.PredictionHorizon = 40;
 mpcobj.ControlHorizon = 8;
 
-% Steering-wheel angle and rate constraints [rad], [rad/sample].
+% Steering-wheel angle and rate constraints [rad], [rad/s].
 mpcobj.MV.Min = -12.0;
 mpcobj.MV.Max =  12.0;
-mpcobj.MV.RateMin = -0.6;
-mpcobj.MV.RateMax =  0.6;
+mpcobj.MV.RateMin = -10.0;
+mpcobj.MV.RateMax =  10.0;
 
 % Initial hand-tuned weights. These become BO variables after nominal closure.
 mpcobj.Weights.OutputVariables = [5.0 2.0 0.2];

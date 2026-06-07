@@ -382,8 +382,8 @@ def write_experiment_config(experiment_dir: Path, args: argparse.Namespace, repo
         "fixedConstraints": {
             "mvMin": -12.0,
             "mvMax": 12.0,
-            "mvRateMin": -0.6,
-            "mvRateMax": 0.6,
+            "mvRateMin": -10.0,
+            "mvRateMax": 10.0,
         },
     }
     path.write_text(json.dumps(config, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

@@ -32,7 +32,7 @@ deltaMax = 12.0;
 mpcobj.MV.Min = -deltaMax;
 mpcobj.MV.Max = deltaMax;
 
-rateMax = 0.6;
+rateMax = 10.0;
 mpcobj.MV.RateMin = -rateMax;
 mpcobj.MV.RateMax = rateMax;
 
