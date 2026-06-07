@@ -235,7 +235,7 @@ def plan_bo_candidate(
     observations = successful_observations(rows)
 
     if len(observations) < args.bo_init:
-        plan = load_or_create_space_plan(experiment_dir, "lhc", args.seed, max(args.bo_init, args.budget))
+        plan = load_or_create_space_plan(experiment_dir, "lhc", args.seed, args.bo_init)
         normalized = plan[len(observations)]
         source = "bo_init_lhc"
     else:
