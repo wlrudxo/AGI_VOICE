@@ -1,4 +1,4 @@
-function summary = analyze_results_mat(inputPath, outputDir, deltaCmdMode, ergSummaryPath)
+function summary = analyze_results_mat(inputPath, outputDir, deltaCmdMode, ergSummaryPath, verbose)
 % Analyze Simulink To File output saved as Results.mat.
 %
 % Usage:
@@ -28,6 +28,9 @@ if nargin < 3 || strlength(string(deltaCmdMode)) == 0
 end
 if nargin < 4
     ergSummaryPath = '';
+end
+if nargin < 5
+    verbose = true;
 end
 deltaCmdMode = lower(string(deltaCmdMode));
 if ~ismember(deltaCmdMode, ["applied", "pre_gain"])
@@ -211,7 +214,9 @@ write_text(fullfile(outputDir, 'summary.json'), jsonText);
 write_markdown(fullfile(outputDir, 'summary.md'), summary);
 write_plots(outputDir, T, summary);
 
-fprintf('%s\n', jsonText);
+if verbose
+    fprintf('%s\n', jsonText);
+end
 end
 
 function name = resolve_signal_name(data, candidates)

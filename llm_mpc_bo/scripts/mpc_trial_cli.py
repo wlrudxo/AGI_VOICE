@@ -61,12 +61,12 @@ def main() -> int:
         )
         append_jsonl(experiment_dir / "trials.jsonl", record)
         update_best_summary(experiment_dir)
-        print(json.dumps(record, ensure_ascii=False))
+        print(json.dumps(compact_record(record), ensure_ascii=False))
         raise
 
     append_jsonl(experiment_dir / "trials.jsonl", record)
     update_best_summary(experiment_dir)
-    print(json.dumps(record, ensure_ascii=False))
+    print(json.dumps(compact_record(record), ensure_ascii=False))
     return 0
 
 
@@ -137,6 +137,34 @@ def load_params(args: argparse.Namespace) -> dict[str, float]:
             raise ValueError(f"{key} must be positive")
         params[key] = value
     return params
+
+
+def compact_record(record: dict[str, Any]) -> dict[str, Any]:
+    keys = (
+        "timestamp",
+        "method",
+        "iter",
+        "runId",
+        "ok",
+        "J",
+        "status",
+        "pylonHits",
+        "crashOrSimFail",
+        "rmseET",
+        "maxAbsET",
+        "rmseDelta",
+        "rmseDeltaRate",
+        "maxYawRate",
+        "duration",
+        "engine",
+        "error",
+    )
+    compact = {key: record[key] for key in keys if key in record}
+    if "params" in record:
+        compact["params"] = record["params"]
+    if "trialDir" in record:
+        compact["trialDir"] = record["trialDir"]
+    return compact
 
 
 def decode_normalized(values: list[Any]) -> dict[str, float]:
@@ -215,7 +243,7 @@ cd(cmProjectSrcDir);
 addpath(fullfile(repoRoot, 'llm_mpc_bo', 'simulink'));
 addpath(fullfile(repoRoot, 'llm_mpc_bo', 'scripts'));
 if exist('cmenv', 'file') == 2
-    cmenv;
+    evalc('cmenv;');
 end
 if {reset_expr} || evalin('base', "exist('mpcobj','var')") ~= 1
     evalin('base', sprintf("run('%s')", fullfile(repoRoot, 'llm_mpc_bo', 'simulink', 'init_slalom_mpc.m')));
@@ -227,7 +255,7 @@ steerGainBlock = [mdl '/CarMaker/VehicleControl/CreateBus VhclCtrl.Steering/Gain
 if getSimulinkBlockHandle(steerGainBlock) ~= -1
     set_param(steerGainBlock, 'Gain', '{steering_gain}');
 end
-mpcobj = apply_slalom_mpc_params(params);
+evalc('mpcobj = apply_slalom_mpc_params(params);');
 if exist(resultsMatPath, 'file')
     beforeInfo = dir(resultsMatPath);
     beforeDatenum = beforeInfo.datenum;
@@ -235,8 +263,7 @@ else
     beforeDatenum = -Inf;
 end
 simStart = datetime('now');
-fprintf('[mpc_trial_cli] runId=%s params=%s\\n', runId, jsonencode(params));
-simOut = sim(mdl);
+evalc('simOut = sim(mdl);');
 simEnd = datetime('now');
 assignin('base', 'simOut', simOut);
 if ~exist(resultsMatPath, 'file')
@@ -246,7 +273,7 @@ afterInfo = dir(resultsMatPath);
 if afterInfo.datenum <= beforeDatenum
     error('Results.mat timestamp did not advance. Old/new datenum: %.12f / %.12f', beforeDatenum, afterInfo.datenum);
 end
-summary = analyze_results_mat(resultsMatPath, outputDir);
+summary = analyze_results_mat(resultsMatPath, outputDir, 'applied', '', false);
 cliTrialRecord = struct();
 cliTrialRecord.runId = runId;
 cliTrialRecord.params = params;
@@ -282,7 +309,6 @@ end
 fprintf(fid, '%s\\n', jsonencode(cliTrialRecord, PrettyPrint=true));
 fclose(fid);
 assignin('base', 'cliTrialRecord', cliTrialRecord);
-fprintf('[mpc_trial_cli] J=%g status=%s pylonHits=%d\\n', cliTrialRecord.J, cliTrialRecord.status, cliTrialRecord.pylonHits);
 """
 
 
