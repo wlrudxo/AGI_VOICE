@@ -1,0 +1,24 @@
+{
+  "testrun": "LLM_MPC_BO/ICCAS_Slalom18m_Base",
+  "ergPath": "/mnt/e/CarMakerProject/AGI/SimOutput/DESKTOP-QHUIRV6/20260606/LLM_MPC_BO_ICCAS_Slalom18m_Base_133335.erg",
+  "metrics": {
+    "RMSE_y": 0.5979992188218919,
+    "MAX_y": 1.928962230682373,
+    "RMSE_e_psi": 0.09469243030205542,
+    "MAX_e_psi": 0.2693937420845032,
+    "RMSE_delta": 0.9811626786361897,
+    "RMSE_d_delta": 3.0058038909581217,
+    "MAX_yaw_rate": 0.6491121649742126,
+    "MAX_side_slip": 0.05178655683994293,
+    "N_violation": 1,
+    "crash_or_sim_fail": false,
+    "status": "SIM_END",
+    "durationS": 38.026,
+    "distanceM": 517.399
+  },
+  "objective": {
+    "J_continuous": 9.319339529527548,
+    "J_failClosed": 9.319339529527548,
+    "objectiveUsed": "continuous"
+  }
+}

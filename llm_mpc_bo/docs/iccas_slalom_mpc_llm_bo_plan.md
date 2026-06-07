@@ -14,6 +14,14 @@ ICCAS 6페이지 논문 방향은 다음으로 잡는다.
 
 이 방향은 기존 KSAE 논문의 "LLM-CarMaker decision loop"보다 제어/최적화 논문으로 더 방어적이다. 또한 낮은 난이도의 국제학회 6페이지 논문에는 충분하다.
 
+2026-06-06 구현 진행 후 확정한 범위:
+
+- 제어기 자체는 특별한 4WS/4WID/game-theory/dynamics novelty를 주장하지 않는다.
+- 논문 핵심은 `standard slalom MPC controller`의 튜닝 자동화다.
+- 차량동역학 모델은 MPC 상태/목적함수 정의를 위한 최소 수준으로 유지한다.
+- 성공한 nominal slalom trajectory를 reference path로 사용하고, low-friction 조건에서 MPC tuning 자동화 성능을 검증한다.
+- 4WS/4WID coordination 논문류는 관련연구/평가지표 근거로만 참고하고, 구현 방법론으로 채택하지 않는다.
+
 ## 1. 문제정의
 
 ### 1.1 대상 문제
@@ -86,6 +94,14 @@ CarMaker vehicle states / path preview
 
 Simulink MPC는 차량의 횡방향 error, heading error, yaw rate, steering command를 이용해 slalom path를 추종한다. 논문에서는 MPC 내부 수식보다 "tunable parameter를 가진 standard MPC controller"라는 점을 강조한다.
 
+현재 구현 기준:
+
+- CM4SL 기반 `UserSteer.mdl`을 사용한다.
+- 효과가 확인된 조향 override 위치는 `VehicleControlUpd` 이후 `CreateBus VhclCtrl.Steering` 내부의 `VhclCtrl Steering Ang`이다.
+- `Read CM Dict` 블록으로 `Vhcl.sRoad`, `Vhcl.tRoad` 또는 `Car.Road.Path.DevDist`, `Car.Road.Path.DevAng`, `Car.YawRate`, `Car.v`를 읽는다.
+- reference path는 successful `Base mu=1.0` run에서 `s_ref -> t_ref, psi_ref, delta_ff` lookup table로 생성한다.
+- PD controller는 MPC 전 신호/부호/lookup/override smoke test로만 사용한다.
+
 ### 2.3 기록할 telemetry
 
 최소 필요 telemetry:
@@ -128,6 +144,19 @@ CarMaker UAQ 후보:
 | `delta_max_scale` | steering soft/hard limit scale | continuous | 0.6 - 1.2 | linear |
 
 권장 시작은 이 6변수다. Horizon까지 넣으면 mixed discrete optimization이 되므로, 첫 논문에서는 제외하는 편이 안정적이다.
+
+현재 MPC 구현에서는 `delta_cmd = delta_ff + u_mpc` 구조를 우선한다. 따라서 BO가 직접 튜닝할 대상은 steering command 자체가 아니라 tracking/stability/correction smoothness trade-off다.
+
+초기 구현 변수 해석:
+
+| Variable | Current role |
+| --- | --- |
+| `q_y` | `e_t = t - t_ref` 추종 가중치 |
+| `q_psi` | `e_psi = devang - psi_ref` 추종 가중치 |
+| `q_r` | yaw-rate 억제 가중치 |
+| `r_delta` | MPC correction steering `u_mpc` 크기 가중치 |
+| `r_d_delta` | correction 변화율 가중치 |
+| `delta_max_scale` | steering/correction saturation scale |
 
 ### 3.2 확장 8변수안
 

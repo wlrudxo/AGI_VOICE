@@ -1,0 +1,24 @@
+{
+  "testrun": "LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL",
+  "ergPath": "/mnt/e/CarMakerProject/AGI/SimOutput/DESKTOP-QHUIRV6/20260606/LLM_MPC_BO_ICCAS_Slalom18m_UserSteer_CM4SL_144759.erg",
+  "metrics": {
+    "RMSE_y": 0.5983813952234714,
+    "MAX_y": 1.9344254732131958,
+    "RMSE_e_psi": 0.09507617827075318,
+    "MAX_e_psi": 0.2692430019378662,
+    "RMSE_delta": 0.9875451002007893,
+    "RMSE_d_delta": 2.8921341105660576,
+    "MAX_yaw_rate": 0.6502050161361694,
+    "MAX_side_slip": 0.052500031888484955,
+    "N_violation": 1,
+    "crash_or_sim_fail": false,
+    "status": "SIM_END",
+    "durationS": 38.028,
+    "distanceM": 517.406
+  },
+  "objective": {
+    "J_continuous": 9.286455252446345,
+    "J_failClosed": 9.286455252446345,
+    "objectiveUsed": "continuous"
+  }
+}

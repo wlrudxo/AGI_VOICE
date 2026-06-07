@@ -88,6 +88,14 @@ workspace/carmaker_llm_scenario_skill/reports/**/osc2cm_log_summary.md
 workspace/carmaker_llm_scenario_skill/reports/**/reference_*.md
 workspace/carmaker_llm_scenario_skill/reports/research_automation/runs/
 
+# LLM-MPC-BO local Simulink caches and temporary backups
+llm_mpc_bo/simulink/slprj/
+llm_mpc_bo/simulink/*.slxc
+llm_mpc_bo/**/*.bak
+llm_mpc_bo/results/processed/sigsOut_latest/
+llm_mpc_bo/results/processed/sigsOut_latest_analysis/
+llm_mpc_bo/results/processed/*.mat
+
 # CarMaker map/traffic pipeline generated and local-only artifacts
 MapGenerator/CarMakerPipeline/**/__pycache__/
 MapGenerator/CarMakerPipeline/**/*.py[cod]

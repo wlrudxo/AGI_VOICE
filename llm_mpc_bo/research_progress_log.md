@@ -1,23 +1,32 @@
-# LLM-MPC-BO ICCAS Research Progress Log
+# LLM-MPC-BO Research Progress Log
 
-Created: 2026-06-06
+Updated: 2026-06-07
 
-## Purpose
+## Research Direction
 
-This folder tracks the practical research work for an ICCAS 6-page paper on:
+Paper target:
 
-> LLM-assisted Bayesian optimization for MPC lateral-controller tuning in a CarMaker-Simulink low-friction slalom scenario.
+```text
+LLM-assisted Bayesian optimization for standard MPC lateral-controller tuning
+in a CarMaker-Simulink low-friction Slalom18m scenario.
+```
 
-The intended paper claim is conservative:
+Current decision:
 
-- MPC remains the controller.
-- CarMaker-Simulink remains the simulator/validator.
-- Bayesian optimization selects simulator-validated candidates.
-- The LLM only provides warm-start candidates and bounded search-region guidance.
+- Use **MPC Controller block** as the final controller implementation route.
+- Use PD/LQR only as prior smoke tests or fallback baselines, not as the main controller.
+- Do not claim novelty in vehicle dynamics or MPC formulation.
+- Main claim should be BO/LLM-assisted BO tuning efficiency and safer simulator trial selection.
 
-## Repository Location
+Detailed old debug log was archived to:
 
-Project root:
+```text
+llm_mpc_bo/docs/research_progress_log_detailed_archive_20260607.md
+```
+
+## Key Paths
+
+Repository:
 
 ```text
 E:\GitProject\AGI_VOICE
@@ -28,392 +37,414 @@ Research workspace:
 
 ```text
 E:\GitProject\AGI_VOICE\llm_mpc_bo
-/mnt/e/GitProject/AGI_VOICE/llm_mpc_bo
 ```
 
-Do not put this research work under `workspace/`. The existing scenario skill remains under `workspace/` and is used as a helper only.
-
-## Reference Documents
-
-Moved into this folder:
-
-```text
-llm_mpc_bo/docs/iccas_slalom_mpc_llm_bo_plan.md
-llm_mpc_bo/docs/iccas_6p_carmaker_llm_research_ideas.md
-```
-
-Primary implementation plan:
-
-```text
-llm_mpc_bo/docs/iccas_slalom_mpc_llm_bo_plan.md
-```
-
-Broader topic alternatives and fallback claims:
-
-```text
-llm_mpc_bo/docs/iccas_6p_carmaker_llm_research_ideas.md
-```
-
-## Helper Skill / Existing Automation Asset
-
-Existing CarMaker helper asset:
-
-```text
-E:\GitProject\AGI_VOICE\workspace\carmaker_llm_scenario_skill
-/mnt/e/GitProject/AGI_VOICE/workspace/carmaker_llm_scenario_skill
-```
-
-Use this as a helper for:
-
-- official CarMaker TestRun catalog scanning,
-- `LoadTestRun`, `StartSim`, `StopSim`,
-- `DVARead` / `DVAWrite`,
-- telemetry snapshots,
-- trigger/action smoke tests,
-- CarMaker session-log triage.
-
-Relevant files:
-
-```text
-workspace/carmaker_llm_scenario_skill/README.md
-workspace/carmaker_llm_scenario_skill/research_automation_plan.md
-workspace/carmaker_llm_scenario_skill/agent/carmaker_research_runner.py
-```
-
-Known CarMaker project for live automation:
+CarMaker project:
 
 ```text
 E:\CarMakerProject\AGI
-/mnt/e/CarMakerProject/AGI
+E:\CarMakerProject\AGI\src_cm4sl
 ```
 
-Known CarMaker TCP command port from that project:
+CarMaker install:
 
 ```text
-16660
+C:\IPG\carmaker\win64-15.0.1
 ```
 
-Known session-log folder:
+Current Simulink model:
 
 ```text
-E:\CarMakerProject\AGI\SimOutput\DESKTOP-QHUIRV6\Log
-/mnt/e/CarMakerProject/AGI/SimOutput/DESKTOP-QHUIRV6/Log
+E:\CarMakerProject\AGI\src_cm4sl\UserSteer.mdl
 ```
 
-## Installed CarMaker Example Source
+## Current TestRuns
 
-Official example TestRun root:
+Base and non-Simulink variants:
 
 ```text
-C:\IPG\carmaker\win64-15.0.1\Data\TestRun\Examples
-/mnt/c/IPG/carmaker/win64-15.0.1/Data/TestRun/Examples
+LLM_MPC_BO/ICCAS_Slalom18m_Base
+LLM_MPC_BO/ICCAS_Slalom18m_Nominal
+LLM_MPC_BO/ICCAS_Slalom18m_LowMu06
+LLM_MPC_BO/ICCAS_Slalom18m_HarshMu05
 ```
 
-Relevant scenario candidates found:
+CM4SL/UserSteer variants:
 
 ```text
-Examples/VehicleDynamics/Handling/Slalom18m
-Examples/VehicleDynamics/Handling/Slalom18m_AMS
-Examples/VehicleDynamics/Handling/Slalom36m
-Examples/BasicFunctions/Simulink/LaneChange_ISO_ESP
-Examples/BasicFunctions/Simulink/Hockenheim_UserSteer
+LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL
+LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_Nominal
+LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_LowMu06
+LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_HarshMu05
 ```
 
-Current scenario choice:
+## Implemented Artifacts
+
+Reference and MPC setup:
 
 ```text
-Main: Examples/VehicleDynamics/Handling/Slalom18m
-Fallback/reference: Examples/VehicleDynamics/Handling/Slalom18m_AMS
-Auxiliary harsh/high-speed candidate: Examples/VehicleDynamics/Handling/Slalom36m
-Simulink reference candidate: Examples/BasicFunctions/Simulink/LaneChange_ISO_ESP
+llm_mpc_bo/simulink/slalom18m_base_reference.csv
+llm_mpc_bo/simulink/init_slalom_reference.m
+llm_mpc_bo/simulink/init_slalom_mpc.m
+llm_mpc_bo/simulink/run_slalom_mpc_and_export.m
+llm_mpc_bo/simulink/run_slalom_mpc_batch.m
 ```
 
-Why `Slalom18m` is the main candidate:
-
-- It is an official CarMaker vehicle-dynamics slalom TestRun.
-- Description says `Closed loop slalom driving with pylons gap of 18 m`.
-- It uses `Examples/DemoCar`.
-- Road length is `600 m`.
-- Slalom section is around `s = 300 m` onward.
-- End condition is `s > 485`.
-- Default driver cruising speed is `58 km/h`.
-- Current friction knowledge key is `Driver.Knowl.0.Friction = 1.0`.
-
-Low-friction implementation hint found in official examples:
+Analysis scripts:
 
 ```text
-Road.Link.0.Friction = 0.5
+llm_mpc_bo/scripts/erg_drive_summary.py
+llm_mpc_bo/scripts/evaluate_slalom.py
+llm_mpc_bo/scripts/plot_slalom_baseline.py
+llm_mpc_bo/scripts/plot_slalom_runs.py
+llm_mpc_bo/scripts/extract_slalom_pylons.py
+llm_mpc_bo/scripts/plot_slalom_pylon_map.py
+llm_mpc_bo/scripts/build_slalom_reference.py
+llm_mpc_bo/scripts/analyze_sigsout_mpc.py
+llm_mpc_bo/scripts/analyze_results_mat.m
 ```
 
-Example source where that pattern appears:
+Important notes:
 
 ```text
-Examples/BasicFunctions/Simulink/TractCtrl
+llm_mpc_bo/docs/slalom18m_pylon_geometry.md
+llm_mpc_bo/docs/carmaker_simulink_slalom_mpc_connection_scan.md
+llm_mpc_bo/docs/matlab_lane_following_example_notes.md
+llm_mpc_bo/docs/native_windows_agent_handoff.md
 ```
 
-Initial intended friction variants:
+## Execution Environment Decision
+
+Use Windows-native MATLAB for all CarMaker/Simulink execution.
+
+Recommended split:
 
 ```text
-Nominal: Road.Link.0.Friction = 1.0
-LowMu main: Road.Link.0.Friction = 0.6
-Harsh auxiliary: Road.Link.0.Friction = 0.5
+Windows MATLAB:
+  run CarMaker/Simulink
+  load cmenv
+  create mpcobj/reference workspace variables
+  save Simulink `Results.mat`
+
+WSL/Codex:
+  inspect files
+  analyze exported `Results.mat` and ERG
+  generate plots
+  maintain docs/scripts/git
 ```
 
-## Current Status
+Reason: WSL-to-Windows GUI/MATLAB/CarMaker automation caused quoting,
+workspace, GUI-dialog, and TCP-session issues. Native MATLAB avoids most of
+that friction.
 
-- [x] Read the broad ICCAS research-ideas document.
-- [x] Read the slalom MPC LLM-BO implementation-plan document.
-- [x] Decided that the practical implementation should follow `iccas_slalom_mpc_llm_bo_plan.md`.
-- [x] Inspected official CarMaker example TestRuns under CarMaker 15.0.1.
-- [x] Found direct slalom candidates.
-- [x] Selected `Examples/VehicleDynamics/Handling/Slalom18m` as the main scenario candidate.
-- [x] Identified `Road.Link.0.Friction` as the simplest likely low-friction TestRun edit.
-- [x] Created the `llm_mpc_bo/` research folder at the AGI_VOICE repo root.
-- [x] Moved both ICCAS planning documents from `docs/` into `llm_mpc_bo/docs/`.
-- [x] Created this progress log.
+## Confirmed Technical Facts
 
-## Work Plan
+### Slalom Geometry
 
-### Phase 1: Research Workspace Setup
-
-- [x] Create `llm_mpc_bo/`.
-- [x] Move ICCAS planning documents into `llm_mpc_bo/docs/`.
-- [x] Create this durable research progress log.
-- [ ] Create subfolders for practical work:
+- Slalom18m is the selected official CarMaker scenario.
+- Slalom section starts around `s = 300 m`.
+- Pylon coordinates must be interpreted from `DrvPylon.Param` as:
 
 ```text
-llm_mpc_bo/carmaker/
-llm_mpc_bo/carmaker/testruns/
-llm_mpc_bo/simulink/
-llm_mpc_bo/scripts/
-llm_mpc_bo/scripts/bo/
-llm_mpc_bo/scripts/llm/
-llm_mpc_bo/results/
-llm_mpc_bo/results/raw/
-llm_mpc_bo/results/processed/
-llm_mpc_bo/results/figures/
-llm_mpc_bo/paper/
+x = s
+y = latOffset +/- width/2
 ```
 
-### Phase 2: CarMaker Scenario Baseline
+### Signals
 
-- [ ] Copy or package the official `Slalom18m` TestRun into a research-controlled location.
-- [ ] Preserve an unmodified source copy.
-- [ ] Create a nominal variant with friction `1.0`.
-- [ ] Create a low-friction variant with friction `0.6`.
-- [ ] Optionally create a harsh variant with friction `0.5`.
-- [ ] Load the nominal variant in CarMaker.
-- [ ] Confirm the default IPG driver can complete the scenario.
-- [ ] Load the low-friction variant in CarMaker.
-- [ ] Confirm whether the default IPG driver can complete the low-friction scenario.
-- [ ] Record session-log outcomes for each baseline run.
-
-Key checks:
-
-- Does the TestRun load without missing road/vehicle resources?
-- Does the scenario finish with `SIM_END`?
-- Does low friction make the task meaningfully harder without making every run fail?
-- Are pylon hit, road departure, or lateral instability visible in logs or telemetry?
-
-### Phase 3: Telemetry and Metric Definition
-
-- [ ] Determine available UAQ / DVA quantities for the slalom TestRun.
-- [ ] Confirm exact signal names for:
+Use these CarMaker quantities in Simulink:
 
 ```text
-Time
-Car.v
 Vhcl.sRoad
-Vhcl.tRoad
+Car.Road.Path.DevDist
+Car.Road.Path.DevAng
 Car.YawRate
-DM.Steer.Ang or steering command equivalent
-Car.SideSlipAngle if available
+Car.v
 ```
 
-- [ ] Decide how to compute lateral tracking error.
-- [ ] Decide how to detect cone hit / pylon hit / violation.
-- [ ] Decide how to detect simulation failure.
-- [ ] Create a first metric extractor.
-- [ ] Create the scalar objective `J`.
-
-Initial objective from the plan:
+Reference lookup:
 
 ```text
-J =
-  1.00 * RMSE_y / 0.50
-+ 0.60 * MAX_y / 1.50
-+ 0.20 * RMSE_delta / 0.20
-+ 0.30 * RMSE_d_delta / 0.80
-+ 0.30 * MAX_yaw_rate / 0.80
-+ 5.00 * N_violation
-+ 20.0 * I_crash_or_sim_fail
+t_ref   = lookup(Vhcl.sRoad, slalom_s_ref, slalom_t_ref)
+psi_ref = lookup(Vhcl.sRoad, slalom_s_ref, slalom_psi_ref)
 ```
 
-Hard-fail fallback:
+### Steering Override
+
+Effective steering override point:
 
 ```text
-J = 50 + 10 * N_violation
+VehicleControlUpd output
+  -> CreateBus VhclCtrl.Steering
+  -> VhclCtrl Steering Ang
 ```
 
-### Phase 4: CarMaker-Simulink MPC Connection
+Changing only `VhclCtrl Steering Ang` is sufficient; setting it to zero made the vehicle drive straight.
 
-- [ ] Identify the best Simulink steering/control reference model.
-- [ ] Confirm MATLAB R2025a + CarMaker 15.0.1 + CM4SL startup path.
-- [ ] Confirm active Simulink model can run with CarMaker.
-- [ ] Decide whether to adapt an existing CM4SL model or create a new slalom MPC model.
-- [ ] Connect CarMaker vehicle/path states to Simulink MPC.
-- [ ] Send steering command back from Simulink to CarMaker.
-- [ ] Confirm one closed-loop slalom run with a fixed MPC parameter set.
+### Current MPC Block Wiring
 
-Known CM4SL setup reference from the helper skill:
+MPC Controller block object:
+
+```text
+mpcobj
+```
+
+Inputs:
+
+```text
+mo  = [Car.Road.Path.DevDist; Car.Road.Path.DevAng; Car.YawRate]
+ref = [t_ref; psi_ref; 0]
+```
+
+Output:
+
+```text
+mv = steering angle command
+```
+
+Actual working sign path:
+
+```text
+MPC mv output -> Gain(-1) -> VhclCtrl Steering Ang
+```
+
+The `Gain(-1)` is currently required. Without it, `e_t` and `delta_cmd` had the same sign and the vehicle diverged before the slalom section.
+
+### Results.mat Analysis Path
+
+Current preferred analysis path:
+
+```text
+E:\CarMakerProject\AGI\src_cm4sl\Results.mat
+  + latest CarMaker ERG
+  -> llm_mpc_bo/scripts/analyze_results_mat.m
+  -> aligned_signals.csv / summary.json / summary.md / plots / BO objective
+```
+
+`Results.mat` is now preferred over `sigsOut_latest` because Simulink signal
+logging produced a 1-sample export when run from a non-interactive/batch path.
+The `Results.mat` To File output contains full-run timeseries and matches the
+CarMaker ERG timing.
+
+Expected fields:
+
+```text
+s
+t
+t_ref
+devang
+psi_ref
+yawrate
+v
+steer_manual
+delta_cmd or applied_delta_cmd or signal1
+```
+
+The current Simulink file stores the applied steering command as `signal1`.
+`analyze_results_mat.m` automatically maps `signal1` to `delta_cmd`. The
+default assumes `delta_cmd` is already after the Gain(-1) sign correction. For
+older files where `delta_cmd` was logged before Gain(-1), call:
 
 ```matlab
-addpath('C:\IPG\carmaker\win64-15.0.1\Matlab')
-addpath('C:\IPG\carmaker\win64-15.0.1\Matlab\R2025a')
-addpath('C:\IPG\carmaker\win64-15.0.1\CM4SL\R2025a')
+analyze_results_mat(inputPath, outputDir, 'pre_gain')
+```
 
-cd('E:\CarMakerProject\AGI\src_cm4sl')
+The script also finds the latest matching ERG under:
+
+```text
+E:\CarMakerProject\AGI\SimOutput\DESKTOP-QHUIRV6
+```
+
+and automatically runs `erg_drive_summary.py` to produce:
+
+```text
+llm_mpc_bo/results/processed/results_mat_latest/latest_erg_summary.json
+llm_mpc_bo/results/processed/results_mat_latest/latest_erg_drive_log.csv
+```
+
+The BO objective is available as:
+
+```matlab
+summary.objective.JFailClosed
+```
+
+### MPC Plant Model
+
+`init_slalom_mpc.m` uses a linear bicycle lateral model derived from the local MathWorks lane-following example:
+
+```text
+C:\Users\user\OneDrive\문서\MATLAB\Examples\R2025a\mpc\LaneFollowingUsingNMPCExample
+```
+
+Reduced model:
+
+```text
+x = [Vy; yaw_rate; lateral_deviation; heading_error]
+y = [lateral_deviation; heading_error; yaw_rate]
+u = steering angle
+```
+
+Current `mpcobj` settings:
+
+```text
+Ts = 0.02 s
+PredictionHorizon = 40
+ControlHorizon = 8
+MV.Min = -2
+MV.Max = 2
+MV.RateMin = -0.03
+MV.RateMax = 0.03
+Weights.OutputVariables = [5, 2, 0.2]
+Weights.ManipulatedVariables = 0.2
+Weights.ManipulatedVariablesRate = 2
+```
+
+## Latest Evidence
+
+MPC block run before the `Gain(-1)` fix:
+
+```text
+Date: 2026-06-07 14:10
+TestRun: LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL
+Result: failed before slalom, 8.355 s / 44.917 m
+Diagnosis:
+  corr(e_t, delta_cmd) = +0.9747
+  same-sign fraction e_t * delta_cmd = 1.0
+  corr(e_t, steer_manual) = -0.9034
+Action:
+  add Gain(-1) between MPC mv output and VhclCtrl Steering Ang
+```
+
+Diagnosis files:
+
+```text
+llm_mpc_bo/results/processed/sigsOut_latest_analysis/diagnosis.md
+llm_mpc_bo/results/processed/sigsOut_latest_analysis/diagnosis.json
+```
+
+User confirmed:
+
+```text
+Gain(-1) after MPC output makes the direction work.
+```
+
+Additional CarMaker log evidence from a later new-MATLAB run:
+
+```text
+2026-06-07 14:11
+SIM ... LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL 0 37.916 517.263
+```
+
+This indicates the fixed sign path can complete the nominal/UserSteer CM4SL
+run. A fresh `sigsOut` diagnosis still needs to be exported and checked because
+the batch workspace/logging setup was incomplete during that run.
+
+Latest `Results.mat` + ERG analysis:
+
+```text
+Date: 2026-06-07 15:03
+Input: E:\CarMakerProject\AGI\src_cm4sl\Results.mat
+ERG: latest LLM_MPC_BO_ICCAS_Slalom18m_UserSteer_CM4SL under 20260607
+Status: SIM_END
+Duration: 37.918 s
+Final s: 525.456 m
+Signal mapping: signal1 -> applied delta_cmd
+Sign diagnosis: no applied sign issue
+
+RMSE e_t: 0.7536 m
+MAX |e_t|: 2.6615 m
+RMSE delta: 0.1748 rad
+RMSE delta rate: 0.4586 rad/s
+MAX |yawrate|: 0.1378 rad/s
+Pylon hits: 10
+BO J_failClosed: 52.9702
+```
+
+Interpretation:
+
+- The fixed sign path completes the nominal/UserSteer CM4SL run.
+- The applied steering sign is correct.
+- Tracking is still weak for slalom quality because the run hits 10 pylons.
+- Next tuning should focus on tracking strength, smoothness, and reference
+  suitability, not another sign flip.
+
+## MATLAB Run Commands
+
+When MATLAB/CarMaker/Simulink is already open and configured:
+
+```matlab
+run('E:\GitProject\AGI_VOICE\llm_mpc_bo\simulink\init_slalom_mpc.m')
+run('E:\GitProject\AGI_VOICE\llm_mpc_bo\simulink\run_slalom_mpc_batch.m')
+```
+
+`run_slalom_mpc_batch.m` is now intended to work from a fresh Windows MATLAB
+workspace. It performs:
+
+```text
+cd E:\CarMakerProject\AGI\src_cm4sl
 cmenv
+run init_slalom_mpc.m
+open_system UserSteer
+run/export
 ```
 
-### Phase 5: Tunable Parameter Interface
-
-- [ ] Expose the first 6 MPC tuning variables:
+Outputs:
 
 ```text
-q_y
-q_psi
-q_r
-r_delta
-r_d_delta
-delta_max_scale
+llm_mpc_bo/results/processed/sigsOut_latest/*.csv
+llm_mpc_bo/results/processed/sigsOut_latest/sigsOut_latest.mat
+llm_mpc_bo/results/processed/sigsOut_latest_analysis/diagnosis.md
+llm_mpc_bo/results/processed/sigsOut_latest_analysis/diagnosis.json
 ```
 
-- [ ] Keep horizon variables out of the first implementation.
-- [ ] Implement normalized `[0, 1]` to physical-parameter decoding.
-- [ ] Support log-scale decoding for weight variables.
-- [ ] Confirm `theta` can be injected before each simulation run.
-- [ ] Confirm repeated runs use the newly injected parameters.
+Preferred current analysis command:
 
-Initial parameter ranges:
+```matlab
+addpath('E:\GitProject\AGI_VOICE\llm_mpc_bo\scripts')
+summary = analyze_results_mat( ...
+    'E:\CarMakerProject\AGI\src_cm4sl\Results.mat', ...
+    'E:\GitProject\AGI_VOICE\llm_mpc_bo\results\processed\results_mat_latest' ...
+);
+J = summary.objective.JFailClosed;
+```
+
+## Next Actions
+
+1. Keep logging `Results.mat` with applied `delta_cmd` after the Gain(-1) sign correction.
+2. Use `analyze_results_mat.m` after each run to compute `J_failClosed` from `Results.mat` plus the latest ERG.
+3. Tune the nominal/UserSteer CM4SL MPC manually until pylon hits and `e_t` improve:
 
 ```text
-q_y:              0.1 - 100    log
-q_psi:            0.1 - 100    log
-q_r:              0.01 - 30    log
-r_delta:          0.01 - 10    log
-r_d_delta:        0.01 - 10    log
-delta_max_scale:  0.6 - 1.2    linear
+Weights.OutputVariables
+Weights.ManipulatedVariables
+Weights.ManipulatedVariablesRate
+MV.RateMin / MV.RateMax
+MV.Min / MV.Max
 ```
 
-### Phase 6: Trial Runner
-
-- [ ] Implement `theta -> run -> log -> metrics -> J`.
-- [ ] Store every trial result as machine-readable JSON/CSV.
-- [ ] Store raw run metadata and failure reason.
-- [ ] Ensure fail-closed behavior for uncertain runs.
-- [ ] Run a small manual sweep to verify repeatability.
-
-Minimum trial output fields:
+4. Then evaluate:
 
 ```text
-run_id
-method
-seed
-trial_index
-normalized_x
-decoded_theta
-raw_metrics
-objective_J
-fail_reason
-testrun
-friction
-timestamp
+LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL
+LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_LowMu06
 ```
 
-### Phase 7: Manual Baseline and Pure BO
-
-- [ ] Record manual/default MPC baseline.
-- [ ] Implement Latin Hypercube Sampling.
-- [ ] Implement GP surrogate.
-- [ ] Implement Expected Improvement acquisition.
-- [ ] Run pure BO:
+5. Expose BO variables:
 
 ```text
-10 LHS initial evaluations
-30 BO/EI evaluations
-40 total evaluations
+q_y, q_psi, q_r, r_delta, r_d_delta, delta_max_scale
 ```
 
-- [ ] Save best-so-far objective curve.
-- [ ] Save best pure-BO parameter set and metrics.
-
-### Phase 8: LLM-Assisted BO
-
-- [ ] Implement LLM warm-start prompt.
-- [ ] Validate LLM JSON output against schema and bounds.
-- [ ] Use 4 LLM warm-start candidates + 6 LHS candidates.
-- [ ] Run 30 BO/EI evaluations after the initial 10.
-- [ ] Optionally implement LLM intervention after iterations 10, 20, and 30.
-- [ ] Use LLM intervention only as bounded search-region guidance.
-- [ ] Keep EI/BO responsible for final candidate choice.
-
-Initial LLM intervention output shape:
-
-```json
-{
-  "diagnosis": "short failure analysis",
-  "promisingRegion": {
-    "q_y": [0.2, 0.8],
-    "q_psi": [0.2, 0.9],
-    "q_r": [0.1, 0.7],
-    "r_delta": [0.2, 0.8],
-    "r_d_delta": [0.3, 1.0],
-    "delta_max_scale": [0.6, 1.0]
-  },
-  "avoidRegionReason": "short text",
-  "confidence": 0.7
-}
-```
-
-### Phase 9: Paper Artifacts
-
-- [ ] Generate convergence plot.
-- [ ] Generate method comparison table.
-- [ ] Generate trajectory comparison plot.
-- [ ] Generate lateral error time-series plot.
-- [ ] Generate steering command time-series plot.
-- [ ] Generate yaw-rate time-series plot.
-- [ ] Save best parameter table.
-- [ ] Draft architecture figure.
-- [ ] Draft optimization flow figure.
-
-Minimum comparison:
+6. Build the first trial runner:
 
 ```text
-Manual baseline
-Pure BO
-LLM-assisted BO
+theta -> init/update mpcobj -> run CarMaker/Simulink -> export sigsOut/ERG -> compute J
 ```
 
-Preferred result claims if data supports them:
+7. Compare:
 
-- LLM-assisted BO improves early-stage sample efficiency.
-- LLM-assisted BO reduces unsafe/aggressive repeated trials.
-- Final best performance may be similar to pure BO; sample efficiency is the safer claim.
-
-## Immediate Next Actions
-
-1. Create the practical subfolder skeleton under `llm_mpc_bo/`.
-2. Copy `Slalom18m` into `llm_mpc_bo/carmaker/testruns/` as a preserved source reference.
-3. Create nominal/low-mu/harsh edited variants.
-4. Use the helper skill or CarMaker GUI to load and smoke-test the nominal and low-mu TestRuns.
-5. Record session-log evidence in this document after each smoke test.
-
-## Open Questions
-
-- Should the copied TestRun live only inside this repo, or should it also be installed into `E:\CarMakerProject\AGI\Data\TestRun\...` for live execution?
-- Which Simulink model is the best starting point for steering/MPC control?
-- Which signal should be the authoritative lateral error for `J`: `Vhcl.tRoad`, a reference path error from Simulink, or a postprocessed pylon/path reference?
-- Can cone/pylon hits be detected from session log, scratchpad notes, collision sensors, or a dedicated UAQ quantity?
-- Should the first paper experiment use only `Slalom18m` at `mu = 0.6`, or include nominal/harsh as auxiliary results?
+```text
+Manual tuned MPC
+Pure BO tuned MPC
+LLM-assisted BO tuned MPC
+```

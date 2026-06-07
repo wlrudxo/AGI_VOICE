@@ -1,0 +1,182 @@
+{
+  "testrun": "LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL",
+  "dateLocal": "2026-06-06 14:48:08 대한민국 표준시",
+  "samples": 3803,
+  "durationS": 38.02,
+  "finalTimeS": 38.02,
+  "finalSRoadM": 523.4628712863085,
+  "finalX": 522.4550170898438,
+  "finalY": 0.6802753806114197,
+  "speedKph": {
+    "min": 0.0,
+    "mean": 48.977980185754056,
+    "max": 58.3502082824707
+  },
+  "sRoadM": {
+    "min": 8.399996278265371,
+    "mean": 228.92698161048654,
+    "max": 523.4628712863085
+  },
+  "carTyM": {
+    "min": -1.9485081434249878,
+    "mean": 0.00794015555279084,
+    "max": 1.786729335784912
+  },
+  "absCarTyMaxM": 1.9485081434249878,
+  "vhclTRoadM": {
+    "min": -1.9378474950790405,
+    "mean": -0.009975748611043176,
+    "max": 1.7505773305892944
+  },
+  "absVhclTRoadMaxM": 1.9378474950790405,
+  "pathDevDistM": {
+    "min": -1.9378474950790405,
+    "mean": -0.009975748611043176,
+    "max": 1.7505773305892944
+  },
+  "absPathDevDistMaxM": 1.9378474950790405,
+  "routeDevDistM": {
+    "min": -1.9378474950790405,
+    "mean": -0.009975748611043176,
+    "max": 1.7505773305892944
+  },
+  "absRouteDevDistMaxM": 1.9378474950790405,
+  "pathDevAngRad": {
+    "min": -0.261936753988266,
+    "mean": 0.001274962675051001,
+    "max": 0.2701396644115448
+  },
+  "absPathDevAngMaxRad": 0.2701396644115448,
+  "routeDevAngRad": {
+    "min": -0.261936753988266,
+    "mean": 0.001274962675051001,
+    "max": 0.2701396644115448
+  },
+  "absRouteDevAngMaxRad": 0.2701396644115448,
+  "driverLatDyM": {
+    "min": -0.5449495315551758,
+    "mean": 0.0024460401032598282,
+    "max": 0.6161759495735168
+  },
+  "absDriverLatDyMaxM": 0.6161759495735168,
+  "yawRateRadps": {
+    "min": -0.6341934204101562,
+    "mean": 0.0007298791113931867,
+    "max": 0.6540479063987732
+  },
+  "absYawRateMaxRadps": 0.6540479063987732,
+  "vhclYawRateRadps": {
+    "min": -0.6341934204101562,
+    "mean": 0.0007298791113931867,
+    "max": 0.6540479063987732
+  },
+  "absVhclYawRateMaxRadps": 0.6540479063987732,
+  "sideSlipRad": {
+    "min": -0.05340151488780975,
+    "mean": -0.00018507451640905457,
+    "max": 0.04877793788909912
+  },
+  "absSideSlipMaxRad": 0.05340151488780975,
+  "latAccelMps2": {
+    "min": -8.569262504577637,
+    "mean": 0.01255294129811575,
+    "max": 8.672235488891602
+  },
+  "absLatAccelMaxMps2": 8.672235488891602,
+  "dmSteerAngRad": {
+    "min": -3.8354415893554688,
+    "mean": -0.013585128683568221,
+    "max": 3.0760555267333984
+  },
+  "absDmSteerAngMaxRad": 3.8354415893554688,
+  "dmSteerAngVelRadps": {
+    "min": -13.245591163635254,
+    "mean": -0.0038604654836488328,
+    "max": 16.181001663208008
+  },
+  "absDmSteerAngVelMaxRadps": 16.181001663208008,
+  "dmSteerAngAccRadps2": {
+    "min": -174.5329132080078,
+    "mean": -0.01775126296895678,
+    "max": 174.5329132080078
+  },
+  "absDmSteerAngAccMaxRadps2": 174.5329132080078,
+  "steerWhlAngRad": {
+    "min": -3.8354415893554688,
+    "mean": -0.013585128683568221,
+    "max": 3.0760555267333984
+  },
+  "absSteerWhlAngMaxRad": 3.8354415893554688,
+  "muRoadFL": {
+    "min": 1.0,
+    "mean": 1.0,
+    "max": 1.0
+  },
+  "pylonHitCount": 1,
+  "pylonHits": [
+    {
+      "record": 0,
+      "time": 30.705,
+      "sRoad": 400.640945,
+      "id": 0,
+      "side": 14,
+      "pos_0_x": 408.0,
+      "pos_0_y": -0.25
+    }
+  ],
+  "availableDefaultQuantities": [
+    "Car.Road.Path.DevAng",
+    "Car.Road.Path.DevDist",
+    "Car.Road.Route.DevAng",
+    "Car.Road.Route.DevDist",
+    "Car.SideSlipAngle",
+    "Car.YawRate",
+    "Car.ax",
+    "Car.ay",
+    "Car.muRoadFL",
+    "Car.muRoadFR",
+    "Car.muRoadRL",
+    "Car.muRoadRR",
+    "Car.tx",
+    "Car.ty",
+    "Car.v",
+    "DM.Brake",
+    "DM.Gas",
+    "DM.Steer.Ang",
+    "DM.Steer.AngAcc",
+    "DM.Steer.AngVel",
+    "Driver.Lat.dy",
+    "Steer.WhlAng",
+    "Time",
+    "Vhcl.YawRate",
+    "Vhcl.sRoad",
+    "Vhcl.tRoad"
+  ],
+  "roadDepartureLikely": false,
+  "ergPath": "/mnt/e/CarMakerProject/AGI/SimOutput/DESKTOP-QHUIRV6/20260606/LLM_MPC_BO_ICCAS_Slalom18m_UserSteer_CM4SL_144759.erg",
+  "infoPath": "/mnt/e/CarMakerProject/AGI/SimOutput/DESKTOP-QHUIRV6/20260606/LLM_MPC_BO_ICCAS_Slalom18m_UserSteer_CM4SL_144759.erg.info",
+  "dataOffsetBytes": 16,
+  "recordQuantityCount": 166,
+  "missingRequestedQuantities": [],
+  "sessionLogPath": "/mnt/e/CarMakerProject/AGI/SimOutput/DESKTOP-QHUIRV6/Log/DESKTOP-QHUIRV6_20260606_143140.log",
+  "sessionLog": {
+    "status": "SIM_END",
+    "durationS": 38.028,
+    "distanceM": 517.406,
+    "slalomTimeS": 11.415,
+    "averageSpeedKph": 56.77,
+    "roadDeparture": null,
+    "starts": [
+      {
+        "testrun": "LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL",
+        "startedAt": "2026-06-06 14:47:48"
+      },
+      {
+        "testrun": "LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL",
+        "startedAt": "2026-06-06 14:47:59"
+      }
+    ]
+  },
+  "csvPath": "llm_mpc_bo/results/processed/usersteer_cm4sl_latest_drive_log.csv",
+  "csvDownsample": 10
+}

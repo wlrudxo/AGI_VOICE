@@ -1,0 +1,24 @@
+{
+  "testrun": "LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_LowMu06",
+  "ergPath": "/mnt/e/CarMakerProject/AGI/SimOutput/DESKTOP-QHUIRV6/20260606/LLM_MPC_BO_ICCAS_Slalom18m_UserSteer_LowMu06_144832.erg",
+  "metrics": {
+    "RMSE_y": 1.2243655423166082,
+    "MAX_y": 4.0429558753967285,
+    "RMSE_e_psi": 0.1416257540809381,
+    "MAX_e_psi": 0.46181532740592957,
+    "RMSE_delta": 3.7201224879154116,
+    "RMSE_d_delta": 7.2600702485351905,
+    "MAX_yaw_rate": 0.5835682153701782,
+    "MAX_side_slip": 0.06546599417924881,
+    "N_violation": 6,
+    "crash_or_sim_fail": false,
+    "status": "SIM_END",
+    "durationS": 40.938,
+    "distanceM": 515.291
+  },
+  "objective": {
+    "J_continuous": 40.72740034667183,
+    "J_failClosed": 40.72740034667183,
+    "objectiveUsed": "continuous"
+  }
+}

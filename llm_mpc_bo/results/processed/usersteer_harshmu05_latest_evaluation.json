@@ -1,0 +1,24 @@
+{
+  "testrun": "LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_HarshMu05",
+  "ergPath": "/mnt/e/CarMakerProject/AGI/SimOutput/DESKTOP-QHUIRV6/20260606/LLM_MPC_BO_ICCAS_Slalom18m_UserSteer_HarshMu05_145559.erg",
+  "metrics": {
+    "RMSE_y": 1.434852566552394,
+    "MAX_y": 5.276083946228027,
+    "RMSE_e_psi": 0.14473284050274324,
+    "MAX_e_psi": 0.5779052972793579,
+    "RMSE_delta": 4.1077585003865815,
+    "RMSE_d_delta": 6.548301646477174,
+    "MAX_yaw_rate": 0.42541587352752686,
+    "MAX_side_slip": 0.05094846338033676,
+    "N_violation": 6,
+    "crash_or_sim_fail": true,
+    "status": "SIM_ABORT",
+    "durationS": 33.908,
+    "distanceM": 429.273
+  },
+  "objective": {
+    "J_continuous": 61.70304128198434,
+    "J_failClosed": 110.0,
+    "objectiveUsed": "hard_fail"
+  }
+}

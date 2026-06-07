@@ -1,0 +1,215 @@
+{
+  "generated": "2026-06-07 15:10:24",
+  "inputPath": "E:\\CarMakerProject\\AGI\\src_cm4sl\\Results.mat",
+  "outputDir": "E:\\GitProject\\AGI_VOICE\\llm_mpc_bo\\results\\processed\\results_mat_latest",
+  "samples": 37919,
+  "timeStart": 0,
+  "timeEnd": 37.918,
+  "duration": 37.918,
+  "finalS": 525.45574511186533,
+  "finalV": 0,
+  "finalT": -0.95172103052622925,
+  "finalTRef": 0.685260653,
+  "finalET": -1.6369816835262294,
+  "finalDevAng": 0.06883431851421562,
+  "finalPsiRef": 0.027993914,
+  "finalEPsi": 0.040840404514215618,
+  "metrics": {
+    "maxAbsET": 2.6614640352069809,
+    "rmseET": 0.75362192428162533,
+    "maxAbsEPsi": 0.32008402572841721,
+    "rmseEPsi": 0.10973117358087052,
+    "maxAbsLoggedDeltaCmd": 0.4946283731409451,
+    "rmseLoggedDeltaCmd": 0.17475104948899403,
+    "maxAbsAppliedDeltaCmd": 0.4946283731409451,
+    "rmseAppliedDeltaCmd": 0.17475104948899403,
+    "maxAbsAppliedDeltaRate": 1.5000000000003644,
+    "rmseAppliedDeltaRate": 0.45857970829431244,
+    "maxAbsSteerManual": 10.239204274140112,
+    "rmseSteerManual": 4.8118603626966845,
+    "maxAbsYawRate": 0.13776256823711241,
+    "meanSpeed": 13.641697521178228
+  },
+  "deltaCmdMode": "applied",
+  "signalNames": {
+    "s": "s",
+    "t": "t",
+    "t_ref": "t_ref",
+    "devang": "devang",
+    "psi_ref": "psi_ref",
+    "yawrate": "yawrate",
+    "v": "v",
+    "delta_cmd": "signal1",
+    "steer_manual": "steer_manual"
+  },
+  "signDiagnosis": {
+    "activeSamples": 14150,
+    "corrETLoggedDeltaCmd": -0.906223562917136,
+    "loggedSameSignFraction": 0.054275618374558306,
+    "loggedOppositeSignFraction": 0.9457243816254417,
+    "appliedCorrETDeltaCmd": -0.906223562917136,
+    "appliedSameSignFraction": 0.054275618374558306,
+    "appliedOppositeSignFraction": 0.9457243816254417,
+    "manualActiveSamples": 14266,
+    "corrETSteerManual": -0.87299438831642651,
+    "manualSameSignFraction": 0.095191364082433755,
+    "manualOppositeSignFraction": 0.90480863591756622,
+    "likelySignIssueLogged": false,
+    "likelySignIssueApplied": false
+  },
+  "events": {
+    "firstAbsETGt0p1": {
+      "found": true,
+      "time": 23.507,
+      "s": 293.57461997824686,
+      "value": -0.10011098667626184
+    },
+    "firstAbsETGt0p5": {
+      "found": true,
+      "time": 23.961000000000002,
+      "s": 300.88813960300962,
+      "value": -0.50033332793402252
+    },
+    "firstAbsAppliedDeltaCmdGt0p1": {
+      "found": true,
+      "time": 23.46,
+      "s": 292.81740070122339,
+      "value": 0.10024023227530483
+    },
+    "firstSGe280": {
+      "found": true,
+      "time": 22.665,
+      "s": 280.00902179504061,
+      "value": 0.0043071197549219148
+    },
+    "firstSGe300": {
+      "found": true,
+      "time": 23.906,
+      "s": 300.00227381944376,
+      "value": -0.43392434889354586
+    }
+  },
+  "erg": {
+    "available": true,
+    "path": "E:\\GitProject\\AGI_VOICE\\llm_mpc_bo\\results\\processed\\results_mat_latest\\latest_erg_summary.json",
+    "status": "SIM_END",
+    "pylonHitCount": 10,
+    "crashOrSimFail": false,
+    "durationS": 37.910000000000004,
+    "distanceM": 525.4075433512096
+  },
+  "objective": {
+    "JContinuous": 52.970208865834323,
+    "JFailClosed": 52.970208865834323,
+    "objectiveUsed": "continuous",
+    "NViolation": 10,
+    "crashOrSimFail": false,
+    "ergStatus": "SIM_END",
+    "components": {
+      "RMSE_y": 0.75362192428162533,
+      "MAX_y": 2.6614640352069809,
+      "RMSE_delta": 0.17475104948899403,
+      "RMSE_d_delta": 0.45857970829431244,
+      "MAX_yaw_rate": 0.13776256823711241
+    },
+    "normalization": {
+      "RMSE_y": 0.5,
+      "MAX_y": 1.5,
+      "RMSE_delta": 0.2,
+      "RMSE_d_delta": 0.8,
+      "MAX_yaw_rate": 0.8
+    }
+  },
+  "signalInfo": {
+    "signal1": {
+      "class": "timeseries",
+      "samples": 1896,
+      "timeStart": 0,
+      "timeEnd": 37.9,
+      "dataSize": [
+        1896,
+        1
+      ]
+    },
+    "psi_ref": {
+      "class": "timeseries",
+      "samples": 37919,
+      "timeStart": 0,
+      "timeEnd": 37.918,
+      "dataSize": [
+        37919,
+        1
+      ]
+    },
+    "t": {
+      "class": "timeseries",
+      "samples": 37919,
+      "timeStart": 0,
+      "timeEnd": 37.918,
+      "dataSize": [
+        37919,
+        1
+      ]
+    },
+    "devang": {
+      "class": "timeseries",
+      "samples": 37919,
+      "timeStart": 0,
+      "timeEnd": 37.918,
+      "dataSize": [
+        37919,
+        1
+      ]
+    },
+    "t_ref": {
+      "class": "timeseries",
+      "samples": 37919,
+      "timeStart": 0,
+      "timeEnd": 37.918,
+      "dataSize": [
+        37919,
+        1
+      ]
+    },
+    "steer_manual": {
+      "class": "timeseries",
+      "samples": 37919,
+      "timeStart": 0,
+      "timeEnd": 37.918,
+      "dataSize": [
+        37919,
+        1
+      ]
+    },
+    "yawrate": {
+      "class": "timeseries",
+      "samples": 37919,
+      "timeStart": 0,
+      "timeEnd": 37.918,
+      "dataSize": [
+        37919,
+        1
+      ]
+    },
+    "s": {
+      "class": "timeseries",
+      "samples": 37919,
+      "timeStart": 0,
+      "timeEnd": 37.918,
+      "dataSize": [
+        37919,
+        1
+      ]
+    },
+    "v": {
+      "class": "timeseries",
+      "samples": 37919,
+      "timeStart": 0,
+      "timeEnd": 37.918,
+      "dataSize": [
+        37919,
+        1
+      ]
+    }
+  }
+}
