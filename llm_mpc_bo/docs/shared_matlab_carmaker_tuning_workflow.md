@@ -358,6 +358,21 @@ latest_erg_summary.json
 latest_erg_drive_log.csv
 ```
 
+To plot one analyzed MPC trial as a trajectory/pylon PNG:
+
+```powershell
+py -3 llm_mpc_bo/scripts/plot_mpc_trial.py `
+  --trial-dir llm_mpc_bo/results/experiments/standard_slalom_replay_lhc0063/trials/replay_lhc0063 `
+  --label lhc_0063_replay
+```
+
+This reads `aligned_signals.csv` and `slalom18m_pylons.csv`, then writes:
+
+```text
+trajectory_pylons.png
+trial_time_signals.png
+```
+
 The BO objective is:
 
 ```matlab
