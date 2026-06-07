@@ -284,12 +284,12 @@ Example:
 ```powershell
 py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
   --strategy bo `
-  --count 30 `
-  --budget 30 `
-  --bo-init 10 `
-  --seed 7 `
+  --count 100 `
+  --budget 100 `
+  --bo-init 30 `
+  --seed 1 `
   --engine MATLAB_58352 `
-  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_bo_seed7
+  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_bo_seed1
 ```
 
 Dry-run verification completed:

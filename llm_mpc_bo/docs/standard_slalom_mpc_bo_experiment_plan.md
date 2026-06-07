@@ -388,8 +388,9 @@ Dry-run can be used to inspect the next candidates without running CarMaker:
 py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
   --strategy bo `
   --count 3 `
-  --budget 30 `
-  --seed 7 `
-  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_bo_seed7 `
+  --budget 100 `
+  --bo-init 30 `
+  --seed 1 `
+  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_bo_seed1 `
   --dry-run
 ```

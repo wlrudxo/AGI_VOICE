@@ -313,25 +313,6 @@ MAX |e_t|: 2.2070 m
 Applied sign issue: false
 ```
 
-Latest automated BO smoke/formalization result:
-
-```text
-Experiment dir: llm_mpc_bo/results/experiments/standard_slalom_bo_seed7
-Completed trials: 12
-Best run: bo_0010
-Status: SIM_END
-J: 2.1349
-Pylon hits: 0
-RMSE e_t: 0.2603 m
-MAX |e_t|: 0.9529 m
-Best params:
-  q_y = 42.7413
-  q_psi = 79.8466
-  q_r = 15.1523
-  r_delta = 0.5276
-  r_d_delta = 0.9608
-```
-
 Interpretation:
 
 - The current verified steering sign is `Gain=1`, not an added software sign
