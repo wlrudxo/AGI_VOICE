@@ -1373,3 +1373,36 @@ MAX |e_t|: 2.2070 m
 The first smoke attempt failed due MATLAB string escaping and was intentionally
 preserved as a failed ledger row. The second row succeeded. Experiment outputs
 are ignored by git under `llm_mpc_bo/results/experiments/`.
+
+## Addendum: BO Objective Recalibration
+
+Date: 2026-06-07
+
+The BO objective was recalibrated for the direct steering-wheel-angle command
+convention. The previous objective over-penalized steering command and steering
+rate because `delta_cmd` is now `VhclCtrl.Steering.Ang [rad]`.
+
+Current objective:
+
+```text
+J =
+  100 * simFail
+  + 50 * collisionDetected
+  + 25 * collisionCount
+  + 10 * pylonHits
+  + 2.0 * (rmseET / 0.5)
+  + 1.0 * (maxAbsET / 2.0)
+  + 0.5 * (rmseEPsi / 0.1)
+  + 0.3 * (maxYawRate / 0.7)
+  + 0.1 * (rmseDelta / 3.0)
+  + 0.05 * (rmseDeltaRate / 10.0)
+```
+
+Notes:
+
+- Pylon contacts are counted separately by `pylonHitCount` from
+  `Scratchpad.PylonHit.*`/ERG metadata.
+- Pylon contacts are not currently treated as generic collision signals.
+- Generic collision fields are included as extension points, but are currently
+  false/zero unless the ERG summary provides them.
+- The first BO target is reducing pylon hits while preserving `SIM_END`.

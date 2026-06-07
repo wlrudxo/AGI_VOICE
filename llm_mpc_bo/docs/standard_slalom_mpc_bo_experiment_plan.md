@@ -192,21 +192,25 @@ Use `summary.objective.JFailClosed` from:
 llm_mpc_bo/scripts/analyze_results_mat.m
 ```
 
-The objective should be recalibrated for steering wheel angle scale. The current
-implementation is usable for debugging but still over-penalizes steering command
-and steering-rate after the controller output was corrected to steering wheel
-angle units.
-
-Recommended objective structure:
+Current common BO objective structure:
 
 ```text
 J =
-  lateral tracking term
-  + heading/yaw smoothness term
-  + steering wheel command smoothness term
-  + pylon hit penalty
-  + fail-closed simulation penalty
+  100 * simFail
+  + 50 * collisionDetected
+  + 25 * collisionCount
+  + 10 * pylonHits
+  + 2.0 * (rmseET / 0.5)
+  + 1.0 * (maxAbsET / 2.0)
+  + 0.5 * (rmseEPsi / 0.1)
+  + 0.3 * (maxYawRate / 0.7)
+  + 0.1 * (rmseDelta / 3.0)
+  + 0.05 * (rmseDeltaRate / 10.0)
 ```
+
+The collision fields are reserved for non-pylon collision signals when they are
+available. Pylon contacts are currently counted separately by
+`pylonHitCount` from the ERG/session metadata, not as generic collisions.
 
 The first hard target is:
 

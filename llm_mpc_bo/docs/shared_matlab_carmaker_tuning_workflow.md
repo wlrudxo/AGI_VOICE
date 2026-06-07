@@ -295,9 +295,28 @@ summary.objective.JFailClosed
 Fail-closed behavior:
 
 ```text
-SIM_ABORT or missing ERG -> J = 50 + 10*NViolation
-SIM_END -> continuous tracking/control objective + 5*NViolation
+SIM_ABORT -> 100-point simFail penalty plus any known pylon hits
+SIM_END -> pylon-hit-dominant tracking/control objective
 ```
+
+Current BO objective:
+
+```text
+J =
+  100 * simFail
+  + 50 * collisionDetected
+  + 25 * collisionCount
+  + 10 * pylonHits
+  + 2.0 * (rmseET / 0.5)
+  + 1.0 * (maxAbsET / 2.0)
+  + 0.5 * (rmseEPsi / 0.1)
+  + 0.3 * (maxYawRate / 0.7)
+  + 0.1 * (rmseDelta / 3.0)
+  + 0.05 * (rmseDeltaRate / 10.0)
+```
+
+Pylon contacts are counted by `pylonHitCount`; they are not currently surfaced
+as generic collision events.
 
 Be careful with stale ERG matching. A previous run appeared to complete because
 the analyzer paired a one-sample `Results.mat` with a later `SIM_END` ERG. A
