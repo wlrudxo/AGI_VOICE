@@ -233,6 +233,16 @@ py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
   --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_bo_seed1
 ```
 
+```powershell
+py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
+  --strategy random `
+  --count 100 `
+  --budget 100 `
+  --seed 1 `
+  --engine MATLAB_58352 `
+  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_random_seed1
+```
+
 The important rule is to reuse the same `--experiment-dir` for the same
 optimization. The directory is the resumable state:
 
@@ -244,6 +254,17 @@ best_summary.json  best evaluated parameter set so far
 candidate_plan_*   deterministic LHC/random candidate plan
 trials/<run_id>/   per-trial summaries and analysis outputs
 ```
+
+After the batch command exits, the CLI also regenerates:
+
+```text
+objective_by_episode.png
+```
+
+This episode-vs-`J` plot is generated for LHC, random, and BO experiments from
+the current `trials.jsonl`. A zero-count rerun can refresh only the experiment
+summary plot without running new simulations. Use `--skip-objective-plot` only
+when plotting overhead is not wanted.
 
 If 12 trials were completed and the command is run again with the same method
 and directory, the next run starts at iteration 13. BO is executed sequentially:

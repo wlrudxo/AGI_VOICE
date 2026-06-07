@@ -55,12 +55,16 @@ def main() -> int:
             completed = completed_iterations(rows, args.method)
             candidate = plan_bo_candidate(args, experiment_dir, rows, completed)
             run_trial(args, repo_root, experiment_dir, candidate)
+        if not args.skip_objective_plot:
+            print(json.dumps({"objectivePlot": generate_objective_plot(args, repo_root, experiment_dir)}, ensure_ascii=False))
         return 0
 
     candidates = plan_candidates(args, experiment_dir, rows, completed)
     for candidate in candidates:
         run_trial(args, repo_root, experiment_dir, candidate)
 
+    if not args.skip_objective_plot:
+        print(json.dumps({"objectivePlot": generate_objective_plot(args, repo_root, experiment_dir)}, ensure_ascii=False))
     return 0
 
 
@@ -84,6 +88,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--trial-cli", default="llm_mpc_bo/scripts/mpc_trial_cli.py")
     parser.add_argument("--load-testrun", action="store_true")
     parser.add_argument("--allow-uncurated", action="store_true")
+    parser.add_argument("--skip-objective-plot", action="store_true")
+    parser.add_argument("--plot-python", default="py -3", help="Python command for matplotlib plotting. Default: py -3")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     if args.count < 0:
@@ -344,6 +350,28 @@ def run_trial(args: argparse.Namespace, repo_root: Path, experiment_dir: Path, c
     candidate_path = experiment_dir / "candidates.jsonl"
     append_jsonl(candidate_path, candidate_to_json(candidate))
     subprocess.run(command, cwd=str(repo_root), check=True)
+
+
+def generate_objective_plot(args: argparse.Namespace, repo_root: Path, experiment_dir: Path) -> dict[str, Any]:
+    script = repo_root / "llm_mpc_bo" / "scripts" / "plot_experiment_objective.py"
+    command = args.plot_python.split() + [
+        str(script),
+        "--experiment-dir",
+        str(experiment_dir),
+        "--title",
+        f"{args.method} seed{args.seed}, {args.budget} budget",
+    ]
+    try:
+        result = subprocess.run(
+            command,
+            cwd=str(repo_root),
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return {"ok": True, **json.loads(result.stdout)}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
 
 
 def read_ledger(path: Path) -> list[dict[str, Any]]:

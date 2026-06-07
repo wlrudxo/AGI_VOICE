@@ -28,6 +28,25 @@ summary.objective.JFailClosed
 Lower is better. Pylon hits dominate the current objective through a
 `10 * pylonHits` penalty.
 
+## Current Comparison
+
+| Method | Seed | Trials | SIM_END | SIM_ABORT | Pylon-free | `pylonHits <= 2` | Best run | Best J | Best RMSE e_t | Best max e_t |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: |
+| LHC | 1 | 100 | 93 | 7 | 2 | 18 | `lhc_0063` | 1.8451 | 0.2343 | 0.7036 |
+| BO, 30 LHC init + 70 EI | 1 | 100 | 99 | 1 | 13 | 40 | `bo_0071` | 1.6997 | 0.2082 | 0.6969 |
+| Random | 1 | 100 | 91 | 9 | 2 | 16 | `random_0083` | 2.3219 | 0.2924 | 1.0648 |
+
+Interpretation:
+
+- BO is currently the strongest non-LLM optimizer on this scenario: it improved
+  best `J`, produced more pylon-free candidates, and had fewer aborts than LHC
+  or random search under the same 100-trial budget.
+- Random search remains useful as a plain sampling baseline, but it is weaker
+  than LHC and BO in this seed.
+- Keep `boInit=30` for the main experiment. A `boInit` ablation such as
+  10/20/30/50 is methodologically valid, but it is a secondary study rather
+  than necessary for the first comparison.
+
 ## LHC Seed 1, 100 Trials
 
 Experiment:
@@ -107,3 +126,134 @@ Top 10 trials by objective:
 | 8 | 75 | 22.0954 | SIM_END | 2 | 0.2785 | 0.8671 |
 | 9 | 8 | 22.4129 | SIM_END | 2 | 0.3083 | 1.0751 |
 | 10 | 97 | 22.5837 | SIM_END | 2 | 0.3317 | 1.1868 |
+
+## BO Seed 1, 100 Trials
+
+Experiment:
+
+```text
+method: bo
+seed: 1
+budget: 100
+boInit: 30
+experimentDir: llm_mpc_bo/results/experiments/standard_slalom_bo_seed1
+completedAt: 2026-06-07 18:17 KST
+```
+
+Aggregate:
+
+| Metric | Value |
+| --- | ---: |
+| Trials | 100 |
+| Successful CLI rows | 100 |
+| SIM_END | 99 |
+| SIM_ABORT | 1 |
+| `pylonHits = 0` | 13 |
+| `pylonHits = 1` | 11 |
+| `pylonHits <= 2` | 40 |
+
+Best trial:
+
+```text
+runId: bo_0071
+J: 1.6996505791
+status: SIM_END
+pylonHits: 0
+rmseET: 0.208163 m
+maxAbsET: 0.6968829 m
+rmseDelta: 1.373435 rad
+rmseDeltaRate: 4.569954 rad/s
+maxYawRate: 0.699621 rad/s
+```
+
+Best parameters:
+
+| Parameter | Value |
+| --- | ---: |
+| `q_y` | 3.0285391641 |
+| `q_psi` | 14.1305688054 |
+| `q_r` | 0.0100000000 |
+| `r_delta` | 0.0192763649 |
+| `r_d_delta` | 0.3122725205 |
+
+Generated check plot:
+
+```text
+llm_mpc_bo/results/experiments/standard_slalom_bo_seed1/objective_by_episode.png
+```
+
+Interpretation:
+
+- BO seed 1 improved slightly beyond the best LHC seed 1 result within the same
+  100-trial budget.
+- The current best BO trial is pylon-free and keeps the same direct
+  steering-wheel-angle convention as the rest of the formal experiments.
+
+## Random Seed 1, 100 Trials
+
+Experiment:
+
+```text
+method: random
+seed: 1
+budget: 100
+experimentDir: llm_mpc_bo/results/experiments/standard_slalom_random_seed1
+completedAt: 2026-06-07 18:46 KST
+```
+
+Aggregate:
+
+| Metric | Value |
+| --- | ---: |
+| Trials | 100 |
+| Successful CLI rows | 100 |
+| SIM_END | 91 |
+| SIM_ABORT | 9 |
+| `pylonHits = 0` | 2 |
+| `pylonHits = 1` | 5 |
+| `pylonHits <= 2` | 16 |
+
+Best trial:
+
+```text
+runId: random_0083
+J: 2.3218586095
+status: SIM_END
+pylonHits: 0
+rmseET: 0.292382 m
+maxAbsET: 1.064809 m
+rmseDelta: 1.615388 rad
+rmseDeltaRate: 4.597987 rad/s
+maxYawRate: 0.713366 rad/s
+```
+
+Best parameters:
+
+| Parameter | Value |
+| --- | ---: |
+| `q_y` | 44.5685708544 |
+| `q_psi` | 0.8617992177 |
+| `q_r` | 2.5592018542 |
+| `r_delta` | 3.5234926302 |
+| `r_d_delta` | 0.1302695738 |
+
+Generated check plot:
+
+```text
+llm_mpc_bo/results/experiments/standard_slalom_random_seed1/objective_by_episode.png
+```
+
+Top 10 trials by objective:
+
+| Rank | Iter | J | Status | Pylons | RMSE e_t | Max e_t |
+| ---: | ---: | ---: | --- | ---: | ---: | ---: |
+| 1 | 83 | 2.3219 | SIM_END | 0 | 0.2924 | 1.0648 |
+| 2 | 50 | 11.8063 | SIM_END | 1 | 0.2214 | 0.7617 |
+| 3 | 76 | 12.0118 | SIM_END | 1 | 0.2562 | 0.7967 |
+| 4 | 60 | 12.0586 | SIM_END | 1 | 0.2602 | 0.9154 |
+| 5 | 52 | 12.3518 | SIM_END | 1 | 0.2969 | 0.9698 |
+| 6 | 80 | 12.5686 | SIM_END | 1 | 0.3403 | 1.1185 |
+| 7 | 78 | 22.6536 | SIM_END | 2 | 0.3256 | 1.3118 |
+| 8 | 92 | 22.8952 | SIM_END | 2 | 0.3436 | 1.7039 |
+| 9 | 19 | 23.0127 | SIM_END | 2 | 0.3675 | 1.6408 |
+| 10 | 51 | 23.2565 | SIM_END | 2 | 0.3932 | 1.9403 |
