@@ -204,11 +204,11 @@ def decode_normalized(values: list[Any]) -> dict[str, float]:
     import math
 
     ranges = {
-        "q_y": (0.1, 100.0),
-        "q_psi": (0.1, 100.0),
-        "q_r": (0.01, 30.0),
-        "r_delta": (0.01, 10.0),
-        "r_d_delta": (0.01, 10.0),
+        "q_y": (0.01, 100.0),
+        "q_psi": (0.01, 100.0),
+        "q_r": (0.01, 100.0),
+        "r_delta": (0.01, 100.0),
+        "r_d_delta": (0.01, 100.0),
     }
     params: dict[str, float] = {}
     for key, raw in zip(TUNED_KEYS, values):

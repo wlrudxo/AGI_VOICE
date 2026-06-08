@@ -16,11 +16,11 @@ from typing import Any
 
 TUNED_KEYS = ("q_y", "q_psi", "q_r", "r_delta", "r_d_delta")
 LOG_RANGES = {
-    "q_y": (0.1, 100.0),
-    "q_psi": (0.1, 100.0),
-    "q_r": (0.01, 30.0),
-    "r_delta": (0.01, 10.0),
-    "r_d_delta": (0.01, 10.0),
+    "q_y": (0.01, 100.0),
+    "q_psi": (0.01, 100.0),
+    "q_r": (0.01, 100.0),
+    "r_delta": (0.01, 100.0),
+    "r_d_delta": (0.01, 100.0),
 }
 
 
@@ -50,9 +50,12 @@ def main() -> int:
         return 0
 
     if args.strategy == "bo":
-        for _ in range(args.count):
+        target_count = target_trial_count(args)
+        for _ in range(new_trial_limit(completed, target_count, args.max_new_trials)):
             rows = read_ledger(experiment_dir / "trials.jsonl")
             completed = completed_iterations(rows, args.method)
+            if len(completed) >= target_count:
+                break
             candidate = plan_bo_candidate(args, experiment_dir, rows, completed)
             run_trial(args, repo_root, experiment_dir, candidate)
         print(json.dumps({"objectivePlot": generate_objective_plot(args, repo_root, experiment_dir)}, ensure_ascii=False))
@@ -79,8 +82,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--strategy", choices=["lhc", "random", "bo"], required=True)
     parser.add_argument("--method", default=None, help="Ledger method label. Defaults to strategy.")
-    parser.add_argument("--count", type=int, required=True, help="Number of new trials to run.")
-    parser.add_argument("--budget", type=int, default=None, help="Total planned trials for LHC/random plan.")
+    parser.add_argument("--count", type=int, required=True, help="Target total completed trials for this experiment directory.")
+    parser.add_argument("--budget", type=int, default=None, help="Total planned search budget. Defaults to --count.")
+    parser.add_argument("--max-new-trials", type=int, default=None, help="Optional cap on newly executed trials in this invocation.")
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--bo-init", type=int, default=10, help="Random/LHC observations before BO exploitation.")
     parser.add_argument("--bo-candidates", type=int, default=512, help="Candidate pool size for BO acquisition.")
@@ -99,12 +103,14 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
     if args.count < 0:
         parser.error("--count must be non-negative")
+    if args.max_new_trials is not None and args.max_new_trials < 0:
+        parser.error("--max-new-trials must be non-negative")
     if args.budget is not None and args.budget < args.count:
         parser.error("--budget must be >= --count")
     if args.method is None:
         args.method = args.strategy
     if args.budget is None:
-        args.budget = max(args.count, 30)
+        args.budget = args.count
     return args
 
 
@@ -151,12 +157,17 @@ def plan_candidates(
     rows: list[dict[str, Any]],
     completed: set[int],
 ) -> list[Candidate]:
-    if args.count == 0:
+    target_count = target_trial_count(args)
+    if target_count == 0:
         return []
 
     if args.strategy in {"lhc", "random"}:
         plan = load_or_create_space_plan(experiment_dir, args.strategy, args.seed, args.budget)
-        iterations = next_missing_iterations(completed, args.budget, args.count)
+        iterations = next_missing_iterations(
+            completed,
+            target_count,
+            new_trial_limit(completed, target_count, args.max_new_trials),
+        )
         return [
             make_candidate(args.method, iteration, plan[iteration - 1], args.strategy)
             for iteration in iterations
@@ -206,7 +217,8 @@ def plan_bo_candidates(
     completed: set[int],
 ) -> list[Candidate]:
     candidates: list[Candidate] = []
-    for _ in range(args.count):
+    target_count = target_trial_count(args)
+    for _ in range(new_trial_limit(completed, target_count, args.max_new_trials)):
         candidate = plan_bo_candidate(args, experiment_dir, rows, completed)
         candidates.append(candidate)
         if args.dry_run:
@@ -231,7 +243,7 @@ def plan_bo_candidate(
     rows: list[dict[str, Any]],
     completed: set[int],
 ) -> Candidate:
-    next_iter = first_missing_iteration(completed)
+    next_iter = first_missing_iteration(completed, args.budget)
     observations = successful_observations(rows)
 
     if len(observations) < args.bo_init:
@@ -465,14 +477,27 @@ def next_missing_iterations(completed: set[int], budget: int, count: int) -> lis
                 return iterations
     if iterations:
         return iterations
-    raise RuntimeError(f"No remaining iterations in budget={budget}; completed={len(completed)}")
+    return []
 
 
-def first_missing_iteration(completed: set[int]) -> int:
+def first_missing_iteration(completed: set[int], budget: int) -> int:
     iteration = 1
     while iteration in completed:
         iteration += 1
+        if iteration > budget:
+            raise RuntimeError(f"No remaining iterations in budget={budget}; completed={len(completed)}")
     return iteration
+
+
+def target_trial_count(args: argparse.Namespace) -> int:
+    return min(args.count, args.budget)
+
+
+def new_trial_limit(completed: set[int], target_count: int, max_new_trials: int | None) -> int:
+    remaining = max(0, target_count - len(completed))
+    if max_new_trials is not None:
+        return min(remaining, max_new_trials)
+    return remaining
 
 
 def decode_normalized(values: list[float]) -> dict[str, float]:

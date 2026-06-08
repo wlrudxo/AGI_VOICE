@@ -280,9 +280,12 @@ runtime and disk churn. Each trial still keeps `aligned_signals.csv`,
 `sroad_tracking.png` are needed.
 
 If 12 trials were completed and the command is run again with the same method
-and directory, the next run starts at iteration 13. BO is executed sequentially:
-after each trial it rereads `trials.jsonl`, updates the surrogate from all
-successful observations, and proposes the next candidate.
+and directory with `--count 100 --budget 100`, the next run starts at iteration
+13 and stops at 100 total completed trials. `--count` is the target total trial
+count, not the number of additional trials to append. Use `--max-new-trials N`
+only for short interactive continuations. BO is executed sequentially: after
+each trial it rereads `trials.jsonl`, updates the surrogate from all successful
+observations, and proposes the next candidate.
 
 For the main 5D tuning experiment, use `--budget 100 --bo-init 30` as the
 standard comparison setting, or a larger one-off budget when diagnosing a hard
@@ -308,8 +311,9 @@ Dry-run shows the next candidates without starting CarMaker/Simulink:
 ```powershell
 py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
   --strategy bo `
-  --count 3 `
+  --count 100 `
   --budget 100 `
+  --max-new-trials 3 `
   --bo-init 30 `
   --seed 1 `
   --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_bo_seed1 `
@@ -434,19 +438,19 @@ Current simplified BO objective for the next formal nominal runs:
 
 ```text
 J =
-  100 * simFail
-  + 50 * collisionDetected
-  + 25 * collisionCount
-  + 10 * pylonHits
-  + 8.0 * rmseET
-  + 3.0 * maxAbsET
-  + 1.0 * rmseEPsi
+  100.0 * simFail
+  + 10.0 * pylonHits
+  + 4.0 * rmseET
+  + 0.5 * maxAbsET
+  + 5.0 * rmseEPsi
 ```
 
-Pylon contacts are counted by `pylonHitCount`; they are not currently surfaced
-as generic collision events. Steering angle/rate terms are no longer directly
-penalized in the outer-loop BO objective; keep them as MPC internal weights and
-secondary report metrics. See
+Here `simFail` is interpreted as road departure, crash, or simulation abort.
+Pylon contacts are counted by `pylonHitCount`; generic collision fields are
+reported when available but are not separately penalized in the current scalar
+objective. Steering angle/rate terms are no longer directly penalized in the
+outer-loop BO objective; keep them as MPC internal weights and secondary report
+metrics. See
 `docs/mpc_search_space_objective_revision_20260607.md`.
 
 Be careful with stale ERG matching. A previous run appeared to complete because

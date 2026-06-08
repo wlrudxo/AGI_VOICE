@@ -68,9 +68,9 @@ mpcobj.MV.RateMin = -10.0;
 mpcobj.MV.RateMax =  10.0;
 ```
 
-These values are intentionally wide steering-wheel angle/rate limits in the
-MPC command domain. The formal optimizer should find usable behavior through
-the MPC weights rather than by shrinking steering limits.
+These values are intentionally wide steering-wheel angle/rate limits in the MPC
+command domain. Keep them fixed during formal optimization so that the
+benchmark focuses on MPC-weight tuning rather than actuator-limit exploration.
 
 ## Tuned Variables
 
@@ -206,31 +206,33 @@ validated and BO-driven.
 
 ## Trial Budget
 
-Main 100-trial design:
+Main calibrated design:
 
 ```text
-BO method: 30 LHC initialization trials + 70 BO/EI trials
-Hybrid BO method: 10 broad LHC trials + BO, with LLM region updates around
-                  trials 10, 30, and 60
-Grid/LHC baseline: 100 LHC trials
-Random baseline: 100 random log-uniform trials
+5D BO method: 30 LHC initialization trials + BO/EI up to 100 total trials
+4D follow-up BO method: 15 LHC initialization trials + BO/EI up to 50 total trials
+Hybrid BO method: short BO blocks with LLM region updates every 5-10 trials
+Grid/LHC baseline: 50-100 LHC trials, matched to the BO budget for the run
+Random baseline: 50-100 random log-uniform trials, matched to the BO budget
 ```
 
-For BO, use:
+For the current LowMu07 follow-up, prefer the 4D/50-trial design:
 
 ```text
-budget = 100
-bo_init = 30
+q_r = fixed at 0.01 or removed from the tuned vector
+budget = 50
+bo_init = 15
 seed = fixed per repeated experiment
 ```
 
-This is enough to form a meaningful 5D surrogate while keeping total runtime
-manageable when one run is about 10-20 seconds.
-
-The earlier 30-trial budget remains useful only for smoke/pipeline validation,
-not for final method comparison.
-
-Each completed 100-trial run should produce:
+This keeps runtime manageable and reflects the current observation that `q_r`
+is repeatedly pushed to the lower bound in the calibrated 5D LowMu07 run.
+A 3-level full factorial design over 4 variables would require `3^4 = 81`
+simulations. That is useful as a coverage reference, but the formal comparison
+should stay at 50 trials when the region has already been tightened by prior
+BO/LLM diagnosis. A 30-trial budget is reserved for quick feasibility checks,
+not final comparison.
+Each completed run should produce:
 
 ```text
 best objective vs iteration
@@ -272,18 +274,18 @@ Current simplified BO objective structure for the next formal runs:
 
 ```text
 J =
-  100 * simFail
-  + 50 * collisionDetected
-  + 25 * collisionCount
-  + 10 * pylonHits
-  + 8.0 * rmseET
-  + 3.0 * maxAbsET
-  + 1.0 * rmseEPsi
+  100.0 * simFail
+  + 10.0 * pylonHits
+  + 4.0 * rmseET
+  + 0.5 * maxAbsET
+  + 5.0 * rmseEPsi
 ```
 
-The collision fields are reserved for non-pylon collision signals when they are
-available. Pylon contacts are currently counted separately by
-`pylonHitCount` from the ERG/session metadata, not as generic collisions.
+Here `simFail` is interpreted as road departure, crash, or simulation abort.
+Pylon contacts are counted separately by `pylonHitCount` from the ERG/session
+metadata. Generic collision fields are reported when available but are not
+separately penalized in the current scalar objective because they duplicate the
+fail-closed road-departure/crash signal in this scenario.
 
 The outer-loop objective should prioritize closed-loop path-following success
 and pylon avoidance. Steering angle and steering-rate usage should be controlled
@@ -309,7 +311,7 @@ Current model/setup:
 ```text
 Simulink steering Gain: 1
 MPC output: steering wheel angle command [rad]
-MPC plant input scale: none
+MPC prediction input calibration: steeringCmdInputScale = 20
 Constraints: fixed [-12, 12] rad, rate [-10, 10] rad/s
 ```
 
@@ -388,6 +390,13 @@ Use one `--experiment-dir` as the persistent optimization state. After an
 optimization has already run `n` trials, reuse the same directory and the CLI
 continues from the next missing iteration instead of starting over.
 
+`--count` means the target total number of completed trials in that experiment
+directory. It is not the number of additional trials to append. For example, if
+`trials.jsonl` already contains 92 completed BO trials, `--count 100 --budget
+100` runs only trials 93-100 and then stops. Use `--max-new-trials N` when an
+interactive session should intentionally stop after at most `N` newly executed
+simulations.
+
 State files:
 
 ```text
@@ -439,8 +448,9 @@ Dry-run can be used to inspect the next candidates without running CarMaker:
 ```powershell
 py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
   --strategy bo `
-  --count 3 `
+  --count 100 `
   --budget 100 `
+  --max-new-trials 3 `
   --bo-init 30 `
   --seed 1 `
   --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_bo_seed1 `
