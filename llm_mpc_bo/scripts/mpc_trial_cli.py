@@ -51,7 +51,7 @@ def main() -> int:
         record["ok"] = True
         if not args.skip_trial_plots:
             record["plots"] = generate_trial_plots(args, repo_root, trial_dir, run_id)
-    except Exception as exc:  # keep a recoverable experiment ledger
+    except Exception as exc:
         record.update(
             {
                 "ok": False,
@@ -61,8 +61,6 @@ def main() -> int:
                 "pylonHits": None,
             }
         )
-        append_jsonl(experiment_dir / "trials.jsonl", record)
-        update_best_summary(experiment_dir)
         print(json.dumps(compact_record(record), ensure_ascii=False))
         raise
 

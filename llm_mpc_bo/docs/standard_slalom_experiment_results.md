@@ -295,3 +295,73 @@ Interpretation:
 - Manual steering stayed within the `±12 rad` angle limit but exceeded the
   `±0.6 rad/s` rate limit frequently, so the next run relaxes the fixed
   steering-wheel rate constraint to `±10 rad/s`.
+
+## LowMu06 BO Seed 1, 150 Trials, Rate Limit 10 rad/s
+
+Experiment:
+
+```text
+method: bo
+seed: 1
+budget: 150
+boInit: 50
+scenario: LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_LowMu06
+experimentDir: llm_mpc_bo/results/experiments/lowmu06_bo_rate10_seed1
+completedAt: 2026-06-07 20:37 KST
+```
+
+Aggregate:
+
+| Metric | Value |
+| --- | ---: |
+| Trials | 150 |
+| Successful CLI rows | 150 |
+| Minimum pylon hits | 5 |
+| `pylonHits = 5` | 17 |
+| `pylonHits <= 4` | 0 |
+
+Best trial:
+
+```text
+runId: bo_0046
+J: 51.8673143817
+status: SIM_END
+pylonHits: 5
+rmseET: 0.244035 m
+maxAbsET: 0.810291 m
+rmseDelta: 1.756321 rad
+rmseDeltaRate: 10.709694 rad/s
+mvRateMin/Max: [-10, 10] rad/s
+```
+
+Best parameters:
+
+| Parameter | Value |
+| --- | ---: |
+| `q_y` | 8.5728823207 |
+| `q_psi` | 1.3806865208 |
+| `q_r` | 0.1377094269 |
+| `r_delta` | 0.0463628419 |
+| `r_d_delta` | 0.1764682553 |
+
+Interpretation:
+
+- Relaxing the steering-rate constraint improved the best tracking metrics, but
+  did not reduce pylon contacts below 5.
+- The best result appeared at iteration 46; later BO iterations did not break
+  the 5-hit plateau.
+- This run used the previous search range
+  `q_y,q_psi=[0.1,100]`, `q_r=[0.01,30]`,
+  `r_delta,r_d_delta=[0.01,10]`. It should be treated as a LowMu06 stress-test
+  result, not as the final widened-range formal setting.
+
+Next planned formal setting:
+
+```text
+Scenario: nominal Slalom18m/UserSteer unless explicitly running a stress test
+Steering constraints: MV.Min/Max = [-12, 12] rad
+Steering rate constraints: MV.RateMin/Max = [-10, 10] rad/s
+No steering ratio, input scale, or Vx_model tuning variable
+Weight ranges:
+  all five MPC weights: [0.01, 100] on a logarithmic scale
+```

@@ -32,8 +32,7 @@ run(fullfile(slalomSimulinkDir, 'init_slalom_reference.m'));
 % Fixed sample time for the first MPC block trial.
 Ts = 0.02;
 
-% Nominal forward speed used in the lateral bicycle model [m/s].
-% BO can later tune this together with the MPC weights if needed.
+% Nominal forward speed used in the fixed lateral bicycle model [m/s].
 Vx = 12.0;
 
 % State/output convention:
@@ -41,10 +40,10 @@ Vx = 12.0;
 %   y = [lateral_deviation; heading_error; yaw_rate]
 %   u = VhclCtrl.Steering.Ang steering wheel angle command [rad]
 %
-% The simple bicycle model input is front-wheel steering angle by convention,
-% while CarMaker VhclCtrl.Steering.Ang is steering-wheel angle. Use an
-% empirical steering-wheel command scale so mpcobj.MV is in the same unit as
-% the CarMaker input. The Simulink Gain after the MPC block should be 1.
+% The formal experiment does not tune or apply steering ratio/input-scale
+% factors. The MPC manipulated variable is the same steering-wheel command
+% signal sent to VhclCtrl.Steering.Ang. The Simulink Gain after the MPC block
+% should be 1.
 m = 1575;
 Iz = 2875;
 lf = 1.2;
@@ -52,7 +51,6 @@ lr = 1.6;
 Cf = 19000;
 Cr = 33000;
 steerSign = 1.0;
-steeringCmdInputScale = 20.0;
 
 a1 = -(2*Cf + 2*Cr) / (m * Vx);
 a2 = -(2*Cf*lf - 2*Cr*lr) / (m * Vx) - Vx;
@@ -66,7 +64,7 @@ Ac = [a1, a2, 0.0, 0.0;
       1.0, 0.0, 0.0, Vx;
       0.0, 1.0, 0.0, 0.0];
 
-Bc = steerSign * [b1; b2; 0.0; 0.0] / steeringCmdInputScale;
+Bc = steerSign * [b1; b2; 0.0; 0.0];
 
 C = [0.0, 0.0, 1.0, 0.0;
      0.0, 0.0, 0.0, 1.0;
@@ -94,6 +92,6 @@ mpcobj.Weights.OutputVariables = [5.0 2.0 0.2];
 mpcobj.Weights.ManipulatedVariables = 0.2;
 mpcobj.Weights.ManipulatedVariablesRate = 2.0;
 
-clear Ac Bc C D Ts plant plant_c Vx m Iz lf lr Cf Cr steerSign steeringCmdInputScale;
+clear Ac Bc C D Ts plant plant_c Vx m Iz lf lr Cf Cr steerSign;
 clear a1 a2 a3 a4 b1 b2 agiVoiceRoot slalomSimulinkDir;
 clear mpcVerbosityStatus;

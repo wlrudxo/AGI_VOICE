@@ -1,0 +1,151 @@
+%% document class file for the preparation of a paper
+%% for the International Conference ICCAS 2020
+%% global option 'fleqn' ensures equations flush left.
+%% set '10pt' and 'twocolumn' options.
+
+\documentclass[10pt,twocolumn]{ICCAS}
+ 
+%%%%%%% set heading and page number hear %%%%%%%%%%
+% % Do not put page numbers for submission.
+%\setcounter{page}{101}
+
+\usepackage{diagbox}
+
+\begin{document}
+
+\title{Preparation of Papers in a Two-Column Format for\\ the International Conference on Control, Automation, and Systems}
+
+\author{First A. Author${}^{1}$ and Second B. Author${}^{2*}$ }
+
+\affils{ ${}^{1}$Department of Electrical Engineering, Hankook University, \\
+Seoul, 13391, Korea (first@hankook.ac.kr) \\
+${}^{2}$Department of Mechanical Engineering, Hankook University, \\
+Seoul, 13391, Korea (second@hankook.ac.kr) {\small${}^{*}$ Corresponding author}}
+
+%\thanks{ \noindent
+%   This paper is supported by my funding agencies.
+%  }
+
+\abstract{
+    It is recommended that your abstract contain 150-200 words.
+}
+
+\keywords{
+    Selected keywords relevant to the subject.
+}
+
+\maketitle
+
+%-----------------------------------------------------------------------
+
+\section{Introduction}
+Each paper must be divided into two parts. The first part includes the title, authors' name, abstract, and keywords. The second part is the main body of the paper.
+
+\section{Paper size and format}
+\textbf{Only PDF files} are acceptable. Each paper size should be
+A4 (21.0cm$\times$29.7cm) and the following margins should be set:
+
+\begin{center}
+\begin{tabular}{lc}
+    Left margin  &  20mm \\
+    Right margin &  20mm \\
+    Top margin   &  25mm \\
+    Bottom margin&  25mm \\
+    Column width &  80mm \\
+\end{tabular}
+\end{center}
+
+
+\section{Fonts and style}
+
+\subsection{First part}
+The first part includes the paper title, authors' name, abstract,
+and keywords. All fonts must be in Times New Roman, and the font
+size of the title, authors' name, affiliation, abstract, and
+keywords are bold 12pt, 11pt, 10pt, 10pt, and 10pt, respectively.
+
+\subsection{Paper body}
+The second part consisting of the paper body must be edited in the double column format, with each column 80mm width and separated by 10mm. The top-level heading, usually called section, numbered in Arabic numerals, shall appear centered on the column with Times New Roman capital bold 11pt. The numbered level-two heading starts from the left in Times New Roman bold 10pt font. The main text uses Times New Roman 10pt font with single spacing. New paragraphs indent 4mm on the first line.
+
+\section{Figures, tables, and equations}
+
+\subsection{Figures and tables}
+All figures and tables should be placed after their first 
+
+\newpage
+\noindent
+mention in the text. Large
+figures and tables may span across both columns. Scanned images (e.g., line art, photos)
+can be used if the output resolution is at least 600 dpi.
+
+\begin{figure}[thb]
+\begin{center}
+%\includegraphics[height=3cm]{test.eps}
+\includegraphics[width=6.5cm]{test.eps}
+\caption{\label{test}The caption should be placed after the figure.}
+\end{center}
+\end{figure}
+
+Figure captions should be below the figures; table captions should be above the tables.
+They should be referred to in the text as, for example, Fig. \ref{test}, or Figs.
+1$\sim$3.\\
+
+\begin{table}[htb]
+\setlength{\extrarowheight}{0.75ex}
+\caption{The caption should be placed before the table.}
+\begin{center}
+\begin{tabu}to\linewidth{|X[c]|X[c]|X[c]|X[c]|}\hline
+\diagbox[width=4.7pc, height=1.5pc]{~}{~} &   A   &   B   &   C \\\hline
+(1) & 150\% & 16.3\% & 18.2\% \\\hline
+\end{tabu}
+\end{center} 
+\end{table}
+
+\subsection{Equations}
+Equation numbers should be Arabic numerals enclosed in parentheses
+on the right-hand margin. They should be cited in the text as, for
+example, Eq. (1), or Eqs. (1)$\sim$(3). Equations are located in the middle and equation numbers are located at the end. Punctuate equations with commas or periods when
+they are part of a sentence. For example,
+\begin{align}
+&\dot{x} =  Ax+Bu, \label{eq.1}\\
+&y  =  Cx+Du. \label{eq.2}
+\end{align}
+ 
+\subsection{References} References should appear in a separate
+bibliography at the end of the paper, with items referred to by
+numerals in square brackets [1, 4-5]. Times New Roman 10pt is used
+for references.
+%\cite{ref1}. Times New Roman 10pt is used for references.
+
+\section{Page Numbers}
+Do not put a page number in the manuscript PDF.
+
+
+
+%\section*{ACKNOWLEDGEMENT}
+%
+%This paper has been supported by NRF of Korea in 2021.
+
+
+%%%%%%%%%%%%%%%%% BIBLIOGRAPHY IN THE LaTeX file !!!!! %%%%%%%%%%%%%%%%%%%%%%
+%%---------------------------------------------------------------------------%%
+%
+\begin{thebibliography}{99}
+
+\bibitem{ref1}
+J. H. Bong, ``Controlling the parasite,'' in \textit{Proc. of International Conference on Control, Automation and Systems}, pp. 0209-0210, 2020
+
+
+\bibitem{ref2}
+A. Alice and B. Bob, ``Nonlinear unstable systems,'' \textit{International Journal of Control, Automation, and Systems}, vol. 23, no. 4, pp. 123-145, 1989.
+
+\bibitem{ref3}
+M. Young, \textit{The Technical Writer's Handbook}, Mill Valley, Seoul, 1989.
+
+
+
+\end{thebibliography}
+%
+%%--------------------------------------------------------------------%%
+
+\end{document}

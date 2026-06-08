@@ -144,11 +144,11 @@ Current convention:
 ```text
 MPC output delta_cmd = VhclCtrl.Steering.Ang [rad]
 Simulink steering Gain = 1
-constraints are fixed steering-wheel angle limits
+constraints are fixed wide steering-wheel angle/rate limits
 ```
 
-The MPC plant input gain is scaled in `init_slalom_mpc.m`; do not add another
-Simulink scaling Gain for the formal experiment.
+Do not add steering ratio, command input scaling, or an extra Simulink scaling
+Gain for the formal experiment. The tuning variables are MPC weights only.
 
 Current checked parameter set:
 
@@ -170,7 +170,7 @@ Weights.OutputVariables = [30 10 0.5]
 Weights.ManipulatedVariables = 0.05
 Weights.ManipulatedVariablesRate = 0.5
 MV.Min/Max = [-12, 12]
-MV.RateMin/RateMax = [-0.6, 0.6]
+MV.RateMin/RateMax = [-10, 10]
 ```
 
 Avoid rerunning `init_slalom_mpc.m` inside every trial unless the controller
@@ -284,9 +284,11 @@ and directory, the next run starts at iteration 13. BO is executed sequentially:
 after each trial it rereads `trials.jsonl`, updates the surrogate from all
 successful observations, and proposes the next candidate.
 
-For the main 5D tuning experiment, use `--budget 100 --bo-init 30`. That means
-30 deterministic LHC initialization trials followed by 70 BO/EI trials. Use a
-new directory for each seed, for example:
+For the main 5D tuning experiment, use `--budget 100 --bo-init 30` as the
+standard comparison setting, or a larger one-off budget when diagnosing a hard
+scenario. That means 30 deterministic LHC initialization trials followed by 70
+BO/EI trials for the standard setting. Use a new directory for each seed, for
+example:
 
 ```text
 standard_slalom_bo_seed1
@@ -425,10 +427,10 @@ Fail-closed behavior:
 
 ```text
 SIM_ABORT -> 100-point simFail penalty plus any known pylon hits
-SIM_END -> pylon-hit-dominant tracking/control objective
+SIM_END -> pylon-hit feasibility plus tracking-quality ranking objective
 ```
 
-Current BO objective:
+Current simplified BO objective for the next formal nominal runs:
 
 ```text
 J =
@@ -436,16 +438,16 @@ J =
   + 50 * collisionDetected
   + 25 * collisionCount
   + 10 * pylonHits
-  + 2.0 * (rmseET / 0.5)
-  + 1.0 * (maxAbsET / 2.0)
-  + 0.5 * (rmseEPsi / 0.1)
-  + 0.3 * (maxYawRate / 0.7)
-  + 0.1 * (rmseDelta / 3.0)
-  + 0.05 * (rmseDeltaRate / 10.0)
+  + 8.0 * rmseET
+  + 3.0 * maxAbsET
+  + 1.0 * rmseEPsi
 ```
 
 Pylon contacts are counted by `pylonHitCount`; they are not currently surfaced
-as generic collision events.
+as generic collision events. Steering angle/rate terms are no longer directly
+penalized in the outer-loop BO objective; keep them as MPC internal weights and
+secondary report metrics. See
+`docs/mpc_search_space_objective_revision_20260607.md`.
 
 Be careful with stale ERG matching. A previous run appeared to complete because
 the analyzer paired a one-sample `Results.mat` with a later `SIM_END` ERG. A
@@ -476,5 +478,5 @@ Formal experiments should tune only MPC weights:
 q_y, q_psi, q_r, r_delta, r_d_delta
 ```
 
-Keep steering constraints fixed. Prefer small changes and always restore the
-best known parameter set after a bad trial.
+Keep steering constraints fixed and wide. Prefer changing the MPC weights
+rather than changing vehicle/model scale factors or actuator limits.

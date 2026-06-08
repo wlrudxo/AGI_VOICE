@@ -11,6 +11,19 @@ Do not make low-friction or icy-road operation the main benchmark for the first
 paper. LowMu can remain a stress-test or future-work extension after the nominal
 Slalom18m workflow is stable.
 
+Current research story:
+
+```text
+1. Start from a broad but defensible five-dimensional MPC-weight search space.
+2. Show that non-adaptive LHC/random sampling spends many trials in poor
+   regions, such as under-tracking or steering-suppressed controllers.
+3. Show that BO can exploit simulator feedback, but must first pay for a broad
+   initial design before the surrogate becomes useful.
+4. Use the LLM as a reasoning module that reads trial logs and tightens the
+   weight search region for BO. The LLM does not modify physical steering
+   constraints, vehicle parameters, input scaling, or the MPC structure.
+```
+
 ## Scenario
 
 CarMaker TestRun:
@@ -39,9 +52,9 @@ CarMaker quantity = steering wheel angle command [rad]
 Simulink steering Gain = 1
 ```
 
-The MPC plant input gain is scaled inside `init_slalom_mpc.m` so that the
-controller output itself is in the same steering-wheel angle scale as the
-CarMaker input.
+No steering ratio, command input scale, or model-speed variable is included in
+the optimization. The MPC manipulated variable is the steering-wheel command
+sent to CarMaker through `VhclCtrl.Steering.Ang`.
 
 ## Fixed Constraints
 
@@ -51,11 +64,13 @@ fixed physical/safety limits:
 ```matlab
 mpcobj.MV.Min = -12.0;
 mpcobj.MV.Max =  12.0;
-mpcobj.MV.RateMin = -0.6;
-mpcobj.MV.RateMax =  0.6;
+mpcobj.MV.RateMin = -10.0;
+mpcobj.MV.RateMax =  10.0;
 ```
 
-These values are steering wheel angle/rate limits in the MPC sample domain.
+These values are intentionally wide steering-wheel angle/rate limits in the
+MPC command domain. The formal optimizer should find usable behavior through
+the MPC weights rather than by shrinking steering limits.
 
 ## Tuned Variables
 
@@ -75,7 +90,7 @@ Normalized BO vector order:
 [q_y, q_psi, q_r, r_delta, r_d_delta]
 ```
 
-Initial search ranges:
+Initial search ranges for the next formal nominal Slalom18m runs:
 
 | Variable | Meaning | Range | Scale |
 | --- | --- | --- | --- |
@@ -84,6 +99,16 @@ Initial search ranges:
 | `q_r` | yaw-rate output weight | `0.01 - 30` | log |
 | `r_delta` | steering wheel angle command weight | `0.01 - 10` | log |
 | `r_d_delta` | steering wheel angle rate weight | `0.01 - 10` | log |
+
+Tracking, yaw-response, and control-effort penalties have different physical
+roles and numerical sensitivities. The formal setting therefore uses a simple
+MPC-aware split: path tracking weights use `[0.1, 100]`, yaw-rate weight uses
+`[0.01, 30]`, and input/input-rate penalties use `[0.01, 10]`, all on a
+logarithmic scale.
+
+The previous equal broad range `[0.01, 50]` for all five weights is kept as a
+naive broad-space ablation/motivation setting, not as the main formal range.
+See `docs/mpc_search_space_objective_revision_20260607.md`.
 
 Do not include `Vx_model`, steering scale, command saturation scale, or command
 rate scale as main tuning variables. Those are model/setup choices, not the
@@ -147,17 +172,37 @@ No surrogate optimizer is used.
 
 ### Hybrid BO
 
-Use BO as the base optimizer and let the LLM assist by:
+Use BO as the base optimizer and let the LLM assist by search-space reasoning,
+not by changing the controller or actuator constraints. Physical steering
+constraints stay fixed; the LLM may only suggest narrower weight bounds or
+candidate filters within the original mixed log-scale space
+(`q_y,q_psi`: `[0.1, 100]`; `q_r`: `[0.01, 30]`;
+`r_delta,r_d_delta`: `[0.01, 10]`).
+
+The preferred Hybrid BO schedule is:
 
 ```text
-proposing warm-start candidates
-suggesting trust-region/range narrowing
-explaining failed trials
-choosing between BO candidate and LLM candidate
+trials 1-10: broad LHC initialization
+trial 10: LLM diagnosis and first weight-region suggestion
+trials 11-30: BO within or biased toward the suggested region
+trial 30: LLM update from accumulated trial history
+trials 31-60: BO
+trial 60: LLM update
+trials 61-100: BO
+```
+
+LLM diagnosis should identify patterns such as:
+
+```text
+tracking weights too small -> weak path following
+steering effort/rate weights too large -> steering is suppressed
+steering effort/rate weights too small -> overly aggressive steering activity
+yaw-rate weight too large -> yaw response can be over-penalized
 ```
 
 The hybrid method should still evaluate exactly one candidate per trial so that
-trial counts are comparable.
+trial counts are comparable. Final candidate selection remains simulator
+validated and BO-driven.
 
 ## Trial Budget
 
@@ -165,6 +210,8 @@ Main 100-trial design:
 
 ```text
 BO method: 30 LHC initialization trials + 70 BO/EI trials
+Hybrid BO method: 10 broad LHC trials + BO, with LLM region updates around
+                  trials 10, 30, and 60
 Grid/LHC baseline: 100 LHC trials
 Random baseline: 100 random log-uniform trials
 ```
@@ -221,7 +268,7 @@ Use `summary.objective.JFailClosed` from:
 llm_mpc_bo/scripts/analyze_results_mat.m
 ```
 
-Current common BO objective structure:
+Current simplified BO objective structure for the next formal runs:
 
 ```text
 J =
@@ -229,17 +276,21 @@ J =
   + 50 * collisionDetected
   + 25 * collisionCount
   + 10 * pylonHits
-  + 2.0 * (rmseET / 0.5)
-  + 1.0 * (maxAbsET / 2.0)
-  + 0.5 * (rmseEPsi / 0.1)
-  + 0.3 * (maxYawRate / 0.7)
-  + 0.1 * (rmseDelta / 3.0)
-  + 0.05 * (rmseDeltaRate / 10.0)
+  + 8.0 * rmseET
+  + 3.0 * maxAbsET
+  + 1.0 * rmseEPsi
 ```
 
 The collision fields are reserved for non-pylon collision signals when they are
 available. Pylon contacts are currently counted separately by
 `pylonHitCount` from the ERG/session metadata, not as generic collisions.
+
+The outer-loop objective should prioritize closed-loop path-following success
+and pylon avoidance. Steering angle and steering-rate usage should be controlled
+through the MPC internal weights (`r_delta`, `r_d_delta`) and reported as
+secondary metrics, rather than being directly penalized again in the BO
+objective. Report `rmseDelta`, `maxAbsDelta`, `rmseDeltaRate`,
+`maxAbsDeltaRate`, and steering saturation separately.
 
 The first hard target is:
 
@@ -248,7 +299,8 @@ pylon hits: 5 -> 0
 SIM_END maintained
 ```
 
-Then optimize tracking and smoothness.
+Then rank pylon-free runs by tracking quality, while reporting steering smoothness
+as a secondary metric.
 
 ## Current Verified Controller State
 
@@ -257,8 +309,8 @@ Current model/setup:
 ```text
 Simulink steering Gain: 1
 MPC output: steering wheel angle command [rad]
-MPC plant input scale: internal input gain divided by 20
-Constraints: fixed [-12, 12] rad, rate [-0.6, 0.6] rad/sample
+MPC plant input scale: none
+Constraints: fixed [-12, 12] rad, rate [-10, 10] rad/s
 ```
 
 Current checked parameter set:

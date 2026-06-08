@@ -361,9 +361,8 @@ def run_trial(args: argparse.Namespace, repo_root: Path, experiment_dir: Path, c
     if not args.write_analysis_plots:
         command.append("--skip-analysis-plots")
 
-    candidate_path = experiment_dir / "candidates.jsonl"
-    append_jsonl(candidate_path, candidate_to_json(candidate))
     subprocess.run(command, cwd=str(repo_root), check=True)
+    append_jsonl(experiment_dir / "candidates.jsonl", candidate_to_json(candidate))
 
 
 def generate_objective_plot(args: argparse.Namespace, repo_root: Path, experiment_dir: Path) -> dict[str, Any]:
@@ -464,6 +463,8 @@ def next_missing_iterations(completed: set[int], budget: int, count: int) -> lis
             iterations.append(iteration)
             if len(iterations) >= count:
                 return iterations
+    if iterations:
+        return iterations
     raise RuntimeError(f"No remaining iterations in budget={budget}; completed={len(completed)}")
 
 

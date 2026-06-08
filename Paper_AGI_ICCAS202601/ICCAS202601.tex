@@ -1,0 +1,414 @@
+%% Draft manuscript for ICCAS 2026
+%% Based on Paper-Template_ICCAS.tex in this directory.
+
+\documentclass[10pt,twocolumn]{ICCAS}
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{diagbox}
+\usepackage{url}
+
+\begin{document}
+
+\title{LLM-Assisted Bayesian Optimization for MPC Weight Tuning in\\ Vehicle Slalom Simulation}
+
+\author{Kyoungtae Ji${}^{1}$, Dongyeol Won${}^{1}$, Chanhyeok Ko${}^{1}$, and Kyoungseok Han${}^{1*}$}
+
+\affils{${}^{1}$Department of Automotive Engineering, Hanyang University,\\
+Seoul, Korea (kyoungsh@hanyang.ac.kr) {\small${}^{*}$ Corresponding author}}
+
+\abstract{
+This paper presents a simulator-in-the-loop optimization framework for tuning model predictive control (MPC) weights in an autonomous vehicle slalom maneuver. The controller structure is fixed, and the optimization target is a small set of MPC weighting parameters that govern lateral tracking, heading response, yaw behavior, steering effort, and steering smoothness. Each candidate is evaluated by a closed-loop CarMaker-Simulink simulation and converted into a scalar objective that includes pylon contacts, tracking error, yaw response, steering activity, and simulation failure penalties. The study compares non-adaptive sampling, Bayesian optimization (BO), LLM-only candidate proposal, and LLM-assisted BO under the same simulation budget. The large language model (LLM) is not used as a low-level vehicle controller; instead, it assists the optimizer by interpreting previous trial results, diagnosing poor trials, and suggesting promising search regions. This draft defines the paper structure, mathematical formulation, and experimental protocol before the final batch results are inserted.
+}
+
+\keywords{
+Bayesian optimization, large language model, model predictive control, autonomous vehicle simulation, slalom maneuver
+}
+
+\maketitle
+
+%-----------------------------------------------------------------------
+
+\section{Introduction}
+\label{sec:introduction}
+
+Model predictive control (MPC) is widely used for vehicle control because it can handle multi-objective tracking and actuation constraints in a systematic way. In vehicle applications, control-oriented models are often kept simpler than the high-fidelity plant so that they can be used repeatedly inside an online optimizer or estimator \cite{rajamani2006vehicle,reina2017vehicle,maull2022optimizing}. However, even when the controller structure is fixed, its practical performance depends strongly on the selection of weighting parameters. In high-fidelity simulation, these parameters are often tuned by repeated trial-and-error, which is time-consuming and difficult to reproduce.
+
+This paper considers MPC weight tuning as a black-box optimization problem. A candidate weight vector is applied to the controller, one closed-loop slalom simulation is executed, and the resulting driving performance is summarized by a scalar objective. This formulation is suitable for Bayesian optimization (BO), especially when each evaluation is expensive and derivative information is unavailable. Similar simulation-based optimization ideas have been used in automotive calibration and racing-line computation, where candidate designs are evaluated by a simulator or numerical vehicle model rather than by analytic gradients \cite{jain2020computing,arya2019fully,eriksson2019scalable}.
+
+Recent large language models (LLMs) have shown strong ability to summarize logs, reason over numerical trends, and suggest experimental directions. Recent studies have also investigated LLMs as assistants for BO, scientific experimentation, and autonomous-driving reasoning \cite{liu2024large,cisse2025language,cisse2026can,cui2026llm4ad}. In this work, the LLM is not treated as a direct steering controller. Instead, it is used as an optimization assistant that can interpret previous trials, diagnose failure patterns, and propose candidate regions or warm-start points. This preserves the MPC controller as the low-level control law while investigating whether LLM reasoning can improve the sample efficiency of simulator-based tuning.
+
+The contributions of this paper are as follows:
+\begin{itemize}
+    \item The MPC weight tuning task for a vehicle slalom maneuver is formulated as a simulator-in-the-loop black-box optimization problem.
+    \item A fail-closed objective is defined using pylon contacts, tracking error, heading error, yaw response, steering effort, and steering-rate smoothness.
+    \item A unified comparison protocol is proposed for non-adaptive sampling, BO, LLM-only search, and LLM-assisted BO under the same simulation budget.
+\end{itemize}
+
+\section{Problem Formulation and Objective}
+\label{sec:problem}
+
+\subsection{Vehicle Dynamics Model}
+\label{subsec:vehicle_model}
+
+The MPC controller uses a linearized lateral bicycle model around a constant
+longitudinal speed. This class of low-order lateral model is commonly used when
+vehicle yaw and lateral motion must be represented with a small number of
+states for estimation or control \cite{rajamani2006vehicle,reina2017vehicle}. Let
+the state vector be
+\begin{equation}
+x =
+\begin{bmatrix}
+v_y & r & e_y & e_\psi
+\end{bmatrix}^{\top},
+\label{eq:state_vector}
+\end{equation}
+where $v_y$ is the lateral velocity, $r$ is the yaw rate, $e_y$ is the lateral
+tracking error with respect to the reference path, and $e_\psi$ is the heading
+error. The manipulated input is the steering-wheel angle command
+\begin{equation}
+u = \delta_{\mathrm{sw}}.
+\label{eq:control_input}
+\end{equation}
+The simulator plant still uses the high-fidelity CarMaker vehicle model. The
+bicycle model is used only as the MPC prediction model, and the optimized
+parameters are limited to the MPC weights rather than vehicle parameters or
+input scaling factors.
+
+The continuous-time model is written as
+\begin{equation}
+\dot{x}(t) = A_c x(t) + B_c u(t),
+\label{eq:continuous_model}
+\end{equation}
+with
+\begin{equation}
+A_c =
+\begin{bmatrix}
+a_1 & a_2 & 0 & 0 \\
+a_3 & a_4 & 0 & 0 \\
+1   & 0   & 0 & V_x \\
+0   & 1   & 0 & 0
+\end{bmatrix},
+\quad
+B_c =
+\begin{bmatrix}
+b_1 \\ b_2 \\ 0 \\ 0
+\end{bmatrix}.
+\label{eq:continuous_matrices}
+\end{equation}
+The coefficients are
+\begin{align}
+a_1 &= -\frac{2C_f+2C_r}{mV_x}, \nonumber\\
+a_2 &= -\frac{2C_f l_f-2C_r l_r}{mV_x} - V_x, \nonumber\\
+a_3 &= -\frac{2C_f l_f-2C_r l_r}{I_z V_x}, \nonumber\\
+a_4 &= -\frac{2C_f l_f^2+2C_r l_r^2}{I_z V_x}, \nonumber\\
+b_1 &= \frac{2C_f}{m}, \qquad
+b_2 = \frac{2C_f l_f}{I_z},
+\label{eq:model_coefficients}
+\end{align}
+where $m$ is the vehicle mass, $I_z$ is the yaw moment of inertia, $l_f$ and
+$l_r$ are the distances from the center of gravity to the front and rear axles,
+$C_f$ and $C_r$ are the front and rear cornering stiffnesses, and $V_x$ is the
+nominal longitudinal speed. The measured output vector used by the MPC is
+\begin{equation}
+y =
+\begin{bmatrix}
+e_y & e_\psi & r
+\end{bmatrix}^{\top}
+= Cx,
+\quad
+C =
+\begin{bmatrix}
+0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 1 \\
+0 & 1 & 0 & 0
+\end{bmatrix}.
+\label{eq:output_equation}
+\end{equation}
+The model is discretized with sampling time $T_s$ as
+\begin{equation}
+x_{k+1} = A_d x_k + B_d u_k,\qquad y_k = Cx_k.
+\label{eq:discrete_model}
+\end{equation}
+This separation between a simple prediction model and a high-fidelity
+simulation plant is intentional. The optimizer evaluates the closed-loop result
+in the simulator, while the MPC remains lightweight enough for repeated
+experiments. Any mismatch between the reduced prediction model and the simulator
+plant is therefore handled indirectly through closed-loop performance
+evaluation.
+
+\subsection{MPC Formulation}
+\label{subsec:mpc_formulation}
+
+At each sampling instant, the MPC predicts the future output trajectory over a
+prediction horizon $N_p$ and computes a control sequence over a control horizon
+$N_c$. Similar receding-horizon formulations are used in automotive control
+problems where actuator limits, rate limits, and tracking or energy objectives
+must be considered simultaneously \cite{maull2022optimizing}. The reference path is converted into tracking-error states before
+entering the linear MPC. Therefore, the nominal output reference is
+\begin{equation}
+y^{\mathrm{ref}}_k =
+\begin{bmatrix}
+0 & 0 & 0
+\end{bmatrix}^{\top},
+\label{eq:reference_output}
+\end{equation}
+where the first two components correspond to zero lateral and heading tracking
+error, and the third component corresponds to zero yaw-rate reference in the
+reduced linear MPC model.
+
+The finite-horizon quadratic program is
+\begin{align}
+\min_{\{u_{k+i|k}\}} \quad
+& \sum_{i=1}^{N_p}
+\left\| y_{k+i|k} - y^{\mathrm{ref}}_{k+i} \right\|_Q^2
+\nonumber\\
+&+
+\sum_{i=0}^{N_c-1}
+\left(
+\left\| u_{k+i|k} \right\|_R^2
++
+\left\| \Delta u_{k+i|k} \right\|_{R_\Delta}^2
+\right)
+\label{eq:mpc_qp}
+\end{align}
+subject to
+\begin{align}
+x_{k+i+1|k} &= A_d x_{k+i|k} + B_d u_{k+i|k}, \nonumber\\
+y_{k+i|k} &= Cx_{k+i|k}, \nonumber\\
+u_{\min} &\leq u_{k+i|k} \leq u_{\max}, \nonumber\\
+\Delta u_{\min} &\leq \Delta u_{k+i|k} \leq \Delta u_{\max},
+\label{eq:mpc_constraints}
+\end{align}
+where
+\begin{equation}
+\Delta u_{k+i|k} = u_{k+i|k} - u_{k+i-1|k}.
+\label{eq:input_increment}
+\end{equation}
+Only the first command $u^\star_{k|k}$ is applied to the vehicle simulator, and
+the optimization is repeated at the next sampling instant. The input constraints
+represent the steering-wheel command range used by the simulator interface,
+while the input-rate constraints prevent unrealistically discontinuous steering
+commands.
+
+The weighting matrices are diagonal:
+\begin{equation}
+Q = \mathrm{diag}(q_y,q_\psi,q_r), \quad
+R = r_\delta, \quad
+R_\Delta = r_{\Delta\delta}.
+\label{eq:mpc_weights}
+\end{equation}
+Thus, the control architecture, prediction model, horizons, and actuator
+constraints are fixed, while the scalar weights in \eqref{eq:mpc_weights} are
+tuned by the outer-loop optimizer. This choice keeps the optimization problem
+small and makes the comparison focus on sample-efficient weight selection
+rather than on redesigning the controller. It also matches the practical
+calibration setting in which an engineer often keeps the controller structure
+fixed and searches for weight combinations that provide acceptable safety,
+tracking, and smoothness trade-offs.
+
+\subsection{MPC Weight Tuning Problem}
+\label{subsec:mpc_weights}
+
+The lateral controller is an MPC controller whose structure, horizons, plant model, and steering constraints are fixed during the experiment. The optimization target is the MPC weight vector
+\begin{equation}
+\theta =
+\left[
+q_y,\,
+q_\psi,\,
+q_r,\,
+r_\delta,\,
+r_{\Delta\delta}
+\right]^\top ,
+\label{eq:theta}
+\end{equation}
+where $q_y$ is the lateral tracking weight, $q_\psi$ is the heading error weight, $q_r$ is the yaw-response weight, $r_\delta$ is the steering effort weight, and $r_{\Delta\delta}$ is the steering-rate smoothness weight.
+
+The tuning problem is written as
+\begin{equation}
+\theta^\star =
+\arg\min_{\theta \in \Theta} J(\theta),
+\label{eq:optimization_problem}
+\end{equation}
+where $\Theta$ denotes the feasible search space and $J(\theta)$ is obtained from one closed-loop simulation. The search space is logarithmic because useful MPC weights can vary across orders of magnitude. In the formal comparison, each element of $\theta$ is sampled in a predefined positive interval and decoded to the corresponding physical MPC weight before simulation. Steering magnitude and steering-rate limits are kept fixed so that the comparison focuses on controller weighting rather than changing actuator constraints. This produces a small but nontrivial expensive black-box optimization problem, comparable in spirit to automotive calibration and racing-line search tasks where each candidate must be evaluated by a simulation or solver loop \cite{jain2020computing,arya2019fully}.
+
+\subsection{Simulation-Based Objective}
+\label{subsec:objective}
+
+The scalar objective is designed to penalize unsafe or invalid behavior first,
+and then rank successful runs by tracking accuracy and steering smoothness. For
+a candidate weight vector $\theta$, let the simulator return a finite time
+series over $t \in [0,T]$. The root-mean-square operator is defined as
+\begin{equation}
+\operatorname{rms}(z)
+=
+\left(
+\frac{1}{T}
+\int_{0}^{T} z^2(t)\,dt
+\right)^{1/2}.
+\label{eq:rms_definition}
+\end{equation}
+For sampled simulation data, \eqref{eq:rms_definition} is evaluated by the
+corresponding discrete-time average.
+
+The fail-closed simulation objective is
+\begin{align}
+J(\theta)
+&= J_{\mathrm{safe}}(\theta)
+ + J_{\mathrm{trk}}(\theta)
+ + J_{\mathrm{ctrl}}(\theta),
+\label{eq:objective}\\
+J_{\mathrm{safe}}
+&=
+\lambda_f I_{\mathrm{fail}}
++ \lambda_c I_{\mathrm{col}}
++ \lambda_N N_{\mathrm{col}}
++ \lambda_p N_{\mathrm{pylon}},
+\label{eq:objective_safe}\\
+J_{\mathrm{trk}}
+&=
+\lambda_y
+\frac{\operatorname{rms}(e_y)}{\bar e_y}
++ \lambda_{\infty y}
+\frac{\|e_y\|_{\infty}}{\bar e_{\infty y}}
++ \lambda_\psi
+\frac{\operatorname{rms}(e_\psi)}{\bar e_\psi},
+\label{eq:objective_tracking}\\
+J_{\mathrm{ctrl}}
+&=
+\lambda_r
+\frac{\|r\|_{\infty}}{\bar r}
++ \lambda_\delta
+\frac{\operatorname{rms}(\delta_{\mathrm{sw}})}{\bar\delta}
++ \lambda_{\dot{\delta}}
+\frac{\operatorname{rms}(\dot{\delta}_{\mathrm{sw}})}
+{\bar{\dot{\delta}}}.
+\label{eq:objective_control}
+\end{align}
+Here $I_{\mathrm{fail}}$ is one for a simulation abort, missing output, or
+invalid evaluation and zero otherwise. $I_{\mathrm{col}}$ and $N_{\mathrm{col}}$
+denote the occurrence and count of generic collision events when available,
+whereas $N_{\mathrm{pylon}}$ denotes the number of pylon contacts extracted from
+the slalom evaluation log. The tracking variables $e_y$ and $e_\psi$ are the
+lateral and heading errors, $r$ is the yaw rate, $\delta_{\mathrm{sw}}$ is the
+steering-wheel command, and $\dot{\delta}_{\mathrm{sw}}$ is its rate. The
+constants $\bar e_y$, $\bar e_{\infty y}$, $\bar e_\psi$, $\bar r$,
+$\bar\delta$, and $\bar{\dot{\delta}}$ are normalization values chosen from the
+expected maneuver scale.
+
+The safety coefficients are selected so that invalid runs and pylon contacts
+dominate the objective before tracking and smoothness are considered. Among
+runs with similar safety performance, $J_{\mathrm{trk}}$ rewards small lateral
+and heading errors, while $J_{\mathrm{ctrl}}$ discourages aggressive yaw and
+steering activity. The optimizer receives only the scalar value $J(\theta)$,
+but the stored trial log preserves the decomposed terms in
+\eqref{eq:objective_safe}--\eqref{eq:objective_control} for later analysis.
+
+\section{LLM-Assisted BO Framework}
+\label{sec:framework}
+
+\subsection{Simulator-in-the-Loop Evaluation}
+\label{subsec:sil}
+
+The evaluation loop consists of four steps. First, an optimizer proposes a candidate weight vector $\theta_k$. Second, the weight vector is applied to the MPC controller and a closed-loop slalom simulation is executed. Third, trajectory, steering, yaw, and pylon-contact metrics are extracted from the simulation output. Finally, the result pair $(\theta_k,J_k)$ is appended to the experiment history.
+
+The history after $n$ evaluations is
+\begin{equation}
+\mathcal{D}_n =
+\{(\theta_i,J_i)\}_{i=1}^{n}.
+\label{eq:dataset}
+\end{equation}
+All optimization methods use the same evaluation function, objective definition, and trial budget. This makes the comparison focus on how the next candidate is selected rather than on differences in the simulator or metric extractor.
+
+\subsection{Bayesian Optimization}
+\label{subsec:bo}
+
+BO builds a surrogate model from $\mathcal{D}_n$ and selects the next candidate using an acquisition function:
+\begin{equation}
+\theta_{n+1} =
+\arg\max_{\theta \in \Theta}
+a(\theta;\mathcal{D}_n).
+\label{eq:acquisition}
+\end{equation}
+In the planned experiment, BO begins with a space-filling initial design and then performs sequential acquisition-based updates. This is appropriate for a five-dimensional tuning problem where each simulation is costly but a moderate number of trials is available.
+
+\subsection{LLM-Only and LLM-Assisted Search}
+\label{subsec:llm_search}
+
+The LLM-only method uses the previous trial table, best-so-far metrics, and fixed search bounds to propose the next candidate. It does not use a surrogate model, so its performance indicates whether language-based reasoning alone can provide useful tuning suggestions.
+
+The LLM-assisted BO method keeps BO as the main optimizer while using the LLM as a reasoning module. The LLM may summarize failed or unsafe trials, identify promising regions, suggest warm-start candidates, or explain why certain parameter combinations should be avoided. The final candidate selection remains constrained by the same search space and trial budget.
+
+Reinforcement learning is not included as a main comparison group. The present problem is static controller-parameter tuning, where one parameter vector is evaluated per rollout. A reinforcement learning baseline would require a state-action policy-learning formulation and a much larger interaction budget, making it a different problem rather than a direct optimizer comparison.
+
+\section{Experimental Setup}
+\label{sec:experimental_setup}
+
+\subsection{Slalom Simulation Scenario}
+\label{subsec:scenario}
+
+The benchmark scenario is a standard vehicle slalom maneuver with pylons. The vehicle is controlled by a Simulink MPC lateral controller in closed-loop co-simulation with a high-fidelity vehicle simulator. The controller output is a steering-wheel angle command, and the same vehicle, road, reference path, controller structure, and physical steering constraints are used for all methods.
+
+The nominal slalom scenario is used as the main benchmark because it already exposes meaningful tuning difficulty: overly weak tracking weights can lead to pylon contacts and large lateral error, while overly aggressive weights can produce excessive steering activity. Low-friction variants are reserved for stress testing or future work.
+
+\subsection{Compared Methods}
+\label{subsec:methods}
+
+The planned comparison includes the following methods:
+\begin{center}
+\begin{tabular}{p{0.30\linewidth}p{0.58\linewidth}}
+\hline
+Method & Role \\
+\hline
+Driver baseline & reference driving behavior \\
+Random search & simple non-adaptive baseline \\
+LHC & space-filling non-adaptive baseline \\
+BO & surrogate-based sequential optimizer \\
+LLM-only & language-based candidate proposal \\
+LLM-assisted BO & BO with LLM-guided reasoning \\
+\hline
+\end{tabular}
+\end{center}
+
+Each method is evaluated under the same maximum number of simulation trials. For BO, the budget is divided into an initial space-filling design and subsequent BO updates. For repeated experiments, independent runs are performed with fixed random seeds and the same seed index is matched across methods; the paper reports aggregated statistics rather than implementation-specific seed values.
+
+\subsection{Evaluation Metrics}
+\label{subsec:metrics}
+
+The final results will report both objective-level and signal-level metrics:
+\begin{itemize}
+    \item best objective value versus iteration,
+    \item pylon contact count and simulation failure count,
+    \item RMSE and maximum lateral tracking error,
+    \item steering command and steering-rate smoothness,
+    \item trajectory and steering response of the best run from each method.
+\end{itemize}
+
+\section{Results and Discussion}
+\label{sec:results}
+
+This section will be completed after the full batch experiments. The expected primary plot is the best-so-far objective curve, which directly shows sample efficiency under a fixed simulation budget. A second safety-focused plot should show pylon contacts or violation count versus iteration.
+
+\subsection{Preliminary Automated Tuning Result}
+\label{subsec:preliminary}
+
+Preliminary automated runs have confirmed that the proposed evaluation loop can execute repeated simulations and identify pylon-free MPC weight sets. A representative early run achieved simulation completion with zero pylon contacts, lateral tracking RMSE of approximately $0.26$ m, and maximum lateral error below $1.0$ m. This result should be treated as a pipeline validation result until the formal repeated experiments are complete.
+
+\subsection{Planned Analysis}
+\label{subsec:planned_analysis}
+
+The final analysis should compare methods in the following order. First, safety and completion are checked using pylon contacts and simulation failures. Second, tracking quality is evaluated using lateral error statistics. Third, steering smoothness is evaluated to avoid selecting overly aggressive controllers. Finally, convergence curves are used to determine whether BO or LLM-assisted BO reaches good parameter regions with fewer simulations than non-adaptive search.
+
+If LLM-assisted BO improves early-stage convergence or avoids repeated unsafe regions, the claim should be sample-efficiency improvement rather than final-controller novelty. If LLM-only search is unstable, it should be reported as evidence that language reasoning alone is insufficient without a numerical optimizer.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+This paper formulates MPC weight tuning for a vehicle slalom maneuver as a simulator-in-the-loop black-box optimization problem. The proposed framework evaluates each candidate through closed-loop simulation, computes a fail-closed objective from safety, tracking, yaw, and steering metrics, and compares several candidate-selection strategies under a common budget.
+
+The final paper will report whether BO and LLM-assisted BO improve sample efficiency over non-adaptive search. Future work includes evaluating low-friction scenarios, extending the benchmark to additional maneuvers, and considering reinforcement learning only if the task is reformulated as a policy-learning problem.
+
+\bibliographystyle{ieeetr}
+\bibliography{ref}
+
+\end{document}
