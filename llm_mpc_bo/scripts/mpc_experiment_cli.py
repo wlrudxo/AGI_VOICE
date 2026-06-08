@@ -14,11 +14,10 @@ from pathlib import Path
 from typing import Any
 
 
-TUNED_KEYS = ("q_y", "q_psi", "q_r", "r_delta", "r_d_delta")
+TUNED_KEYS = ("q_y", "q_psi", "r_delta", "r_d_delta")
 LOG_RANGES = {
     "q_y": (0.01, 100.0),
     "q_psi": (0.01, 100.0),
-    "q_r": (0.01, 100.0),
     "r_delta": (0.01, 100.0),
     "r_d_delta": (0.01, 100.0),
 }

@@ -89,7 +89,7 @@ mpcobj.MV.RateMin = -10.0;
 mpcobj.MV.RateMax =  10.0;
 
 % Initial hand-tuned weights. These become BO variables after nominal closure.
-mpcobj.Weights.OutputVariables = [5.0 2.0 0.2];
+mpcobj.Weights.OutputVariables = [5.0 2.0 0.0];
 mpcobj.Weights.ManipulatedVariables = 0.2;
 mpcobj.Weights.ManipulatedVariablesRate = 2.0;
 

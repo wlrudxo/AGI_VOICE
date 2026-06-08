@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 
-TUNED_KEYS = ("q_y", "q_psi", "q_r", "r_delta", "r_d_delta")
+TUNED_KEYS = ("q_y", "q_psi", "r_delta", "r_d_delta")
 
 
 def main() -> int:
@@ -86,9 +86,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--run-id", default=None, help="Trial run id. Default derives from method/iter/time.")
 
     source = parser.add_mutually_exclusive_group(required=True)
-    source.add_argument("--params-json", help="JSON object containing q_y, q_psi, q_r, r_delta, r_d_delta.")
+    source.add_argument("--params-json", help="JSON object containing q_y, q_psi, r_delta, r_d_delta.")
     source.add_argument("--params-file", help="Path to a JSON parameter file.")
-    source.add_argument("--normalized-json", help="JSON array of 5 normalized values in [0,1].")
+    source.add_argument("--normalized-json", help="JSON array of 4 normalized values in [0,1].")
 
     parser.add_argument("--host", default="localhost", help="CarMaker TCP host for optional TestRun load.")
     parser.add_argument("--port", type=int, default=16660, help="CarMaker TCP port for optional TestRun load.")
@@ -115,8 +115,8 @@ def load_params(args: argparse.Namespace) -> dict[str, float]:
         raw = json.loads(Path(args.params_file).read_text(encoding="utf-8"))
     else:
         values = json.loads(args.normalized_json)
-        if not isinstance(values, list) or len(values) != 5:
-            raise ValueError("--normalized-json must be a JSON array of 5 numbers")
+        if not isinstance(values, list) or len(values) != len(TUNED_KEYS):
+            raise ValueError(f"--normalized-json must be a JSON array of {len(TUNED_KEYS)} numbers")
         raw = decode_normalized(values)
 
     if not isinstance(raw, dict):
@@ -131,7 +131,7 @@ def load_params(args: argparse.Namespace) -> dict[str, float]:
         raise ValueError(
             "Unexpected parameter(s): "
             + ", ".join(extra)
-            + ". Main experiment tunes only q_y, q_psi, q_r, r_delta, r_d_delta."
+            + ". Main experiment tunes only q_y, q_psi, r_delta, r_d_delta."
         )
 
     for key in TUNED_KEYS:
@@ -206,7 +206,6 @@ def decode_normalized(values: list[Any]) -> dict[str, float]:
     ranges = {
         "q_y": (0.01, 100.0),
         "q_psi": (0.01, 100.0),
-        "q_r": (0.01, 100.0),
         "r_delta": (0.01, 100.0),
         "r_d_delta": (0.01, 100.0),
     }

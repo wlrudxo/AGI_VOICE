@@ -156,7 +156,6 @@ Current checked parameter set:
 params = struct( ...
     'q_y', 30, ...
     'q_psi', 10, ...
-    'q_r', 0.5, ...
     'r_delta', 0.05, ...
     'r_d_delta', 0.5 ...
 );
@@ -166,7 +165,7 @@ mpcobj = apply_slalom_mpc_params(params);
 This applies:
 
 ```text
-Weights.OutputVariables = [30 10 0.5]
+Weights.OutputVariables = [30 10 0]
 Weights.ManipulatedVariables = 0.05
 Weights.ManipulatedVariablesRate = 0.5
 MV.Min/Max = [-12, 12]
@@ -188,7 +187,7 @@ py -3.12 llm_mpc_bo/scripts/mpc_trial_cli.py `
   --method manual `
   --iter 1 `
   --run-id manual_0001 `
-  --params-json "{""q_y"":30,""q_psi"":10,""q_r"":0.5,""r_delta"":0.05,""r_d_delta"":0.5}"
+  --params-json "{""q_y"":30,""q_psi"":10,""r_delta"":0.05,""r_d_delta"":0.5}"
 ```
 
 This writes:
@@ -225,9 +224,9 @@ py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
 ```powershell
 py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
   --strategy bo `
-  --count 100 `
-  --budget 100 `
-  --bo-init 30 `
+  --count 50 `
+  --budget 50 `
+  --bo-init 15 `
   --seed 1 `
   --engine MATLAB_58352 `
   --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_bo_seed1
@@ -236,8 +235,8 @@ py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
 ```powershell
 py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
   --strategy random `
-  --count 100 `
-  --budget 100 `
+  --count 50 `
+  --budget 50 `
   --seed 1 `
   --engine MATLAB_58352 `
   --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_random_seed1
@@ -280,17 +279,16 @@ runtime and disk churn. Each trial still keeps `aligned_signals.csv`,
 `sroad_tracking.png` are needed.
 
 If 12 trials were completed and the command is run again with the same method
-and directory with `--count 100 --budget 100`, the next run starts at iteration
-13 and stops at 100 total completed trials. `--count` is the target total trial
+and directory with `--count 50 --budget 50`, the next run starts at iteration
+13 and stops at 50 total completed trials. `--count` is the target total trial
 count, not the number of additional trials to append. Use `--max-new-trials N`
 only for short interactive continuations. BO is executed sequentially: after
 each trial it rereads `trials.jsonl`, updates the surrogate from all successful
 observations, and proposes the next candidate.
 
-For the main 5D tuning experiment, use `--budget 100 --bo-init 30` as the
-standard comparison setting, or a larger one-off budget when diagnosing a hard
-scenario. That means 30 deterministic LHC initialization trials followed by 70
-BO/EI trials for the standard setting. Use a new directory for each seed, for
+For the main 4D tuning experiment, use `--budget 50 --bo-init 15` as the
+standard comparison setting. That means 15 deterministic LHC initialization
+trials followed by 35 BO/EI trials. Use a new directory for each seed, for
 example:
 
 ```text
@@ -311,12 +309,12 @@ Dry-run shows the next candidates without starting CarMaker/Simulink:
 ```powershell
 py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
   --strategy bo `
-  --count 100 `
-  --budget 100 `
+  --count 50 `
+  --budget 50 `
   --max-new-trials 3 `
-  --bo-init 30 `
+  --bo-init 15 `
   --seed 1 `
-  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_bo_seed1 `
+  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_4d_bo_qr0_budget50_seed1 `
   --dry-run
 ```
 
@@ -334,8 +332,8 @@ cd('E:\CarMakerProject\AGI\src_cm4sl');
 addpath('E:\GitProject\AGI_VOICE\llm_mpc_bo\simulink');
 addpath('E:\GitProject\AGI_VOICE\llm_mpc_bo\scripts');
 
-params = struct('q_y',30,'q_psi',10,'q_r',0.5, ...
-    'r_delta',0.05,'r_d_delta',0.5);
+params = struct('q_y',30,'q_psi',10, ...
+                'r_delta',0.05,'r_d_delta',0.5);
 mpcobj = apply_slalom_mpc_params(params);
 
 simOut = sim('UserSteer');
@@ -479,7 +477,7 @@ tracking objective.
 Formal experiments should tune only MPC weights:
 
 ```text
-q_y, q_psi, q_r, r_delta, r_d_delta
+q_y, q_psi, r_delta, r_d_delta
 ```
 
 Keep steering constraints fixed and wide. Prefer changing the MPC weights

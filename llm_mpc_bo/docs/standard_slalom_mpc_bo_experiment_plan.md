@@ -79,7 +79,6 @@ Tune only MPC weight parameters:
 ```text
 q_y
 q_psi
-q_r
 r_delta
 r_d_delta
 ```
@@ -87,28 +86,27 @@ r_d_delta
 Normalized BO vector order:
 
 ```text
-[q_y, q_psi, q_r, r_delta, r_d_delta]
+[q_y, q_psi, r_delta, r_d_delta]
 ```
 
 Initial search ranges for the next formal nominal Slalom18m runs:
 
 | Variable | Meaning | Range | Scale |
 | --- | --- | --- | --- |
-| `q_y` | lateral error weight | `0.1 - 100` | log |
-| `q_psi` | heading error weight | `0.1 - 100` | log |
-| `q_r` | yaw-rate output weight | `0.01 - 30` | log |
-| `r_delta` | steering wheel angle command weight | `0.01 - 10` | log |
-| `r_d_delta` | steering wheel angle rate weight | `0.01 - 10` | log |
+| `q_y` | lateral error weight | `0.01 - 100` | log |
+| `q_psi` | heading error weight | `0.01 - 100` | log |
+| `r_delta` | steering wheel angle command weight | `0.01 - 100` | log |
+| `r_d_delta` | steering wheel angle rate weight | `0.01 - 100` | log |
 
-Tracking, yaw-response, and control-effort penalties have different physical
-roles and numerical sensitivities. The formal setting therefore uses a simple
-MPC-aware split: path tracking weights use `[0.1, 100]`, yaw-rate weight uses
-`[0.01, 30]`, and input/input-rate penalties use `[0.01, 10]`, all on a
-logarithmic scale.
+The yaw-rate output weight is fixed:
 
-The previous equal broad range `[0.01, 50]` for all five weights is kept as a
-naive broad-space ablation/motivation setting, not as the main formal range.
-See `docs/mpc_search_space_objective_revision_20260607.md`.
+```text
+q_r = 0
+```
+
+The formal setting uses a single equal log-scale range for the four remaining
+weights. This keeps the experiment easy to describe while removing the
+previously unhelpful yaw-rate-weight dimension.
 
 Do not include `Vx_model`, steering scale, command saturation scale, or command
 rate scale as main tuning variables. Those are model/setup choices, not the
@@ -129,7 +127,7 @@ Use five groups:
 Do not include reinforcement learning as a main comparison group for the first
 paper. This experiment tunes five static MPC weights with a simulator-in-the-
 loop objective; it is not a sequential state-action policy-learning setup.
-With a 100-run budget, RL would be sample-starved and would compare a different
+With a 50-run budget, RL would be sample-starved and would compare a different
 problem formulation rather than a different optimizer for the same controller.
 Mention RL only as a related/future direction if needed.
 
@@ -175,9 +173,8 @@ No surrogate optimizer is used.
 Use BO as the base optimizer and let the LLM assist by search-space reasoning,
 not by changing the controller or actuator constraints. Physical steering
 constraints stay fixed; the LLM may only suggest narrower weight bounds or
-candidate filters within the original mixed log-scale space
-(`q_y,q_psi`: `[0.1, 100]`; `q_r`: `[0.01, 30]`;
-`r_delta,r_d_delta`: `[0.01, 10]`).
+candidate filters within the original 4D log-scale space
+(`q_y,q_psi,r_delta,r_d_delta`: `[0.01, 100]`; `q_r = 0` fixed).
 
 The preferred Hybrid BO schedule is:
 
@@ -186,9 +183,7 @@ trials 1-10: broad LHC initialization
 trial 10: LLM diagnosis and first weight-region suggestion
 trials 11-30: BO within or biased toward the suggested region
 trial 30: LLM update from accumulated trial history
-trials 31-60: BO
-trial 60: LLM update
-trials 61-100: BO
+trials 31-50: BO within the updated region
 ```
 
 LLM diagnosis should identify patterns such as:
@@ -197,7 +192,7 @@ LLM diagnosis should identify patterns such as:
 tracking weights too small -> weak path following
 steering effort/rate weights too large -> steering is suppressed
 steering effort/rate weights too small -> overly aggressive steering activity
-yaw-rate weight too large -> yaw response can be over-penalized
+yaw-rate weight fixed at 0 -> diagnose steering/tracking weights first
 ```
 
 The hybrid method should still evaluate exactly one candidate per trial so that
@@ -209,24 +204,24 @@ validated and BO-driven.
 Main calibrated design:
 
 ```text
-5D BO method: 30 LHC initialization trials + BO/EI up to 100 total trials
-4D follow-up BO method: 15 LHC initialization trials + BO/EI up to 50 total trials
+4D BO method: 15 LHC initialization trials + BO/EI up to 50 total trials
 Hybrid BO method: short BO blocks with LLM region updates every 5-10 trials
-Grid/LHC baseline: 50-100 LHC trials, matched to the BO budget for the run
-Random baseline: 50-100 random log-uniform trials, matched to the BO budget
+Grid/LHC baseline: 50 LHC trials
+Random baseline: 50 random log-uniform trials
 ```
 
-For the current LowMu07 follow-up, prefer the 4D/50-trial design:
+For the current normal-road follow-up, use the 4D/50-trial design:
 
 ```text
-q_r = fixed at 0.01 or removed from the tuned vector
+scenario = LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL
+q_r = 0 fixed
 budget = 50
 bo_init = 15
 seed = fixed per repeated experiment
 ```
 
 This keeps runtime manageable and reflects the current observation that `q_r`
-is repeatedly pushed to the lower bound in the calibrated 5D LowMu07 run.
+was repeatedly pushed to the lower bound in the calibrated 5D run.
 A 3-level full factorial design over 4 variables would require `3^4 = 81`
 simulations. That is useful as a coverage reference, but the formal comparison
 should stay at 50 trials when the region has already been tightened by prior
@@ -256,8 +251,8 @@ conditions. For example, `bo_seed1`, `lhc_seed1`, and `random_seed1`.
 Recommended sequence:
 
 ```text
-Phase 1: BO 100 trials, seed 1, confirm the full 30+70 pipeline
-Phase 2: LHC/random 100 trials, seed 1, establish baseline
+Phase 1: BO 50 trials, seed 1, confirm the 15+35 pipeline
+Phase 2: LHC/random 50 trials, seed 1, establish baseline
 Phase 3: repeat BO and best baseline for seeds 2 and 3
 Phase 4: add LLM-only/Hybrid BO runs with the same seed set
 ```
@@ -320,7 +315,7 @@ Current checked parameter set:
 ```text
 q_y = 30
 q_psi = 10
-q_r = 0.5
+q_r = 0 fixed
 r_delta = 0.05
 r_d_delta = 0.5
 ```
@@ -358,7 +353,7 @@ py -3.12 llm_mpc_bo/scripts/mpc_trial_cli.py `
   --method llm_only `
   --iter 7 `
   --run-id llm_only_0007 `
-  --params-json "{""q_y"":30,""q_psi"":10,""q_r"":0.5,""r_delta"":0.05,""r_d_delta"":0.5}"
+  --params-json "{""q_y"":30,""q_psi"":10,""r_delta"":0.05,""r_d_delta"":0.5}"
 ```
 
 The CLI:
@@ -392,8 +387,8 @@ continues from the next missing iteration instead of starting over.
 
 `--count` means the target total number of completed trials in that experiment
 directory. It is not the number of additional trials to append. For example, if
-`trials.jsonl` already contains 92 completed BO trials, `--count 100 --budget
-100` runs only trials 93-100 and then stops. Use `--max-new-trials N` when an
+`trials.jsonl` already contains 42 completed BO trials, `--count 50 --budget
+50` runs only trials 43-50 and then stops. Use `--max-new-trials N` when an
 interactive session should intentionally stop after at most `N` newly executed
 simulations.
 
@@ -435,12 +430,12 @@ py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
 ```powershell
 py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
   --strategy bo `
-  --count 100 `
-  --budget 100 `
-  --bo-init 30 `
+  --count 50 `
+  --budget 50 `
+  --bo-init 15 `
   --seed 1 `
   --engine MATLAB_58352 `
-  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_bo_seed1
+  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_4d_bo_qr0_budget50_seed1
 ```
 
 Dry-run can be used to inspect the next candidates without running CarMaker:
@@ -448,11 +443,11 @@ Dry-run can be used to inspect the next candidates without running CarMaker:
 ```powershell
 py -3.12 llm_mpc_bo/scripts/mpc_experiment_cli.py `
   --strategy bo `
-  --count 100 `
-  --budget 100 `
+  --count 50 `
+  --budget 50 `
   --max-new-trials 3 `
-  --bo-init 30 `
+  --bo-init 15 `
   --seed 1 `
-  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_bo_seed1 `
+  --experiment-dir llm_mpc_bo/results/experiments/standard_slalom_4d_bo_qr0_budget50_seed1 `
   --dry-run
 ```
