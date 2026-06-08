@@ -115,3 +115,261 @@ Process note:
 - `mpc_experiment_cli.py` was updated so `--count` now means target total
   completed trials. Use `--max-new-trials` only for interactive short
   continuations.
+
+## Standard Slalom 4D qr0 BO Budget50
+
+Scenario:
+
+```text
+LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL
+```
+
+Setup:
+
+```text
+steeringCmdInputScale = 20
+Simulink steering Gain = 1
+MV.Min/Max = [-12, 12] rad
+MV.RateMin/RateMax = [-10, 10] rad/s
+q_r = 0 fixed/removed from search
+4D weights in [0.01, 100], log scale
+BO init = 15
+budget = 50
+seed = 1
+experiment_dir = llm_mpc_bo/results/experiments/standard_slalom_4d_bo_qr0_budget50_seed1
+```
+
+Run note:
+
+- Started with shared engine `MATLAB_25884`.
+- The first run stopped after 17 completed trials when that engine raised a
+  MATLAB `Unknown exception` during iteration 18.
+- `MATLAB_25884` disappeared and the active shared engine became
+  `MATLAB_6952`; the run resumed from the target-count ledger and completed
+  through 50 trials.
+- Iteration 18 produced `SIM_END` output files and was ultimately recorded in
+  the ledger during the resumed run.
+
+Result:
+
+```text
+completed trials: 50
+ok trials: 50
+status counts: SIM_END 49, SIM_ABORT 1
+zero-pylon trials: 18
+best run: bo_0046
+J: 1.105666
+pylonHits: 0
+status: SIM_END
+q_y: 12.2943
+q_psi: 28.7875
+r_delta: 0.133960
+r_d_delta: 0.0285438
+```
+
+Artifacts:
+
+```text
+best_summary.json
+objective_by_episode.png
+best_trajectory_pylons.png
+best_trial_time_signals.png
+```
+
+## Runtime and Resume Workflow Updates
+
+Changes made during the V61 follow-up:
+
+- `mpc_trial_cli.py` now records per-trial timing breakdowns in each
+  `trials.jsonl` row.
+- `mpc_experiment_cli.py --load-testrun` now loads the CarMaker TestRun once at
+  the batch level by default instead of reloading it inside every trial
+  subprocess.
+- The old per-trial reload behavior remains available with
+  `--reload-testrun-each-trial`.
+- Existing experiment directories can now be resumed with a larger `--budget`
+  when all other optimizer settings are unchanged. This enabled extending the
+  V61 BO run from 50 to 150 total trials.
+
+Timing observation from 3-trial smoke tests:
+
+```text
+per-trial LoadTestRun:
+  loadTestrunWallS avg: 0.846 s/trial
+  load + MATLAB avg: 10.45 s/trial
+
+batch load once:
+  loadTestrunWallS in trial rows: 0
+  MATLAB avg: 9.801 s/trial
+```
+
+The dominant runtime cost remains the CarMaker/Simulink `sim(mdl)` call, with
+`analyze_results_mat` as the next largest repeated cost.
+
+## Speed-Increased TestRun Variants
+
+The original TestRun was copied in the CarMaker project to create speed variants
+outside the Git repository:
+
+```text
+source:
+E:\CarMakerProject\AGI\Data\TestRun\LLM_MPC_BO\ICCAS_Slalom18m_UserSteer_CM4SL
+
+V61:
+E:\CarMakerProject\AGI\Data\TestRun\LLM_MPC_BO\ICCAS_Slalom18m_UserSteer_CM4SL_V61
+Driver.Vel.CruisingSpeed = 61
+
+V64:
+E:\CarMakerProject\AGI\Data\TestRun\LLM_MPC_BO\ICCAS_Slalom18m_UserSteer_CM4SL_V64
+Driver.Vel.CruisingSpeed = 64
+```
+
+The first V61/V64 checks were run while manual steering was still enabled and
+should not be treated as MPC-only results. After manual steering was disabled,
+the previous V58 BO best (`bo_0046`) was replayed on V61:
+
+```text
+scenario: LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL_V61
+experiment_dir: llm_mpc_bo/results/experiments/single_trial_v61_bo0046_mpc
+params source: standard_slalom_4d_bo_qr0_budget50_seed1 best bo_0046
+
+J: 11.1768
+pylonHits: 1
+status: SIM_END
+meanSpeed: 49.62 km/h
+q_y: 12.2943
+q_psi: 28.7875
+r_delta: 0.133960
+r_d_delta: 0.0285438
+```
+
+Interpretation:
+
+- V61 is a useful intermediate difficulty: the V58 best no longer completes
+  pylon-free, but it remains near the boundary with one pylon hit.
+- V64 was more aggressive and produced four pylon hits in the preliminary
+  replay, so V61 was selected for the next LHC/BO comparisons.
+
+## V61 4D qr0 LHC Budget50
+
+Scenario:
+
+```text
+LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL_V61
+```
+
+Setup:
+
+```text
+q_r = 0 fixed/removed from search
+4D weights in [0.01, 100], log scale
+strategy = lhc
+budget = 50
+seed = 1
+experiment_dir = llm_mpc_bo/results/experiments/standard_slalom_v61_4d_lhc_qr0_budget50_seed1
+```
+
+Result:
+
+```text
+completed trials: 50
+ok trials: 50
+status counts: SIM_END 39, SIM_ABORT 11
+zero-pylon trials: 1
+best run: lhc_0025
+J: 11.5053
+pylonHits: 1
+status: SIM_END
+q_y: 19.0285
+q_psi: 11.5477
+r_delta: 0.0700846
+r_d_delta: 1.30613
+```
+
+The single zero-pylon LHC trial was not the best valid outcome because the best
+valid objective still had one pylon hit. LHC confirmed V61 is substantially
+harder than V58.
+
+## V61 4D qr0 BO Budget150
+
+The V61 BO run started with a 50-trial target and was later extended to 150
+total trials to test whether the remaining one-pylon result was a budget issue.
+
+Setup:
+
+```text
+scenario: LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL_V61
+q_r = 0 fixed/removed from search
+4D weights in [0.01, 100], log scale
+strategy = bo
+BO init = 15
+seed = 1
+experiment_dir = llm_mpc_bo/results/experiments/standard_slalom_v61_4d_bo_qr0_budget50_seed1
+final target count: 150
+```
+
+Interim 50-trial result:
+
+```text
+completed trials: 50
+zero-pylon trials: 2
+best run: bo_0049
+J: 11.4681
+pylonHits: 1
+status: SIM_END
+q_y: 1.54163
+q_psi: 1.41200
+r_delta: 0.0313211
+r_d_delta: 0.0110932
+```
+
+Final 150-trial result:
+
+```text
+completed trials: 150
+ok trials: 150
+status counts: SIM_END 136, SIM_ABORT 14
+zero-pylon trials: 5
+zero-pylon SIM_END trials: 0
+best run: bo_0088
+J: 11.3866
+pylonHits: 1
+status: SIM_END
+q_y: 93.8685
+q_psi: 0.0449184
+r_delta: 1.18758
+r_d_delta: 0.102389
+```
+
+Top valid BO trials all remained at one pylon hit:
+
+```text
+bo_0088  J=11.3866  pylonHits=1
+bo_0049  J=11.4681  pylonHits=1
+bo_0140  J=11.4849  pylonHits=1
+bo_0054  J=11.4870  pylonHits=1
+bo_0063  J=11.4895  pylonHits=1
+```
+
+The five zero-pylon rows were all `SIM_ABORT`, so they are not valid
+pylon-free completions.
+
+Interpretation:
+
+- Extending BO from 50 to 150 trials did not find a valid pylon-free completion.
+- The limiting factor is probably not BO budget alone.
+- V61 appears to expose a structural limitation of the current
+  lateral-only/front-steering MPC plus fixed reference setup: the optimizer
+  repeatedly finds near-boundary one-pylon solutions but not a clean
+  completion.
+- Further progress likely requires problem-definition changes, such as
+  pylon-safe reference margins, lateral corridor constraints, or including
+  longitudinal speed control in the optimization problem.
+
+Open direction:
+
+- A low-mu safe-performance formulation may be more meaningful than another
+  fixed-speed lateral-only sweep.
+- Candidate formulation: tune lateral MPC weights plus `speedScale`, reward
+  speed only for pylon-free completions, and keep large penalties for pylon
+  hits and `SIM_ABORT`.

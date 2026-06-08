@@ -48,6 +48,9 @@ def main() -> int:
         print(json.dumps([candidate_to_json(c) for c in candidates], indent=2, ensure_ascii=False))
         return 0
 
+    if args.load_testrun and not args.reload_testrun_each_trial and has_trials_to_run(args, completed):
+        load_testrun(args, repo_root)
+
     if args.strategy == "bo":
         target_count = target_trial_count(args)
         for _ in range(new_trial_limit(completed, target_count, args.max_new_trials)):
@@ -90,7 +93,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--engine", default=None)
     parser.add_argument("--trial-cli", default="llm_mpc_bo/scripts/mpc_trial_cli.py")
     parser.add_argument("--testrun", default="LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL")
-    parser.add_argument("--load-testrun", action="store_true")
+    parser.add_argument("--host", default="localhost", help="CarMaker TCP host for TestRun loading.")
+    parser.add_argument("--port", type=int, default=16660, help="CarMaker TCP port for TestRun loading.")
+    parser.add_argument("--load-testrun", action="store_true", help="Load the TestRun once before newly executed trials.")
+    parser.add_argument(
+        "--reload-testrun-each-trial",
+        action="store_true",
+        help="With --load-testrun, reload the TestRun inside every trial subprocess.",
+    )
     parser.add_argument("--allow-uncurated", action="store_true")
     parser.add_argument("--reset-mpc", action="store_true", help="Re-run init_slalom_mpc.m inside each trial before applying params.")
     parser.add_argument("--write-trial-plots", action="store_true", help="Generate per-trial trajectory/time PNGs during the batch.")
@@ -125,6 +135,12 @@ def write_or_validate_optimizer_config(experiment_dir: Path, args: argparse.Name
     for key, expected in config.items():
         if existing.get(key) != expected:
             mismatches.append((key, existing.get(key), expected))
+    if len(mismatches) == 1 and mismatches[0][0] == "budget":
+        _, old_budget, new_budget = mismatches[0]
+        if int(new_budget) >= int(old_budget):
+            existing["budget"] = new_budget
+            path.write_text(json.dumps(existing, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+            return
     if mismatches:
         details = "; ".join(
             f"{key}: existing={old!r}, requested={new!r}" for key, old, new in mismatches
@@ -361,8 +377,9 @@ def run_trial(args: argparse.Namespace, repo_root: Path, experiment_dir: Path, c
     ]
     if args.engine:
         command.extend(["--engine", args.engine])
-    if args.load_testrun:
+    if args.load_testrun and args.reload_testrun_each_trial:
         command.append("--load-testrun")
+        command.extend(["--host", args.host, "--port", str(args.port)])
     if args.allow_uncurated:
         command.append("--allow-uncurated")
     if args.reset_mpc:
@@ -374,6 +391,25 @@ def run_trial(args: argparse.Namespace, repo_root: Path, experiment_dir: Path, c
 
     subprocess.run(command, cwd=str(repo_root), check=True)
     append_jsonl(experiment_dir / "candidates.jsonl", candidate_to_json(candidate))
+
+
+def load_testrun(args: argparse.Namespace, repo_root: Path) -> None:
+    runner = repo_root / "workspace" / "carmaker_llm_scenario_skill" / "agent" / "carmaker_research_runner.py"
+    command = [
+        sys.executable,
+        str(runner),
+        "load",
+        "--direct-carmaker",
+        "--host",
+        args.host,
+        "--port",
+        str(args.port),
+        "--testrun",
+        args.testrun,
+    ]
+    if args.allow_uncurated:
+        command.append("--allow-uncurated")
+    subprocess.run(command, check=True, cwd=str(repo_root))
 
 
 def generate_objective_plot(args: argparse.Namespace, repo_root: Path, experiment_dir: Path) -> dict[str, Any]:
@@ -497,6 +533,11 @@ def new_trial_limit(completed: set[int], target_count: int, max_new_trials: int 
     if max_new_trials is not None:
         return min(remaining, max_new_trials)
     return remaining
+
+
+def has_trials_to_run(args: argparse.Namespace, completed: set[int]) -> bool:
+    target_count = target_trial_count(args)
+    return new_trial_limit(completed, target_count, args.max_new_trials) > 0
 
 
 def decode_normalized(values: list[float]) -> dict[str, float]:

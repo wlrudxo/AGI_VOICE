@@ -7,6 +7,7 @@ import argparse
 import json
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,7 @@ def main() -> int:
         "experimentDir": str(experiment_dir),
         "trialDir": str(trial_dir),
         "dryRun": args.dry_run,
+        "timing": {},
     }
 
     if args.dry_run:
@@ -43,11 +45,18 @@ def main() -> int:
     write_experiment_config(experiment_dir, args, repo_root)
 
     if args.load_testrun:
+        load_start = time.perf_counter()
         load_testrun(args, repo_root)
+        record["timing"]["loadTestrunWallS"] = time.perf_counter() - load_start
 
     try:
+        matlab_start = time.perf_counter()
         matlab_result = run_matlab_trial(args, repo_root, trial_dir, params, run_id)
+        timing = dict(record.get("timing", {}))
+        timing["runMatlabTrialWallS"] = time.perf_counter() - matlab_start
+        timing.update(matlab_result.get("timing", {}))
         record.update(matlab_result)
+        record["timing"] = timing
         record["ok"] = True
         if not args.skip_trial_plots:
             record["plots"] = generate_trial_plots(args, repo_root, trial_dir, run_id)
@@ -160,6 +169,7 @@ def compact_record(record: dict[str, Any]) -> dict[str, Any]:
         "maxYawRate",
         "duration",
         "engine",
+        "timing",
         "error",
     )
     compact = {key: record[key] for key in keys if key in record}
@@ -235,13 +245,23 @@ def run_matlab_trial(
             raise RuntimeError("No shared MATLAB engines found. Run matlab.engine.shareEngine in MATLAB.")
         engine_name = engines[0]
 
+    connect_start = time.perf_counter()
     eng = matlab.engine.connect_matlab(engine_name)
+    connect_wall_s = time.perf_counter() - connect_start
     matlab_cmd = build_matlab_command(args, repo_root, trial_dir, params, run_id)
+    eval_start = time.perf_counter()
     eng.eval(matlab_cmd, nargout=0)
+    eval_wall_s = time.perf_counter() - eval_start
 
+    fetch_start = time.perf_counter()
     compact_json = eng.eval("jsonencode(cliTrialRecord)")
+    fetch_wall_s = time.perf_counter() - fetch_start
     result = json.loads(compact_json)
     result["engine"] = engine_name
+    result.setdefault("timing", {})
+    result["timing"]["connectMatlabWallS"] = connect_wall_s
+    result["timing"]["matlabEvalWallS"] = eval_wall_s
+    result["timing"]["fetchRecordWallS"] = fetch_wall_s
     return result
 
 
@@ -272,23 +292,43 @@ resultsMatPath = '{results_mat}';
 outputDir = '{out_dir}';
 runId = '{run_id_q}';
 params = jsondecode('{params_q}');
+timing = struct();
+trialWallTic = tic;
+stageTic = tic;
 cd(cmProjectSrcDir);
 addpath(fullfile(repoRoot, 'llm_mpc_bo', 'simulink'));
 addpath(fullfile(repoRoot, 'llm_mpc_bo', 'scripts'));
+timing.setupPathsS = toc(stageTic);
 if exist('cmenv', 'file') == 2
+    stageTic = tic;
     evalc('cmenv;');
+    timing.cmenvS = toc(stageTic);
+else
+    timing.cmenvS = 0;
 end
 if {reset_expr} || evalin('base', "exist('mpcobj','var')") ~= 1
+    stageTic = tic;
     evalin('base', sprintf("run('%s')", fullfile(repoRoot, 'llm_mpc_bo', 'simulink', 'init_slalom_mpc.m')));
+    timing.initMpcS = toc(stageTic);
+else
+    timing.initMpcS = 0;
 end
 if ~bdIsLoaded(mdl)
+    stageTic = tic;
     open_system(mdl);
+    timing.openSystemS = toc(stageTic);
+else
+    timing.openSystemS = 0;
 end
 steerGainBlock = [mdl '/CarMaker/VehicleControl/CreateBus VhclCtrl.Steering/Gain'];
+stageTic = tic;
 if getSimulinkBlockHandle(steerGainBlock) ~= -1
     set_param(steerGainBlock, 'Gain', '{steering_gain}');
 end
+timing.setSteeringGainS = toc(stageTic);
+stageTic = tic;
 evalc('mpcobj = apply_slalom_mpc_params(params);');
+timing.applyMpcParamsS = toc(stageTic);
 if exist(resultsMatPath, 'file')
     beforeInfo = dir(resultsMatPath);
     beforeDatenum = beforeInfo.datenum;
@@ -296,7 +336,9 @@ else
     beforeDatenum = -Inf;
 end
 simStart = datetime('now');
+stageTic = tic;
 evalc('simOut = sim(mdl);');
+timing.simCallS = toc(stageTic);
 simEnd = datetime('now');
 assignin('base', 'simOut', simOut);
 if ~exist(resultsMatPath, 'file')
@@ -306,7 +348,9 @@ afterInfo = dir(resultsMatPath);
 if afterInfo.datenum <= beforeDatenum
     error('Results.mat timestamp did not advance. Old/new datenum: %.12f / %.12f', beforeDatenum, afterInfo.datenum);
 end
+stageTic = tic;
 summary = analyze_results_mat(resultsMatPath, outputDir, 'applied', '', false, '{matlab_quote(args.testrun)}', {write_analysis_plots});
+timing.analyzeResultsS = toc(stageTic);
 cliTrialRecord = struct();
 cliTrialRecord.runId = runId;
 cliTrialRecord.params = params;
@@ -334,6 +378,8 @@ cliTrialRecord.mvMin = mpcobj.MV.Min;
 cliTrialRecord.mvMax = mpcobj.MV.Max;
 cliTrialRecord.mvRateMin = mpcobj.MV.RateMin;
 cliTrialRecord.mvRateMax = mpcobj.MV.RateMax;
+timing.totalMatlabCommandS = toc(trialWallTic);
+cliTrialRecord.timing = timing;
 trialSummaryPath = fullfile(outputDir, 'trial_summary.json');
 fid = fopen(trialSummaryPath, 'w');
 if fid < 0
