@@ -9,12 +9,12 @@
 - MPC 제어기 구조 자체가 새로운 것이 아니라, 고정된 MPC 제어기의 가중치 튜닝을 대상으로 한다.
 - 각 후보 파라미터는 한 번의 시뮬레이션으로 평가되며, 결과는 하나의 목적함수 값으로 환산된다.
 - 비교 대상의 중심은 무작위/공간충진 탐색, Bayesian Optimization, LLM-based 후보 제안이다.
-- Sobol은 optimizer baseline이 아니라 4D search landscape audit 용도로 사용한다.
-- BO-advised LLM은 메인 성능 주장보다, naive hybrid가 BO exploration과 충돌할 수 있음을 보여주는 preliminary diagnostic으로 둔다.
+- Sobol은 optimizer baseline이 아니라 4D search landscape analysis 용도로 사용한다.
+- BO-advised LLM은 메인 성능 주장보다, naive hybrid가 BO exploration과 충돌할 수 있음을 보여주는 preliminary analysis로 둔다.
 - LLM은 차량을 직접 제어하는 저수준 제어기가 아니라, 실험 결과를 해석하고 다음 탐색 후보 또는 탐색 영역을 제안하는 보조 최적화 모듈로 설명한다.
 - 현재 핵심 메시지는 "LLM-based는 물리적으로 그럴듯한 feasible region에 빠르게 도달하고 local refinement를 잘하지만, BO/Sobol은 LLM이 잘 고르지 않는 비직관 feasible local region을 발견할 수 있다"이다.
 - 단순 LLM+BO 결합은 자동으로 좋아지지 않으며, LLM이 BO proposal의 gatekeeper가 되면 비직관 exploration을 약화시킬 수 있다는 cautionary finding을 discussion에 둔다.
-- 현재 주 실험은 nominal slalom, 4D MPC weight tuning이다. 내부 로그의 `V61` 같은 시나리오 식별자는 논문 본문에 직접 쓰지 않는다. `q_r`은 0으로 고정하고, `q_y`, `q_\psi`, `r_\delta`, `r_{\Delta\delta}`만 탐색한다.
+- 현재 주 실험은 nominal slalom, 4D MPC weight tuning이다. 내부 로그의 `V61` 같은 시나리오 식별자는 논문 본문에 직접 쓰지 않는다. 논문 본문에서는 `q_y`, `q_\psi`, `r_\delta`, `r_{\Delta\delta}`만 튜닝 변수로 제시한다.
 
 논문은 최대 6페이지 제한을 고려하여, 구현 세부사항보다 문제 정의, 수식화, 실험 프로토콜, 결과 비교에 집중한다.
 
@@ -69,8 +69,8 @@ Related work는 별도 section으로 길게 두기보다 Introduction 후반 또
 
 ```text
 1. CarMaker-Simulink 기반 MPC weight tuning 문제를 black-box optimization 문제로 정식화하였다.
-2. road departure, evaluated pylon hit, lateral/heading tracking error를 포함한 scalar objective를 정의하고, yaw/steering metric은 진단용으로 기록하였다.
-3. 동일한 simulation budget에서 LHC/random, BO, LLM-based를 비교하고, Sobol audit으로 feasible local-region 구조를 분석하였다.
+2. road departure, evaluated cone contact, lateral/heading tracking error를 포함한 scalar objective를 정의하고, yaw/steering metric은 diagnostic analysis용으로 기록하였다.
+3. 동일한 simulation budget에서 LHC/random, BO, LLM-based를 비교하고, Sobol analysis로 feasible local-region 구조를 분석하였다.
 4. BO-advised LLM preliminary run을 통해 naive gatekeeping hybrid의 한계를 관찰하였다.
 ```
 
@@ -99,7 +99,7 @@ r_\delta: steering effort weight
 r_{\Delta\delta}: steering-rate smoothness weight
 ```
 
-`q_r`은 MPC output-weight matrix에는 남아 있지만, 현재 formal comparison에서는 `q_r=0`으로 고정한다고 설명한다. `q_r`을 튜닝 변수처럼 쓰지 않는다.
+논문 본문에서는 `q_y`, `q_\psi`, `r_\delta`, `r_{\Delta\delta}` 네 개만 튜닝 변수로 제시한다.
 
 탐색 문제는 다음처럼 쓴다.
 
@@ -116,7 +116,7 @@ r_{\Delta\delta}: steering-rate smoothness weight
 J(\theta)
 =
 100 I_{\mathrm{fail}}
-+ 10 N_{\mathrm{pylon}}
++ 10 N_{\mathrm{hit}}
 + 4\,\mathrm{RMSE}(e_y)
 + 0.5\,\|e_y\|_{\infty}
 + 5\,\mathrm{RMSE}(e_\psi).
@@ -125,7 +125,7 @@ J(\theta)
 본문에서는 각 항을 다음처럼 설명한다.
 
 - `I_fail`: road departure에 대한 penalty
-- `N_pylon`: evaluated pylon contact count, entry contact는 무시
+- `N_hit`: evaluated cone contact count, entry contact는 무시
 - `e_y`: lateral tracking error
 - `e_psi`: heading error
 - `r`, `delta`, `Delta delta`: objective에는 0 weight이고 진단/plot용 metric으로만 기록
@@ -165,7 +165,7 @@ a(\theta;\mathcal{D}_n)
 LLM 역할은 다음 세 가지 정도로 제한한다.
 
 ```text
-1. failed or unsafe trial diagnosis
+1. failed or unsafe trial diagnostic analysis
 2. promising region suggestion
 3. candidate ranking or warm-start proposal
 ```
@@ -179,10 +179,10 @@ LLM 역할은 다음 세 가지 정도로 제한한다.
 포함할 내용:
 
 - 시뮬레이터: CarMaker-Simulink co-simulation
-- 시나리오: standard slalom maneuver with pylons
+- 시나리오: standard slalom maneuver with cones
 - 차량 제어: steering command through MPC lateral controller
 - 고정 조건: MPC structure, prediction/control horizon, steering physical constraints
-- 튜닝 대상: 4개 weight only (`q_r=0` fixed)
+- 튜닝 대상: 4개 MPC weights
 - 평가 예산: method/run당 50 simulation trials
 
 탐색 방법은 table로 간단히 정리한다.
@@ -194,7 +194,7 @@ Random Search        random sampling in the same search space
 LHC                  space-filling non-adaptive baseline
 BO                   initial design + sequential surrogate-based search
 LLM-based            LLM proposes candidates from previous results
-BO-advised LLM      BO with LLM-guided diagnosis or region suggestion
+BO-advised LLM      BO with LLM-guided analysis or region suggestion
 ```
 
 BO 예산은 다음처럼 쓴다.
@@ -222,10 +222,10 @@ Table 2: Method comparison summary
 
 결과에서 강조할 것:
 
-- pylon hit를 0으로 줄이는지
+- cone hits를 0으로 줄이는지
 - 같은 trial budget에서 best objective가 얼마나 빨리 감소하는지
 - BO가 LHC/random 대비 early-stage sample efficiency를 보이는지
-- LLM-based가 feasible zero-hit region을 얼마나 빨리 찾는지
+- LLM-based가 feasible hit-free region을 얼마나 빨리 찾는지
 - BO가 LLM-based보다 낮은 objective local region을 찾는지
 - BO-advised LLM가 LLM-based의 feasibility와 BO의 global exploration을 동시에 살리는지
 - BO-advised LLM의 BO proposal accept/modify/reject 비율과 각 action의 결과가 어떤지
@@ -233,7 +233,7 @@ Table 2: Method comparison summary
 결과 해석은 다음 순서로 쓴다.
 
 ```text
-1. completion and safety: SIM_END, pylon hits
+1. completion and safety: SIM_END, cone hits
 2. tracking quality: RMSE/max lateral error
 3. control smoothness: steering command/rate
 4. sample efficiency: convergence curve
@@ -247,8 +247,8 @@ Table 2: Method comparison summary
 포함할 내용:
 
 - simulator-in-the-loop MPC tuning framework를 구축했다.
-- pylon hit와 lateral/heading tracking metrics를 포함한 objective로 비교하고, control metrics는 진단용으로 기록했다.
-- BO와 LLM-based의 sample efficiency를 평가했다. BO-advised LLM은 diagnostic case로만 보고한다.
+- cone hit와 lateral/heading tracking metrics를 포함한 objective로 비교하고, control metrics는 diagnostic analysis용으로 기록했다.
+- BO와 LLM-based의 sample efficiency를 평가했다. BO-advised LLM은 preliminary analysis case로만 보고한다.
 - 한계: 단일 시나리오, 고정 MPC 구조, 시뮬레이션 기반 검증
 - 향후 연구: low-friction stress test, more driving scenarios, policy-learning formulation if RL is considered
 
@@ -268,7 +268,7 @@ r_{\Delta\delta}
 \right]^\top
 ```
 
-`q_r=0` fixed라는 문장을 바로 붙인다.
+본문에서는 별도의 yaw-rate weight를 튜닝 변수로 제시하지 않는다.
 
 2. black-box optimization problem
 
@@ -299,7 +299,7 @@ a(\theta;\mathcal{D}_n)
 J(\theta)
 =
 100 I_{\mathrm{fail}}
-+ 10 N_{\mathrm{pylon}}
++ 10 N_{\mathrm{hit}}
 + 4\,\mathrm{RMSE}(e_y)
 + 0.5\,\|e_y\|_{\infty}
 + 5\,\mathrm{RMSE}(e_\psi)
@@ -333,15 +333,15 @@ Model Predictive Control (MPC)
 Latin Hypercube Sampling (LHC)
 simulator-in-the-loop
 black-box optimization
-pylon hit
+cone hit
 lateral tracking error
-steering diagnostics
+steering diagnostic metrics
 scalar objective
 ```
 
 ## 현재 초안 수정 방향
 
-현재 `ICCAS202601.tex` 초안은 nominal slalom 4D baseline 결과와 BO-advised LLM diagnostic 결과를 반영한 상태다. 실제 6페이지 논문으로 줄일 때는 다음처럼 압축한다.
+현재 `ICCAS202601.tex` 초안은 nominal slalom 4D baseline 결과와 BO-advised LLM preliminary analysis 결과를 반영한 상태다. 실제 6페이지 논문으로 줄일 때는 다음처럼 압축한다.
 
 - `Related Work`는 독립 section에서 빼고 Introduction 또는 Framework 앞부분으로 흡수한다.
 - `Problem Formulation`과 `Objective`는 하나의 section으로 합친다.
@@ -359,26 +359,26 @@ BO: 5 independent runs, 250 trials, 4 successes, best J = 0.739914
 LHC: 5 independent runs, 250 trials, 1 success, best J = 1.378332
 Random: 5 independent runs, 250 trials, 0 successes, best J = 11.169761
 LLM-based: 5 independent runs, 250 trials, 101 successes, best J = 1.176372
-BO-advised LLM: 1 diagnostic run, 50 trials, 0 successes, best J = 11.398445
+BO-advised LLM: 1 preliminary run, 50 trials, 0 successes, best J = 11.398445
 ```
 
 해석은 다음 선을 넘지 않는다.
 
-- LLM-based는 5회 중 4회에서 feasible zero-hit solution을 빠르게 찾았지만, 1회는 one-hit local pocket에 머물렀다.
+- LLM-based는 5회 중 4회에서 feasible hit-free solution을 빠르게 찾았지만, 1회는 one-hit local region에 머물렀다.
 - BO는 성공률은 낮지만 현재 best objective를 찾았다.
 - LLM-based는 성공하거나 near-feasible point를 찾은 뒤 같은 local region 주변을 exploit하는 경향이 있었다.
-- BO-advised LLM은 naive gatekeeping hybrid가 BO exploration과 충돌할 수 있음을 보여주는 preliminary diagnostic으로 둔다.
+- BO-advised LLM은 naive gatekeeping hybrid가 BO exploration과 충돌할 수 있음을 보여주는 preliminary analysis로 둔다.
 
-## Zero-Hit Local Region Table 계획
+## Hit-Free Local Region Table 계획
 
-논문 결과 section에는 method별 best만 나열하기보다, 모든 pylon-free trial을
+논문 결과 section에는 method별 best만 나열하기보다, 모든 hit-free trial을
 4D log-scaled weight space에서 묶은 local region table을 추가하는 방향이 좋다.
-중복되는 zero-hit point는 대표점만 제시한다.
+중복되는 hit-free point는 대표점만 제시한다.
 
 현재 결과 기준:
 
 ```text
-zero-hit points:
+hit-free points:
 BO 4, LHC 1, Random 0, LLM-based 101, Sobol 2, BO-advised LLM 0
 total 108
 ```
@@ -393,13 +393,13 @@ R1 BO aggressive high-heading
 
 R2 LLM-based high-heading
   found by: LLM-based, BO
-  zero-hit pts: 102
+  hit-free pts: 102
   rep J: 1.1764
   weights: q_y=80.000, q_psi=45.765, r_delta=0.1000, r_d_delta=0.8000
 
 R3 low-heading mid-penalty
   found by: BO, LHC, Sobol
-  zero-hit pts: 3
+  hit-free pts: 3
   rep J: 1.3714
   weights: q_y=56.001, q_psi=0.0459, r_delta=0.3501, r_d_delta=0.9510
 
@@ -424,16 +424,16 @@ R5 BO low-heading high-q_y
   scan이다. 이는 full 4D robustness volume이 아니라 local sensitivity
   evidence로만 사용한다.
 - 요약 결과:
-  - R1 BO aggressive high-heading: best J=0.6993, zero-hit 9/33. `q_y`,
+- R1 BO aggressive high-heading: best J=0.6993, hit-free 9/33. `q_y`,
     `q_psi`는 민감하고, `r_delta`, `r_d_delta`는 lower-bound 방향에서만
-    zero-hit 유지.
-  - R2 LLM-based high-heading: best J=1.1764, zero-hit 2/33. 중심점 주변이
-    좁고 `q_psi -0.1 decade`만 추가 zero-hit.
-  - R3 low-heading mid-penalty: best J=1.3714, zero-hit 9/33. `q_psi`는
+    hit-free 유지.
+  - R2 LLM-based high-heading: best J=1.1764, hit-free 2/33. 중심점 주변이
+    좁고 `q_psi -0.1 decade`만 추가 hit-free.
+  - R3 low-heading mid-penalty: best J=1.3714, hit-free 9/33. `q_psi`는
     `+-0.4 decade` 전체 허용, 나머지 축은 민감.
-  - R4 Sobol low-heading low-penalty: best J=1.3736, zero-hit 9/33. R3와
+  - R4 Sobol low-heading low-penalty: best J=1.3736, hit-free 9/33. R3와
     동일하게 `q_psi` 둔감, 나머지 축 민감.
-  - R5 BO low-heading high-q_y: best J=1.3847, zero-hit 17/33. `q_psi`와
+  - R5 BO low-heading high-q_y: best J=1.3847, hit-free 17/33. `q_psi`와
     `r_delta`는 `+-0.4 decade` 전체 허용, `q_y`와 `r_d_delta`는 민감.
 - 논문에서는 "single basin" 같은 표현보다 separated local minimum areas with
   different local sensitivities라고 쓴다. R1은 sharp high-performance point,
@@ -444,16 +444,16 @@ R5 BO low-heading high-q_y
 이 결과는 모든 MPC tuning 문제에 일반화하기보다, 현재 slalom 시나리오와
 목적함수 구조의 특성 안에서 해석한다.
 
-- 현재 slalom은 연속 pylon 회피 문제라 steering timing의 작은 변화가 뒤쪽
-  pylon contact로 증폭될 수 있다.
-- 목적함수는 lateral/heading tracking error 같은 연속 지표와 pylon hit 같은
+- 현재 slalom은 연속 cone 회피 문제라 steering timing의 작은 변화가 뒤쪽
+  cone contact로 증폭될 수 있다.
+- 목적함수는 lateral/heading tracking error 같은 연속 지표와 cone hit 같은
   discrete event penalty를 함께 포함한다.
 - 따라서 objective landscape는 smooth한 단일 bowl 형태라기보다, 여러
   separated high-performing local minimum areas와 sharp optimum을 포함하는
   non-smooth closed-loop simulation objective로 해석하는 것이 적절하다.
 - R1 BO best는 현재까지 가장 낮은 objective를 보였지만, 축방향 tolerance scan
   초기 결과상 `q_y`, `q_\psi` perturbation에 매우 민감하고 control penalty는
-  lower-bound 부근에서만 pylon-free 성능이 유지되는 sharp solution으로 보인다.
+  lower-bound 부근에서만 hit-free 성능이 유지되는 sharp solution으로 보인다.
 - LLM-based는 물리적으로 그럴듯한 feasible region에 빠르게 도달하고 local
   refinement를 잘하지만, 이런 sharp/non-intuitive optimum이나 떨어진 local
   minimum area를 충분히 exploration하지 못할 수 있다.
@@ -464,7 +464,7 @@ Discussion/Conclusion에서는 다음 정도로 제한적으로 주장한다.
 
 ```text
 These findings do not imply that BO or LLM-based tuning is universally superior.
-Rather, in an event-driven slalom calibration problem with discrete pylon-contact
+Rather, in an event-driven slalom calibration problem with discrete cone-contact
 penalties and sharp high-performing regions, LLM-based tuning can rapidly reach
 physically plausible feasible settings but may concentrate around intuitive local
 minimum areas. BO can discover less intuitive high-performance settings, although

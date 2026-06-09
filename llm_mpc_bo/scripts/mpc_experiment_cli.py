@@ -82,7 +82,7 @@ def parse_args() -> argparse.Namespace:
         "--experiment-dir",
         default="llm_mpc_bo/results/experiments/standard_slalom_latest",
     )
-    parser.add_argument("--strategy", choices=["lhc", "random", "bo"], required=True)
+    parser.add_argument("--strategy", choices=["lhc", "random", "sobol", "bo"], required=True)
     parser.add_argument("--method", default=None, help="Ledger method label. Defaults to strategy.")
     parser.add_argument("--count", type=int, required=True, help="Target total completed trials for this experiment directory.")
     parser.add_argument("--budget", type=int, default=None, help="Total planned search budget. Defaults to --count.")
@@ -176,7 +176,7 @@ def plan_candidates(
     if target_count == 0:
         return []
 
-    if args.strategy in {"lhc", "random"}:
+    if args.strategy in {"lhc", "random", "sobol"}:
         plan = load_or_create_space_plan(experiment_dir, args.strategy, args.seed, args.budget)
         iterations = next_missing_iterations(
             completed,
@@ -199,10 +199,13 @@ def load_or_create_space_plan(
         data = json.loads(path.read_text(encoding="utf-8"))
         return data["normalizedCandidates"]
 
-    rng = random.Random(seed)
     if strategy == "lhc":
+        rng = random.Random(seed)
         plan = latin_hypercube(budget, len(TUNED_KEYS), rng)
+    elif strategy == "sobol":
+        plan = sobol_sequence(budget, len(TUNED_KEYS), skip=max(0, seed - 1) * budget)
     else:
+        rng = random.Random(seed)
         plan = [[rng.random() for _ in TUNED_KEYS] for _ in range(budget)]
 
     payload = {
@@ -223,6 +226,60 @@ def latin_hypercube(n: int, d: int, rng: random.Random) -> list[list[float]]:
         rng.shuffle(values)
         columns.append(values)
     return [[columns[j][i] for j in range(d)] for i in range(n)]
+
+
+def sobol_sequence(n: int, d: int, skip: int = 0) -> list[list[float]]:
+    if d > 4:
+        raise ValueError("sobol_sequence currently supports up to 4 dimensions")
+    bits = 32
+    directions = sobol_direction_numbers(d, bits)
+    points: list[list[float]] = []
+    scale = float(1 << bits)
+    for index in range(skip, skip + n):
+        gray = index ^ (index >> 1)
+        point = []
+        for dim in range(d):
+            x = 0
+            bit = 0
+            value = gray
+            while value:
+                if value & 1:
+                    x ^= directions[dim][bit]
+                value >>= 1
+                bit += 1
+            point.append((x + 0.5) / scale)
+        points.append(point)
+    return points
+
+
+def sobol_direction_numbers(d: int, bits: int) -> list[list[int]]:
+    # Primitive polynomial data for the first four Sobol dimensions.
+    params = [
+        (0, 0, []),
+        (1, 0, [1]),
+        (2, 1, [1, 3]),
+        (3, 1, [1, 3, 1]),
+    ]
+    directions: list[list[int]] = []
+    for dim in range(d):
+        s, a, m = params[dim]
+        v = [0] * bits
+        if dim == 0:
+            for j in range(bits):
+                v[j] = 1 << (bits - j - 1)
+            directions.append(v)
+            continue
+
+        for j in range(s):
+            v[j] = m[j] << (bits - j - 1)
+        for j in range(s, bits):
+            value = v[j - s] ^ (v[j - s] >> s)
+            for k in range(1, s):
+                if (a >> (s - 1 - k)) & 1:
+                    value ^= v[j - k]
+            v[j] = value
+        directions.append(v)
+    return directions
 
 
 def plan_bo_candidates(

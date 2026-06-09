@@ -146,6 +146,28 @@ For repeated seeds, use a new `--experiment-dir` for each method/seed pair.
 Never reuse one experiment directory after changing search ranges, objective
 terms, steering constraints, TestRun, seed, or BO initialization count.
 
+Run a Sobol landscape-audit batch when the goal is dense, low-discrepancy
+coverage of the 4D log-scale search space rather than optimizer comparison:
+
+```powershell
+py -3.12 llm_mpc_bo\scripts\mpc_experiment_cli.py `
+  --strategy sobol `
+  --method sobol `
+  --count 1024 `
+  --budget 1024 `
+  --seed 1 `
+  --engine MATLAB_58352 `
+  --testrun LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL_V61 `
+  --load-testrun `
+  --allow-uncurated `
+  --experiment-dir llm_mpc_bo\results\experiments\standard_slalom_v61_4d_sobol_entryignored_budget1024_seed1 `
+  --reset-mpc
+```
+
+For interactive Sobol smoke checks, keep the same `--count 1024 --budget
+1024` target and add `--max-new-trials N`. This preserves the final 1024-point
+candidate plan while running only the next `N` missing simulations.
+
 ## Outputs
 
 Each experiment directory contains:

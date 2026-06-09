@@ -361,6 +361,7 @@ lines = {
     sprintf('- J fail-closed: `%.6g`', summary.objective.JFailClosed)
     sprintf('- objective used: `%s`', summary.objective.objectiveUsed)
     sprintf('- pylon hits: `%d`', summary.objective.pylonHits)
+    sprintf('- raw/ignored entry pylon hits: `%d` / `%d`', summary.objective.rawPylonHits, summary.objective.entryPylonHitsIgnored)
     sprintf('- collision detected/count: `%d` / `%d`', summary.objective.collisionDetected, summary.objective.collisionCount)
     sprintf('- crash/sim fail: `%d`', summary.objective.crashOrSimFail)
     sprintf('- ERG status: `%s`', summary.objective.ergStatus)
@@ -443,6 +444,10 @@ erg.available = false;
 erg.path = '';
 erg.status = 'unknown';
 erg.pylonHitCount = 0;
+erg.rawPylonHitCount = 0;
+erg.entryPylonHitCount = 0;
+erg.evaluatedPylonHitCount = 0;
+erg.pylonHits = struct([]);
 erg.collisionDetected = false;
 erg.collisionCount = 0;
 erg.crashOrSimFail = false;
@@ -469,6 +474,12 @@ erg.available = true;
 erg.path = char(candidate);
 if isfield(raw, 'pylonHitCount')
     erg.pylonHitCount = raw.pylonHitCount;
+    erg.rawPylonHitCount = raw.pylonHitCount;
+end
+if isfield(raw, 'pylonHits')
+    erg.pylonHits = raw.pylonHits;
+    [erg.evaluatedPylonHitCount, erg.entryPylonHitCount] = count_evaluated_pylon_hits(raw.pylonHits);
+    erg.pylonHitCount = erg.evaluatedPylonHitCount;
 end
 if isfield(raw, 'collisionDetected')
     erg.collisionDetected = logical(raw.collisionDetected);
@@ -488,6 +499,29 @@ if isfield(raw, 'finalSRoadM')
     erg.distanceM = raw.finalSRoadM;
 end
 erg.crashOrSimFail = ~strcmp(string(erg.status), "SIM_END");
+end
+
+function [evaluatedCount, entryCount] = count_evaluated_pylon_hits(pylonHits)
+entryStartX = 309.0;
+evaluatedCount = 0;
+entryCount = 0;
+if isempty(pylonHits)
+    return;
+end
+for idx = 1:numel(pylonHits)
+    hit = pylonHits(idx);
+    isEntry = false;
+    if isfield(hit, 'pos_0_x')
+        isEntry = double(hit.pos_0_x) < entryStartX;
+    elseif isfield(hit, 'sRoad')
+        isEntry = double(hit.sRoad) < entryStartX;
+    end
+    if isEntry
+        entryCount = entryCount + 1;
+    else
+        evaluatedCount = evaluatedCount + 1;
+    end
+end
 end
 
 function latestErg = find_latest_erg(testrunName)
@@ -549,10 +583,20 @@ end
 
 function objective = compute_bo_objective(metrics, erg)
 pylonHits = 0;
+rawPylonHits = 0;
+entryPylonHits = 0;
 crashOrSimFail = false;
 ergStatus = 'unknown';
 if isfield(erg, 'available') && erg.available
     pylonHits = erg.pylonHitCount;
+    if isfield(erg, 'rawPylonHitCount')
+        rawPylonHits = erg.rawPylonHitCount;
+    else
+        rawPylonHits = pylonHits;
+    end
+    if isfield(erg, 'entryPylonHitCount')
+        entryPylonHits = erg.entryPylonHitCount;
+    end
     crashOrSimFail = erg.crashOrSimFail;
     ergStatus = erg.status;
 end
@@ -587,6 +631,8 @@ objective.JFailClosed = JFailClosed;
 objective.objectiveUsed = objectiveUsed;
 objective.NViolation = pylonHits;
 objective.pylonHits = pylonHits;
+objective.rawPylonHits = rawPylonHits;
+objective.entryPylonHitsIgnored = entryPylonHits;
 objective.collisionDetected = false;
 objective.collisionCount = 0;
 objective.crashOrSimFail = crashOrSimFail;
