@@ -17,6 +17,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -110,12 +111,24 @@ def main():
         )
 
     plot_pylons(ax, pylons)
+    ax.add_patch(
+        Rectangle(
+            (365.5, -1.32),
+            13.0,
+            1.20,
+            fill=False,
+            edgecolor="#d62728",
+            linewidth=0.9,
+            linestyle=(0, (3.0, 2.0)),
+            zorder=5,
+        )
+    )
     ax.axhline(0.0, color="#dddddd", linewidth=0.7, zorder=1)
 
     ax.set_xlim(280, 505)
     ax.set_ylim(-2.0, 2.0)
-    ax.set_xlabel("Road coordinate s [m]", fontsize=8.5)
-    ax.set_ylabel("Lateral position t [m]", fontsize=8.5)
+    ax.set_xlabel("Road coordinate [m]", fontsize=8.5)
+    ax.set_ylabel("Lateral position [m]", fontsize=8.5)
     ax.tick_params(axis="both", labelsize=7.5)
     ax.grid(True, alpha=0.22, linewidth=0.55)
     ax.legend(loc="upper right", ncol=1, frameon=True, framealpha=0.78, fontsize=5.4)

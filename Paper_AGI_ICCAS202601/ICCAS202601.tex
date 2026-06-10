@@ -17,7 +17,7 @@
 
 \begin{document}
 
-\title{Language-Based Calibration and Bayesian Optimization for\\ MPC Weight Tuning in Vehicle Slalom Simulation}
+\title{LLM-Based Search and Bayesian Optimization for\\ MPC Weight Tuning in Vehicle Slalom Simulation}
 
 \author{Kyoungtae Ji${}^{1}$, Dongyeol Won${}^{1}$,  and Kyoungseok Han${}^{1*}$}
 
@@ -25,7 +25,24 @@
 Seoul, Korea (kyoungsh@hanyang.ac.kr) {\small${}^{*}$ Corresponding author}}
 
 \abstract{
-This paper presents a simulator-in-the-loop study of model predictive control (MPC) weight calibration for an autonomous vehicle slalom maneuver. The controller structure is fixed, and the optimization target is a four-dimensional set of MPC weights governing lateral tracking, heading response, steering effort, and steering smoothness. Each candidate is evaluated by a closed-loop CarMaker-Simulink simulation and converted into a simulation objective including road departure, evaluated cone contacts, lateral tracking error, and heading error. Additional steering and yaw metrics are logged for diagnostic analysis. The study compares non-adaptive sampling, Bayesian optimization (BO), and LLM-based candidate proposal under a common 50-trial budget, and uses Sobol landscape analysis to interpret the resulting search behavior. Results show complementary behavior: LLM-based calibration rapidly reaches physically plausible hit-free regions and performs effective local refinement, whereas BO and Sobol sampling reveal non-intuitive feasible regions that language-only search tends not to explore.
+This paper presents a simulator-in-the-loop study of model predictive control
+(MPC) weight calibration for an autonomous vehicle slalom maneuver in
+CarMaker-Simulink. The controller structure, prediction model, horizons, and
+steering constraints are fixed, and the optimization target is a
+four-dimensional MPC weight vector for lateral tracking, heading response,
+steering effort, and steering smoothness. Each candidate is evaluated by a
+closed-loop simulation and converted into a simulation objective that penalizes
+road departure, counted cone contacts, and tracking error. Under a common
+50-trial budget, the study compares Latin-hypercube sampling, random search,
+Bayesian optimization (BO), and LLM-based search over five independent
+repetitions. The results show complementary behavior: LLM-based search reaches
+hit-free candidates in four of five repetitions and typically does so early,
+while BO finds the lowest objective value when its exploration reaches a useful
+region. A 4096-sample Sobol-based landscape analysis finds only seven hit-free
+samples, indicating that feasible weight regions are sparse in the log-scaled
+four-dimensional search space. These results suggest that LLM-based search is effective for rapid
+feasibility seeking, whereas numerical exploration remains important for
+discovering less intuitive weight regions.
 }
 
 \keywords{
@@ -41,17 +58,17 @@ Bayesian optimization, large language model, model predictive control, autonomou
 
 Model predictive control (MPC) is widely used for vehicle control because it can handle multi-objective tracking and actuation constraints in a systematic way. In vehicle applications, control-oriented models are often kept simpler than the high-fidelity plant so that they can be used repeatedly inside an online optimizer or estimator \cite{rajamani2006vehicle,reina2017vehicle,maull2022optimizing}. However, even when the controller structure is fixed, its practical performance depends strongly on the selection of weighting parameters. In high-fidelity simulation, these parameters are often tuned by repeated trial-and-error, which is time-consuming and difficult to reproduce.
 
-This paper considers MPC weight tuning as a black-box optimization problem. A candidate weight vector is applied to the controller, one closed-loop slalom simulation is executed, and the resulting driving performance is summarized by a simulation objective. This formulation is suitable for Bayesian optimization (BO), especially when each evaluation is expensive and derivative information is unavailable. Similar simulation-based optimization ideas have been used in automotive calibration and racing-line computation, where candidate designs are evaluated by a simulator or numerical vehicle model rather than by analytic gradients \cite{jain2020computing,arya2019fully,eriksson2019scalable}.
+This paper considers MPC weight tuning as a black-box optimization problem. A candidate weight vector is applied to the controller, one closed-loop slalom simulation is executed, and the resulting driving performance is summarized by a simulation objective. This formulation is suitable for Bayesian optimization (BO), especially when each evaluation is expensive and derivative information is unavailable. Similar simulation-based optimization ideas have been used in automotive calibration and racing-line computation, where candidate designs are evaluated by a simulator or numerical vehicle model rather than by analytic gradients \cite{jain2020computing,arya2019fully}.
 
-Recent large language models (LLMs) have shown strong ability to summarize logs, reason over numerical trends, and suggest experimental directions. Recent studies have also investigated LLMs as assistants for BO, scientific experimentation, and autonomous-driving reasoning \cite{liu2024large,cisse2025language,cisse2026can,cui2026llm4ad}. In this work, the LLM is not treated as a direct steering controller. Instead, it is used as an optimization assistant that can interpret previous trials, diagnose failure patterns, and propose candidate regions or warm-start points. This preserves the MPC controller as the low-level control law while investigating whether LLM reasoning can improve the sample efficiency of simulator-based tuning.
+Recent large language models (LLMs) have shown strong ability to summarize logs, reason over numerical trends, and suggest experimental directions. Recent studies have also investigated LLMs as assistants for BO and closed-loop scientific experimentation \cite{liu2024large,cisse2025language,cisse2026can}. In this work, the LLM is not treated as a direct steering controller. Instead, it is used as an optimization assistant that can interpret previous trials, diagnose failure patterns, and propose candidate regions or warm-start points. This preserves the MPC controller as the low-level control law while investigating whether LLM reasoning can improve the sample efficiency of simulator-based tuning.
 
-The central question is not whether language reasoning replaces numerical optimization. Instead, we ask how language-based calibration behaves differently from BO in a physical closed-loop tuning task. The slalom benchmark is useful for this comparison because feasible hit-free regions can be narrow and sometimes counterintuitive in the controller-weight space. This creates a setting where physically plausible LLM proposals may reach good solutions quickly, while algorithmic exploration may still be needed to reveal separated or non-intuitive local regions.
+The central question is not whether language reasoning replaces numerical optimization. Instead, we ask how language-based calibration behaves differently from BO in a physical closed-loop tuning task. The slalom benchmark is useful for this comparison because feasible hit-free regions can be narrow and sometimes counterintuitive in the controller-weight space. This creates a setting where intuitive LLM proposals may reach good solutions quickly, while algorithmic exploration may still be needed to reveal separated or non-intuitive local regions.
 
 The contributions of this paper are as follows:
 \begin{itemize}
-    \item A vehicle slalom MPC weight-tuning task is formulated as a simulator-in-the-loop black-box optimization problem, and a Sobol search-space audit is used to analyze the sparsity and separation of hit-free regions in the four-dimensional log-scaled weight space.
-    \item A unified repeated-experiment protocol is presented for comparing LHC, random search, BO, and LLM-based search under the same search range, objective function, and simulation budget.
-    \item LLM-based candidate proposal is experimentally evaluated in the tuning loop, where the LLM selects the next MPC weights from vehicle context, driving-task information, and previous trial logs.
+    \item A vehicle slalom MPC weight-tuning task is formulated as a simulator-in-the-loop black-box optimization problem, with a Sobol-based landscape analysis used to examine the sparsity of hit-free candidates in the four-dimensional log-scaled weight space.
+    \item A matched repeated-experiment evaluation is conducted for LHC, random search, BO, and LLM-based search under the same search range, simulation objective, and 50-trial budget.
+    \item The experiments characterize how LLM-based search and BO explore different regions of the MPC weight space under a limited simulation budget.
 \end{itemize}
 
 \section{Problem Formulation and Objective}
@@ -233,7 +250,7 @@ optimization tasks \cite{jain2020computing,arya2019fully}.
 \subsection{Simulation-Based Objective}
 \label{subsec:objective}
 
-The simulation objective is designed to penalize road departure and evaluated cone
+The simulation objective is designed to penalize road departure and counted cone
 contacts first, and then rank runs by lateral and heading tracking accuracy. For
 a candidate weight vector $\theta$, let the simulator return a finite time
 series over $t \in [0,T]$.
@@ -252,8 +269,8 @@ w_{\mathrm{fail}} I_{\mathrm{fail}}
 \label{eq:objective}
 \end{align}
 Here $I_{\mathrm{fail}}$ is one when the vehicle departs from the road and zero
-otherwise. $N_{\mathrm{hit}}$ denotes the number of evaluated cone contacts;
-entry contacts before the evaluation gate are ignored. The tracking variables
+otherwise. $N_{\mathrm{hit}}$ denotes the number of counted cone contacts; entry
+contacts before the evaluation gate are ignored. The tracking variables
 $e_y$ and $e_\psi$ are the lateral and heading errors computed from the
 simulation output.
 
@@ -293,9 +310,9 @@ rather than on differences in the simulator or post-processing pipeline.
 
 The compared methods differ only in how they choose the next candidate
 $\theta_{n+1}$ from the common search space. LHC generates a space-filling
-Latin-hypercube design in the normalized logarithmic weight space. Random search
-draws independent samples from the same normalized search space. These two
-methods provide non-adaptive baselines.
+Latin-hypercube design in the normalized logarithmic weight space
+\cite{mckay2000comparison}. Random search draws independent samples from the
+same normalized search space. These two methods provide non-adaptive baselines.
 
 BO begins with LHC-based space-filling samples to initialize the search and then
 fits a Gaussian-process surrogate model to the observed history $D_n$. The next
@@ -306,9 +323,10 @@ candidate is selected by maximizing an acquisition function:
 a(\theta;D_n).
 \label{eq:acquisition}
 \end{equation}
-The implementation uses expected improvement evaluated over a finite candidate
-pool that includes both global random candidates and local perturbations around
-the current best observation.
+Expected improvement is used as the acquisition function in the same normalized
+log-weight space used by the sampling baselines \cite{frazier2018tutorial}.
+Candidate selection is therefore sequentially informed by the observed objective
+values while remaining within the common bounded search domain.
 
 The LLM-based method uses the previous trial table, best-so-far metrics, task
 context, and fixed search bounds to propose the next candidate. It does not use
@@ -316,10 +334,22 @@ a surrogate model, so its performance indicates whether language-based reasoning
 alone can provide useful tuning suggestions.
 
 In addition to these 50-trial candidate-selection methods, Sobol
-low-discrepancy sampling is used as a separate non-adaptive landscape audit. It
+low-discrepancy sampling is used as a separate non-adaptive landscape analysis
+\cite{sobol1967distribution}. It
 is not treated as an optimizer baseline. Instead, it probes whether hit-free
 candidates occupy sparse or separated regions of the log-scaled four-dimensional
 search space.
+
+\begin{figure*}[t!]
+	\centering
+	\includegraphics[width=\linewidth]{figures/fig2_convergence_1x4.pdf}
+	\caption{Best-so-far objective trajectories over five independent 50-trial
+		repetitions for each method. Each panel shows one search strategy, and each
+		curve denotes one repetition.}
+	\label{fig:convergence}
+\end{figure*}
+
+
 
 \section{Experimental Setup}
 \label{sec:experimental_setup}
@@ -340,6 +370,8 @@ co-simulation with IPG CarMaker. The MPC output is the steering-wheel angle, and
 all methods use the same vehicle, road, reference path, controller structure,
 and physical steering constraints.
 
+
+
 \subsection{Experimental Design}
 \label{subsec:experimental_design}
 
@@ -350,13 +382,21 @@ trials as an LHC initial design and performs acquisition-based updates for the
 remaining 35 trials. The other methods select all 50 candidates according to the
 candidate-selection rules described in Section~\ref{subsec:candidate_selection}.
 
-For LLM-based search, GPT-5.5 medium is used through Codex. The agent is given
-MCP tools that can operate MATLAB, Simulink, and CarMaker through the experiment
-interface, read trial logs, and write candidate decisions. The LLM does not
-receive the closed-form simulation objective; it observes only the available
-trial results and diagnostic metrics.
+The lateral controller is implemented with the standard Simulink MPC Controller
+block using a MATLAB MPC object. The controller sample time is $T_s=0.02$ s,
+with prediction and control horizons $N_p=40$ and $N_c=8$, respectively. The
+steering-wheel angle and rate limits are $[-12,12]$ rad and $[-10,10]$ rad/s.
 
-Sobol sampling is run separately as a landscape audit and is not counted as a
+For LLM-based search, OpenAI GPT-5.5 with medium reasoning effort is used
+through Codex with tools to operate the experiment interface, read trial logs,
+and submit candidate decisions.
+At each trial, the LLM observes logged outcomes, including previous MPC weights,
+objective value, status, cone contacts, tracking errors, and diagnostic metrics,
+but it is not given the analytic objective expression or penalty weights. It
+then outputs the next four decoded MPC weights within the log-scale search
+bounds.
+
+Sobol sampling is run separately as a landscape analysis and is not counted as a
 50-trial optimizer baseline.
 
 In all experiments, the objective weights are set to
@@ -373,41 +413,30 @@ In addition to the simulation objective, the results report cone contacts,
 road-departure events, lateral and heading tracking errors, steering response,
 and yaw-rate diagnostics.
 
+
 \section{Results and Discussion}
 \label{sec:results}
 
-This section summarizes the nominal slalom experiments. The main optimizer comparison uses
-the 50-trial budget and the four-dimensional search space described in
-Section~\ref{sec:experimental_setup}. The Sobol analysis is discussed separately
-because it uses a larger non-adaptive sample set for landscape interpretation
-rather than as a direct 50-trial optimizer.
+This section compares fixed-budget search performance, best-run trajectories,
+and hit-free weight-space patterns. The Sobol-based landscape analysis is used
+only as supporting evidence, not as a 50-trial optimizer baseline.
 
-\subsection{Baseline Results}
-\label{subsec:baseline_results}
+\subsection{Run-Level Search Performance}
+\label{subsec:run_level_results}
 
-Table~\ref{tab:method_summary} summarizes the run-level results. Each method is
-evaluated as five independent 50-trial repetitions. A hit-free repetition
-means that the best candidate found within that 50-trial budget completed the
-simulation with zero evaluated cone hits. This run-level view avoids pooling
-the five repetitions into a single 250-trial search and better reflects the
-calibration outcome available after one assigned budget.
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/fig2_convergence_1x4.pdf}
-\caption{Best-so-far objective trajectories over five independent 50-trial
-repetitions for each method. Each panel shows one search strategy, and each
-curve denotes one repetition.}
-\label{fig:convergence}
-\end{figure*}
+Table~\ref{tab:method_summary} summarizes the fixed-budget search outcomes. A
+hit-free repetition is one whose best candidate within the 50-trial budget
+completed the simulation with zero counted cone contacts. The table also
+lists the first hit-free trial index for successful repetitions; the entry is
+omitted when no hit-free candidate was found.
 
 \begin{table}[t]
-\caption{Run-level results over five independent 50-trial repetitions. A hit-free repetition is one whose best candidate has zero evaluated cone hits; first hit-free trials are listed only for such repetitions.}
+\caption{Run-level results over five independent 50-trial repetitions. Hit-free means the best candidate has zero counted cone contacts.}
 \label{tab:method_summary}
 \centering
 \begin{tabular}{lrrr}
 \hline
-Method & Hit-free & First & Median $J$ \\
+Method & Hit-free & First hit-free & Median $J$ \\
 \hline
 LHC & 1/5 & 50 & 11.3927 \\
 Random & 0/5 & -- & 11.4301 \\
@@ -417,81 +446,109 @@ LLM-based & 4/5 & 3, 3, 15, 10 & 1.2383 \\
 \end{tabular}
 \end{table}
 
-The results show different strengths. LLM-based calibration found a hit-free
-best candidate in four of five repetitions and usually did so early in the
-budget. BO found hit-free best candidates in three of five repetitions and did
-so later, but it discovered the lowest objective value among all 50-trial runs.
-Random search did not find a hit-free best candidate in any repetition, and
-LHC found one only at the final trial of one repetition. This suggests that
-LLM-based calibration is more reliable for rapidly reaching feasible settings,
-whereas BO can locate lower-objective local regions when exploration succeeds.
 
-Figure~\ref{fig:convergence} will summarize the same trend over the trial
-sequence. The key visual feature expected in this plot is different from a
-simple success-rate comparison: LLM-based calibration tends to find feasible
-regions early and then improve locally, whereas BO may spend more trials on
-infeasible or one-hit samples before locating a lower-objective point.
+The four methods exhibit distinct fixed-budget behavior. Random search does not
+produce a hit-free best candidate in any repetition, and its median best
+objective remains near the one-cone-contact level. LHC improves the space
+coverage compared with random sampling, but only one repetition becomes hit-free,
+and that occurs at the final trial. These results indicate that simple
+non-adaptive coverage is not sufficient for reliable calibration under the
+50-trial budget.
 
-Table~\ref{tab:best_trials} lists representative best results without exposing
-run identifiers. The best BO result used a high heading weight and very low
-steering penalties, whereas the best LLM-based result used high tracking and
-heading weights with moderate steering-rate penalty. This difference supports
-the interpretation that LLM-based search tends to exploit physically intuitive
-regions, while BO can enter more aggressive or less intuitive regions.
+BO succeeds in three of five repetitions and generally requires more trials
+before reaching a hit-free region. However, when BO succeeds, it can continue
+improving the objective and finds the lowest observed 50-trial result.
+LLM-based search reaches hit-free best candidates in four of five repetitions
+and usually does so early, at trial 3, 3, 15, or 10. In
+Fig.~\ref{fig:convergence}, this appears as an early drop in the best-so-far
+objective followed by local refinement. The remaining LLM-based repetition
+illustrates a limitation of the LLM-based strategy. After failing to find a
+hit-free candidate early, the agent effectively treated the one-contact region
+as the practical performance limit and refined candidates within that regime
+through the remaining budget.
+Thus, BO is stronger at
+discovering lower-objective candidates when exploration reaches a useful
+region, whereas LLM-based search is more effective as a rapid feasibility-seeking
+mechanism.
+
+\subsection{Best-Run Tracking Behavior}
+\label{subsec:best_run_behavior}
+
+Table~\ref{tab:best_trials} compares the best run obtained by each method.
+For random search, the best candidate within the same budget still has one
+counted cone contact.
+
+
+The table separates two effects that are not visible from the success counts
+alone. First, the best random-search candidate has lateral and heading tracking
+errors that are comparable to some hit-free runs, but the single cone contact
+keeps its objective near 11 because the simulation objective prioritizes cone
+avoidance.
+Second, among hit-free candidates, BO achieves the lowest objective by reducing
+both the lateral RMSE and the maximum lateral error. The best LLM-based result is
+also hit-free, but its tracking errors are larger than the best BO result,
+consistent with its role as a reliable feasibility-seeking method rather than a
+pure objective minimizer.
+
 
 \begin{table}[t]
-\caption{Representative best-run objective metrics from the experiments. Hits denote evaluated cone contacts.}
-\label{tab:best_trials}
-\centering
-\begin{tabular}{@{}lrrrrr@{}}
-\hline
-Method & $J$ & Hits & RMS$_y$ & Max$_y$ & RMS$_\psi$ \\
-\hline
-LHC & 1.378 & 0 & 0.210 & 0.767 & 0.031 \\
-Random & 11.170 & 1 & 0.168 & 0.794 & 0.020 \\
-BO & 0.740 & 0 & 0.101 & 0.538 & 0.013 \\
-LLM-based & 1.176 & 0 & 0.171 & 0.784 & 0.021 \\
-\hline
-\end{tabular}
+	\caption{Representative best-run objective metrics from the experiments. Hits denote counted cone contacts.}
+	\label{tab:best_trials}
+	\centering
+	\begin{tabular}{@{}lrrrrr@{}}
+		\hline
+		Method & $J$ & Hits & RMS$_y$ & Max$_y$ & RMS$_\psi$ \\
+		\hline
+		LHC & 1.378 & 0 & 0.210 & 0.767 & 0.031 \\
+		Random & 11.170 & 1 & 0.168 & 0.794 & 0.020 \\
+		BO & 0.740 & 0 & 0.101 & 0.538 & 0.013 \\
+		LLM-based & 1.176 & 0 & 0.171 & 0.784 & 0.021 \\
+		\hline
+	\end{tabular}
 \end{table}
 
-The repeated runs also show different reproducibility patterns in the weight
-space. The three successful BO repetitions did not converge to the same
-parameter set. Their best hit-free solutions appeared in separated regions,
-including one aggressive high-heading solution and two low-heading solutions
-with different steering-penalty combinations. In contrast, the four successful
-LLM-based repetitions remained within a more consistent high-heading family:
-the exact weights differed across repetitions, but all successful LLM-based
-best candidates used moderate-to-high lateral and heading weights with
-relatively small steering penalties. Thus, LLM-based calibration is more
-reproducible in terms of the type of controller setting it selects, whereas BO
-is more diverse and can reveal qualitatively different local optima.
-
 \begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/fig3_best_trajectories.pdf}
-\caption{Best-run trajectories for the compared methods. Red triangles denote
-slalom cones.}
-\label{fig:best_trajectory}
+	\centering
+	\begin{minipage}[t]{\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{figures/fig3_best_trajectories.pdf}\\[-0.5mm]
+		\footnotesize (a) Full slalom segment
+	\end{minipage}
+	\vspace{1.0mm}
+	\begin{minipage}[t]{\linewidth}
+		\centering
+		\includegraphics[width=\linewidth]{figures/fig3_random_contact_zoom.pdf}\\[-0.5mm]
+		\footnotesize (b) Zoom around the random-search cone contact
+	\end{minipage}
+	\caption{Best-run trajectories for the compared methods. Red triangles denote
+		slalom cones, and the red dashed rectangle in (a) marks the region enlarged
+		in (b).}
+	\label{fig:best_trajectory}
 \end{figure}
 
-\subsection{Landscape Analysis}
-\label{subsec:landscape_tolerance}
+Figure~\ref{fig:best_trajectory}(a) shows that the best trajectories of all
+methods remain close to the reference path over most of the maneuver. This
+visual similarity is expected because the objective strongly penalizes cone
+contacts before ranking hit-free runs by tracking accuracy. Therefore, the
+decisive differences are not large changes in the global trajectory shape, but
+smaller changes in peak lateral deviation near the cone locations.
+The BO trajectory is consistent with the lower tracking metrics in
+Table~\ref{tab:best_trials}. Figure~\ref{fig:best_trajectory}(b) highlights the
+counted cone-contact region for random search and shows that visually plausible
+tracking can still be unacceptable when the trajectory approaches a cone too
+closely. The difference between the random-search trajectory and the hit-free
+trajectories is small in the plotted lateral position, but it changes the
+discrete cone-contact outcome. This sensitivity makes the objective difficult
+for purely space-filling search under a small simulation budget.
 
-Sobol sampling was added to interpret the above behavior. In this analysis,
-1024 Sobol samples were evaluated, with 775 simulation completions and two
-hit-free completions. Both hit-free Sobol samples belong to a
-low-heading-weight family, with $q_\psi$ close to the lower end of the search
-range. Similar low-heading hit-free solutions were also observed in LHC and
-BO runs. This family is not a single numerical outlier, but nearby samples often
-produce one or more cone hits, indicating a narrow feasible region.
+\subsection{Hit-Free Weight-Space Patterns}
+\label{subsec:weight_space_patterns}
 
-By contrast, the LLM-based successful solutions occupy a more physically
-interpretable high-heading family. Across 101 hit-free LLM-based trials, the
-successful weights used moderate-to-high lateral and heading weights and low to
-moderate steering penalties. Thus, LLM-based search is effective at exploiting a
-plausible controller region, but it is less likely to select the low-heading
-branch that BO and Sobol sampling can reveal.
+The repeated runs reveal that the methods differ not only in final objective
+value, but also in the type of hit-free weight settings they discover. This is
+important because multiple weight combinations can complete the same slalom
+maneuver, but they may correspond to different control mechanisms and different
+local regions of the objective landscape.
 
 \begin{figure*}[t]
 \centering
@@ -500,54 +557,80 @@ branch that BO and Sobol sampling can reveal.
 weight space. The green shaded ellipse denotes the empirical high-heading region
 visited by LLM-based search, while LHC and BO are shown as sparse hit-free
 candidates. Black center markers R1--R6 denote representative candidates selected
-for interpretation. Sobol audit samples are excluded from the plot and summarized
-separately in the text.}
+for interpretation.}
 \label{fig:local_regions}
 \end{figure*}
 
-\begin{table*}[t]
-\caption{Representative hit-free solution families found during the search. The
-representatives summarize distinct hit-free regions, not only final best
-candidates.}
+Figure~\ref{fig:local_regions} projects all observed hit-free candidates from
+LHC, BO, and LLM-based search onto four representative two-dimensional views of
+the log-scaled weight space. The green shaded ellipse is an empirical summary of
+the LLM-based hit-free candidates. It shows that the LLM repeatedly returns to a
+high-heading region with moderate-to-high lateral and heading tracking weights
+and moderate steering smoothing. This pattern is consistent with a physically
+intuitive tuning strategy: emphasize tracking errors and avoid excessively
+aggressive steering changes.
+
+BO exhibits a different pattern. Its hit-free candidates are sparse, but they
+appear in separated parts of the search space rather than only within the
+LLM-based region. In particular, BO identifies a sharp high-heading candidate
+with very weak steering penalties and several lower-heading alternatives with
+different steering-effort and steering-rate trade-offs. LHC finds one hit-free
+candidate in a similar low-heading portion of the space. These observations
+indicate that the slalom objective contains several hit-free local regions, some
+of which are less aligned with the intuitive high-heading strategy favored by
+LLM-based search.
+
+\begin{table}[t]
+\caption{Representative hit-free weight settings. Values are decoded MPC weights,
+not normalized samples.}
 \label{tab:solution_families}
 \centering
-\scriptsize
-\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llrrrrr>{\raggedright\arraybackslash}p{0.40\textwidth}@{}}
+\setlength{\tabcolsep}{5.8pt}
+\begin{tabular}{@{}llrrrrr@{}}
 \hline
-Rep. & Found by & $J$ & $q_y$ & $q_\psi$ & $r_\delta$ & $r_{\Delta\delta}$ & Interpretation \\
+Rep. & From & $J$ & $q_y$ & $q_\psi$ & $r_\delta$ & $r_{\Delta\delta}$ \\
 \hline
-R1 & BO & 0.7399 & 13.32 & 89.76 & 0.011 & 0.013 & dominant heading correction with very weak steering penalties \\
-R2 & LLM-based & 1.1764 & 80.00 & 45.77 & 0.100 & 0.800 & strong lateral/heading tracking with moderate steering smoothing \\
-R3 & BO & 1.3779 & 62.96 & 4.71 & 0.190 & 1.130 & lateral-error-dominant tracking with smoothed steering motion \\
-R4 & BO & 1.3714 & 56.00 & 0.046 & 0.350 & 0.951 & low-heading solution with stronger steering and rate penalties \\
-R5 & LHC & 1.3783 & 29.11 & 0.23 & 0.150 & 0.530 & lateral tracking with little direct heading-error correction \\
-R6 & BO & 1.3848 & 86.59 & 0.041 & 0.021 & 1.758 & lateral-error-heavy control with weak steering magnitude penalty but strong rate smoothing \\
+R1 & BO & 0.7399 & 13.32 & 89.76 & 0.011 & 0.013 \\
+R2 & LLM & 1.1764 & 80.00 & 45.77 & 0.100 & 0.800 \\
+R3 & BO & 1.3779 & 62.96 & 4.71 & 0.190 & 1.130 \\
+R4 & BO & 1.3714 & 56.00 & 0.046 & 0.350 & 0.951 \\
+R5 & LHC & 1.3783 & 29.11 & 0.23 & 0.150 & 0.530 \\
+R6 & BO & 1.3848 & 86.59 & 0.041 & 0.021 & 1.758 \\
 \hline
-\end{tabular*}
-\end{table*}
+\end{tabular}
+\end{table}
 
 Table~\ref{tab:solution_families} summarizes representative hit-free candidates
-selected from all hit-free trials observed during the search. R2 summarizes the
-LLM-based high-heading region, where many successful trials remain near the same
-physically plausible controller setting. In contrast, BO produced several
-separated hit-free candidates, including high-heading, mid-heading, and
-low-heading solutions with different steering-penalty combinations. These
-representatives are not additional methods; they summarize distinct weight
-patterns observed among the hit-free candidates.
+selected from the observed hit-free trials. R1--R6 are not separate search
+methods; they are representative weight settings found by the compared methods.
+R2 summarizes the LLM-based high-heading region. R1, R3, R4, and R6 show BO
+candidates with different balances between heading correction and steering
+penalties. R5 is the hit-free LHC candidate and lies closer to the low-heading
+family than to the LLM-based high-heading region. Overall, LLM-based search
+repeatedly exploits one plausible controller family, whereas BO exposes more
+diverse and less intuitive hit-free candidates.
 
-The overall result therefore supports a limited but useful conclusion. LLM-based
-calibration is effective as a fast feasibility-seeking and local-refinement
-mechanism. BO is less aligned with physical intuition but can find lower-cost
-or more diverse local regions. These observations motivate future hybrid
-methods, but the present paper focuses on the behavior of LLM-based calibration
-and BO rather than claiming a completed hybrid optimizer.
+As a non-adaptive landscape analysis, Sobol sampling provides additional evidence
+for the sparsity of hit-free weights. Among 4096 Sobol samples, only seven were
+hit-free, corresponding to approximately 0.17\% of the sampled search space.
+These hit-free Sobol samples belonged to low-heading or moderate-heading
+families, consistent with the non-LLM candidates found by LHC and BO. Although
+this analysis does not characterize the full feasible set, it indicates that
+hit-free regions are sparse in the four-dimensional log-scaled weight space.
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-This paper formulates MPC weight tuning for a vehicle slalom maneuver as a simulator-in-the-loop black-box optimization problem. The proposed framework evaluates each candidate through closed-loop simulation, computes a simulation objective from road departure, evaluated cone contacts, and tracking metrics, and logs yaw and steering metrics for diagnostic analysis under a common candidate-selection budget.
-
-The nominal slalom results indicate that LLM-based search can rapidly find feasible hit-free MPC weights and refine physically plausible controller settings, while BO can discover lower-objective and less intuitive regions but with lower feasibility frequency. The Sobol analysis indicates that the objective landscape contains multiple local minimum regions: hit-free solutions appear in both high-heading regions favored by LLM-based search and low-heading regions that are easier for non-language exploration to reveal. Future work will focus on exploration-preserving hybrid designs, low-friction scenarios, additional maneuvers, and reinforcement learning only if the task is reformulated as a policy-learning problem.
+This paper studied simulator-in-the-loop MPC weight calibration for a CarMaker
+slalom maneuver under a common 50-trial budget. The results show complementary
+search behavior: LLM-based search rapidly reaches hit-free controller settings,
+whereas BO can discover lower-objective and less intuitive
+weight regions when its exploration succeeds. The Sobol-based landscape analysis
+further indicates that hit-free weights occupy sparse regions in the
+four-dimensional log-scaled search space. Because the present study uses five repetitions of one nominal
+slalom scenario and one LLM configuration, future work will evaluate larger
+repetition sets, additional maneuvers and friction conditions, model-dependent
+LLM proposal bias, and exploration-preserving LLM--BO designs.
 
 \bibliographystyle{ieeetr}
 \bibliography{ref}

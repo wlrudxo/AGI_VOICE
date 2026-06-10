@@ -141,7 +141,7 @@ def main():
         os.makedirs(OUT_DIR)
 
     data = collect_hit_free()
-    fig, axes = plt.subplots(1, 4, figsize=(6.95, 1.85))
+    fig, axes = plt.subplots(1, 4, figsize=(6.95, 1.98))
     handles = []
     labels = []
 
@@ -183,14 +183,14 @@ def main():
                 zorder=5,
             )
             dx, dy = label_offset(rep["label"], x_key, y_key)
-            ax.text(x + dx, y + dy, rep["label"], fontsize=5.2, zorder=5)
+            ax.text(x + dx, y + dy, rep["label"], fontsize=6.4, zorder=5)
 
-        ax.set_title(title, fontsize=7.0)
-        ax.set_xlabel(AXIS_LABELS[x_key], fontsize=6.6)
-        ax.set_ylabel(AXIS_LABELS[y_key], fontsize=6.6)
+        ax.set_title(title, fontsize=8.1)
+        ax.set_xlabel(AXIS_LABELS[x_key], fontsize=7.8)
+        ax.set_ylabel(AXIS_LABELS[y_key], fontsize=7.8)
         ax.set_xlim(-2.15, 2.15)
         ax.set_ylim(-2.15, 2.15)
-        ax.tick_params(axis="both", labelsize=5.8, pad=1.0)
+        ax.tick_params(axis="both", labelsize=7.0, pad=1.2)
         ax.grid(True, alpha=0.23, linewidth=0.45)
 
     fig.legend(
@@ -201,12 +201,12 @@ def main():
         ncol=3,
         frameon=True,
         framealpha=0.82,
-        fontsize=6.5,
+        fontsize=7.6,
         handlelength=1.1,
-        columnspacing=0.55,
-        borderpad=0.25,
+        columnspacing=0.65,
+        borderpad=0.30,
     )
-    fig.subplots_adjust(left=0.055, right=0.995, top=0.76, bottom=0.21, wspace=0.42)
+    fig.subplots_adjust(left=0.058, right=0.995, top=0.74, bottom=0.23, wspace=0.40)
 
     png = os.path.join(OUT_DIR, "fig4_hit_free_regions.png")
     pdf = os.path.join(OUT_DIR, "fig4_hit_free_regions.pdf")
