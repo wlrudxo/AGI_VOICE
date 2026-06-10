@@ -159,13 +159,16 @@ py -3.12 llm_mpc_bo\scripts\mpc_experiment_cli.py `
   --engine MATLAB_58352 `
   --testrun LLM_MPC_BO/ICCAS_Slalom18m_UserSteer_CM4SL_V61 `
   --load-testrun `
+  --reload-testrun-each-trial `
   --allow-uncurated `
   --experiment-dir llm_mpc_bo\results\experiments\standard_slalom_v61_4d_sobol_entryignored_budget1024_seed1 `
   --reset-mpc
 ```
 
-For interactive Sobol smoke checks, keep the same `--count 1024 --budget
-1024` target and add `--max-new-trials N`. This preserves the final 1024-point
+For long unattended Sobol runs, keep `--reload-testrun-each-trial` so each
+trial subprocess reloads the intended TestRun before simulation. For
+interactive Sobol smoke checks, keep the same `--count 1024 --budget 1024`
+target and add `--max-new-trials N`. This preserves the final 1024-point
 candidate plan while running only the next `N` missing simulations.
 
 ## Outputs

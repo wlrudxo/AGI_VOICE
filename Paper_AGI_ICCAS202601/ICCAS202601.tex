@@ -49,11 +49,9 @@ The central question is not whether language reasoning replaces numerical optimi
 
 The contributions of this paper are as follows:
 \begin{itemize}
-    \item The MPC weight tuning task for a vehicle slalom maneuver is formulated as a simulator-in-the-loop black-box optimization problem.
-    \item A scalar objective is defined using road departure, evaluated cone contacts, lateral tracking error, and heading error, with steering and yaw metrics retained for diagnostic analysis.
-    \item A unified comparison protocol is proposed for non-adaptive sampling, BO, and LLM-based search under the same simulation budget.
-    \item Repeated experiments reveal complementary behavior: LLM-based search rapidly finds physically plausible feasible solutions, whereas BO and Sobol sampling can identify non-intuitive feasible local regions.
-    \item Sobol landscape analysis and a local tolerance scan are used to interpret separated local minimum areas and their sensitivity to MPC weight perturbations.
+    \item A vehicle slalom MPC weight-tuning task is formulated as a simulator-in-the-loop black-box optimization problem, and a Sobol search-space audit is used to analyze the sparsity and separation of hit-free regions in the four-dimensional log-scaled weight space.
+    \item A unified repeated-experiment protocol is presented for comparing LHC, random search, BO, and LLM-based search under the same search range, objective function, and simulation budget.
+    \item LLM-based candidate proposal is experimentally evaluated in the tuning loop, where the LLM selects the next MPC weights from vehicle context, driving-task information, and previous trial logs.
 \end{itemize}
 
 \section{Problem Formulation and Objective}
@@ -267,19 +265,13 @@ simulation output.
 \section{Calibration Search Framework}
 \label{sec:framework}
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\figureplaceholder{38mm}{Placeholder for overall simulator-in-the-loop calibration workflow.\\
-Planned content: optimizer or LLM proposes MPC weights $\theta$; weights are
-applied to the Simulink MPC; CarMaker-Simulink closed-loop slalom simulation is
-run; objective and diagnostic metrics are logged; history is returned to the
-candidate-selection method.}
-\caption{Overview of the simulator-in-the-loop MPC weight calibration workflow.
-All compared methods share the same simulator, objective function, search
-bounds, and trial budget; they differ only in how the next candidate weight
-vector is selected.}
+\includegraphics[width=0.8\linewidth]{figures/overview1.png}
+\caption{Overview of the shared simulator-in-the-loop MPC weight calibration
+workflow.}
 \label{fig:overview}
-\end{figure*}
+\end{figure}
 
 \subsection{Simulator-in-the-Loop Evaluation}
 \label{subsec:sil}
@@ -382,10 +374,10 @@ calibration outcome available after one assigned budget.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\linewidth]{figures/fig2_convergence_best_worst.pdf}
-\caption{Representative best-so-far objective trajectories under the 50-trial
-simulation budget. The best and worst repetitions of each method are selected
-by the final best objective value.}
+\includegraphics[width=\linewidth]{figures/fig2_convergence_1x4.pdf}
+\caption{Best-so-far objective trajectories over five independent 50-trial
+repetitions for each method. Each panel shows one search strategy, and each
+curve denotes one repetition.}
 \label{fig:convergence}
 \end{figure*}
 
@@ -463,7 +455,7 @@ slalom cones.}
 \label{fig:best_trajectory}
 \end{figure}
 
-\subsection{Landscape Analysis and Local Tolerance}
+\subsection{Landscape Analysis}
 \label{subsec:landscape_tolerance}
 
 Sobol sampling was added to interpret the above behavior. In this analysis,
@@ -484,42 +476,44 @@ branch that BO and Sobol sampling can reveal.
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.98\textwidth]{figures/fig4_hit_free_regions.pdf}
-\caption{Representative hit-free local minimum areas in log-scaled MPC weight
-space. Small markers denote hit-free samples found by each method, and black
-stars denote the representative areas used in the local tolerance scan.}
+\caption{Representative projections of hit-free candidates in the log-scaled MPC
+weight space. The green shaded ellipse denotes the empirical high-heading region
+visited by LLM-based search, while LHC and BO are shown as sparse hit-free
+candidates. Black center markers R1--R6 denote representative candidates selected
+for interpretation. Sobol audit samples are excluded from the plot and summarized
+separately in the text.}
 \label{fig:local_regions}
 \end{figure*}
 
 \begin{table*}[t]
-\caption{Representative hit-free local minimum areas and axis-wise local tolerance. The tolerance scan perturbs one weight at a time by $\pm0.1,\pm0.2,\pm0.3,\pm0.4$ decades while fixing the other weights.}
-\label{tab:local_tolerance}
+\caption{Representative hit-free solution families found during the search. The
+representatives summarize distinct hit-free regions, not only final best
+candidates.}
+\label{tab:solution_families}
 \centering
 \scriptsize
-\begin{tabular}{llrrlll}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llrrrrr>{\raggedright\arraybackslash}p{0.40\textwidth}@{}}
 \hline
-Area & Main source & Rep. $J$ & Hit-free scan & Tolerant axes & Sensitive axes & Interpretation \\
+Rep. & Found by & $J$ & $q_y$ & $q_\psi$ & $r_\delta$ & $r_{\Delta\delta}$ & Interpretation \\
 \hline
-R1 & BO & 0.7399 & 9/33 & $r_\delta\downarrow$, $r_{\Delta\delta}\downarrow$ & $q_y$, $q_\psi$ & sharp best-performance point \\
-R2 & LLM-based & 1.1764 & 2/33 & $q_\psi\downarrow$ only & most axes & narrow intuitive high-heading area \\
-R3 & BO/LHC/Sobol & 1.3714 & 9/33 & $q_\psi$ & $q_y$, $r_\delta$, $r_{\Delta\delta}$ & low-heading local area \\
-R4 & Sobol & 1.3736 & 9/33 & $q_\psi$ & $q_y$, $r_\delta$, $r_{\Delta\delta}$ & similar low-heading area \\
-R5 & BO & 1.3848 & 17/33 & $q_\psi$, $r_\delta$ & $q_y$, $r_{\Delta\delta}$ & wider but higher-cost area \\
+R1 & BO & 0.7399 & 13.32 & 89.76 & 0.011 & 0.013 & dominant heading correction with very weak steering penalties \\
+R2 & LLM-based & 1.1764 & 80.00 & 45.77 & 0.100 & 0.800 & strong lateral/heading tracking with moderate steering smoothing \\
+R3 & BO & 1.3779 & 62.96 & 4.71 & 0.190 & 1.130 & lateral-error-dominant tracking with smoothed steering motion \\
+R4 & BO & 1.3714 & 56.00 & 0.046 & 0.350 & 0.951 & low-heading solution with stronger steering and rate penalties \\
+R5 & LHC & 1.3783 & 29.11 & 0.23 & 0.150 & 0.530 & lateral tracking with little direct heading-error correction \\
+R6 & BO & 1.3848 & 86.59 & 0.041 & 0.021 & 1.758 & lateral-error-heavy control with weak steering magnitude penalty but strong rate smoothing \\
 \hline
-\end{tabular}
+\end{tabular*}
 \end{table*}
 
-Table~\ref{tab:local_tolerance} summarizes the representative hit-free local
-minimum areas and their one-axis-at-a-time tolerance. This scan should not be
-interpreted as a full four-dimensional robustness volume. It is a local
-sensitivity check around each representative point. Nevertheless, it clarifies
-the structure of the tuning landscape. The lowest observed objective region R1
-is sharp in the tracking weights but can be improved by reducing control
-penalties toward the search lower bound. The LLM-based high-heading region R2
-is also narrow. In contrast, the low-heading regions R3 and R4 are insensitive
-to the heading weight over the tested range but sensitive to lateral and
-control-penalty changes. R5 is wider than the other representatives because both
-$q_\psi$ and $r_\delta$ tolerate the full tested perturbation range, although it
-has a higher objective value than R1.
+Table~\ref{tab:solution_families} summarizes representative hit-free candidates
+selected from all hit-free trials observed during the search. R2 summarizes the
+LLM-based high-heading region, where many successful trials remain near the same
+physically plausible controller setting. In contrast, BO produced several
+separated hit-free candidates, including high-heading, mid-heading, and
+low-heading solutions with different steering-penalty combinations. These
+representatives are not additional methods; they summarize distinct weight
+patterns observed among the hit-free candidates.
 
 The overall result therefore supports a limited but useful conclusion. LLM-based
 calibration is effective as a fast feasibility-seeking and local-refinement
@@ -533,7 +527,7 @@ and BO rather than claiming a completed hybrid optimizer.
 
 This paper formulates MPC weight tuning for a vehicle slalom maneuver as a simulator-in-the-loop black-box optimization problem. The proposed framework evaluates each candidate through closed-loop simulation, computes a scalar objective from road departure, evaluated cone contacts, and tracking metrics, and logs yaw and steering metrics for diagnostic analysis under a common candidate-selection budget.
 
-The nominal slalom results indicate that LLM-based search can rapidly find feasible hit-free MPC weights and refine physically plausible controller settings, while BO can discover lower-objective and less intuitive regions but with lower feasibility frequency. The Sobol analysis indicates that the objective landscape contains multiple local minimum regions: hit-free solutions appear in both high-heading regions favored by LLM-based search and low-heading regions that are easier for non-language exploration to reveal. The local tolerance scan further shows that these regions have different sensitivities: the best observed BO point is sharp, whereas one low-heading BO region is wider but higher in objective value. Future work will focus on exploration-preserving hybrid designs, low-friction scenarios, additional maneuvers, and reinforcement learning only if the task is reformulated as a policy-learning problem.
+The nominal slalom results indicate that LLM-based search can rapidly find feasible hit-free MPC weights and refine physically plausible controller settings, while BO can discover lower-objective and less intuitive regions but with lower feasibility frequency. The Sobol analysis indicates that the objective landscape contains multiple local minimum regions: hit-free solutions appear in both high-heading regions favored by LLM-based search and low-heading regions that are easier for non-language exploration to reveal. Future work will focus on exploration-preserving hybrid designs, low-friction scenarios, additional maneuvers, and reinforcement learning only if the task is reformulated as a policy-learning problem.
 
 \bibliographystyle{ieeetr}
 \bibliography{ref}
