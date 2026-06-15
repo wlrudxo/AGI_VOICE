@@ -17,7 +17,7 @@
 
 \begin{document}
 
-\title{LLM-Based Search and Bayesian Optimization for\\ MPC Weight Tuning in Vehicle Slalom Simulation}
+\title{Simulator-in-the-Loop MPC Weight Tuning Using\\ LLM-Based Search and Bayesian Optimization}
 
 \author{Kyoungtae Ji${}^{1}$, Dongyeol Won${}^{1}$,  and Kyoungseok Han${}^{1*}$}
 
@@ -25,28 +25,11 @@
 Seoul, Korea (kyoungsh@hanyang.ac.kr) {\small${}^{*}$ Corresponding author}}
 
 \abstract{
-This paper presents a simulator-in-the-loop study of model predictive control
-(MPC) weight calibration for an autonomous vehicle slalom maneuver in
-CarMaker-Simulink. The controller structure, prediction model, horizons, and
-steering constraints are fixed, and the optimization target is a
-four-dimensional MPC weight vector for lateral tracking, heading response,
-steering effort, and steering smoothness. Each candidate is evaluated by a
-closed-loop simulation and converted into a simulation objective that penalizes
-road departure, counted cone contacts, and tracking error. Under a common
-50-trial budget, the study compares Latin-hypercube sampling, random search,
-Bayesian optimization (BO), and LLM-based search over five independent
-repetitions. The results show complementary behavior: LLM-based search reaches
-hit-free candidates in four of five repetitions and typically does so early,
-while BO finds the lowest objective value when its exploration reaches a useful
-region. A 4096-sample Sobol-based landscape analysis finds only seven hit-free
-samples, indicating that feasible weight regions are sparse in the log-scaled
-four-dimensional search space. These results suggest that LLM-based search is effective for rapid
-feasibility seeking, whereas numerical exploration remains important for
-discovering less intuitive weight regions.
+This paper presents a simulator-in-the-loop study of model predictive control (MPC) weight calibration for autonomous vehicle path-following using a high-fidelity closed-loop simulation environment. With the controller structure fixed, the optimization target is a four-dimensional MPC weight vector for lateral tracking, heading response, steering effort, and steering smoothness. Each candidate is evaluated by a simulation objective that penalizes road departure, counted cone contacts, and tracking error. Under a common 50-trial budget, the study compares Latin-hypercube sampling, random search, Bayesian optimization (BO), and LLM-based search over five independent repetitions. The results show complementary behavior: LLM-based search reaches hit-free candidates early in four of five repetitions, while BO finds the lowest objective value when its exploration reaches a useful region. A 4096-sample Sobol-based landscape analysis finds only seven hit-free samples, indicating that feasible weight regions are sparse. These results suggest that LLM-based search is effective for rapid feasibility seeking, whereas numerical exploration remains important for discovering less intuitive weight regions.
 }
 
 \keywords{
-Bayesian optimization, large language model, model predictive control, autonomous vehicle simulation, slalom maneuver
+Bayesian optimization, large language model, model predictive control, autonomous vehicle simulation, simulator-in-the-loop calibration
 }
 
 \maketitle
@@ -58,15 +41,15 @@ Bayesian optimization, large language model, model predictive control, autonomou
 
 Model predictive control (MPC) is widely used for vehicle control because it can handle multi-objective tracking and actuation constraints in a systematic way. In vehicle applications, control-oriented models are often kept simpler than the high-fidelity plant so that they can be used repeatedly inside an online optimizer or estimator \cite{rajamani2006vehicle,reina2017vehicle,maull2022optimizing}. However, even when the controller structure is fixed, its practical performance depends strongly on the selection of weighting parameters. In high-fidelity simulation, these parameters are often tuned by repeated trial-and-error, which is time-consuming and difficult to reproduce.
 
-This paper considers MPC weight tuning as a black-box optimization problem. A candidate weight vector is applied to the controller, one closed-loop slalom simulation is executed, and the resulting driving performance is summarized by a simulation objective. This formulation is suitable for Bayesian optimization (BO), especially when each evaluation is expensive and derivative information is unavailable. Similar simulation-based optimization ideas have been used in automotive calibration and racing-line computation, where candidate designs are evaluated by a simulator or numerical vehicle model rather than by analytic gradients \cite{jain2020computing,arya2019fully}.
+This paper considers MPC weight tuning as a black-box optimization problem. A candidate weight vector is applied to the controller, one closed-loop path-following simulation is executed, and the resulting driving performance is summarized by a simulation objective. This formulation is suitable for Bayesian optimization (BO), especially when each evaluation is expensive and derivative information is unavailable. Similar simulation-based optimization ideas have been used in automotive calibration and racing-line computation, where candidate designs are evaluated by a simulator or numerical vehicle model rather than by analytic gradients \cite{jain2020computing,arya2019fully}.
 
 Recent large language models (LLMs) have shown strong ability to summarize logs, reason over numerical trends, and suggest experimental directions. Recent studies have also investigated LLMs as assistants for BO and closed-loop scientific experimentation \cite{liu2024large,cisse2025language,cisse2026can}. In this work, the LLM is not treated as a direct steering controller. Instead, it is used as an optimization assistant that can interpret previous trials, diagnose failure patterns, and propose candidate regions or warm-start points. This preserves the MPC controller as the low-level control law while investigating whether LLM reasoning can improve the sample efficiency of simulator-based tuning.
 
-The central question is not whether language reasoning replaces numerical optimization. Instead, we ask how language-based calibration behaves differently from BO in a physical closed-loop tuning task. The slalom benchmark is useful for this comparison because feasible hit-free regions can be narrow and sometimes counterintuitive in the controller-weight space. This creates a setting where intuitive LLM proposals may reach good solutions quickly, while algorithmic exploration may still be needed to reveal separated or non-intuitive local regions.
+The central question is not whether language reasoning replaces numerical optimization. Instead, we ask how language-based calibration behaves differently from BO in a physical closed-loop tuning task. A constrained vehicle path-following benchmark is useful for this comparison because feasible contact-free regions can be narrow and sometimes counterintuitive in the controller-weight space. This creates a setting where intuitive LLM proposals may reach good solutions quickly, while algorithmic exploration may still be needed to reveal separated or non-intuitive local regions.
 
 The contributions of this paper are as follows:
 \begin{itemize}
-    \item A vehicle slalom MPC weight-tuning task is formulated as a simulator-in-the-loop black-box optimization problem, with a Sobol-based landscape analysis used to examine the sparsity of hit-free candidates in the four-dimensional log-scaled weight space.
+    \item A vehicle path-following MPC weight-tuning task is formulated as a simulator-in-the-loop black-box optimization problem, with a Sobol-based landscape analysis used to examine the sparsity of hit-free candidates in the four-dimensional log-scaled weight space.
     \item A matched repeated-experiment evaluation is conducted for LHC, random search, BO, and LLM-based search under the same search range, simulation objective, and 50-trial budget.
     \item The experiments characterize how LLM-based search and BO explore different regions of the MPC weight space under a limited simulation budget.
 \end{itemize}
@@ -97,7 +80,7 @@ u = \delta_{\mathrm{sw}}.
 \label{eq:control_input}
 \end{equation}
 Note that longitudinal speed control is not included in the optimization. In the
-closed-loop evaluation, the plant is the high-fidelity CarMaker vehicle model,
+closed-loop evaluation, the plant is a high-fidelity vehicle simulation model,
 whereas the bicycle model is used only as the MPC prediction model.
 
 The continuous-time model is written as
@@ -290,8 +273,8 @@ workflow.}
 
 Figure~\ref{fig:overview} shows the common evaluation loop used by all search
 methods. A candidate-selection method proposes an MPC weight vector, the weights
-are applied to the Simulink MPC controller, and the CarMaker-Simulink
-closed-loop slalom simulation returns an objective value and diagnostic trial
+are applied to the MPC controller, and the high-fidelity closed-loop
+path-following simulation returns an objective value and diagnostic trial
 log. The result is appended to the history and used by the next
 candidate-selection step.
 
@@ -357,7 +340,9 @@ search space.
 \subsection{Slalom Simulation Scenario}
 \label{subsec:scenario}
 
-The benchmark scenario is derived from the CarMaker Nominal Slalom example. The
+The general simulator-in-the-loop calibration workflow is instantiated in this
+study using an IPG CarMaker-Simulink co-simulation benchmark. The benchmark
+scenario is derived from the CarMaker Nominal Slalom example. The
 reference path is taken from the Manual Drive Maneuver trajectory of the base
 CarMaker slalom example, which completes the maneuver without cone contacts. To
 make the tuning task more discriminative, the target speed is increased by 5\%
@@ -520,9 +505,7 @@ pure objective minimizer.
 		\includegraphics[width=\linewidth]{figures/fig3_random_contact_zoom.pdf}\\[-0.5mm]
 		\footnotesize (b) Zoom around the random-search cone contact
 	\end{minipage}
-	\caption{Best-run trajectories for the compared methods. Red triangles denote
-		slalom cones, and the red dashed rectangle in (a) marks the region enlarged
-		in (b).}
+	\caption{Best-run trajectories for the compared methods.}
 	\label{fig:best_trajectory}
 \end{figure}
 
@@ -536,10 +519,8 @@ The BO trajectory is consistent with the lower tracking metrics in
 Table~\ref{tab:best_trials}. Figure~\ref{fig:best_trajectory}(b) highlights the
 counted cone-contact region for random search and shows that visually plausible
 tracking can still be unacceptable when the trajectory approaches a cone too
-closely. The difference between the random-search trajectory and the hit-free
-trajectories is small in the plotted lateral position, but it changes the
-discrete cone-contact outcome. This sensitivity makes the objective difficult
-for purely space-filling search under a small simulation budget.
+closely. This sensitivity makes the objective difficult for purely
+space-filling search under a small simulation budget.
 
 \subsection{Hit-Free Weight-Space Patterns}
 \label{subsec:weight_space_patterns}
@@ -554,10 +535,7 @@ local regions of the objective landscape.
 \centering
 \includegraphics[width=0.98\textwidth]{figures/fig4_hit_free_regions.pdf}
 \caption{Representative projections of hit-free candidates in the log-scaled MPC
-weight space. The green shaded ellipse denotes the empirical high-heading region
-visited by LLM-based search, while LHC and BO are shown as sparse hit-free
-candidates. Black center markers R1--R6 denote representative candidates selected
-for interpretation.}
+weight space. Markers R1--R6 denote representative solutions.}
 \label{fig:local_regions}
 \end{figure*}
 
@@ -621,16 +599,27 @@ hit-free regions are sparse in the four-dimensional log-scaled weight space.
 \section{Conclusion}
 \label{sec:conclusion}
 
-This paper studied simulator-in-the-loop MPC weight calibration for a CarMaker
-slalom maneuver under a common 50-trial budget. The results show complementary
-search behavior: LLM-based search rapidly reaches hit-free controller settings,
-whereas BO can discover lower-objective and less intuitive
+This paper studied simulator-in-the-loop MPC weight calibration for autonomous
+vehicle path-following under a common 50-trial budget. The results show
+complementary search behavior: LLM-based search rapidly reaches hit-free
+controller settings, whereas BO can discover lower-objective and less intuitive
 weight regions when its exploration succeeds. The Sobol-based landscape analysis
 further indicates that hit-free weights occupy sparse regions in the
-four-dimensional log-scaled search space. Because the present study uses five repetitions of one nominal
-slalom scenario and one LLM configuration, future work will evaluate larger
-repetition sets, additional maneuvers and friction conditions, model-dependent
-LLM proposal bias, and exploration-preserving LLM--BO designs.
+four-dimensional log-scaled search space. The workflow was evaluated using a
+CarMaker-Simulink slalom benchmark as a representative high-fidelity closed-loop
+vehicle simulation case. Future work will evaluate broader scenarios, friction
+conditions, model-dependent LLM proposal bias, and exploration-preserving
+LLM--BO designs.
+
+\section*{ACKNOWLEDGEMENT}
+
+This work was supported partly by the Korea Agency for Infrastructure
+Technology Advancement (KAIA) grant funded by the Ministry of Land,
+Infrastructure and Transport (MOLIT) of the Korean government (Grant
+RS-2026-25522607), and partly by the Institute of Information \&
+communications Technology Planning \& Evaluation (IITP) grant funded by the
+Korea government (MSIT) (No. RS-2025-25422680, Meta cognitive AGI Framework and
+its Applications).
 
 \bibliographystyle{ieeetr}
 \bibliography{ref}
