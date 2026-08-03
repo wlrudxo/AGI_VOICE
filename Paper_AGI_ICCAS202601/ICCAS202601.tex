@@ -250,12 +250,12 @@ w_{\mathrm{fail}} I_{\mathrm{fail}}
 + w_\psi\,\mathrm{RMSE}(e_\psi).
 \label{eq:objective}
 \end{align}
-Here $I_{\mathrm{fail}}$ is one when the run terminates before its normal end
-event, which occurs when the vehicle departs from the road, and zero otherwise.
-Cone contacts are detected by the contact sensing of the simulation scenario
-and logged as per-cone hit events with road positions; $N_{\mathrm{hit}}$
-counts contacts at or beyond the first slalom gate, excluding the entry section
-used to converge onto the reference path from the initial transient. The
+Here $I_{\mathrm{fail}}$ is one when the simulation terminates early due to
+road departure, and zero otherwise. Cone contacts are detected by the
+simulation scenario, and each contact is recorded with its road position;
+$N_{\mathrm{hit}}$ counts contacts at or beyond the first slalom gate,
+excluding the entry section used to converge onto the reference path from the
+initial transient. The
 tracking variables $e_y$ and $e_\psi$ are the lateral and heading errors
 computed from the simulation output.
 
@@ -378,11 +378,11 @@ and submit candidate decisions.
 At each trial, the LLM observes logged outcomes, including previous MPC weights,
 objective value, status, cone contacts, tracking errors, and diagnostic metrics,
 but it is not given the analytic objective expression or penalty weights. It
-then submits one candidate of four decoded MPC weights per trial through the
-same trial interface used by the other methods, which rejects malformed
-submissions before simulation. The log-scale search bounds are restated at
-every trial; all 250 logged LLM proposals remained within the bounds, so no
-clipping was applied.
+then proposes one candidate of four decoded MPC weights per trial through the
+same evaluation pipeline used by the other methods. The log-scale search bounds
+are provided in the task context at every trial, and all LLM proposals across
+the five repetitions remained within these bounds, so no clipping or rejection
+was needed.
 
 In all experiments, the objective weights are set to
 \begin{equation}
