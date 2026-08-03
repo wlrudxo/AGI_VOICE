@@ -1,0 +1,79 @@
+Reviewer 1 of ICCAS 2026 submission 346
+
+Comments to the author
+======================
+
+1. The LLM-based search procedure is not sufficiently
+reproducible.
+
+The LLM-based search is one of the main contributions, but
+the paper provides only a high-level description. The
+manuscript states that OpenAI GPT-5.5 with medium reasoning
+effort is used through Codex with tools, and that the model
+reads previous trial logs and proposes the next four MPC
+weights. However, the exact decision procedure is not
+reproducible.
+
+2. The fairness of the comparison between LLM-based search
+and BO should be examined more carefully.
+
+All methods are given the same number of simulator
+evaluations, which is reasonable when simulation cost
+dominates. However, LLM-based search and BO have
+substantially different candidate-selection overheads.
+
+3. The experimental evaluation is limited to a single
+slalom scenario.
+
+The proposed conclusions are based on one CarMaker nominal
+slalom scenario with the target speed increased by 5% to 61
+km/h. This is insufficient to establish general utility for
+autonomous-vehicle MPC calibration.
+
+4. The reported number of repetitions is too small for
+strong statistical conclusions.
+
+Each method is repeated only five times. This is a small
+sample for stochastic search algorithms, especially when
+the paper emphasizes differences in success probability and
+early feasibility discovery.
+
+5. The definition and detection of cone contacts and road
+departure need more detail.
+
+Cone contacts are central to the feasibility criterion, yet
+the paper does not fully explain how they are detected and
+counted. The statement that entry contacts before the
+evaluation gate are ignored also requires justification.
+
+6. The sparse-feasible-region claim should be interpreted
+more carefully.
+
+The paper reports that only 7 of 4096 Sobol samples are
+hit-free and concludes that feasible regions are sparse.
+This is suggestive, but the statement is stronger than the
+evidence supports.
+
+7. Generalization of the tuned MPC weights is not
+evaluated.
+
+The paper searches for weights that perform well on the
+same scenario used for evaluation. However, practical
+calibration requires robustness across operating
+conditions.
+
+8. The MPC implementation lacks key reproducibility
+details.
+
+The paper provides sample time and horizons but omits
+several important controller parameters.
+
+9. The novelty relative to prior LLM-assisted Bayesian
+optimization work should be sharpened.
+
+The related-work section cites LLM-assisted BO and
+closed-loop experimentation studies, but the manuscript
+should articulate more clearly what is methodologically
+new. At present, the main novelty appears to be applying an
+LLM as a sequential candidate proposer for MPC weight
+tuning in CarMaker.

@@ -1,0 +1,37 @@
+Message from The PaperPlaza Conference/Journal Management System
+
+Message originated by Zee Yeon Lee
+
+To: Prof. Kyoungseok Han
+
+Re: (346) Simulator-in-the-Loop MPC Weight Tuning Using LLM-Based Search and Bayesian Optimization
+
+Dear Colleague:
+
+It is our pleasure to inform you that your paper has been accepted for publication in the Proceedings of the 26th International Conference on Control, Automation and Systems (ICCAS). Congratulations!
+
+All papers were reviewed by reviewers and an Associate Editor. The reviews and recommendations were discussed by the Program Co-Chairs that made the final decision. The reviews of your paper are attached to this email and can also be viewed by logging into your PaperPlaza account at http://ras.papercept.net and following the link "reviews".
+
+The ICCAS 2026 organizing committee has decided to hold the ICCAS 2026 on schedule as a traditional in-person conference.
+
+* Presenting your paper in Sapporo, Japan Your paper is accepted on the condition of an author presenting it at the conference.
+
+At least one author of each paper must be registered for the conference before submitting the final version. Full on-site registrations covers one paper; student registrations cover one paper. Please follow the registration instructions on the conference website. Please be sure to write the Registration Number (R0000) in the final questionnaire.
+
+
+* Preparing the final version of your paper Your reviews and editorial feedback are available at http://ras.papercept.net
+
+Please carefully read the reviews. Your final version should reflect this advice from the Editorial Board. The final version of your paper must be essentially the same as the draft we accepted. You may not add or remove material except as requested by the reviewers. The preferred paper length is up to six pages.
+
+UPDATE: The final version of your manuscript must be uploaded to PaperPlaza by 31 August 2026 at 23:59 PST.
+
+UPDATE: * Planning your travel Note that the discounted early registration deadline is September 18, 2026 at 23:59 PST.
+
+We look forward to welcoming you to Sapporo in October.
+
+Yours sincerely,
+
+General Co-Chair
+Hyun Myung
+
+Program Co-Chairs Hae-Won Park & TaeWon Seo

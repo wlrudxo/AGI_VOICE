@@ -1,0 +1,17 @@
+Reviewer 2 of ICCAS 2026 submission 346
+
+Comments to the author
+======================
+
+- In 4.2 Experimental Design first paragraph, there is no
+period in last sentence.
+
+- LLM-based search method’s handling of candidates that
+exceed the search bounds should be described.
+
+- The current experiments are conducted under each method
+and evaluated over only five independent repetitions.
+Therefore, it is necessary to examine whether five
+repetitions are sufficient to support the claimed
+performance differences between LLM-based search and
+Bayesian optimization.
