@@ -9,6 +9,8 @@ import os
 import matplotlib
 
 matplotlib.use("Agg")
+matplotlib.rcParams["pdf.fonttype"] = 42
+matplotlib.rcParams["ps.fonttype"] = 42
 import matplotlib.pyplot as plt
 
 from make_fig3_best_trajectories import (

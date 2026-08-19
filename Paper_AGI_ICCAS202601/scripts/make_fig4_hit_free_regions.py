@@ -10,6 +10,8 @@ import os
 import matplotlib
 
 matplotlib.use("Agg")
+matplotlib.rcParams["pdf.fonttype"] = 42
+matplotlib.rcParams["ps.fonttype"] = 42
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Ellipse
