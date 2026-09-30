@@ -82,3 +82,7 @@ AGI_VOICE/
 - 이전 루트 앱 코드(`src`, `src-tauri`, `static`)는 `legacy/v2/`에 보관합니다.
 - V2의 `.svelte-kit/`, `build/`, `src-tauri/target/` 같은 생성물은 추적하지 않습니다.
 - Map/RAG는 V3에서 아직 별도 정리 중이며, 현재 메인 전환 범위에서는 완전 parity 대상으로 보지 않습니다.
+
+## 관련 연구 레포
+
+- LLM/BO 기반 MPC 가중치 튜닝 연구(`llm_mpc_bo/`, ICCAS 2026 논문)는 [wlrudxo/PRJ_LLM_MPC_Tuning](https://github.com/wlrudxo/PRJ_LLM_MPC_Tuning)(private)으로 분리했습니다.
